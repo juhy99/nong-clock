@@ -1,0 +1,14 @@
+# Spring Boot
+/backend-spring/build/
+.gradle/
+
+# Python / ML
+/python-ml/data/raw/
+/python-ml/data/processed/
+.venv/
+__pycache__/
+
+# Environment & IDE
+.env
+.vscode/
+.idea/

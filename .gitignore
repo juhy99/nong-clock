@@ -7,6 +7,7 @@
 /python-ml/data/processed/
 .venv/
 __pycache__/
+.pytest_cache/
 
 # Environment & IDE
 .env

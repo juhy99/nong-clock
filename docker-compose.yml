@@ -12,5 +12,14 @@ services:
       - ./db/init:/docker-entrypoint-initdb.d
       - pgdata:/var/lib/postgresql/data
 
+  ml-api:
+    build: ./ml-api
+    container_name: nong-clock-ml-api
+    environment:
+      MODEL_VERSION: ${MODEL_VERSION:-dummy-0.1}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
+    ports:
+      - "8000:8000"
+
 volumes:
   pgdata:

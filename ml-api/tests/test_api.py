@@ -44,7 +44,7 @@ def test_region_defaults_to_national():
     assert client.get("/predict/top-movers").status_code == 200
 
 
-@pytest.mark.parametrize("horizon", [7, 14, 30])
+@pytest.mark.parametrize("horizon", [1, 7, 10, 14, 23, 30])
 def test_predict_shape(horizon):
     res = client.post("/predict", json={"item": "napa_cabbage", "horizon": horizon})
     assert res.status_code == 200
@@ -65,7 +65,8 @@ def test_predict_is_deterministic():
     [
         ({"item": "banana", "horizon": 7}, 404),
         ({"item": "napa_cabbage", "region": "seoul", "horizon": 7}, 404),
-        ({"item": "napa_cabbage", "horizon": 10}, 422),
+        ({"item": "napa_cabbage", "horizon": 0}, 422),
+        ({"item": "napa_cabbage", "horizon": 31}, 422),
         ({"item": "napa_cabbage", "region": "gyeonggi", "horizon": 7}, 404),  # 지역별 예측 꺼짐
     ],
 )
@@ -73,14 +74,15 @@ def test_predict_invalid(req, status):
     assert client.post("/predict", json=req).status_code == status
 
 
-@pytest.mark.parametrize("horizon", [7, 14, 30])
+@pytest.mark.parametrize("horizon", [1, 7, 10, 30])
 def test_top_movers_horizon_query(horizon):
     # 쿼리 파라미터는 문자열로 들어온다 ("7") — 회귀 테스트
     assert client.get(f"/predict/top-movers?horizon={horizon}&limit=2").status_code == 200
 
 
-def test_top_movers_invalid_horizon():
-    assert client.get("/predict/top-movers?horizon=10").status_code == 422
+@pytest.mark.parametrize("horizon", [0, 31])
+def test_top_movers_invalid_horizon(horizon):
+    assert client.get(f"/predict/top-movers?horizon={horizon}").status_code == 422
 
 
 def test_top_movers_sorted():

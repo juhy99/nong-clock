@@ -3,13 +3,16 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-Horizon = Literal[7, 14, 30]
+from app.core.catalog import HORIZONS, NATIONAL
+
+# 허용 값은 catalog.HORIZONS 에서 가져온다 (현재 7, 14, 30)
+Horizon = Literal[tuple(HORIZONS)]
 
 
 class PredictRequest(BaseModel):
-    item: str = Field(examples=["lettuce"], description="품목 코드 (GET /items 참고)")
-    region: str = Field(examples=["gyeonggi"], description="재배 지역 코드 (GET /regions 참고)")
-    horizon: Horizon = Field(examples=[14], description="예측 시점(일)")
+    item: str = Field(examples=["napa_cabbage"], description="품목 코드 (GET /items 참고)")
+    region: str = Field(NATIONAL, examples=[NATIONAL], description="지역 코드 (GET /regions 참고). 생략하면 전국")
+    horizon: Horizon = Field(examples=[14], description="예측 기간(일). GET /horizons 참고")
 
 
 class PricePoint(BaseModel):
@@ -39,10 +42,10 @@ class PredictResponse(BaseModel):
     region: str
     horizon: Horizon
     base_date: date
-    base_price: int = Field(description="기준일 중도매가(원)")
+    base_price: int = Field(description="기준일 도매가(원/kg)")
     history: list[PricePoint] = Field(description="최근 실제 시세")
     forecast: list[ForecastPoint] = Field(description="기준일 다음 날부터 horizon 일까지 예측")
-    predicted_price: int = Field(description="horizon 일 후 예상 도매가")
+    predicted_price: int = Field(description="horizon 일 후 예상 도매가(원/kg)")
     change_pct: float = Field(description="기준가 대비 변동률(%)")
     confidence: int = Field(ge=0, le=100, description="신뢰도 지수")
     alerts: list[WeatherAlert]

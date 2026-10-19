@@ -21,8 +21,9 @@ uvicorn app.main:app --reload --port 8000
 | 메서드 | 경로 | 용도 | 화면 |
 |---|---|---|---|
 | GET | `/health` | 상태 확인 | - |
-| GET | `/items` | 품목 코드 목록 | 품종 선택 |
-| GET | `/regions` | 재배 지역 코드 목록 | 재배 지역 선택 |
+| GET | `/items` | 품목 코드 목록 (이름·분류·이모지 포함) | 품종 선택, 시세 카드 |
+| GET | `/regions` | 지역 목록 (현재 전국만) | 지역 선택 (1개면 숨김) |
+| GET | `/horizons` | 예측 기간 목록 (1주/2주/1개월) | 기간 버튼 |
 | POST | `/predict` | 품목·지역·기간별 예측 | AI 가격예측 |
 | GET | `/predict/top-movers?horizon=7&limit=4` | 변동률 절댓값 큰 순 품목 | 홈 · AI 추천 급등락 예상 품목 |
 
@@ -30,22 +31,24 @@ uvicorn app.main:app --reload --port 8000
 
 ```json
 // 요청
-{ "item": "lettuce", "region": "gyeonggi", "horizon": 14 }
+{ "item": "napa_cabbage", "horizon": 14 }
 
-// 응답 (일부)
+// 응답 (일부) — 가격은 모두 원/kg
 {
-  "item": "lettuce", "item_name": "상추", "unit": "4kg", "region": "gyeonggi",
-  "horizon": 14, "base_date": "2026-10-15", "base_price": 18200,
-  "history":  [{ "date": "2026-10-01", "price": 16289 }, ...],
-  "forecast": [{ "date": "2026-10-16", "price": 18300, "lower": 17750, "upper": 18850 }, ...],
-  "predicted_price": 22412, "change_pct": 23.1, "confidence": 84,
-  "alerts": [{ "start": "2026-10-22", "end": "2026-10-24", "reason": "...",
+  "item": "napa_cabbage", "item_name": "배추", "unit": "kg", "region": "national",
+  "horizon": 14, "base_date": "2026-10-19", "base_price": 800,
+  "history":  [{ "date": "2026-10-05", "price": 689 }, ...],
+  "forecast": [{ "date": "2026-10-20", "price": 790, "lower": 766, "upper": 814 }, ...],
+  "predicted_price": 722, "change_pct": -9.8, "confidence": 79,
+  "alerts": [{ "start": "2026-10-26", "end": "2026-10-28", "reason": "...",
                "mape_normal": 6.2, "mape_anomaly": 19.8 }],
   "model_version": "dummy-0.1"
 }
 ```
 
-- `horizon`: 7 / 14 / 30 중 하나 (그 외 422)
+- 가격 단위는 전 품목 **원/kg** (`unit` 은 항상 `"kg"`)
+- `region` 은 생략 가능하며 기본값은 `national`(전국). 지역별 예측은 `ENABLE_REGIONAL_FORECAST=true` 로 켬
+- `horizon`: 7 / 14 / 30 중 하나 (그 외 422). 목록은 `GET /horizons`
 - 없는 품목·지역 코드: 404
 
 ## 구조

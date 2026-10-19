@@ -6,6 +6,12 @@ class ItemOut(BaseModel):
     name: str
     unit: str
     category: str
+    emoji: str
+
+
+class HorizonOut(BaseModel):
+    days: int
+    label: str
 
 
 class RegionOut(BaseModel):

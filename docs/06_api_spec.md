@@ -269,23 +269,65 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 
 ---
 
-## 2. Backend (Spring Boot)
+## 2. Backend (Spring Boot) — 프론트 기준 제안
 
-> Spring 담당자가 작성해주세요. 화면 기준으로 필요한 API 후보입니다.
+> **아직 Spring 담당자가 확정하지 않은 "제안"입니다.** 프론트(`frontend/`)는 지금 이 모양의 가짜 데이터(`frontend/src/mocks/`)로 동작합니다.
+> Spring 이 이 모양대로 응답하면 프론트는 `frontend/src/api/*.js` 함수 안쪽만 바꾸면 됩니다. 주소·필드를 바꾸고 싶으면 이 문서를 고치고 단톡방에 알려주세요.
+> 공통: 가격은 원/kg 정수, 날짜는 `YYYY-MM-DD`, 일시는 ISO 8601 (`2026-10-19T14:03:00+09:00`).
 
-| 화면 | 필요한 데이터 | 주소 (예정) |
-|---|---|---|
-| 홈 › 상단 시세 띠, 오늘의 주요 시세 | 품목별 오늘 도매가(원/kg), **직전 조사일 대비 금액·%와 비교 날짜** | |
-| 홈 › 실시간 농업 날씨, 기상특보 | 지역 날씨, 특보 문구 | |
-| 홈 › 인기 경매 | 진행 중 경매 목록 | |
-| 시세·수급 › 품목 표 | 중도매가, 전일 대비, 소매가, 유통마진 | |
-| 시세·수급 › 가격 동향 그래프 | 최근 30일 도매/소매가 | |
-| 시세·수급 › 유통처별 가격 | 시장별 가격 | |
-| 시세·수급 › 수급 동향 리포트 | 월별 생산량, 평년값, 관측 문구 | |
-| 경매 마켓 | 경매 목록·상세·입찰 | |
-| 마이페이지 | 회원 정보, 입찰 내역 | |
+### 한눈에 보기
 
----
+| 메서드 | 주소 (제안) | 설명 | 사용 화면 | 프론트 함수 |
+|---|---|---|---|---|
+| GET | `/api/prices/today` | 오늘 시세 + 직전 조사일 대비 | 홈 시세 띠·카드, 시세 표 | `getTodayPrices` |
+| GET | `/api/prices/{item}/history?days=30` | 최근 N 조사일 도매·소매 | 시세 › 가격 동향 | `getPriceHistory` |
+| GET | `/api/prices/{item}/markets` | 시장별 가격 | 시세 › 유통처별 비교 | `getMarketCompare` |
+| GET | `/api/supply/{item}` | 월별 생산량 vs 평년 | 시세 › 수급 리포트 | `getSupply` |
+| GET | `/api/weather` | 농업 날씨 | 홈 날씨 카드 | `getWeather` |
+| GET | `/api/auctions?sort=popular\|ending\|price` | 진행 중 경매 목록 | 홈 인기 경매, 경매 마켓 | `getAuctions` |
+| GET | `/api/auctions/{id}` | 경매 상세 + 입찰 기록 | 경매 상세 | `getAuction` |
+| POST | `/api/auctions/{id}/bids` `{ "amount": 240000 }` | 입찰 (로그인 필요) | 경매 상세 | `placeBid` |
+| GET | `/api/me/bids` | 내 입찰 현황 | 마이페이지 | `getMyBids` |
+| POST | `/api/auth/signup` · `/api/auth/login` | 회원가입·로그인 | 회원가입·로그인 | `signup` · `login` |
+| GET | `/api/notices` | 공지 목록 (`show_on_home` 이면 홈 배너) | 홈 배너, 개발자 › 공지 | `getNotices` |
+| | `/api/admin/...` | 신고·공지·회원·경매 관리 (관리자만) | 개발자 페이지 | `api/admin.js` |
+
+### 2-1. `GET /api/prices/today` 예시
+
+```json
+{
+  "base_date": "2026-10-19",
+  "compared_date": "2026-10-16",
+  "market": "가락시장",
+  "unit": "kg",
+  "items": [
+    { "item": "napa_cabbage", "name": "배추", "emoji": "🥬", "category": "엽채류",
+      "price": 800, "prev_price": 814, "change": -14, "change_pct": -1.7,
+      "retail_price": 1890, "margin_pct": 136 }
+  ]
+}
+```
+- `compared_date` 는 직전 조사일 (주말·공휴일 제외) → 화면에 "10/16(금) 대비" 로 표시
+- 품목 코드·이름·이모지는 ML API `GET /items` 와 같은 값
+
+### 2-2. 경매 목록 항목 예시 (`GET /api/auctions`)
+
+```json
+{ "id": 2, "title": "해남 월동배추 10kg × 20망 (산지직송)", "emoji": "🥬", "item": "napa_cabbage",
+  "origin": "전남 해남", "weight_kg": 200, "start_price": 150000, "current_bid": 236000, "bid_count": 6,
+  "ends_at": "2026-10-20T15:00:00+09:00", "seller": "seller1", "status": "진행중" }
+```
+- `status`: `승인대기` → (관리자 승인) → `진행중` → `마감` / `중단`
+- 입찰 규칙(서버에서 검사): 로그인, 본인 상품 불가, 진행 중·마감 전, 최소 `현재가 + 1,000원` (첫 입찰은 시작가 이상)
+
+### 2-3. 회원가입 요청 예시 (`POST /api/auth/signup`)
+
+```json
+{ "type": "seller", "email": "farmer@farmbid.kr", "password": "abcd1234", "name": "박농부",
+  "phone": "010-3333-4444", "region": "충남", "farm_name": "논산 햇살농장", "marketing": false }
+```
+- `type`: `buyer`(구매자) / `seller`(판매자·농가). 관리자는 가입이 아니라 DB에서 지정
+- 비밀번호: 영문+숫자 8자 이상, **서버에서 암호화 저장**
 
 ## 3. 정해야 할 것
 
@@ -301,6 +343,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 날짜 | 내용 | 작성자 |
 |---|---|---|
 | 2026-10-15 | 최초 작성 (ML API) | |
+| 2026-10-19 | Spring API 제안(시세·경매·회원·공지) 추가 — 프론트 가짜 데이터 기준 | |
 | 2026-10-19 | 예측 기간 1주/2주/1개월 확정 및 `GET /horizons` 추가, 지역은 전국만 제공(지역별은 설정으로 켜기) | |
 | 2026-10-19 | 지역에 `national`(전국) 추가 및 기본값으로 지정, `region` 생략 가능 | |
 | 2026-10-19 | 가격 단위 원/kg 통일, 품목 16개로 변경(`cabbage`=양배추), `/items`에 `emoji` 추가, 가격 비교 기준 명시 | |

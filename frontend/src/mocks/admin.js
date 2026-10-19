@@ -2,10 +2,10 @@
 const ago = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
 
 export const INITIAL_REPORTS = [
-  { id: 101, type: "허위매물", target: "경매 #3 청양 고추 10kg", reporter: "buyer1", reason: "사진과 실제 상품 등급이 다르다는 후기가 있습니다.", status: "접수", created_at: ago(2), memo: "" },
-  { id: 102, type: "부정입찰", target: "경매 #2 해남 월동배추", reporter: "seller1", reason: "같은 사람이 여러 계정으로 가격을 올리는 것 같습니다.", status: "검토중", created_at: ago(20), memo: "IP 중복 확인 중" },
+  { id: 101, type: "허위매물", target: "경매 #3 청양 고추 10kg", auction_id: 3, reporter: "buyer1", reason: "사진과 실제 상품 상태가 다르다는 후기가 있습니다.", status: "접수", created_at: ago(2), memo: "" },
+  { id: 102, type: "부정입찰", target: "경매 #2 해남 월동배추", auction_id: 2, reporter: "seller1", reason: "같은 사람이 여러 계정으로 가격을 올리는 것 같습니다.", status: "검토중", created_at: ago(20), memo: "IP 중복 확인 중" },
   { id: 103, type: "사기의심", target: "회원 buyer2", reporter: "seller2", reason: "낙찰 후 입금하지 않고 연락이 두절되었습니다.", status: "처리완료", created_at: ago(70), memo: "계정 이용정지 처리" },
-  { id: 104, type: "허위매물", target: "경매 #5 수경재배 청상추", reporter: "buyer2", reason: "원산지 표기가 의심됩니다.", status: "반려", created_at: ago(96), memo: "판매자 증빙 확인, 문제 없음" },
+  { id: 104, type: "허위매물", target: "경매 #5 수경재배 청상추", auction_id: 5, reporter: "buyer2", reason: "원산지 표기가 의심됩니다.", status: "반려", created_at: ago(96), memo: "판매자 증빙 확인, 문제 없음" },
 ];
 
 export const INITIAL_NOTICES = [
@@ -16,6 +16,14 @@ export const INITIAL_NOTICES = [
 
 export const NOTICE_CATEGORIES = ["서비스 점검", "가격 급등 안내", "정책 공지", "일반"];
 export const REPORT_STATUSES = ["접수", "검토중", "처리완료", "반려"];
+
+/** 신고 유형. 회원 신고 화면과 관리자 화면이 같이 쓴다. */
+export const REPORT_TYPES = {
+  허위매물: "사진·설명과 실제 상품이 다름",
+  사기의심: "외부 거래 유도, 낙찰 후 연락 두절 등",
+  부정입찰: "가격 띄우기, 여러 계정으로 입찰 등 비정상 입찰",
+  기타: "그 밖의 문제",
+};
 
 // 데이터 수집 현황. 실제로는 수집 스크립트가 DB 에 남긴 기록을 Spring/ML API 가 돌려준다.
 export const COLLECTION_STATUS = [

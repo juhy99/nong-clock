@@ -6,7 +6,9 @@ import Market from "./pages/Market";
 import Predict from "./pages/Predict";
 import Auctions from "./pages/Auctions";
 import AuctionDetail from "./pages/AuctionDetail";
-import MyPage from "./pages/MyPage";
+import MyPage from "./pages/mypage/MyPage";
+import NewAuction from "./pages/mypage/NewAuction";
+import About from "./pages/About";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -27,6 +29,8 @@ export default function App() {
         <Route path="auctions" element={<Auctions />} />
         <Route path="auctions/:id" element={<AuctionDetail />} />
         <Route path="mypage" element={<RequireAuth><MyPage /></RequireAuth>} />
+        <Route path="mypage/auctions/new" element={<RequireAuth><NewAuction /></RequireAuth>} />
+        <Route path="about" element={<About />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
         <Route path="admin" element={<RequireAuth admin><AdminLayout /></RequireAuth>}>

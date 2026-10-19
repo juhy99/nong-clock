@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { isEmailTaken } from "../api/auth";
 import { useAuth } from "../components/AuthContext";
-
-const SIDO = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
+import { SIDO, formatPhone } from "../utils/format";
 
 const TERMS = [
   ["service", "[필수] 서비스 이용약관 동의", true],
@@ -11,14 +10,6 @@ const TERMS = [
   ["age", "[필수] 만 14세 이상입니다", true],
   ["marketing", "[선택] 가격 급등 알림·이벤트 소식 받기", false],
 ];
-
-/** 010-1234-5678 형태로 자동 하이픈 */
-const formatPhone = (v) => {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length < 4) return d;
-  if (d.length < 8) return `${d.slice(0, 3)}-${d.slice(3)}`;
-  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
-};
 
 function validate(f) {
   const e = {};

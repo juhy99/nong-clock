@@ -4,7 +4,7 @@ import { NOTICE_CATEGORIES } from "../../mocks/admin";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { dateTime } from "../../utils/format";
 
-const EMPTY = { category: "일반", title: "", body: "", pinned: false, show_on_home: false };
+const EMPTY = { category: "일반", title: "", body: "", pinned: false, show_on_home: false, sendNotification: false };
 
 export default function Notices() {
   const state = useAsync(getNotices);
@@ -34,6 +34,7 @@ export default function Notices() {
           <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
             <label className="check"><input type="checkbox" checked={form.pinned} onChange={(e) => setForm({ ...form, pinned: e.target.checked })} /> 상단 고정</label>
             <label className="check"><input type="checkbox" checked={form.show_on_home} onChange={(e) => setForm({ ...form, show_on_home: e.target.checked })} /> 홈 배너로 노출</label>
+            <label className="check"><input type="checkbox" checked={!!form.sendNotification} onChange={(e) => setForm({ ...form, sendNotification: e.target.checked })} /> 회원 전체에게 알림 보내기</label>
             <div style={{ flex: 1 }} />
             {editing && <button type="button" className="btn" onClick={() => setForm(EMPTY)}>취소</button>}
             <button className="btn primary">{editing ? "수정 저장" : "등록"}</button>

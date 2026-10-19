@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAllAuctions, getUsers, setAuctionStatus, setUserStatus } from "../../api/admin";
 import { USER_TYPE_LABEL, useAuth } from "../../components/AuthContext";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { dateTime, won } from "../../utils/format";
+import BidCancelPanel from "./BidCancelPanel";
 
-const AUCTION_BADGE = { 진행중: "green", 승인대기: "amber", 중단: "red" };
+const AUCTION_BADGE = { 진행중: "green", 승인대기: "amber", 중단: "red", 취소: "" };
+const USER_BADGE = { 정상: "green", 정지: "red", 탈퇴: "" };
 
 export default function Members() {
   const { user: me } = useAuth();
   const users = useAsync(getUsers);
   const auctions = useAsync(getAllAuctions);
   const [q, setQ] = useState("");
+  const [bidsOpen, setBidsOpen] = useState(null);
 
   return (
     <>
@@ -36,9 +39,9 @@ export default function Members() {
                       <td className="small">{USER_TYPE_LABEL[u.type]}</td>
                       <td className="small">{u.region}</td>
                       <td className="small num">{u.joined}</td>
-                      <td><span className={`badge ${u.status === "정상" ? "green" : "red"}`}>{u.status}</span></td>
+                      <td><span className={`badge ${USER_BADGE[u.status] ?? ""}`}>{u.status}</span></td>
                       <td className="r">
-                        {u.id !== me.id && (
+                        {u.id !== me.id && u.status !== "탈퇴" && (
                           <button className="btn sm" onClick={async () => { await setUserStatus(u.id, u.status === "정상" ? "정지" : "정상"); users.reload(); }}>
                             {u.status === "정상" ? "이용 정지" : "정지 해제"}
                           </button>
@@ -53,7 +56,7 @@ export default function Members() {
         </Async>
       </section>
       <section className="card">
-        <SectionHead title="경매 관리" desc="새 경매는 승인 후 노출됩니다 · 문제 상품은 중단할 수 있습니다" />
+        <SectionHead title="경매 관리" desc="새 경매는 승인 후 노출됩니다 · 문제 상품은 중단, 비정상 입찰은 '입찰 관리'에서 취소할 수 있습니다" />
         <Async state={auctions}>
           {(rows) => (
             <div className="table-wrap">
@@ -63,19 +66,29 @@ export default function Members() {
                 </thead>
                 <tbody>
                   {rows.map((a) => (
-                    <tr key={a.id}>
-                      <td className="muted">{a.id}</td>
-                      <td><Link className="link" to={`/auctions/${a.id}`}>{a.emoji} {a.title}</Link></td>
-                      <td className="small">{a.seller}</td>
-                      <td className="r num">{won(a.current_bid)}원</td>
-                      <td className="small num">{dateTime(a.ends_at)}</td>
-                      <td><span className={`badge ${AUCTION_BADGE[a.status] ?? ""}`}>{a.status}</span></td>
-                      <td className="r" style={{ whiteSpace: "nowrap" }}>
-                        {a.status === "승인대기" && <button className="btn sm primary" onClick={async () => { await setAuctionStatus(a.id, "진행중"); auctions.reload(); }}>승인</button>}{" "}
-                        {a.status === "진행중" && <button className="btn sm danger" onClick={async () => { if (confirm("이 경매를 중단할까요?")) { await setAuctionStatus(a.id, "중단"); auctions.reload(); } }}>중단</button>}
-                        {a.status === "중단" && <button className="btn sm" onClick={async () => { await setAuctionStatus(a.id, "진행중"); auctions.reload(); }}>재개</button>}
-                      </td>
-                    </tr>
+                    <Fragment key={a.id}>
+                      <tr>
+                        <td className="muted">{a.id}</td>
+                        <td><Link className="link" to={`/auctions/${a.id}`}>{a.emoji} {a.title}</Link></td>
+                        <td className="small">{a.seller}</td>
+                        <td className="r num">{won(a.current_bid)}원</td>
+                        <td className="small num">{dateTime(a.ends_at)}</td>
+                        <td><span className={`badge ${AUCTION_BADGE[a.status] ?? ""}`}>{a.status}</span></td>
+                        <td className="r" style={{ whiteSpace: "nowrap" }}>
+                          {a.status === "승인대기" && <button className="btn sm primary" onClick={async () => { await setAuctionStatus(a.id, "진행중"); auctions.reload(); }}>승인</button>}{" "}
+                          {a.status === "진행중" && <button className="btn sm danger" onClick={async () => { if (confirm("이 경매를 중단할까요?")) { await setAuctionStatus(a.id, "중단"); auctions.reload(); } }}>중단</button>}
+                          {a.status === "중단" && <button className="btn sm" onClick={async () => { await setAuctionStatus(a.id, "진행중"); auctions.reload(); }}>재개</button>}{" "}
+                          {a.bid_count > 0 && <button className="btn sm" onClick={() => setBidsOpen(bidsOpen === a.id ? null : a.id)}>{bidsOpen === a.id ? "닫기" : "입찰 관리"}</button>}
+                        </td>
+                      </tr>
+                      {bidsOpen === a.id && (
+                        <tr>
+                          <td colSpan={7} style={{ background: "#fafaf7" }}>
+                            <BidCancelPanel auctionId={a.id} onDone={auctions.reload} />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

@@ -6,6 +6,7 @@ import { onMlOffline } from "../api/ml";
 import { pct, won } from "../utils/format";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
 import { useAsync } from "./common";
+import NotificationBell from "./NotificationBell";
 
 function Ticker() {
   const { data } = useAsync(getTodayPrices);
@@ -38,7 +39,7 @@ function Header() {
     ["/market", "시세·수급"],
     ["/ai", "AI 가격예측"],
     ["/auctions", "경매 마켓"],
-    ["/mypage", "마이페이지"],
+    ["/about", "서비스 소개"],
     ...(isAdmin ? [["/admin", "개발자"]] : []),
   ];
   return (
@@ -57,9 +58,11 @@ function Header() {
         <div className="header-right">
           {user ? (
             <>
-              <span className="user-chip">
-                👤 {user.name} <span className="muted">· {USER_TYPE_LABEL[user.type]}</span>
-              </span>
+              <NotificationBell user={user} />
+              {/* 마이페이지는 로그인했을 때만, 오른쪽 끝에 */}
+              <NavLink to="/mypage" className="user-chip" title={`${user.name} · ${USER_TYPE_LABEL[user.type]}`}>
+                👤 <b>{user.name}</b> <span className="muted">· 마이페이지</span>
+              </NavLink>
               <button
                 className="btn sm"
                 onClick={() => {
@@ -106,7 +109,8 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="footer">
-        FarmBid · 시세·경매·회원 데이터는 개발용 가상 데이터입니다 (실서비스 연동 시 KAMIS·aT 도매시장 API)
+        FarmBid · 시세·경매·회원 데이터는 개발용 가상 데이터입니다 (실서비스 연동 시 KAMIS·aT 도매시장 API) ·{" "}
+        <Link to="/about" className="link small">서비스 소개 · 문의</Link>
       </footer>
     </>
   );

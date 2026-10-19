@@ -1,35 +1,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getHorizons, getItems, getRegions, predict } from "../api/ml";
 import { Async, PctChange, useAsync } from "../components/common";
-import { md, shortDate, won, wonPerKg } from "../utils/format";
-
-/** 실제(history) + 예측(forecast)을 그래프 한 줄로 합친다 */
-function toChartRows(p) {
-  const rows = p.history.map((h) => ({ date: h.date, actual: h.price }));
-  rows[rows.length - 1].forecast = p.base_price; // 실제선과 예측선이 이어지게
-  rows[rows.length - 1].range = [p.base_price, p.base_price];
-  p.forecast.forEach((f) => rows.push({ date: f.date, forecast: f.price, range: [f.lower, f.upper] }));
-  return rows;
-}
-
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  const row = payload[0].payload;
-  return (
-    <div className="card" style={{ padding: "8px 12px", fontSize: 13 }}>
-      <b>{shortDate(label)}</b>
-      {row.actual != null && <div>실제 {wonPerKg(row.actual)}</div>}
-      {row.forecast != null && row.actual == null && (
-        <>
-          <div style={{ color: "var(--green)" }}>예측 {wonPerKg(row.forecast)}</div>
-          <div className="muted">범위 {won(row.range[0])} ~ {won(row.range[1])}원</div>
-        </>
-      )}
-    </div>
-  );
-}
+import ForecastChart from "../components/ForecastChart";
+import { md, shortDate, wonPerKg } from "../utils/format";
 
 function Result({ p, horizonLabel }) {
   const alert = p.alerts[0];
@@ -42,19 +16,7 @@ function Result({ p, horizonLabel }) {
         </span>
         {alert && <span className="chip warn">⚠️ 이상기후 경보 구간 {md(alert.start)} ~ {md(alert.end)}</span>}
       </div>
-      <ResponsiveContainer width="100%" height={340}>
-        <ComposedChart data={toChartRows(p)} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-          <XAxis dataKey="date" tickFormatter={md} fontSize={12} minTickGap={16} />
-          <YAxis fontSize={12} tickFormatter={won} width={60} domain={["auto", "auto"]} />
-          <Tooltip content={<ChartTooltip />} />
-          <Legend />
-          {alert && <ReferenceArea x1={alert.start} x2={alert.end} fill="#f9d9a6" fillOpacity={0.5} label={{ value: "이상기후", fontSize: 11, fill: "#9a6200" }} />}
-          <Area name="예측 오차범위" dataKey="range" stroke="none" fill="#cfe8d7" fillOpacity={0.7} />
-          <Line name="실제" dataKey="actual" stroke="#1c1c1a" strokeWidth={2} dot={false} />
-          <Line name="예측" dataKey="forecast" stroke="#157a3e" strokeWidth={2.5} strokeDasharray="6 4" dot={false} />
-        </ComposedChart>
-      </ResponsiveContainer>
+      <ForecastChart p={p} height={340} />
       {alert ? (
         <div className="banner" style={{ marginTop: 14 }}>
           ⚠️

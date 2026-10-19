@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { MIN_INCREMENT, getAuction, placeBid } from "../api/auction";
 import { useAuth } from "../components/AuthContext";
 import { Async, useAsync } from "../components/common";
+import ReportModal from "../components/ReportModal";
 import { dateTime, remain, won } from "../utils/format";
 import { useNow } from "./Auctions";
 
@@ -14,6 +15,8 @@ export default function AuctionDetail() {
   const [amount, setAmount] = useState("");
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const mask = (id) => (id === user?.id ? "나" : id.replace(/.(?=.{2})/g, "*"));
 
   async function submit(e, a) {
     e.preventDefault();
@@ -44,7 +47,12 @@ export default function AuctionDetail() {
               <div className="detail-thumb">{a.emoji}</div>
               <div className="card" style={{ display: "grid", gap: 16, alignContent: "start" }}>
                 <div>
-                  <span className={`badge ${live ? "green" : "amber"}`}>{live ? "진행중" : a.status === "진행중" ? "마감" : a.status}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span className={`badge ${live ? "green" : "amber"}`}>{live ? "진행중" : a.status === "진행중" ? "마감" : a.status}</span>
+                    {user && a.seller !== user.id && (
+                      <button className="btn sm danger" onClick={() => setReporting(true)}>🚨 신고</button>
+                    )}
+                  </div>
                   <h1 style={{ marginTop: 8 }}>{a.title}</h1>
                 </div>
                 <div>
@@ -79,9 +87,12 @@ export default function AuctionDetail() {
                     <table className="table">
                       <tbody>
                         {[...a.bids].reverse().map((b, i) => (
-                          <tr key={i}>
-                            <td>{b.user === user?.id ? <b>나</b> : b.user.replace(/.(?=.{2})/g, "*")}</td>
-                            <td className="r num">{won(b.amount)}원</td>
+                          <tr key={i} className={b.cancelled ? "muted" : ""}>
+                            <td>{b.user === user?.id ? <b>나</b> : mask(b.user)}</td>
+                            <td className="r num">
+                              {b.cancelled ? <s>{won(b.amount)}원</s> : `${won(b.amount)}원`}
+                              {b.cancelled && <span className="badge" style={{ marginLeft: 6 }} title={b.cancel_reason}>취소됨</span>}
+                            </td>
                             <td className="r muted small">{dateTime(b.at)}</td>
                           </tr>
                         ))}
@@ -90,6 +101,13 @@ export default function AuctionDetail() {
                   )}
                 </div>
               </div>
+              {reporting && (
+                <ReportModal
+                  auction={a}
+                  bidders={[...new Set(a.bids.filter((b) => !b.cancelled && b.user !== user?.id).map((b) => b.user))].map((id) => ({ id, label: mask(id) }))}
+                  onClose={() => setReporting(false)}
+                />
+              )}
             </div>
           );
         }}

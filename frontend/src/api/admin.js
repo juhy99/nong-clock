@@ -1,7 +1,9 @@
 // 개발자(관리자) 페이지 API. ML API 상태는 실제로 확인하고, 나머지는 가짜 데이터.
 // 실제로는 Spring 이 관리자 권한(role=admin)을 확인한 뒤에만 응답해야 한다.
 import { fake } from "./client";
+import { recalc } from "./auction";
 import { pingMl } from "./ml";
+import { notify, notifyAll } from "./notify";
 import { COLLECTION_STATUS, INITIAL_NOTICES, INITIAL_REPORTS, MODEL_PERFORMANCE } from "../mocks/admin";
 import { auctionsDb, usersDb } from "../mocks/auctions";
 import { load, save } from "../mocks/store";
@@ -9,10 +11,55 @@ import { load, save } from "../mocks/store";
 // ── 신고·분쟁 ──
 export const getReports = () => fake(load("reports", INITIAL_REPORTS));
 
-export function updateReport(id, patch) {
-  const rows = load("reports", INITIAL_REPORTS).map((r) => (r.id === id ? { ...r, ...patch } : r));
+const RESULT_TEXT = { 처리완료: "조치를 완료했어요", 반려: "확인 결과 문제가 없어 종료했어요", 검토중: "검토를 시작했어요" };
+
+/**
+ * 신고 처리. notifyReporter 면 신고한 회원에게 처리 결과(메모 포함)를 알림으로 보낸다.
+ * @param {number} id
+ * @param {{status: string, memo: string, notifyReporter?: boolean}} patch
+ */
+export function processReport(id, { status, memo, notifyReporter = true }) {
+  const rows = load("reports", INITIAL_REPORTS).map((r) => (r.id === id ? { ...r, status, memo, processed_at: new Date().toISOString() } : r));
   save("reports", rows);
-  return fake(rows.find((r) => r.id === id));
+  const r = rows.find((x) => x.id === id);
+  if (notifyReporter && RESULT_TEXT[status])
+    notify(r.reporter, {
+      type: "report",
+      title: `신고 ${status === "검토중" ? "검토 시작" : "처리 결과"}`,
+      body: `'${r.type}' 신고(${r.target}): ${RESULT_TEXT[status]}.${memo.trim() ? ` ${memo.trim()}` : ""}`,
+      link: "/mypage?tab=reports",
+    });
+  return fake(r);
+}
+
+// ── 비정상 입찰 취소 ──
+
+/**
+ * 선택한 입찰을 취소하고 현재가를 다시 계산한다. 기록은 지우지 않고 "취소됨"으로 남긴다.
+ * 취소된 입찰자와 판매자에게 알림을 보낸다.
+ * @param {number} auctionId
+ * @param {number[]} bidIndexes  경매의 bids 배열 위치
+ */
+export function cancelBids(auctionId, bidIndexes, reason) {
+  if (!bidIndexes.length) return Promise.reject(new Error("취소할 입찰을 고르세요"));
+  if (!reason.trim()) return Promise.reject(new Error("취소 사유를 적어주세요"));
+  const rows = auctionsDb.all();
+  const a = rows.find((x) => x.id === auctionId);
+  const now = new Date().toISOString();
+  const cancelledUsers = [];
+  bidIndexes.forEach((i) => {
+    const b = a.bids[i];
+    if (b && !b.cancelled) {
+      Object.assign(b, { cancelled: true, cancelled_at: now, cancel_reason: reason.trim() });
+      cancelledUsers.push(b.user);
+    }
+  });
+  recalc(a);
+  auctionsDb.saveAll(rows);
+  const link = `/auctions/${a.id}`;
+  notify(cancelledUsers, { type: "auction", title: "입찰 취소", body: `'${a.title}'의 입찰이 관리자에 의해 취소되었어요. 사유: ${reason.trim()}`, link });
+  notify(a.seller, { type: "auction", title: "비정상 입찰 정리", body: `'${a.title}'의 비정상 입찰 ${cancelledUsers.length}건이 취소되어 현재가가 ${a.current_bid.toLocaleString()}원으로 조정되었어요.`, link });
+  return fake(a);
 }
 
 // ── 공지사항 (홈 배너에도 사용) ──
@@ -21,8 +68,10 @@ const sortNotices = (rows) =>
 
 export const getNotices = () => fake(sortNotices(load("notices", INITIAL_NOTICES)), 150);
 
-export function saveNotice(notice) {
+/** sendNotification 이면 새 공지를 모든 회원에게 알림으로도 보낸다 */
+export function saveNotice({ sendNotification, ...notice }) {
   const rows = load("notices", INITIAL_NOTICES);
+  if (sendNotification) notifyAll({ type: "notice", title: `공지 · ${notice.category}`, body: notice.title, link: "/" });
   if (notice.id) {
     const i = rows.findIndex((n) => n.id === notice.id);
     rows[i] = { ...rows[i], ...notice };
@@ -66,8 +115,13 @@ export function setUserStatus(id, status) {
 
 export const getAllAuctions = () => fake(auctionsDb.all().map(({ bids, ...a }) => a));
 
+const AUCTION_STATUS_TEXT = { 진행중: "승인되어 경매 마켓에 올라갔어요", 중단: "관리자에 의해 중단되었어요" };
+
 export function setAuctionStatus(id, status) {
   const rows = auctionsDb.all().map((a) => (a.id === id ? { ...a, status } : a));
   auctionsDb.saveAll(rows);
+  const a = rows.find((x) => x.id === id);
+  if (AUCTION_STATUS_TEXT[status])
+    notify(a.seller, { type: "auction", title: `경매 ${status === "진행중" ? "승인" : "중단"}`, body: `'${a.title}' 경매가 ${AUCTION_STATUS_TEXT[status]}.`, link: `/auctions/${a.id}` });
   return getAllAuctions();
 }

@@ -58,3 +58,14 @@ export function seeded(seedText) {
     return ((h ^= h >>> 16) >>> 0) / 4294967296;
   };
 }
+
+/** 회원 지역 (시·도) */
+export const SIDO = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
+
+/** 010-1234-5678 형태로 자동 하이픈 */
+export const formatPhone = (v) => {
+  const d = v.replace(/\D/g, "").slice(0, 11);
+  if (d.length < 4) return d;
+  if (d.length < 8) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+};

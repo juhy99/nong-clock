@@ -39,8 +39,8 @@ function Header() {
     ["/market", "시세·수급"],
     ["/ai", "AI 가격예측"],
     ["/auctions", "경매 마켓"],
+    ["/board", "게시판"],
     ["/about", "서비스 소개"],
-    ...(isAdmin ? [["/admin", "개발자"]] : []),
   ];
   return (
     <header className="header">
@@ -58,6 +58,8 @@ function Header() {
         <div className="header-right">
           {user ? (
             <>
+              {/* 관리자 화면은 별도 사이트 (/admin/) */}
+              {isAdmin && <a className="btn sm" href="/admin/" target="_blank" rel="noreferrer">관리자 사이트 ↗</a>}
               <NotificationBell user={user} />
               {/* 마이페이지는 로그인했을 때만, 오른쪽 끝에 */}
               <NavLink to="/mypage" className="user-chip" title={`${user.name} · ${USER_TYPE_LABEL[user.type]}`}>

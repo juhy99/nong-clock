@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { getNotices } from "../api/admin";
 import { getAuctions } from "../api/auction";
 import { getHorizons, getItems, getTopMovers, predict } from "../api/ml";
-import { getTodayPrices, getWeather } from "../api/market";
+import { getTodayPrices } from "../api/market";
 import { Async, PriceChange, SectionHead, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
+import WeatherMap from "../components/WeatherMap";
 import { AuctionCard } from "./Auctions";
-import { md, shortDate, wonPerKg } from "../utils/format";
+import { addDays, md, shortDate, todayIso, wonPerKg } from "../utils/format";
 
 const HOME_PRICE_COUNT = 8; // 홈에는 일부만, 전체는 시세·수급 화면에서
 
@@ -37,7 +38,7 @@ function TodayPrices() {
               desc={`${shortDate(d.base_date)} · ${d.market} 도매가 기준 (1kg) · ${shortDate(d.compared_date)} 대비`}
               right={<Link className="link" to="/market">전체 시세 →</Link>}
             />
-            <div className="grid grid-auto">
+            <div className="grid price-grid">
               {d.items.slice(0, HOME_PRICE_COUNT).map((p) => (
                 <Link key={p.item} to={`/market?item=${p.item}`} className="price-card">
                   <span className="emoji">{p.emoji}</span>
@@ -47,29 +48,6 @@ function TodayPrices() {
                 </Link>
               ))}
             </div>
-          </>
-        )}
-      </Async>
-    </section>
-  );
-}
-
-function Weather() {
-  const state = useAsync(getWeather);
-  return (
-    <section className="card weather">
-      <Async state={state}>
-        {(w) => (
-          <>
-            <div className="small" style={{ opacity: 0.85 }}>🌦️ 실시간 농업 날씨 · {w.location}</div>
-            <div className="temp">{w.temp}°</div>
-            <div>{w.summary} · 최저 {w.min}° / 최고 {w.max}°</div>
-            <div className="stats">
-              <div>💧 습도 {w.humidity}%</div>
-              <div>🌬️ 풍속 {w.wind}m/s</div>
-              <div>🌡️ 지온 {w.soil_temp}°</div>
-            </div>
-            <div className="small" style={{ marginTop: 14, opacity: 0.85 }}>{w.note}</div>
           </>
         )}
       </Async>
@@ -176,7 +154,7 @@ function ForecastHero() {
               ))
             }
           </Async>
-          <Link className="btn hero-btn" to={item ? `/ai?item=${item}` : "/ai"}>자세한 예측 보기 →</Link>
+          <Link className="btn hero-btn" to={item ? `/ai?item=${item}&date=${addDays(todayIso(), h)}` : "/ai"}>자세한 예측 보기 →</Link>
         </div>
       </div>
     </section>
@@ -189,10 +167,8 @@ export default function Home() {
       <NoticeBanner />
       {/* 예측을 가장 먼저, 오늘 시세는 그 아래에 */}
       <ForecastHero />
-      <div className="split">
-        <TodayPrices />
-        <Weather />
-      </div>
+      <TodayPrices />
+      <WeatherMap />
       <PopularAuctions />
     </div>
   );

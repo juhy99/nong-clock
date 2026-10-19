@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AUCTION_DAYS, createAuction } from "../../api/auction";
 import { getItems, predict } from "../../api/ml";
+import { uploadImages } from "../../api/upload";
+import ImagePicker from "../../components/ImagePicker";
 import { useAuth } from "../../components/AuthContext";
 import { Async, useAsync } from "../../components/common";
 import { won } from "../../utils/format";
@@ -41,6 +43,7 @@ export default function NewAuction() {
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [photos, setPhotos] = useState([]);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const errors = validate(f);
   const err = (k) => touched && errors[k] && <span className="hint error">{errors[k]}</span>;
@@ -59,7 +62,9 @@ export default function NewAuction() {
     const info = list.find((i) => i.code === f.item);
     setBusy(true);
     try {
+      const images = await uploadImages(photos);
       await createAuction(user, {
+        images,
         item: info ? info.code : null,
         emoji: info?.emoji ?? "🧺",
         title: f.title,
@@ -127,10 +132,8 @@ export default function NewAuction() {
               {err("start_price")}
             </div>
             <div className="field">
-              <label>상품 사진</label>
-              <div className="input muted small" style={{ height: 80, display: "grid", placeItems: "center", background: "#f8f8f4" }}>
-                📷 사진 올리기는 Spring 서버 연결 후 제공됩니다
-              </div>
+              <label>상품 사진 <span className="muted small">(선택, 최대 5장)</span></label>
+              <ImagePicker files={photos} onChange={setPhotos} />
             </div>
             <div className="field">
               <label htmlFor="desc">상품 설명</label>

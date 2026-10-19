@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import { RequireAuth } from "./components/AuthContext";
 import Home from "./pages/Home";
@@ -9,15 +9,11 @@ import AuctionDetail from "./pages/AuctionDetail";
 import MyPage from "./pages/mypage/MyPage";
 import NewAuction from "./pages/mypage/NewAuction";
 import About from "./pages/About";
+import BoardList from "./pages/board/BoardList";
+import { NoticeView, PostView } from "./pages/board/PostView";
+import PostWrite from "./pages/board/PostWrite";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import AdminLayout from "./pages/admin/AdminLayout";
-import Reports from "./pages/admin/Reports";
-import Notices from "./pages/admin/Notices";
-import SystemStatus from "./pages/admin/SystemStatus";
-import DataStatus from "./pages/admin/DataStatus";
-import ModelPerformance from "./pages/admin/ModelPerformance";
-import Members from "./pages/admin/Members";
 
 export default function App() {
   return (
@@ -31,17 +27,13 @@ export default function App() {
         <Route path="mypage" element={<RequireAuth><MyPage /></RequireAuth>} />
         <Route path="mypage/auctions/new" element={<RequireAuth><NewAuction /></RequireAuth>} />
         <Route path="about" element={<About />} />
+        <Route path="board" element={<BoardList />} />
+        <Route path="board/write" element={<RequireAuth><PostWrite /></RequireAuth>} />
+        <Route path="board/notice/:id" element={<NoticeView />} />
+        <Route path="board/:id" element={<PostView />} />
+        <Route path="board/:id/edit" element={<RequireAuth><PostWrite /></RequireAuth>} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
-        <Route path="admin" element={<RequireAuth admin><AdminLayout /></RequireAuth>}>
-          <Route index element={<Navigate to="system" replace />} />
-          <Route path="system" element={<SystemStatus />} />
-          <Route path="data" element={<DataStatus />} />
-          <Route path="model" element={<ModelPerformance />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="notices" element={<Notices />} />
-          <Route path="members" element={<Members />} />
-        </Route>
         <Route path="*" element={<div className="page"><div className="card state">페이지를 찾을 수 없습니다.</div></div>} />
       </Route>
     </Routes>

@@ -38,7 +38,7 @@ h3 { font-size: 16px; }
 .container { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
 .page { padding: 28px 0 60px; display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); }
 /* 그리드 칸이 안쪽의 넓은 표·가로 스크롤 목록 때문에 화면 밖으로 늘어나지 않게 */
-.split > *, .two-col > *, .predict-layout > *, .admin-layout > *, .hero-grid > * { min-width: 0; }
+.split > *, .two-col > *, .predict-layout > *, .hero-grid > * { min-width: 0; }
 .page-head p { margin: 4px 0 0; color: var(--muted); }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
@@ -127,7 +127,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .h-scroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 14px; overflow-x: auto; padding-bottom: 6px; }
 .auction-card { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; display: grid; }
 .auction-card:hover { border-color: var(--green); }
-.auction-thumb { background: #e7efe6; display: grid; place-items: center; font-size: 56px; height: 130px; }
+.auction-thumb { background: #e7efe6; display: grid; place-items: center; font-size: 56px; height: 130px; overflow: hidden; }
 .auction-body { padding: 12px 14px; display: grid; gap: 4px; }
 .auction-body .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .auction-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
@@ -161,11 +161,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .steps span.on { background: var(--green); }
 .check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
 
-/* ── 개발자 페이지 ── */
-.admin-layout { display: grid; grid-template-columns: 210px 1fr; gap: 20px; align-items: start; }
-.admin-nav { display: grid; gap: 2px; position: sticky; top: 80px; }
-.admin-nav a { padding: 9px 12px; border-radius: 9px; color: #3d3c38; }
-.admin-nav a.active { background: #1c1c1a; color: #fff; }
+/* ── 관리자 화면 공통 부품 (관리자 사이트 전용 배치는 src/admin/admin.css) ── */
 .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .stat { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #fff; }
 .stat .v { font-size: 22px; font-weight: 800; }
@@ -244,16 +240,88 @@ button.link { background: none; border: none; padding: 0; cursor: pointer; }
 .member { display: flex; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
 .member .avatar { width: 42px; height: 42px; font-size: 20px; background: var(--green-soft); }
 
+/* ── 사진 (업로드·미리보기·표시) ── */
+.thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.thumb { position: relative; width: 92px; height: 92px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #f4f3ef; padding: 0; }
+.thumb img, .thumb .photo-empty { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .badge { position: absolute; left: 4px; top: 4px; }
+.thumb > button { position: absolute; right: 4px; top: 4px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.6); color: #fff; cursor: pointer; line-height: 22px; padding: 0; }
+.thumb.add { display: grid; place-items: center; align-content: center; gap: 2px; cursor: pointer; border-style: dashed; color: var(--muted); font-size: 22px; text-align: center; }
+.thumb.add:hover { border-color: var(--green); color: var(--green); }
+button.thumb { cursor: pointer; }
+button.thumb.on { outline: 2px solid var(--green); outline-offset: 1px; }
+.image-picker { display: grid; gap: 6px; }
+.photo-empty { background: #ecebe6; }
+.auction-thumb img, .auction-thumb .photo-empty { width: 100%; height: 100%; object-fit: cover; }
+.detail-thumb.photo { padding: 0; overflow: hidden; aspect-ratio: 4 / 3; min-height: 0; }
+.detail-thumb.photo img { width: 100%; height: 100%; object-fit: cover; }
+.mini-photo { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; vertical-align: middle; }
+.row-title { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── 홈: 시세 카드 한 줄, 날씨 지도 ── */
+.price-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+.weather-map { padding: 0; overflow: hidden; }
+.weather-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.map-wrap { background: linear-gradient(160deg, #e8f3ec, #dcebf3); padding: 18px; display: grid; justify-items: center; gap: 6px; }
+.korea-map { width: 100%; max-width: 440px; max-height: 470px; }
+.korea-map .region { stroke: #fff; stroke-width: 1.2; cursor: pointer; transition: filter 0.15s; outline: none; }
+.korea-map .region:hover, .korea-map .region:focus-visible { filter: brightness(0.92); stroke: var(--green); stroke-width: 2; }
+.korea-map .region.warn { stroke: #e0a100; stroke-width: 2; }
+.korea-map .region.on { stroke: var(--green-dark); stroke-width: 3; }
+.map-label { font-size: 13px; font-weight: 600; fill: #33322e; pointer-events: none; paint-order: stroke; stroke: rgba(255, 255, 255, 0.85); stroke-width: 3px; }
+.map-label .t { font-weight: 800; }
+.map-label.on { fill: var(--green-dark); font-size: 15px; }
+.map-legend { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.map-legend i { width: 90px; height: 8px; border-radius: 99px; background: linear-gradient(90deg, rgb(205, 225, 247), rgb(250, 196, 140)); }
+.weather-detail { background: var(--green); color: #fff; padding: 22px; display: grid; gap: 12px; align-content: start; }
+.weather-detail .card-head p, .weather-detail .muted { color: #cfe6d6; }
+.weather-detail select.input { color: var(--text); }
+.weather-now { display: flex; gap: 16px; align-items: center; }
+.weather-now .big-icon { font-size: 56px; }
+.weather-now .temp { font-size: 52px; font-weight: 800; line-height: 1.05; }
+.weather-detail .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.weather-detail .stats div { background: rgba(255, 255, 255, 0.13); border-radius: 10px; padding: 10px; font-size: 13px; }
+.weather-detail .banner { color: var(--text); }
+.map-credit { margin: 0; font-size: 11px; opacity: 0.6; }
+
+/* ── 게시판 ── */
+.board-table th, .board-table td { padding-left: 14px; padding-right: 14px; }
+.board-table .col-no { width: 72px; text-align: center; }
+.board-table .badge, .board-table .col-date, .board-table .col-author, .board-table .col-cat { white-space: nowrap; }
+.board-table .col-cat { width: 100px; }
+.board-table .col-author { width: 110px; }
+.board-table .col-date { width: 120px; }
+.board-table .col-views { width: 64px; }
+.board-table .notice-row td { background: #fff8ef; }
+.post-title:hover { color: var(--green); text-decoration: underline; }
+.cat-inline, .post-meta { display: none; }
+.pager { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+.write-row { display: flex; gap: 8px; }
+.post { display: grid; gap: 18px; }
+.post-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.post-body { white-space: pre-wrap; line-height: 1.75; min-height: 80px; }
+.post-images { display: grid; gap: 10px; }
+.post-images img { max-width: 100%; border-radius: 10px; }
+.pill.sm { padding: 4px 10px; font-size: 13px; }
+a.stat:hover { border-color: var(--green); }
+.stat-red .v { color: var(--up); }
+.stat-amber .v { color: #b67700; }
+
 .footer { border-top: 1px solid var(--line); padding: 22px 0; text-align: center; color: var(--muted); font-size: 13px; }
 
 @media (max-width: 900px) {
-  .split, .two-col, .predict-layout, .admin-layout, .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .split, .two-col, .predict-layout, .hero-grid { grid-template-columns: minmax(0, 1fr); }
   .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .about-hero { padding: 32px 22px; }
   .about-hero h1 { font-size: 26px; }
-  .admin-nav { position: static; grid-auto-flow: column; overflow-x: auto; }
   .header-inner { height: auto; flex-wrap: wrap; padding: 10px 0; gap: 10px; }
   .nav { order: 3; width: 100%; }
-  .grid-auto { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .grid-auto, .price-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .weather-grid { grid-template-columns: minmax(0, 1fr); }
+  .board-table .col-no, .board-table .col-cat, .board-table .col-author, .board-table .col-date, .board-table .col-views { display: none; }
+  .cat-inline { display: inline-block; margin-right: 6px; }
+  .post-meta { display: block; margin-top: 2px; }
+  .write-row { flex-direction: column; }
+  .write-row select.input { max-width: none !important; }
   .noti-panel { position: fixed; left: 16px; right: 16px; top: 72px; width: auto; max-height: calc(100vh - 90px); overflow-y: auto; }
 }

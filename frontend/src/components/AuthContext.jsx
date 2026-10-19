@@ -26,17 +26,11 @@ export function AuthProvider({ children }) {
 
 export const useAuth = () => useContext(AuthCtx);
 
-/** 로그인(또는 관리자)이 필요한 페이지 감싸개 */
-export function RequireAuth({ admin = false, children }) {
-  const { user, isAdmin } = useAuth();
+/** 로그인이 필요한 페이지 감싸개 (관리자 화면은 별도 사이트 src/admin 에서 따로 확인) */
+export function RequireAuth({ children }) {
+  const { user } = useAuth();
   const loc = useLocation();
   if (!user) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
-  if (admin && !isAdmin)
-    return (
-      <div className="container page">
-        <div className="card state error">관리자만 볼 수 있는 페이지입니다.</div>
-      </div>
-    );
   return children;
 }
 

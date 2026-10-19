@@ -79,7 +79,8 @@ export const getMyAuctions = (userId) =>
 
 /**
  * 경매 등록. 관리자 승인 후 경매 마켓에 노출된다(status: 승인대기).
- * @param {{item: string|null, emoji: string, title: string, origin: string, weight_kg: number, start_price: number, days: number, description: string}} form
+ * @param {{item: string|null, emoji: string, title: string, origin: string, weight_kg: number, start_price: number, days: number, description: string, images: string[]}} form
+ *   images: uploadImages 로 받은 사진 주소 (첫 번째가 대표 사진)
  */
 export function createAuction(user, form) {
   if (user?.type !== "seller") return Promise.reject(new Error("판매자(농가) 회원만 경매를 등록할 수 있습니다"));
@@ -98,6 +99,7 @@ export function createAuction(user, form) {
     seller: user.id,
     status: "승인대기",
     description: form.description.trim(),
+    images: form.images ?? [],
     bids: [],
     created_at: new Date().toISOString(),
   };

@@ -1,0 +1,26 @@
+/* 관리자 사이트 전용 스타일 (공통 부품은 ../styles.css 를 그대로 쓴다) */
+body { background: #f3f4f1; }
+.admin-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100vh; }
+.admin-side { background: #1c1c1a; color: #fff; padding: 20px 14px; display: flex; flex-direction: column; gap: 18px; position: sticky; top: 0; height: 100vh; }
+.admin-brand { font-weight: 800; font-size: 19px; color: #7bd69a; }
+.admin-brand small { color: #bbb; font-weight: 500; font-size: 13px; margin-left: 4px; }
+.admin-side nav { display: grid; gap: 2px; flex: 1; align-content: start; }
+.admin-side nav a { padding: 9px 12px; border-radius: 9px; color: #d6d5d0; }
+.admin-side nav a:hover { background: #2c2c29; }
+.admin-side nav a.active { background: #fff; color: #1c1c1a; font-weight: 600; }
+.admin-main { display: flex; flex-direction: column; min-width: 0; }
+.admin-top { display: flex; align-items: center; gap: 12px; padding: 12px 24px; background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+.admin-menu-btn { display: none; }
+.admin-content { padding: 24px; display: grid; gap: 20px; align-content: start; max-width: 1280px; width: 100%; }
+.admin-login { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: #1c1c1a; }
+.admin-login form { width: min(380px, 100%); display: grid; gap: 14px; }
+.admin-login .admin-brand { color: var(--green); }
+
+@media (max-width: 900px) {
+  .admin-shell { grid-template-columns: minmax(0, 1fr); }
+  .admin-side { position: fixed; inset: 0 auto 0 0; width: 240px; z-index: 40; transform: translateX(-100%); transition: transform 0.2s; }
+  .admin-side.open { transform: none; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.4); }
+  .admin-menu-btn { display: inline-flex; }
+  .admin-top { padding: 10px 16px; }
+  .admin-content { padding: 16px; }
+}

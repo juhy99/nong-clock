@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAuctions } from "../api/auction";
 import { Async, useAsync } from "../components/common";
+import Photo from "../components/Photo";
 import { remain, won } from "../utils/format";
 
 /** 1초마다 남은 시간 갱신 */
@@ -18,7 +19,7 @@ export function AuctionCard({ a }) {
   const now = useNow();
   return (
     <Link to={`/auctions/${a.id}`} className="auction-card">
-      <div className="auction-thumb">{a.emoji}</div>
+      <div className="auction-thumb">{a.images?.length ? <Photo src={a.images[0]} alt={a.title} /> : a.emoji}</div>
       <div className="auction-body">
         <span className="title">{a.title}</span>
         <span className="muted small">{a.bid_count ? "현재 최고가" : "시작가"}</span>

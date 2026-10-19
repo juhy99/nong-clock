@@ -290,7 +290,20 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | GET | `/api/me/bids` | 내 입찰 현황 | 마이페이지 | `getMyBids` |
 | POST | `/api/auth/signup` · `/api/auth/login` | 회원가입·로그인 | 회원가입·로그인 | `signup` · `login` |
 | GET | `/api/notices` | 공지 목록 (`show_on_home` 이면 홈 배너) | 홈 배너, 개발자 › 공지 | `getNotices` |
-| | `/api/admin/...` | 신고·공지·회원·경매 관리 (관리자만) | 개발자 페이지 | `api/admin.js` |
+| GET · PATCH | `/api/me` | 내 정보 조회·수정 (이름·연락처·지역·농장명·관심 품목·알림 설정) | 마이페이지 › 내 정보 | `updateProfile` |
+| POST | `/api/me/password` `{ "current", "next" }` | 비밀번호 변경 | 마이페이지 › 내 정보 | `changePassword` |
+| DELETE | `/api/me` `{ "password" }` | 회원 탈퇴 (진행 중 경매·최고가 입찰 있으면 `409`) | 마이페이지 › 내 정보 | `withdraw` |
+| GET | `/api/me/auctions` | 내가 등록한 경매 | 마이페이지 › 내 경매 | `getMyAuctions` |
+| POST | `/api/auctions` | 경매 등록 (판매자만, `승인대기`로 생성) | 마이페이지 › 새 경매 등록 | `createAuction` |
+| POST | `/api/auctions/{id}/cancel` | 내 경매 취소 (입찰 0건일 때만) | 마이페이지 › 내 경매 | `cancelMyAuction` |
+| GET | `/api/me/notifications` | 내 알림 목록 | 종 아이콘, 마이페이지 › 알림 | `getNotifications` |
+| GET | `/api/me/notifications/unread-count` | 안 읽은 알림 수 (30초마다 호출) | 종 아이콘 배지 | `getUnreadCount` |
+| POST | `/api/me/notifications/read` `{ "id" }` (생략 시 전부) | 읽음 처리 | 종 아이콘, 마이페이지 › 알림 | `markRead` |
+| POST | `/api/reports` | 경매·입찰자 신고 | 경매 상세 › 🚨 신고 | `submitReport` |
+| GET | `/api/me/reports` | 내 신고와 처리 결과 | 마이페이지 › 신고 내역 | `getMyReports` |
+| PATCH | `/api/admin/reports/{id}` `{ "status", "memo", "notify_reporter" }` | 신고 처리 + 신고자에게 결과 알림 | 개발자 › 신고·분쟁 | `processReport` |
+| POST | `/api/admin/auctions/{id}/bids/cancel` `{ "bid_ids", "reason" }` | 비정상 입찰 취소 → 현재가 재계산, 입찰자·판매자 알림 | 개발자 › 신고·분쟁, 회원·경매 관리 | `cancelBids` |
+| | `/api/admin/...` | 공지·회원·경매 관리 (관리자만) | 개발자 페이지 | `api/admin.js` |
 
 ### 2-1. `GET /api/prices/today` 예시
 
@@ -329,12 +342,42 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 - `type`: `buyer`(구매자) / `seller`(판매자·농가). 관리자는 가입이 아니라 DB에서 지정
 - 비밀번호: 영문+숫자 8자 이상, **서버에서 암호화 저장**
 
+### 2-4. 알림 항목 예시 (`GET /api/me/notifications`)
+
+```json
+{ "id": 12, "type": "auction", "title": "입찰 상회", "body": "'해남 월동배추 10kg × 20망'에 더 높은 입찰(240,000원)이 들어왔어요.",
+  "link": "/auctions/2", "read": false, "at": "2026-10-19T14:03:00+09:00" }
+```
+- `type`: `auction`(경매·입찰) / `weather`(이상기후 주의) / `notice`(공지) / `report`(신고 처리 결과). 회원이 내 정보에서 종류별로 끌 수 있음 → Spring 이 알림을 만들 때 회원 설정을 확인
+- 알림을 만드는 때: 새 입찰(판매자), 상회 입찰(직전 최고가 입찰자), 경매 승인·중단(판매자), 입찰 취소(입찰자·판매자), 신고 접수·처리(신고자), 공지 등록 시 "회원 전체에게 알림" 선택, 관심 품목 예측에 이상기후 구간(`alerts`)이 생길 때(배치)
+- 화면은 30초마다 `unread-count` 를 물어보는 방식(폴링). 실시간 푸시는 필요해지면 추가
+
+### 2-5. 신고 요청 예시 (`POST /api/reports`)
+
+```json
+{ "type": "부정입찰", "auction_id": 1, "bidder": "buyer3", "reason": "같은 사람이 여러 계정으로 입찰가를 올리는 것 같습니다." }
+```
+- `type`: `허위매물` / `사기의심` / `부정입찰` / `기타`. `bidder` 는 부정입찰일 때만(선택). 회원 화면에는 가려진 아이디만 보여줌
+- 상태: `접수` → `검토중` → `처리완료` / `반려`. 처리 메모는 신고자에게 그대로 보이므로 개인정보를 쓰지 않음
+
+### 2-6. 경매 등록 요청 예시 (`POST /api/auctions`)
+
+```json
+{ "item": "potato", "title": "강원 수미감자 10kg × 3박스", "origin": "강원 평창", "weight_kg": 30,
+  "start_price": 45000, "days": 3, "description": "오늘 수확한 수미감자입니다." }
+```
+- `item`: 16개 예측 품목 코드, 예측 품목이 아니면 `null`. **품질 등급은 받지 않음** (품질 분류 기준 없음)
+- `days`: 1 / 3 / 5 / 7. 사진 업로드는 Spring 연결 때 추가
+- 회원 탈퇴는 정보를 지우지 않고 `status: "탈퇴"` 로 바꿈 (지난 거래 기록 보존). 같은 이메일로 재가입 불가
+
 ## 3. 정해야 할 것
 
 - [ ] 프론트가 ML API를 **직접 호출**할지, **Spring을 거쳐** 호출할지
 - [ ] 신뢰도 지수(`confidence`) 계산 방식 (예: 백테스트 오차율 기반)
 - [ ] 예측을 **요청 때마다 계산**할지, **매일 미리 계산해 DB에 저장**할지
 - [ ] 품목·지역 코드를 위 영어 코드로 확정할지 (KAMIS 품목코드와의 매핑 포함)
+- [ ] 비정상 입찰 판단 기준 (지금은 관리자가 신고를 보고 직접 골라 취소. 입찰 IP 저장 여부)
+- [ ] 새 DB 테이블: 관심 품목, 알림, 신고 (+ 입찰에 `cancelled`, 회원에 `status`·알림 설정)
 
 ---
 
@@ -347,3 +390,4 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 2026-10-19 | 예측 기간 1주/2주/1개월 확정 및 `GET /horizons` 추가, 지역은 전국만 제공(지역별은 설정으로 켜기) | |
 | 2026-10-19 | 지역에 `national`(전국) 추가 및 기본값으로 지정, `region` 생략 가능 | |
 | 2026-10-19 | 가격 단위 원/kg 통일, 품목 16개로 변경(`cabbage`=양배추), `/items`에 `emoji` 추가, 가격 비교 기준 명시 | |
+| 2026-10-19 | Spring API 제안 추가: 내 정보 수정·탈퇴, 경매 등록·취소, 알림, 신고, 관리자 입찰 취소·신고 결과 알림 | |

@@ -65,8 +65,10 @@ PROVINCES: dict[str, str] = {
 REGIONS: dict[str, str] = {NATIONAL: "전국", **(PROVINCES if ENABLE_REGIONAL_FORECAST else {})}
 
 # 예측 기간: 일수 → 화면 표시 이름. 기간을 바꾸려면 여기만 고치면 된다.
+# 화면의 빠른 선택 버튼. 예측 자체는 1일 ~ MAX_HORIZON 일 중 아무 날이나 가능하다.
 HORIZONS: dict[int, str] = {
     7: "1주",
     14: "2주",
     30: "1개월",
 }
+MAX_HORIZON = max(HORIZONS)

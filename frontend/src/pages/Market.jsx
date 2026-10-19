@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getMarketCompare, getPriceHistory, getSupply, getTodayPrices } from "../api/market";
 import { Async, PriceChange, SectionHead, useAsync } from "../components/common";
+import ItemImage from "../components/ItemImage";
 import { md, shortDate, won, wonPerKg } from "../utils/format";
 
 const tipWon = (v) => wonPerKg(v);
@@ -25,7 +26,7 @@ function ItemCharts({ item, name, emoji }) {
                   <YAxis fontSize={12} tickFormatter={won} width={56} />
                   <Tooltip formatter={tipWon} labelFormatter={shortDate} />
                   <Legend />
-                  <Line name="도매" dataKey="wholesale" stroke="#157a3e" strokeWidth={2} dot={false} />
+                  <Line name="도매" dataKey="wholesale" stroke="#1fa463" strokeWidth={2} dot={false} />
                   <Line name="소매" dataKey="retail" stroke="#e8a33d" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -42,7 +43,7 @@ function ItemCharts({ item, name, emoji }) {
                   <XAxis dataKey="market" fontSize={12} />
                   <YAxis fontSize={12} tickFormatter={won} width={56} />
                   <Tooltip formatter={tipWon} />
-                  <Bar name="가격" dataKey="price" fill="#157a3e" radius={[6, 6, 0, 0]} />
+                  <Bar name="가격" dataKey="price" fill="#1fa463" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -61,7 +62,7 @@ function ItemCharts({ item, name, emoji }) {
                   <YAxis fontSize={12} width={48} />
                   <Tooltip formatter={(v) => `${won(v)}톤`} />
                   <Legend />
-                  <Area name="생산량" dataKey="production" stroke="#157a3e" fill="#d8ecdf" />
+                  <Area name="생산량" dataKey="production" stroke="#1fa463" fill="#d8ecdf" />
                   <ReferenceLine y={d.months[0].normal} stroke="#d93025" strokeDasharray="5 5" label={{ value: "평년", fontSize: 12, fill: "#d93025", position: "insideTopRight" }} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -123,7 +124,7 @@ export default function Market() {
                   <tbody>
                     {rows.map((p) => (
                       <tr key={p.item} className={`clickable ${p.item === selected?.item ? "selected" : ""}`} onClick={() => setParams({ item: p.item })}>
-                        <td>{p.emoji} {p.name}</td>
+                        <td><span className="item-cell"><ItemImage code={p.item} emoji={p.emoji} alt="" className="xs" /> <b>{p.name}</b></span></td>
                         <td className="muted">{p.category}</td>
                         <td className="r num"><b>{won(p.price)}</b></td>
                         <td className="r"><PriceChange change={p.change} changePct={p.change_pct} /></td>

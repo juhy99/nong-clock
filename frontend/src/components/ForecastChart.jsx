@@ -41,7 +41,7 @@ export default function ForecastChart({ p, height = 340, legend = true }) {
         {alert && <ReferenceArea x1={alert.start} x2={alert.end} fill="#f9d9a6" fillOpacity={0.5} label={{ value: "이상기후", fontSize: 11, fill: "#9a6200" }} />}
         <Area name="예측 오차범위" dataKey="range" stroke="none" fill="#cfe8d7" fillOpacity={0.7} />
         <Line name="실제" dataKey="actual" stroke="#1c1c1a" strokeWidth={2} dot={false} />
-        <Line name="예측" dataKey="forecast" stroke="#157a3e" strokeWidth={2.5} strokeDasharray="6 4" dot={false} />
+        <Line name="예측" dataKey="forecast" stroke="#1fa463" strokeWidth={2.5} strokeDasharray="6 4" dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

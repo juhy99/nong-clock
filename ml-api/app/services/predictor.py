@@ -68,7 +68,7 @@ class DummyPredictor:
 
         predicted = forecast[-1].price
         alerts: list[WeatherAlert] = []
-        if horizon >= 14:
+        if horizon >= 9:
             alerts.append(
                 WeatherAlert(
                     start=base_date + timedelta(days=7),

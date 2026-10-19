@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { STATUS_BADGE, cancelMyAuction, displayStatus, getMyAuctions } from "../../api/auction";
 import { useAuth } from "../../components/AuthContext";
 import { Async, SectionHead, useAsync } from "../../components/common";
+import Photo from "../../components/Photo";
 import { useNow } from "../Auctions";
 import { remain, won } from "../../utils/format";
 
@@ -46,7 +47,11 @@ export default function MyAuctions() {
                       const st = displayStatus(a, now);
                       return (
                         <tr key={a.id}>
-                          <td><Link className="link" to={`/auctions/${a.id}`}>{a.emoji} {a.title}</Link></td>
+                          <td>
+                            <Link className="link row-title" to={`/auctions/${a.id}`}>
+                              {a.images?.length ? <Photo src={a.images[0]} alt="" className="mini-photo" /> : a.emoji} {a.title}
+                            </Link>
+                          </td>
                           <td className="r num">{won(a.start_price)}원</td>
                           <td className="r num"><b>{won(a.current_bid)}원</b></td>
                           <td className="r">{a.bid_count}건</td>

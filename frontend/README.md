@@ -7,7 +7,7 @@
 ```powershell
 cd frontend
 npm install        # 처음 한 번
-npm run dev        # http://localhost:5173
+npm run dev        # 사용자 사이트 http://localhost:5173  ·  관리자 사이트 http://localhost:5173/admin/
 ```
 
 - ML API도 같이 켜면 AI 예측이 실제 API 응답으로 나옵니다: `cd ml-api` → `python -m uvicorn app.main:app --reload`
@@ -18,25 +18,31 @@ npm run dev        # http://localhost:5173
 
 | 유형 | 이메일 | 비밀번호 |
 |---|---|---|
-| 구매자 | user@farmbid.kr | user1234 |
-| 판매자 | farmer@farmbid.kr | farmer1234 |
-| 관리자 (개발자 페이지) | admin@farmbid.kr | admin1234 |
+| 일반회원 김구매 | user@farmbid.kr | user1234 |
+| 일반회원 박농부 (농장명 있음) | farmer@farmbid.kr | farmer1234 |
+| 관리자 (관리자 사이트) | admin@farmbid.kr | admin1234 |
 
-회원가입·입찰·공지 작성 결과는 브라우저(localStorage)에만 저장됩니다. 개발자 페이지의 **데모 데이터 초기화**로 되돌릴 수 있습니다.
+회원가입·입찰·게시글·공지 결과는 브라우저(localStorage)에, 올린 사진은 브라우저 IndexedDB 에만 저장됩니다. 관리자 사이트의 **데모 데이터 초기화**로 되돌릴 수 있습니다.
 
 ## 화면
 
 | 주소 | 화면 | 데이터 |
 |---|---|---|
-| `/` | 홈 (시세 띠, 오늘의 시세, 날씨, 인기 경매, AI 급등락) | 가짜 + ML API |
+| `/` | 홈 (AI 예측, 오늘의 시세, 지역별 날씨 지도, 인기 경매) | 가짜 + ML API |
 | `/market` | 시세·수급 (표, 추이, 시장별, 수급) | 가짜 |
-| `/ai` | AI 가격예측 | **ML API** |
-| `/auctions`, `/auctions/:id` | 경매 목록·상세·입찰 | 가짜 |
+| `/ai?item=&date=` | AI 가격예측 (내일 ~ 30일 뒤 날짜 선택) | **ML API** |
+| `/auctions`, `/auctions/:id` | 경매 목록·상세(사진)·입찰·신고 | 가짜 |
+| `/board`, `/board/:id`, `/board/write` | 게시판 (맨 위 공지 + 회원 글, 말머리·검색·페이지, 사진 첨부, 댓글·답글, 글·댓글 신고) | 가짜 |
 | `/mypage` | 관심 품목·내 경매·입찰 참여·알림·신고 내역·내 정보 수정·탈퇴 (로그인 필요, 탭은 `?tab=`) | 가짜 |
-| `/mypage/auctions/new` | 경매 등록 (판매자만, 관리자 승인 후 노출) | 가짜 + AI 참고가 |
+| `/mypage/auctions/new` | 경매 등록 (관리자 외 모든 회원, 관리자 승인 후 노출) | 가짜 + AI 참고가 |
 | `/about` | 서비스 소개·만든 사람·문의처 (`pages/About.jsx` 위쪽 상수만 고치면 됨) | - |
-| `/login`, `/signup` | 로그인·회원가입 (구매자/판매자) | 가짜 |
-| `/admin/*` | 개발자 페이지: 서버·API 상태, 데이터 수집, 모델 성능, 신고·분쟁, 공지사항, 회원·경매 관리 (관리자만) | ML API 상태는 실제, 나머지 가짜 |
+| `/login`, `/signup` | 로그인·회원가입 (회원 유형 없음 — 모두 입찰·판매 가능) | 가짜 |
+| **`/admin/*`** | **관리자 사이트 (별도 화면·별도 로그인)**: 대시보드, 신고·분쟁, 게시판 관리, 공지사항, 회원·경매 관리, 데이터 수집, 모델 성능 | ML API 상태는 실제, 나머지 가짜 |
+
+### 관리자 사이트
+- 사용자 사이트와 메뉴·로그인이 완전히 분리된 화면입니다 (`admin/index.html` → `src/admin/`). 관리자 계정만 들어갈 수 있습니다.
+- 지금은 가짜 데이터를 같은 브라우저 저장소에서 공유해야 해서 같은 주소(`/admin/`)에 둡니다. Spring 이 생기면 다른 도메인(예: `admin.farmbid.kr`)에 따로 올려도 됩니다. 그때는 `.env` 의 `VITE_SITE_URL` 에 사용자 사이트 주소를 넣습니다.
+- `npm run build` 하면 `dist/index.html`(사용자)과 `dist/admin/index.html`(관리자)이 따로 나옵니다. 배포 서버에는 `/admin/*` → `dist/admin/index.html`, 그 밖의 주소 → `dist/index.html` 규칙이 필요합니다 (개발 서버는 `vite.config.js` 가 처리).
 
 ## 구조와 규칙
 
@@ -45,14 +51,18 @@ src/
   api/        서버 호출. 화면은 반드시 여기 함수만 부른다
     client.js   API 주소 (한 곳에서만 관리)
     ml.js       ML API — 실제 연결
-    market.js · auction.js · auth.js · admin.js   Spring 담당 — 지금은 mocks/ 반환
+    market.js · auction.js · auth.js · admin.js · board.js · notify.js · report.js   Spring 담당 — 지금은 mocks/ 반환
+    upload.js   사진 업로드 (지금은 브라우저 IndexedDB, Spring 이 생기면 POST /api/uploads)
   mocks/      가짜 데이터 (Spring API가 생기면 지운다)
   components/ 공통 부품 (레이아웃, 가격 변동 표시, 로딩·에러 처리)
-  pages/      화면
+  pages/      사용자 사이트 화면
+  admin/      관리자 사이트 (main.jsx 진입점, AdminApp.jsx 메뉴·로그인, pages/ 화면)
   utils/format.js  가격(원/kg)·날짜 표시
 ```
 
 - **Spring API 연결 방법:** `api/market.js` 등의 함수 안쪽만 `request(주소, "/api/...")` 로 바꾸면 됩니다. 화면 코드는 고칠 필요 없습니다. 응답 모양은 `docs/06_api_spec.md` 2번 섹션의 제안을 따릅니다.
+- **품목 사진:** `src/assets/items/<품목코드>.png` 처럼 넣으면 자동으로 쓰입니다 (없으면 이모지). 규칙은 그 폴더의 `README.md`.
+- **디자인:** 사용자 사이트는 A안(산뜻한 마켓형) — 색·모서리 값은 `styles.css` 맨 위 변수. 관리자 사이트는 `src/admin/admin.css` 에서 이전 색을 따로 고정.
 - **품목·기간·지역은 하드코딩하지 않는다:** `GET /items`, `/horizons`, `/regions` 로 받아서 그립니다. 지역이 1개면 선택 박스를 숨깁니다.
 - **가격 표기:** 모두 원/kg, 변동은 `▲ 80원 (+6.9%) 10/16(금) 대비` 처럼 비교 날짜를 함께 (`components/common.jsx` 의 `PriceChange`).
 - ⚠️ 로그인·입찰 규칙 검사는 지금 프론트에서 흉내만 냅니다. 실제 검사는 반드시 Spring(서버)에서 해야 합니다.

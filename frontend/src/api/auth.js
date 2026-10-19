@@ -26,7 +26,8 @@ export function isEmailTaken(email) {
   return usersDb.all().some((x) => x.email === email.trim().toLowerCase());
 }
 
-/** @param {{email, password, name, phone, type: "buyer"|"seller", region, farm_name?, marketing?: boolean}} form */
+/** 회원 유형 선택 없음: 모든 회원이 입찰·판매 가능 (farm_name 은 선택, 경매 판매자 이름으로 표시)
+ * @param {{email, password, name, phone, region, farm_name?, marketing?: boolean}} form */
 export function signup(form) {
   const rows = usersDb.all();
   const email = form.email.trim().toLowerCase();
@@ -37,7 +38,7 @@ export function signup(form) {
     password: form.password,
     name: form.name.trim(),
     phone: form.phone,
-    type: form.type,
+    type: "member",
     region: form.region,
     farm_name: form.farm_name || "",
     marketing: !!form.marketing,

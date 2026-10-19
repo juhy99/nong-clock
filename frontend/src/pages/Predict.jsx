@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { getHorizons, getItems, getRegions, predict } from "../api/ml";
 import { Async, PctChange, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
-import { md, shortDate, wonPerKg } from "../utils/format";
+import ItemImage from "../components/ItemImage";
+import { addDays, daysBetween, md, shortDate, todayIso, wonPerKg } from "../utils/format";
 
 function Result({ p, horizonLabel }) {
   const alert = p.alerts[0];
@@ -29,7 +30,7 @@ function Result({ p, horizonLabel }) {
           </div>
         </div>
       ) : (
-        <p className="muted small" style={{ marginTop: 10 }}>{horizonLabel} 예측 구간에 이상기후 경보가 없습니다.</p>
+        <p className="muted small" style={{ marginTop: 10 }}>{horizonLabel}까지 이상기후 경보 구간이 없습니다.</p>
       )}
       <p className="muted small" style={{ margin: "10px 0 0" }}>모델 버전 {p.model_version} · 기준일 {shortDate(p.base_date)}</p>
     </section>
@@ -44,18 +45,31 @@ export default function Predict() {
   });
   const opts = options.data;
   const item = params.get("item") || opts?.items[0]?.code;
-  const [horizon, setHorizon] = useState(null);
   const [region, setRegion] = useState(null);
+  const today = todayIso();
+  // 고를 수 있는 날짜: 내일 ~ 오늘 + 최대 예측 기간(30일). 빠른 선택 버튼은 GET /horizons
+  const maxDays = opts ? Math.max(...opts.horizons.map((h) => h.days)) : 30;
+  const [target, setTarget] = useState(() => {
+    const d = params.get("date");
+    return d && daysBetween(today, d) >= 1 && daysBetween(today, d) <= 30 ? d : addDays(today, 7);
+  });
+  const horizon = daysBetween(today, target);
 
   useEffect(() => {
-    if (!opts) return;
-    setHorizon((h) => h ?? opts.horizons[0]?.days);
-    setRegion((r) => r ?? opts.regions[0]?.code);
+    if (opts) setRegion((r) => r ?? opts.regions[0]?.code);
   }, [opts]);
 
-  const ready = opts && item && horizon && region;
+  const pickDate = (d) => {
+    if (!d) return;
+    const n = Math.min(Math.max(daysBetween(today, d), 1), maxDays);
+    const next = addDays(today, n);
+    setTarget(next);
+    setParams({ item, date: next }, { replace: true });
+  };
+
+  const ready = opts && item && horizon >= 1 && region;
   const result = useAsync(() => (ready ? predict({ item, horizon, region }) : Promise.resolve(null)), [ready, item, horizon, region]);
-  const horizonLabel = opts?.horizons.find((h) => h.days === horizon)?.label ?? "";
+  const horizonLabel = `${shortDate(target)} (${horizon}일 후)`;
 
   return (
     <div className="page">
@@ -69,7 +83,7 @@ export default function Predict() {
             <section className="card" style={{ display: "grid", gap: 18 }}>
               <div className="field">
                 <label htmlFor="item">품종</label>
-                <select id="item" className="input" value={item} onChange={(e) => setParams({ item: e.target.value })}>
+                <select id="item" className="input" value={item} onChange={(e) => setParams({ item: e.target.value, date: target }, { replace: true })}>
                   {o.items.map((i) => (
                     <option key={i.code} value={i.code}>{i.emoji} {i.name}</option>
                   ))}
@@ -85,18 +99,30 @@ export default function Predict() {
                 </div>
               )}
               <div className="field">
-                <label>예측 시점</label>
+                <label htmlFor="target">예측 날짜</label>
+                <input
+                  id="target"
+                  type="date"
+                  className="input"
+                  value={target}
+                  min={addDays(today, 1)}
+                  max={addDays(today, maxDays)}
+                  onChange={(e) => pickDate(e.target.value)}
+                />
                 <div className="pills">
                   {o.horizons.map((h) => (
-                    <button key={h.days} className={`pill ${horizon === h.days ? "on" : ""}`} onClick={() => setHorizon(h.days)}>
-                      {h.label}
+                    <button key={h.days} className={`pill sm ${horizon === h.days ? "on" : ""}`} onClick={() => pickDate(addDays(today, h.days))}>
+                      {h.label} 후
                     </button>
                   ))}
                 </div>
+                <span className="hint">오늘부터 최대 {maxDays}일 뒤까지 고를 수 있어요</span>
               </div>
               {result.data && (
                 <div className="summary-box">
-                  <div className="muted small">{horizonLabel} 후 예상 도매가</div>
+                  <span className="summary-img"><ItemImage code={result.data.item} emoji={o.items.find((i) => i.code === result.data.item)?.emoji} alt="" /></span>
+                  {/* 날짜는 응답의 마지막 예측일을 그대로 쓴다 (서버 기준일과 하루 어긋나도 정확하게) */}
+                  <div className="muted small">{shortDate(result.data.forecast.at(-1).date)} ({horizon}일 후) 예상 도매가</div>
                   <div className="price num">{wonPerKg(result.data.predicted_price)}</div>
                   <PctChange value={result.data.change_pct} className="small" />
                   <span className="muted small"> vs 오늘 {wonPerKg(result.data.base_price)}</span>

@@ -17,8 +17,16 @@ export const INITIAL_NOTICES = [
 export const NOTICE_CATEGORIES = ["서비스 점검", "가격 급등 안내", "정책 공지", "일반"];
 export const REPORT_STATUSES = ["접수", "검토중", "처리완료", "반려"];
 
-/** 신고 유형. 회원 신고 화면과 관리자 화면이 같이 쓴다. */
-export const REPORT_TYPES = {
+/** 신고 유형. 회원 신고 화면과 관리자 화면이 같이 쓴다. 경매용과 게시판(글·댓글)용이 다르다. */
+export const BOARD_REPORT_TYPES = {
+  "욕설·비방": "욕설, 인신공격, 차별 표현",
+  "스팸·광고": "도배, 홍보, 외부 거래 유도",
+  "개인정보 노출": "전화번호·주소 등 남의 정보",
+  "허위 정보": "사실이 아닌 시세·거래 정보",
+  기타: "그 밖의 문제",
+};
+
+export const AUCTION_REPORT_TYPES = {
   허위매물: "사진·설명과 실제 상품이 다름",
   사기의심: "외부 거래 유도, 낙찰 후 연락 두절 등",
   부정입찰: "가격 띄우기, 여러 계정으로 입찰 등 비정상 입찰",

@@ -40,13 +40,19 @@ export function remain(ms) {
   return d > 0 ? `${d}일 ${hms}` : hms;
 }
 
-export const todayIso = () => new Date().toISOString().slice(0, 10);
+// 날짜는 "사용자 컴퓨터 시간(한국)" 기준으로 만든다. toISOString() 은 UTC 라서 한국 오전 9시 전에는 하루 전 날짜가 나온다.
+const localIso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+export const todayIso = () => localIso(new Date());
 
 export function addDays(iso, n) {
   const d = new Date(`${iso}T00:00:00`);
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return localIso(d);
 }
+
+/** 두 날짜("YYYY-MM-DD") 사이 일수 */
+export const daysBetween = (from, to) => Math.round((new Date(`${to}T00:00:00`) - new Date(`${from}T00:00:00`)) / 86400000);
 
 /** 문자열 → 고정 난수 (가짜 데이터가 새로고침마다 바뀌지 않게) */
 export function seeded(seedText) {
@@ -69,3 +75,12 @@ export const formatPhone = (v) => {
   if (d.length < 8) return `${d.slice(0, 3)}-${d.slice(3)}`;
   return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
 };
+
+/** 게시판 작성일: 오늘 쓴 글은 "14:03", 그 전은 "2026-10-18" */
+export function boardDate(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const p = (x) => String(x).padStart(2, "0");
+  if (d.toDateString() === now.toDateString()) return `${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}

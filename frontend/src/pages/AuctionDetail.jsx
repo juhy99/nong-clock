@@ -4,8 +4,30 @@ import { MIN_INCREMENT, getAuction, placeBid } from "../api/auction";
 import { useAuth } from "../components/AuthContext";
 import { Async, useAsync } from "../components/common";
 import ReportModal from "../components/ReportModal";
+import Photo from "../components/Photo";
+import ItemImage from "../components/ItemImage";
 import { dateTime, remain, won } from "../utils/format";
 import { useNow } from "./Auctions";
+
+/** 상품 사진 (없으면 품목 이모지) */
+function Gallery({ a }) {
+  const [i, setI] = useState(0);
+  if (!a.images?.length) return <div className="detail-thumb"><ItemImage code={a.item} emoji={a.emoji} alt={a.title} /></div>;
+  return (
+    <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
+      <div className="detail-thumb photo"><Photo src={a.images[i]} alt={`${a.title} 사진 ${i + 1}`} /></div>
+      {a.images.length > 1 && (
+        <div className="thumbs">
+          {a.images.map((src, k) => (
+            <button key={src} className={`thumb ${k === i ? "on" : ""}`} onClick={() => setI(k)} aria-label={`사진 ${k + 1} 보기`}>
+              <Photo src={src} alt="" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AuctionDetail() {
   const { id } = useParams();
@@ -44,7 +66,7 @@ export default function AuctionDetail() {
           const min = a.bid_count === 0 ? a.start_price : a.current_bid + MIN_INCREMENT;
           return (
             <div className="two-col">
-              <div className="detail-thumb">{a.emoji}</div>
+              <Gallery a={a} />
               <div className="card" style={{ display: "grid", gap: 16, alignContent: "start" }}>
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -103,7 +125,7 @@ export default function AuctionDetail() {
               </div>
               {reporting && (
                 <ReportModal
-                  auction={a}
+                  target={{ kind: "auction", id: a.id, label: a.title }}
                   bidders={[...new Set(a.bids.filter((b) => !b.cancelled && b.user !== user?.id).map((b) => b.user))].map((id) => ({ id, label: mask(id) }))}
                   onClose={() => setReporting(false)}
                 />

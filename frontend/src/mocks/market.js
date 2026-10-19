@@ -87,15 +87,3 @@ export function mockSupply(code) {
     note: `[데모] ${now.getMonth() + 1}월 관측: ${name} 출하량은 평년 대비 소폭 감소 전망. 기상 악화 시 다음 달 가격 강세 예상.`,
   };
 }
-
-export const mockWeather = {
-  location: "경기 이천",
-  temp: 14,
-  summary: "흐리고 비",
-  min: 6,
-  max: 17,
-  humidity: 82,
-  wind: 3,
-  soil_temp: 15,
-  note: "일조량 평년 대비 -18% · 시설재배 보광 권장",
-};

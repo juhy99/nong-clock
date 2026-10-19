@@ -17,7 +17,6 @@ function InfoForm() {
     e.preventDefault();
     if (f.name.trim().length < 2) return setMsg({ ok: false, text: "이름을 2자 이상 입력하세요" });
     if (!/^01\d-\d{3,4}-\d{4}$/.test(f.phone)) return setMsg({ ok: false, text: "휴대폰 번호를 확인하세요 (예: 010-1234-5678)" });
-    if (user.type === "seller" && !f.farm_name.trim()) return setMsg({ ok: false, text: "판매자는 농장(상호)명을 입력하세요" });
     await updateProfile({ ...f, name: f.name.trim(), notify });
     setMsg({ ok: true, text: "저장했습니다" });
   }
@@ -47,12 +46,10 @@ function InfoForm() {
           </select>
         </div>
       </div>
-      {user.type === "seller" && (
-        <div className="field">
-          <label htmlFor="p-farm">농장(상호)명</label>
-          <input id="p-farm" className="input" value={f.farm_name} onChange={set("farm_name")} />
-        </div>
-      )}
+      <div className="field">
+        <label htmlFor="p-farm">농장·상호명 <span className="muted small">(선택, 경매 판매자 이름으로 표시)</span></label>
+        <input id="p-farm" className="input" value={f.farm_name} onChange={set("farm_name")} />
+      </div>
       <div className="field">
         <label>알림 받기</label>
         <div className="pills">

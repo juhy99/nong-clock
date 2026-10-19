@@ -1,18 +1,18 @@
 from datetime import date
-from typing import Literal
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from app.core.catalog import HORIZONS, NATIONAL
+from app.core.catalog import MAX_HORIZON, NATIONAL
 
-# 허용 값은 catalog.HORIZONS 에서 가져온다 (현재 7, 14, 30)
-Horizon = Literal[tuple(HORIZONS)]
+# 오늘로부터 며칠 뒤까지 예측할지. 1 ~ MAX_HORIZON(30)일 중 아무 값이나 가능
+Horizon = Annotated[int, Field(ge=1, le=MAX_HORIZON)]
 
 
 class PredictRequest(BaseModel):
     item: str = Field(examples=["napa_cabbage"], description="품목 코드 (GET /items 참고)")
     region: str = Field(NATIONAL, examples=[NATIONAL], description="지역 코드 (GET /regions 참고). 생략하면 전국")
-    horizon: Horizon = Field(examples=[14], description="예측 기간(일). GET /horizons 참고")
+    horizon: Horizon = Field(examples=[14], description="예측 기간(일). 1~30 중 아무 값 (화면에서 고른 날짜 - 기준일)")
 
 
 class PricePoint(BaseModel):

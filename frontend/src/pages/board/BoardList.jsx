@@ -91,6 +91,7 @@ export default function BoardList() {
                     <span className="cat-inline badge">{p.category}</span>
                     {p.title}
                     {p.images.length > 0 && <span title="사진 있음"> 📷</span>}
+                    {p.comment_count > 0 && <span className="cmt-count" title={`댓글 ${p.comment_count}개`}>[{p.comment_count}]</span>}
                   </Link>
                   <div className="post-meta small muted">{p.author_name} · {boardDate(p.created_at)} · 조회 {p.views}</div>
                 </td>

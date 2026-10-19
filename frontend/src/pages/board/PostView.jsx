@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getNotices } from "../../api/admin";
 import { deletePost, getPost } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
 import { Async, useAsync } from "../../components/common";
 import Photo from "../../components/Photo";
+import ReportModal from "../../components/ReportModal";
+import Comments from "./Comments";
 import { dateTime } from "../../utils/format";
 
 function Article({ badge, title, meta, body, images = [], actions }) {
@@ -32,6 +35,7 @@ export function PostView() {
   const { user } = useAuth();
   const nav = useNavigate();
   const state = useAsync(() => getPost(id, { countView: true }), [id]);
+  const [reporting, setReporting] = useState(false);
 
   async function remove(p) {
     if (!confirm("이 글을 지울까요?")) return;
@@ -44,21 +48,27 @@ export function PostView() {
       <Link to="/board" className="link">← 게시판</Link>
       <Async state={state}>
         {(p) => (
-          <Article
-            badge={<span className="badge">{p.category}</span>}
-            title={p.title}
-            meta={`${p.author_name} · ${dateTime(p.created_at)}${p.updated_at ? " (수정됨)" : ""} · 조회 ${p.views}`}
-            body={p.body}
-            images={p.images}
-            actions={
-              user?.id === p.author && (
-                <div style={{ display: "flex", gap: 6 }}>
-                  <Link className="btn sm" to={`/board/${p.id}/edit`}>수정</Link>
-                  <button className="btn sm danger" onClick={() => remove(p)}>삭제</button>
-                </div>
-              )
-            }
-          />
+          <>
+            <Article
+              badge={<span className="badge">{p.category}</span>}
+              title={p.title}
+              meta={`${p.author_name} · ${dateTime(p.created_at)}${p.updated_at ? " (수정됨)" : ""} · 조회 ${p.views}`}
+              body={p.body}
+              images={p.images}
+              actions={
+                user?.id === p.author ? (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <Link className="btn sm" to={`/board/${p.id}/edit`}>수정</Link>
+                    <button className="btn sm danger" onClick={() => remove(p)}>삭제</button>
+                  </div>
+                ) : (
+                  user && <button className="btn sm danger" onClick={() => setReporting(true)}>🚨 신고</button>
+                )
+              }
+            />
+            <Comments post={p} />
+            {reporting && <ReportModal target={{ kind: "post", id: p.id, label: p.title, post_id: p.id }} onClose={() => setReporting(false)} />}
+          </>
         )}
       </Async>
     </div>

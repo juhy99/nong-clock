@@ -3,8 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../components/AuthContext";
 
 const DEMO = [
-  ["구매자", "user@farmbid.kr", "user1234"],
-  ["판매자", "farmer@farmbid.kr", "farmer1234"],
+  ["김구매", "user@farmbid.kr", "user1234"],
+  ["박농부", "farmer@farmbid.kr", "farmer1234"],
   ["관리자", "admin@farmbid.kr", "admin1234"],
 ];
 

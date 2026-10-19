@@ -83,7 +83,7 @@ export const getMyAuctions = (userId) =>
  *   images: uploadImages 로 받은 사진 주소 (첫 번째가 대표 사진)
  */
 export function createAuction(user, form) {
-  if (user?.type !== "seller") return Promise.reject(new Error("판매자(농가) 회원만 경매를 등록할 수 있습니다"));
+  if (!user || user.type === "admin") return Promise.reject(new Error("로그인한 회원만 경매를 등록할 수 있습니다"));
   const rows = auctionsDb.all();
   const a = {
     id: Math.max(0, ...rows.map((x) => x.id)) + 1,

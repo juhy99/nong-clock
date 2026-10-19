@@ -6,6 +6,7 @@ const ago = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
 /** 알림 종류. 회원은 내 정보에서 종류별로 받기/끄기를 고른다. */
 export const NOTIFY_TYPES = {
   auction: { label: "경매·입찰", icon: "🔨" },
+  comment: { label: "댓글·답글", icon: "💬" },
   weather: { label: "이상기후 주의", icon: "🌧️" },
   notice: { label: "공지사항", icon: "📢" },
   report: { label: "신고 처리 결과", icon: "✅" },

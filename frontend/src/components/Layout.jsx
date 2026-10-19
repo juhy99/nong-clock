@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { getTodayPrices } from "../api/market";
 import { ML_API_BASE } from "../api/client";
-import { onMlOffline } from "../api/ml";
+import { getItems, onMlOffline } from "../api/ml";
 import { pct, won } from "../utils/format";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
 import { useAsync } from "./common";
@@ -31,6 +31,31 @@ function Ticker() {
   );
 }
 
+/**
+ * 헤더 검색: 품목 이름과 같으면 그 품목 시세로, 아니면 게시판 검색으로 보낸다.
+ * (경매·게시판을 함께 찾는 통합 검색은 Spring 검색 API 가 생기면 바꾼다)
+ */
+function HeaderSearch() {
+  const nav = useNavigate();
+  const [q, setQ] = useState("");
+  const { data: items } = useAsync(getItems);
+  function submit(e) {
+    e.preventDefault();
+    const word = q.trim();
+    if (!word) return;
+    const item = items?.find((i) => i.name === word || word.includes(i.name));
+    nav(item ? `/market?item=${item.code}` : `/board?q=${encodeURIComponent(word)}`);
+    setQ("");
+  }
+  return (
+    <form className="search" role="search" onSubmit={submit}>
+      <span aria-hidden>🔍</span>
+      <input placeholder="품목 시세, 게시글 검색" value={q} onChange={(e) => setQ(e.target.value)} aria-label="검색" />
+      <button>검색</button>
+    </form>
+  );
+}
+
 function Header() {
   const { user, isAdmin, logout } = useAuth();
   const nav = useNavigate();
@@ -48,13 +73,7 @@ function Header() {
         <Link to="/" className="logo">
           🌱 FarmBid<small>팜비드</small>
         </Link>
-        <nav className="nav">
-          {links.map(([to, label]) => (
-            <NavLink key={to} to={to} end={to === "/"}>
-              {label}
-            </NavLink>
-          ))}
-        </nav>
+        <HeaderSearch />
         <div className="header-right">
           {user ? (
             <>
@@ -66,7 +85,7 @@ function Header() {
                 👤 <b>{user.name}</b> <span className="muted">· 마이페이지</span>
               </NavLink>
               <button
-                className="btn sm"
+                className="btn sm ghost"
                 onClick={() => {
                   logout();
                   nav("/");
@@ -82,6 +101,15 @@ function Header() {
             </>
           )}
         </div>
+      </div>
+      <div className="container">
+        <nav className="nav">
+          {links.map(([to, label]) => (
+            <NavLink key={to} to={to} end={to === "/"}>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
       </div>
     </header>
   );

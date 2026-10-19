@@ -1,4 +1,18 @@
-/* 관리자 사이트 전용 스타일 (공통 부품은 ../styles.css 를 그대로 쓴다) */
+/* 관리자 사이트 전용 스타일 (공통 부품은 ../styles.css 를 그대로 쓴다)
+   사용자 사이트 디자인(A안)이 바뀌어도 관리자 화면은 그대로 두려고 색·모서리 값을 여기서 고정한다. */
+:root {
+  --green: #157a3e;
+  --green-dark: #0f5f30;
+  --green-soft: #e6f2ea;
+  --bg: #faf9f5;
+  --line: #e7e5df;
+  --text: #1c1c1a;
+  --muted: #6b6a65;
+  --up: #d93025;
+  --down: #1a5fd0;
+  --radius: 14px;
+}
+.btn { border-radius: 10px; }
 body { background: #f3f4f1; }
 .admin-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100vh; }
 .admin-side { background: #1c1c1a; color: #fff; padding: 20px 14px; display: flex; flex-direction: column; gap: 18px; position: sticky; top: 0; height: 100vh; }
@@ -24,3 +38,12 @@ body { background: #f3f4f1; }
   .admin-top { padding: 10px 16px; }
   .admin-content { padding: 16px; }
 }
+
+.admin-sub { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; }
+.admin-comments { display: grid; gap: 6px; }
+.admin-comment { display: flex; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.admin-comment.reply { margin-left: 24px; }
+.ban-panel { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 0; }
+.ban-panel select.input { width: auto; }
+.ban-panel input.input { flex: 1; min-width: 180px; }
+.quote { border-left: 3px solid var(--line); padding: 6px 12px; background: #fff; border-radius: 0 8px 8px 0; }

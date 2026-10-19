@@ -4,8 +4,10 @@ import { REPORT_STATUSES } from "../../mocks/admin";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { dateTime } from "../../utils/format";
 import BidCancelPanel from "./BidCancelPanel";
+import BoardReportPanel from "./BoardReportPanel";
 
-const TYPE_BADGE = { 허위매물: "amber", 사기의심: "red", 부정입찰: "blue", 기타: "" };
+const TYPE_BADGE = { 허위매물: "amber", 사기의심: "red", 부정입찰: "blue", "욕설·비방": "red", "스팸·광고": "amber", "개인정보 노출": "blue", "허위 정보": "amber", 기타: "" };
+const KIND_LABEL = { auction: "경매", post: "게시글", comment: "댓글" };
 const STATUS_BADGE = { 접수: "red", 검토중: "amber", 처리완료: "green", 반려: "" };
 
 export default function Reports() {
@@ -23,7 +25,7 @@ export default function Reports() {
 
   return (
     <section className="card">
-      <SectionHead title="신고 및 분쟁 관리" desc="허위 매물 · 사기 의심 · 부정 입찰 신고 접수 및 처리" />
+      <SectionHead title="신고 및 분쟁 관리" desc="경매(허위 매물·사기·부정 입찰)와 게시판(글·댓글) 신고 접수 및 처리" />
       <Async state={state} empty="접수된 신고가 없습니다">
         {(rows) => {
           const counts = Object.fromEntries(REPORT_STATUSES.map((s) => [s, rows.filter((r) => r.status === s).length]));
@@ -47,7 +49,10 @@ export default function Reports() {
                       <Fragment key={r.id}>
                         <tr>
                           <td className="muted">{r.id}</td>
-                          <td><span className={`badge ${TYPE_BADGE[r.type]}`}>{r.type}</span></td>
+                          <td>
+                            <span className="muted small">{KIND_LABEL[r.kind ?? "auction"]}</span>{" "}
+                            <span className={`badge ${TYPE_BADGE[r.type] ?? ""}`}>{r.type}</span>
+                          </td>
                           <td>{r.target}</td>
                           <td className="small">{r.reporter}</td>
                           <td className="small num">{dateTime(r.created_at)}</td>
@@ -67,6 +72,11 @@ export default function Reports() {
                                   <div>{r.reason}</div>
                                   {r.bidder && <div className="muted small">지목한 입찰자: {r.bidder}</div>}
                                 </div>
+                                {r.post_id && (
+                                  <div className="card" style={{ padding: 14 }}>
+                                    <BoardReportPanel report={r} />
+                                  </div>
+                                )}
                                 {r.auction_id && (
                                   <div className="card" style={{ padding: 14 }}>
                                     <BidCancelPanel auctionId={r.auction_id} />

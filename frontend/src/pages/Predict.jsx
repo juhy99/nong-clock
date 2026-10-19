@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { getHorizons, getItems, getRegions, predict } from "../api/ml";
 import { Async, PctChange, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
+import ItemImage from "../components/ItemImage";
 import { addDays, daysBetween, md, shortDate, todayIso, wonPerKg } from "../utils/format";
 
 function Result({ p, horizonLabel }) {
@@ -119,6 +120,7 @@ export default function Predict() {
               </div>
               {result.data && (
                 <div className="summary-box">
+                  <span className="summary-img"><ItemImage code={result.data.item} emoji={o.items.find((i) => i.code === result.data.item)?.emoji} alt="" /></span>
                   {/* 날짜는 응답의 마지막 예측일을 그대로 쓴다 (서버 기준일과 하루 어긋나도 정확하게) */}
                   <div className="muted small">{shortDate(result.data.forecast.at(-1).date)} ({horizon}일 후) 예상 도매가</div>
                   <div className="price num">{wonPerKg(result.data.predicted_price)}</div>

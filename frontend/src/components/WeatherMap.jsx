@@ -87,7 +87,7 @@ export default function WeatherMap() {
               <div className="weather-detail">
                 <div className="card-head" style={{ marginBottom: 8 }}>
                   <div>
-                    <h2>🌦️ 실시간 농업 날씨</h2>
+                    <h2>우리 지역 농업 날씨</h2>
                     <p>지도에서 지역을 눌러 보세요 · {dateTime(w.base_time)} 발표</p>
                   </div>
                 </div>
@@ -102,7 +102,7 @@ export default function WeatherMap() {
                     <div>{sel.sky} · 최저 {sel.min}° / 최고 {sel.max}°</div>
                   </div>
                 </div>
-                {sel.warning && <div className="banner small">⚠️ <b>{sel.name} {sel.warning}</b></div>}
+                {sel.warning && <span className="warn-chip">⚠️ {sel.name} {sel.warning}</span>}
                 <div className="stats">
                   <div>☔ 강수확률 {sel.rain_prob}%</div>
                   <div>💧 습도 {sel.humidity}%</div>

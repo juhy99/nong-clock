@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { USER_TYPE_LABEL, useAuth } from "../../components/AuthContext";
+import { USER_TYPE_LABEL, canSell, useAuth } from "../../components/AuthContext";
 import FavoriteAlerts, { FavoritePicker } from "./Favorites";
 import MyAuctions from "./MyAuctions";
 import MyBids from "./MyBids";
@@ -9,11 +9,11 @@ import Profile from "./Profile";
 
 export default function MyPage() {
   const { user } = useAuth();
-  const isSeller = user.type === "seller";
+  const seller = canSell(user);
   const [params, setParams] = useSearchParams();
   const tabs = [
     ["watch", "관심 품목", FavoritePicker],
-    ...(isSeller ? [["auctions", "내 경매", MyAuctions]] : []),
+    ...(seller ? [["auctions", "내 경매", MyAuctions]] : []),
     ["bids", "입찰 참여", MyBids],
     ["notifications", "알림", MyNotifications],
     ["reports", "신고 내역", MyReports],
@@ -26,7 +26,7 @@ export default function MyPage() {
   return (
     <div className="page">
       <section className="card profile">
-        <div className="avatar">{isSeller ? "🧑‍🌾" : user.type === "admin" ? "🛠️" : "🧺"}</div>
+        <div className="avatar">{user.type === "admin" ? "🛠️" : user.farm_name ? "🧑‍🌾" : "🧺"}</div>
         <div>
           <h2>
             {user.name} <span style={{ fontWeight: 500, fontSize: 15 }}>({user.email})</span>
@@ -38,7 +38,7 @@ export default function MyPage() {
         </div>
         <div className="profile-actions">
           <button className="btn sm ghost" onClick={() => go("profile")}>내 정보 수정</button>
-          {isSeller && <Link className="btn sm white" to="/mypage/auctions/new">＋ 경매 등록</Link>}
+          {seller && <Link className="btn sm white" to="/mypage/auctions/new">＋ 경매 등록</Link>}
         </div>
       </section>
       <FavoriteAlerts onEdit={() => go("watch")} />

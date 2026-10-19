@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getAuctions } from "../api/auction";
 import { Async, useAsync } from "../components/common";
 import Photo from "../components/Photo";
+import ItemImage from "../components/ItemImage";
 import { remain, won } from "../utils/format";
 
 /** 1초마다 남은 시간 갱신 */
@@ -19,15 +20,20 @@ export function AuctionCard({ a }) {
   const now = useNow();
   return (
     <Link to={`/auctions/${a.id}`} className="auction-card">
-      <div className="auction-thumb">{a.images?.length ? <Photo src={a.images[0]} alt={a.title} /> : a.emoji}</div>
+      <div className="auction-thumb">
+        <span className="timer-chip">⏱ {remain(new Date(a.ends_at) - now)}</span>
+        {/* 판매자 사진 → 없으면 품목 대표 사진 → 없으면 이모지 */}
+        {a.images?.length ? <Photo src={a.images[0]} alt={a.title} /> : <ItemImage code={a.item} emoji={a.emoji} alt={a.title} />}
+      </div>
       <div className="auction-body">
         <span className="title">{a.title}</span>
-        <span className="muted small">{a.bid_count ? "현재 최고가" : "시작가"}</span>
-        <b style={{ fontSize: 19 }} className="num">{won(a.current_bid)}원</b>
-        <div className="auction-meta">
-          <span className="timer">⏱ {remain(new Date(a.ends_at) - now)}</span>
-          <span>🔨 {a.bid_count}건</span>
-        </div>
+        <span className="auction-meta">
+          <span>{a.origin}</span>
+          <span>{a.bid_count ? `입찰 ${a.bid_count}건` : "첫 입찰을 기다려요"}</span>
+        </span>
+        <span className="price num">
+          {won(a.current_bid)}원 <span className="muted small" style={{ fontWeight: 500 }}>{a.bid_count ? "현재가" : "시작가"}</span>
+        </span>
       </div>
     </Link>
   );

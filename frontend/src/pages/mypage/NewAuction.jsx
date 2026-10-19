@@ -4,7 +4,7 @@ import { AUCTION_DAYS, createAuction } from "../../api/auction";
 import { getItems, predict } from "../../api/ml";
 import { uploadImages } from "../../api/upload";
 import ImagePicker from "../../components/ImagePicker";
-import { useAuth } from "../../components/AuthContext";
+import { canSell, useAuth } from "../../components/AuthContext";
 import { Async, useAsync } from "../../components/common";
 import { won } from "../../utils/format";
 
@@ -48,10 +48,10 @@ export default function NewAuction() {
   const errors = validate(f);
   const err = (k) => touched && errors[k] && <span className="hint error">{errors[k]}</span>;
 
-  if (user.type !== "seller")
+  if (!canSell(user))
     return (
       <div className="page">
-        <div className="card state">판매자(농가) 회원만 경매를 등록할 수 있습니다.</div>
+        <div className="card state">관리자 계정으로는 경매를 등록할 수 없습니다.</div>
       </div>
     );
 

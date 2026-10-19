@@ -33,7 +33,7 @@ export function markRead(userId, id) {
  * 알림 보내기. 실제로는 Spring 내부에서만 호출된다(화면이 직접 부르지 않음).
  * 받는 사람이 그 종류의 알림을 꺼 두었거나 탈퇴했으면 보내지 않는다.
  * @param {string|string[]} userIds
- * @param {{type: "auction"|"weather"|"notice"|"report", title: string, body: string, link?: string}} n
+ * @param {{type: "auction"|"comment"|"weather"|"notice"|"report", title: string, body: string, link?: string}} n
  */
 export function notify(userIds, n) {
   const users = usersDb.all();

@@ -3,6 +3,7 @@ import { getTodayPrices } from "../../api/market";
 import { useAuth } from "../../components/AuthContext";
 import { Async, PctChange, PriceChange, SectionHead, useAsync } from "../../components/common";
 import { wonPerKg } from "../../utils/format";
+import ItemImage from "../../components/ItemImage";
 
 /** 관심 품목의 오늘 시세 변동 + AI 1주 예측 (마이페이지 상단) */
 export default function FavoriteAlerts({ onEdit }) {
@@ -28,7 +29,7 @@ export default function FavoriteAlerts({ onEdit }) {
           <div style={{ display: "grid", gap: 8 }}>
             {rows.map((p) => (
               <div key={p.item} className="alert-row">
-                <span>{p.emoji}</span>
+                <ItemImage code={p.item} emoji={p.emoji} alt="" className="sm" />
                 <b>{p.name}</b>
                 <span className="num">{wonPerKg(p.price)}</span>
                 <PriceChange change={p.change} changePct={p.change_pct} comparedDate={p.compared_date} className="small" />
@@ -59,7 +60,7 @@ export function FavoritePicker() {
           <div className="pills">
             {rows.map((i) => (
               <button key={i.code} className={`pill ${favorites.includes(i.code) ? "on" : ""}`} onClick={() => toggle(i.code)}>
-                {i.emoji} {i.name}
+                <ItemImage code={i.code} emoji={i.emoji} alt="" className="xs" /> {i.name}
               </button>
             ))}
           </div>

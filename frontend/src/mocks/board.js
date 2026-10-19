@@ -44,3 +44,27 @@ export const postsDb = {
   all: () => load("posts", INITIAL_POSTS),
   saveAll: (rows) => save("posts", rows),
 };
+
+/** 댓글. parent_id 가 있으면 그 댓글의 답글(대댓글). 답글의 답글은 같은 댓글 아래에 붙는다(1단계만). */
+const COMMENT_SEED = [
+  [18, null, "buyer1", "저도 그래프 봤어요. 다음 주 출하는 조금 미뤄야 하나 고민이네요.", 0.4],
+  [18, 1, "seller1", "서리만 지나가면 다시 오를 수도 있어서 저는 1주 정도 보려고요.", 0.3],
+  [18, null, "seller2", "이상기후 주의 구간이 겹쳐서 오차가 클 수 있대요. 참고만 하세요!", 0.2],
+  [17, null, "seller1", "소액 상품은 단위를 낮추는 의견 운영자님께 전달해 보면 좋겠어요.", 1.5],
+  [16, null, "buyer1", "논산 딸기 저도 다음에 참여해 볼게요 🍓", 4],
+];
+
+export const INITIAL_COMMENTS = COMMENT_SEED.map(([post_id, parent_id, author, body, h], i) => ({
+  id: i + 1,
+  post_id,
+  parent_id,
+  author,
+  body,
+  created_at: ago(h),
+  deleted: false,
+}));
+
+export const commentsDb = {
+  all: () => load("comments", INITIAL_COMMENTS),
+  saveAll: (rows) => save("comments", rows),
+};

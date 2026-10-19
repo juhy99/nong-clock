@@ -73,6 +73,16 @@ def test_predict_invalid(req, status):
     assert client.post("/predict", json=req).status_code == status
 
 
+@pytest.mark.parametrize("horizon", [7, 14, 30])
+def test_top_movers_horizon_query(horizon):
+    # 쿼리 파라미터는 문자열로 들어온다 ("7") — 회귀 테스트
+    assert client.get(f"/predict/top-movers?horizon={horizon}&limit=2").status_code == 200
+
+
+def test_top_movers_invalid_horizon():
+    assert client.get("/predict/top-movers?horizon=10").status_code == 422
+
+
 def test_top_movers_sorted():
     movers = client.get("/predict/top-movers", params={"limit": 4}).json()
     assert len(movers) == 4

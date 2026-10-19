@@ -286,6 +286,11 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | POST · PUT · DELETE | `/api/posts` · `/api/posts/{id}` | 글쓰기·수정·삭제 (작성자 본인만) | 게시판 › 글쓰기 | `createPost` · `updatePost` · `deletePost` |
 | GET | `/api/admin/posts` | 전체 글 (숨김 포함) | 관리자 › 게시판 관리 | `getAllPosts` |
 | PATCH · DELETE | `/api/admin/posts/{id}` `{ "hidden", "reason" }` | 숨김·다시 보이기·삭제 (작성자에게 알림) | 관리자 › 게시판 관리 | `setPostHidden` · `adminDeletePost` |
+| GET | `/api/posts/{id}/comments` | 댓글·답글 (답글은 `replies` 안에) | 게시판 › 글 | `getComments` |
+| POST | `/api/posts/{id}/comments` `{ "body", "parent_id" }` | 댓글·답글 쓰기 (글쓴이·원댓글 작성자에게 알림) | 게시판 › 글 | `createComment` |
+| DELETE | `/api/comments/{id}` | 댓글 삭제 (작성자 본인, 관리자는 사유와 함께) | 게시판 › 글, 관리자 › 게시판 관리 | `deleteComment` |
+| GET | `/api/admin/board-bans` | 게시판 이용 제한 중인 회원 | 관리자 › 게시판 관리 | `getBannedUsers` |
+| POST · DELETE | `/api/admin/users/{id}/board-ban` `{ "days", "reason" }` | 게시판 이용 제한 걸기·풀기 (회원에게 알림) | 관리자 › 게시판 관리, 신고·분쟁 | `banUser` · `liftBan` |
 | GET | `/api/auctions?sort=popular\|ending\|price` | 진행 중 경매 목록 | 홈 인기 경매, 경매 마켓 | `getAuctions` |
 | GET | `/api/auctions/{id}` | 경매 상세 + 입찰 기록 | 경매 상세 | `getAuction` |
 | POST | `/api/auctions/{id}/bids` `{ "amount": 240000 }` | 입찰 (로그인 필요) | 경매 상세 | `placeBid` |
@@ -301,7 +306,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | GET | `/api/me/notifications` | 내 알림 목록 | 종 아이콘, 마이페이지 › 알림 | `getNotifications` |
 | GET | `/api/me/notifications/unread-count` | 안 읽은 알림 수 (30초마다 호출) | 종 아이콘 배지 | `getUnreadCount` |
 | POST | `/api/me/notifications/read` `{ "id" }` (생략 시 전부) | 읽음 처리 | 종 아이콘, 마이페이지 › 알림 | `markRead` |
-| POST | `/api/reports` | 경매·입찰자 신고 | 경매 상세 › 🚨 신고 | `submitReport` |
+| POST | `/api/reports` | 경매·입찰자·게시글·댓글 신고 | 경매 상세, 게시판 › 🚨 신고 | `submitReport` |
 | GET | `/api/me/reports` | 내 신고와 처리 결과 | 마이페이지 › 신고 내역 | `getMyReports` |
 | PATCH | `/api/admin/reports/{id}` `{ "status", "memo", "notify_reporter" }` | 신고 처리 + 신고자에게 결과 알림 | 개발자 › 신고·분쟁 | `processReport` |
 | POST | `/api/admin/auctions/{id}/bids/cancel` `{ "bid_ids", "reason" }` | 비정상 입찰 취소 → 현재가 재계산, 입찰자·판매자 알림 | 개발자 › 신고·분쟁, 회원·경매 관리 | `cancelBids` |
@@ -338,10 +343,11 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 ### 2-3. 회원가입 요청 예시 (`POST /api/auth/signup`)
 
 ```json
-{ "type": "seller", "email": "farmer@farmbid.kr", "password": "abcd1234", "name": "박농부",
+{ "email": "farmer@farmbid.kr", "password": "abcd1234", "name": "박농부",
   "phone": "010-3333-4444", "region": "충남", "farm_name": "논산 햇살농장", "marketing": false }
 ```
-- `type`: `buyer`(구매자) / `seller`(판매자·농가). 관리자는 가입이 아니라 DB에서 지정
+- **회원 유형을 고르지 않음:** 모든 회원이 입찰도 판매(경매 등록)도 할 수 있음. 서버가 `type: "member"` 로 저장하고, 관리자(`admin`)는 DB에서 지정
+- `farm_name`(농장·상호명)은 선택. 있으면 경매 판매자 이름으로 함께 표시
 - 비밀번호: 영문+숫자 8자 이상, **서버에서 암호화 저장**
 
 ### 2-4. 알림 항목 예시 (`GET /api/me/notifications`)
@@ -350,16 +356,23 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 { "id": 12, "type": "auction", "title": "입찰 상회", "body": "'해남 월동배추 10kg × 20망'에 더 높은 입찰(240,000원)이 들어왔어요.",
   "link": "/auctions/2", "read": false, "at": "2026-10-19T14:03:00+09:00" }
 ```
-- `type`: `auction`(경매·입찰) / `weather`(이상기후 주의) / `notice`(공지) / `report`(신고 처리 결과). 회원이 내 정보에서 종류별로 끌 수 있음 → Spring 이 알림을 만들 때 회원 설정을 확인
+- `type`: `auction`(경매·입찰) / `comment`(내 글에 댓글·내 댓글에 답글) / `weather`(이상기후 주의) / `notice`(공지) / `report`(신고 처리 결과). 회원이 내 정보에서 종류별로 끌 수 있음 → Spring 이 알림을 만들 때 회원 설정을 확인
 - 알림을 만드는 때: 새 입찰(판매자), 상회 입찰(직전 최고가 입찰자), 경매 승인·중단(판매자), 입찰 취소(입찰자·판매자), 신고 접수·처리(신고자), 공지 등록 시 "회원 전체에게 알림" 선택, 관심 품목 예측에 이상기후 구간(`alerts`)이 생길 때(배치)
 - 화면은 30초마다 `unread-count` 를 물어보는 방식(폴링). 실시간 푸시는 필요해지면 추가
 
 ### 2-5. 신고 요청 예시 (`POST /api/reports`)
 
 ```json
-{ "type": "부정입찰", "auction_id": 1, "bidder": "buyer3", "reason": "같은 사람이 여러 계정으로 입찰가를 올리는 것 같습니다." }
+// 경매
+{ "kind": "auction", "target_id": 1, "type": "부정입찰", "bidder": "buyer3", "reason": "같은 사람이 여러 계정으로 입찰가를 올리는 것 같습니다." }
+// 게시글 · 댓글
+{ "kind": "comment", "target_id": 12, "post_id": 18, "type": "욕설·비방", "reason": "다른 회원에게 욕설을 했어요." }
 ```
-- `type`: `허위매물` / `사기의심` / `부정입찰` / `기타`. `bidder` 는 부정입찰일 때만(선택). 회원 화면에는 가려진 아이디만 보여줌
+- `kind`: `auction` / `post` / `comment`
+- `type` — 경매: `허위매물` / `사기의심` / `부정입찰` / `기타`, 게시판: `욕설·비방` / `스팸·광고` / `개인정보 노출` / `허위 정보` / `기타`
+- `bidder` 는 경매 부정입찰일 때만(선택). 회원 화면에는 가려진 아이디만 보여줌
+- 서버가 신고 대상의 작성자(`target_user`)를 찾아 저장 → 관리자가 신고 화면에서 바로 글 숨김·댓글 삭제·작성자 이용 제한
+- 내 글·댓글은 신고할 수 없고, 처리 중인 같은 대상을 다시 신고하면 `409`
 - 상태: `접수` → `검토중` → `처리완료` / `반려`. 처리 메모는 신고자에게 그대로 보이므로 개인정보를 쓰지 않음
 
 ### 2-6. 경매 등록 요청 예시 (`POST /api/auctions`)
@@ -400,6 +413,31 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 - 말머리(`category`): `자유` / `질문` / `정보` / `거래후기`. 글쓰기 요청: `{ "category", "title"(2~80자), "body", "images" }`
 - 목록 맨 위 공지는 `GET /api/notices` 를 그대로 사용 (관리자 › 공지사항에서 작성)
 - 조회수는 같은 사람이 새로고침할 때마다 오르지 않게 서버에서 막는 것을 권장
+- 목록 항목에 `comment_count`(지운 댓글 제외) 포함 → 제목 옆 `[3]`
+
+### 2-10. 댓글 예시 (`GET /api/posts/{id}/comments`)
+
+```json
+[ { "id": 1, "parent_id": null, "author": "buyer1", "author_name": "김구매", "body": "저도 그래프 봤어요.",
+    "created_at": "2026-10-19T15:40:00+09:00", "deleted": false,
+    "replies": [ { "id": 2, "parent_id": 1, "author": "seller1", "author_name": "박농부", "body": "저는 1주 정도 보려고요.", "deleted": false } ] } ]
+```
+- 답글은 **1단계까지**. 답글에 답하면 같은 원댓글 아래에 붙음 (알림은 실제로 답한 댓글의 작성자에게)
+- 댓글 1~500자. 답글이 달린 댓글을 지우면 `deleted: true` 로 남기고 내용은 비움("삭제된 댓글입니다")
+- 알림: 내 글에 댓글 → 글쓴이, 내 댓글에 답글 → 원댓글 작성자 (본인이 쓴 건 알림 없음)
+
+### 2-11. 게시판 이용 제한 (`POST /api/admin/users/{id}/board-ban`)
+
+```json
+{ "days": 7, "reason": "스팸 게시 반복" }   // days: 3 / 7 / 30 / null(영구)
+```
+- 제한 중에는 **글·댓글 작성만 막음** (로그인·입찰·판매는 가능). 계정 전체 정지는 기존 회원 관리의 "이용 정지"
+- 글쓰기·댓글 API 는 제한 중이면 `403` + 남은 기간·사유. 걸 때·풀 때 회원에게 알림
+- 회원 정보에 `board_ban: { until, reason, at }` 저장 (`until` 이 null 이면 영구)
+
+### 2-12. 품목 대표 사진
+- 시세 카드·품목 버튼에 쓰는 품목 사진은 **서버가 아니라 프론트 파일**로 둠: `frontend/src/assets/items/<품목코드>.png` (규칙은 같은 폴더의 README)
+- 사진이 없는 품목은 이모지(`GET /items` 의 `emoji`)로 대신 보여줌
 
 ## 3. 정해야 할 것
 
@@ -412,6 +450,8 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 - [ ] 새 DB 테이블: 게시글(숨김 여부·사유 포함), 사진 주소(경매·게시글 공용), 경매에 사진 목록
 - [ ] 예측 모델이 1~30일 **매일** 값을 낼 수 있는지 (사용자가 아무 날짜나 고름)
 - [ ] 관리자 사이트 배포 주소 (같은 도메인 `/admin/` 또는 `admin.` 서브도메인)
+- [ ] 새 DB 테이블: 댓글(답글은 `parent_id`, `deleted`), 회원에 게시판 이용 제한(`board_ban_until`·사유), 신고에 `kind`·`target_user`
+- [ ] 회원 유형 정리: `buyer`·`seller` 를 `member` 하나로 (이미 만든 테이블이 있으면 변경)
 
 ---
 
@@ -426,3 +466,4 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 2026-10-19 | 가격 단위 원/kg 통일, 품목 16개로 변경(`cabbage`=양배추), `/items`에 `emoji` 추가, 가격 비교 기준 명시 | |
 | 2026-10-19 | Spring API 제안 추가: 내 정보 수정·탈퇴, 경매 등록·취소, 알림, 신고, 관리자 입찰 취소·신고 결과 알림 | |
 | 2026-10-19 | 예측 기간 `horizon` 을 1~30일 아무 값으로 확장 (`/horizons` 는 빠른 선택용). Spring 제안 추가: 지역별 날씨, 사진 업로드, 게시판, 관리자 게시판 관리 | |
+| 2026-10-20 | 회원 유형 선택 제거(모두 판매 가능), 댓글·답글, 게시글·댓글 신고, 게시판 이용 제한, 품목 대표 사진 규칙 추가 | |

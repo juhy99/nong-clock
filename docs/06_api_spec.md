@@ -51,16 +51,27 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 
 ### 지역 코드 (`region`)
 
-| 코드 | 이름 | 코드 | 이름 | 코드 | 이름 |
-|---|---|---|---|---|---|
-| **`national`** | **전국** | `chungnam` | 충남 | `gyeongbuk` | 경북 |
-| `gyeonggi` | 경기 | `jeonbuk` | 전북 | `gyeongnam` | 경남 |
-| `gangwon` | 강원 | `jeonnam` | 전남 | `jeju` | 제주 |
-| `chungbuk` | 충북 | | | | |
+**현재는 `national`(전국) 예측만 제공합니다.** `region` 은 생략하면 `national` 입니다.
 
-- `national`(전국)은 지역 구분 없는 예측이며 **기본값**입니다. `GET /regions` 응답의 항상 첫 번째입니다.
-- 나중에 지역별 예측을 없애고 전국만 남기면 `GET /regions` 가 `[{"code":"national","name":"전국"}]` 만 돌려줍니다. 요청·응답 형식은 그대로입니다.
-- **프론트 규칙:** 지역 선택 박스는 `GET /regions` 로 채우고, **결과가 1개뿐이면 선택 박스를 숨깁니다.** 이렇게 해두면 전국만 남아도 화면 코드를 고칠 필요가 없습니다.
+| 코드 | 이름 | 상태 |
+|---|---|---|
+| `national` | 전국 | ✅ 사용 중 (기본값) |
+| `gyeonggi` 경기 · `gangwon` 강원 · `chungbuk` 충북 · `chungnam` 충남 · `jeonbuk` 전북 · `jeonnam` 전남 · `gyeongbuk` 경북 · `gyeongnam` 경남 · `jeju` 제주 | | ⏸ 예정 (지역별 모델 준비 후) |
+
+- 지역별 예측은 ML API 환경변수 `ENABLE_REGIONAL_FORECAST=true` 로 켭니다. 켜면 `GET /regions` 에 위 9개 지역이 추가되고, 요청·응답 형식은 그대로입니다.
+- 꺼져 있을 때 `national` 외 코드를 보내면 `404` 입니다.
+- **프론트 규칙:** 지역 선택 박스는 `GET /regions` 로 채우고, **결과가 1개뿐이면 숨깁니다.** → 지금은 숨겨지고, 지역별 예측을 켜면 코드 수정 없이 나타납니다.
+
+### 예측 기간 (`horizon`)
+
+| 값(일) | 화면 이름 |
+|---|---|
+| `7` | 1주 |
+| `14` | 2주 |
+| `30` | 1개월 |
+
+- **프론트 규칙:** 기간 버튼은 `GET /horizons` 로 받아 그립니다. 기간이 바뀌어도 화면 코드를 고칠 필요가 없습니다.
+- 그 외 값을 보내면 `422` 입니다.
 
 ### 에러 응답
 
@@ -92,7 +103,8 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 |---|---|---|---|
 | GET | `/health` | 서버 상태 확인 | - |
 | GET | `/items` | 품목 목록 | AI 가격예측 › 품종 선택 |
-| GET | `/regions` | 지역 목록 | AI 가격예측 › 재배 지역 선택 |
+| GET | `/regions` | 지역 목록 (현재 전국만) | AI 가격예측 › 지역 선택 (1개면 숨김) |
+| GET | `/horizons` | 예측 기간 목록 | AI 가격예측 › 기간 버튼 |
 | POST | `/predict` | 가격 예측 | AI 가격예측 (`/ai`) |
 | GET | `/predict/top-movers` | 급등락 예상 품목 | 홈 › AI 추천 · 급등락 예상 품목 |
 
@@ -122,9 +134,19 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 **응답 200**
 ```json
 [
-  { "code": "national", "name": "전국" },
-  { "code": "gyeonggi", "name": "경기" },
-  { "code": "gangwon",  "name": "강원" }
+  { "code": "national", "name": "전국" }
+]
+```
+지역별 예측을 켜면 `{ "code": "gyeonggi", "name": "경기" }` … 9개가 뒤에 추가됩니다.
+
+### 1-3-1. `GET /horizons` 예측 기간 목록
+
+**응답 200**
+```json
+[
+  { "days": 7,  "label": "1주" },
+  { "days": 14, "label": "2주" },
+  { "days": 30, "label": "1개월" }
 ]
 ```
 
@@ -140,11 +162,11 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 |---|---|---|---|
 | `item` | string | O | 품목 코드 |
 | `region` | string | X | 지역 코드. **생략하면 `national`(전국)** |
-| `horizon` | number | O | 며칠 뒤까지 예측할지. **`7`, `14`, `30` 중 하나** |
+| `horizon` | number | O | 예측 기간(일). **`GET /horizons` 의 `days` 값 중 하나** (현재 7, 14, 30) |
 
 ```json
-{ "item": "napa_cabbage", "region": "gyeonggi", "horizon": 14 }
-// 전국 예측: { "item": "napa_cabbage", "horizon": 14 }
+{ "item": "napa_cabbage", "horizon": 14 }
+// 지역별 예측을 켠 뒤: { "item": "napa_cabbage", "region": "gyeonggi", "horizon": 14 }
 ```
 
 **응답 200**
@@ -178,25 +200,25 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
   "item": "napa_cabbage",
   "item_name": "배추",
   "unit": "kg",
-  "region": "gyeonggi",
+  "region": "national",
   "horizon": 14,
   "base_date": "2026-10-19",
   "base_price": 800,
   "history": [
-    { "date": "2026-10-05", "price": 690 },
-    { "date": "2026-10-06", "price": 668 },
+    { "date": "2026-10-05", "price": 689 },
+    { "date": "2026-10-06", "price": 691 },
     "... (중략) ...",
     { "date": "2026-10-19", "price": 800 }
   ],
   "forecast": [
-    { "date": "2026-10-20", "price": 799, "lower": 775, "upper": 823 },
-    { "date": "2026-10-21", "price": 796, "lower": 762, "upper": 830 },
+    { "date": "2026-10-20", "price": 790, "lower": 766, "upper": 814 },
+    { "date": "2026-10-21", "price": 782, "lower": 749, "upper": 816 },
     "... (중략) ...",
-    { "date": "2026-11-02", "price": 812, "lower": 721, "upper": 903 }
+    { "date": "2026-11-02", "price": 722, "lower": 641, "upper": 803 }
   ],
-  "predicted_price": 812,
-  "change_pct": 1.5,
-  "confidence": 83,
+  "predicted_price": 722,
+  "change_pct": -9.8,
+  "confidence": 79,
   "alerts": [
     {
       "start": "2026-10-26",
@@ -222,7 +244,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 
 | 이름 | 기본값 | 설명 |
 |---|---|---|
-| `horizon` | `7` | 며칠 뒤 기준 (`7`, `14`, `30`) |
+| `horizon` | `7` | 예측 기간 (`GET /horizons` 참고) |
 | `limit` | `4` | 몇 개 받을지 (1~품목 수) |
 | `region` | `national` | 지역 코드 (생략하면 전국) |
 
@@ -231,10 +253,10 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 **응답 200**
 ```json
 [
-  { "item": "onion", "item_name": "양파", "unit": "kg",
-    "predicted_price": 1092, "change_pct": -9.0, "confidence": 84 },
-  { "item": "apple", "item_name": "사과", "unit": "kg",
-    "predicted_price": 5355, "change_pct": 7.3, "confidence": 89 }
+  { "item": "green_onion", "item_name": "대파", "unit": "kg",
+    "predicted_price": 1608, "change_pct": 9.4, "confidence": 85 },
+  { "item": "pear", "item_name": "배", "unit": "kg",
+    "predicted_price": 2339, "change_pct": -7.9, "confidence": 88 }
 ]
 ```
 
@@ -279,5 +301,6 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 날짜 | 내용 | 작성자 |
 |---|---|---|
 | 2026-10-15 | 최초 작성 (ML API) | |
+| 2026-10-19 | 예측 기간 1주/2주/1개월 확정 및 `GET /horizons` 추가, 지역은 전국만 제공(지역별은 설정으로 켜기) | |
 | 2026-10-19 | 지역에 `national`(전국) 추가 및 기본값으로 지정, `region` 생략 가능 | |
 | 2026-10-19 | 가격 단위 원/kg 통일, 품목 16개로 변경(`cabbage`=양배추), `/items`에 `emoji` 추가, 가격 비교 기준 명시 | |

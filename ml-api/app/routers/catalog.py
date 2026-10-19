@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from app.core.catalog import ITEMS, REGIONS
-from app.schemas.catalog import ItemOut, RegionOut
+from app.core.catalog import HORIZONS, ITEMS, REGIONS
+from app.schemas.catalog import HorizonOut, ItemOut, RegionOut
 
 router = APIRouter(tags=["catalog"])
 
@@ -14,3 +14,8 @@ def list_items() -> list[ItemOut]:
 @router.get("/regions", response_model=list[RegionOut], summary="재배 지역 목록")
 def list_regions() -> list[RegionOut]:
     return [RegionOut(code=code, name=name) for code, name in REGIONS.items()]
+
+
+@router.get("/horizons", response_model=list[HorizonOut], summary="예측 기간 목록")
+def list_horizons() -> list[HorizonOut]:
+    return [HorizonOut(days=days, label=label) for days, label in HORIZONS.items()]

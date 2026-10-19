@@ -9,6 +9,11 @@ class ItemOut(BaseModel):
     emoji: str
 
 
+class HorizonOut(BaseModel):
+    days: int
+    label: str
+
+
 class RegionOut(BaseModel):
     code: str
     name: str

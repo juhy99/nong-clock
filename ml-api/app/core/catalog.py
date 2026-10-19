@@ -8,6 +8,8 @@ base_price 는 더미 예측기가 쓰는 기준 시세(원/kg)이며, 실제 �
 
 from dataclasses import dataclass
 
+from app.core.config import ENABLE_REGIONAL_FORECAST
+
 PRICE_UNIT = "kg"
 
 
@@ -43,13 +45,12 @@ ITEMS: dict[str, Item] = {
     ]
 }
 
-# 'national'(전국)은 지역 구분 없는 예측. 항상 첫 번째에 두고 기본값으로 쓴다.
-# 나중에 전국 예측만 남기려면 아래에서 'national' 외의 줄만 지우면 된다
-# (API 형식은 그대로라 프론트·Spring 은 수정할 필요 없음).
+# 지역: 지금은 전국(national) 예측만 제공한다.
+# 지역별 모델이 준비되면 환경변수 ENABLE_REGIONAL_FORECAST=true 로 아래 PROVINCES 를 켠다.
+# 켜거나 꺼도 API 형식은 그대로라 프론트·Spring 은 수정할 필요 없음.
 NATIONAL = "national"
 
-REGIONS: dict[str, str] = {
-    NATIONAL: "전국",
+PROVINCES: dict[str, str] = {
     "gyeonggi": "경기",
     "gangwon": "강원",
     "chungbuk": "충북",
@@ -61,4 +62,11 @@ REGIONS: dict[str, str] = {
     "jeju": "제주",
 }
 
-HORIZONS = (7, 14, 30)
+REGIONS: dict[str, str] = {NATIONAL: "전국", **(PROVINCES if ENABLE_REGIONAL_FORECAST else {})}
+
+# 예측 기간: 일수 → 화면 표시 이름. 기간을 바꾸려면 여기만 고치면 된다.
+HORIZONS: dict[int, str] = {
+    7: "1주",
+    14: "2주",
+    30: "1개월",
+}

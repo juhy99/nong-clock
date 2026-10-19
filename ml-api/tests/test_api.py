@@ -13,13 +13,16 @@ def test_health():
 
 
 def test_items_and_regions():
-    assert any(i["code"] == "cabbage" for i in client.get("/items").json())
+    items = client.get("/items").json()
+    assert len(items) == 16
+    assert any(i["code"] == "napa_cabbage" for i in items)
+    assert all(i["unit"] == "kg" and i["emoji"] for i in items)
     assert any(r["code"] == "gyeonggi" for r in client.get("/regions").json())
 
 
 @pytest.mark.parametrize("horizon", [7, 14, 30])
 def test_predict_shape(horizon):
-    res = client.post("/predict", json={"item": "lettuce", "region": "gyeonggi", "horizon": horizon})
+    res = client.post("/predict", json={"item": "napa_cabbage", "region": "gyeonggi", "horizon": horizon})
     assert res.status_code == 200
     body = res.json()
     assert len(body["forecast"]) == horizon
@@ -29,7 +32,7 @@ def test_predict_shape(horizon):
 
 
 def test_predict_is_deterministic():
-    req = {"item": "cabbage", "region": "gangwon", "horizon": 14}
+    req = {"item": "napa_cabbage", "region": "gangwon", "horizon": 14}
     assert client.post("/predict", json=req).json() == client.post("/predict", json=req).json()
 
 
@@ -37,8 +40,8 @@ def test_predict_is_deterministic():
     "req, status",
     [
         ({"item": "banana", "region": "gyeonggi", "horizon": 7}, 404),
-        ({"item": "cabbage", "region": "seoul", "horizon": 7}, 404),
-        ({"item": "cabbage", "region": "gyeonggi", "horizon": 10}, 422),
+        ({"item": "napa_cabbage", "region": "seoul", "horizon": 7}, 404),
+        ({"item": "napa_cabbage", "region": "gyeonggi", "horizon": 10}, 422),
     ],
 )
 def test_predict_invalid(req, status):

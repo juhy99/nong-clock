@@ -15,22 +15,37 @@
 ### 데이터 형식
 - 요청·응답 모두 **JSON**, 글자는 UTF-8
 - 날짜: `YYYY-MM-DD` 문자열 (예: `"2026-10-15"`)
-- 가격: **원 단위 정수** (예: `18200`)
+- 가격: **모든 품목 1kg당 원 단위 정수** (예: `1240` = 1,240원/kg). 응답의 `unit` 은 항상 `"kg"`
+  - 상자 단위 원본 가격은 상자 무게로 나눠 저장한다 (예: 배추 10kg 12,400원 → `1240`)
+- 가격 비교(전일 대비 등)는 **직전 조사일 대비**이며, 비교 날짜를 함께 표기한다
+  - KAMIS 가격은 평일 하루 1회 조사(토·일·공휴일 없음) → 월요일 시세는 금요일 대비
+  - 화면 예: `▲ 80원 (+6.9%) 10/16(금) 대비`
 - 퍼센트: 소수 첫째 자리까지 숫자 (예: `23.1` = 23.1%, 하락이면 음수 `-5.5`)
 
 ### 품목 코드 (`item`)
-URL과 API 모두 아래 영어 코드를 씁니다. (프론트 주소 `/market?item=cabbage` 와 동일)
+URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/market?item=napa_cabbage`) 단위는 전부 `kg` 입니다.
 
-| 코드 | 이름 | 단위 | 분류 |
-|---|---|---|---|
-| `cabbage` | 배추 | 10kg | 엽채류 |
-| `lettuce` | 상추 | 4kg | 엽채류 |
-| `onion` | 양파 | 15kg | 조미채소 |
-| `garlic` | 깐마늘 | 1kg | 조미채소 |
-| `hot_pepper` | 청양고추 | 10kg | 과채류 |
-| `tomato` | 토마토 | 5kg | 과채류 |
-| `strawberry` | 딸기 | 2kg | 과일류 |
-| `potato` | 감자 | 20kg | 근채류 |
+| 코드 | 이름 | 분류 |
+|---|---|---|
+| `potato` | 🥔 감자 | 근채류 |
+| `onion` | 🧅 양파 | 조미채소 |
+| `carrot` | 🥕 당근 | 근채류 |
+| `apple` | 🍎 사과 | 과일류 |
+| `watermelon` | 🍉 수박 | 과채류 |
+| `napa_cabbage` | 🥬 배추 | 엽채류 |
+| `radish` | 🌱 무 | 근채류 |
+| `tomato` | 🍅 토마토 | 과채류 |
+| `cabbage` | 🥗 양배추 | 엽채류 |
+| `sweet_potato` | 🍠 고구마 | 근채류 |
+| `button_mushroom` | 🍄 양송이 | 버섯류 |
+| `pear` | 🍐 배 | 과일류 |
+| `king_oyster_mushroom` | 🍄 새송이 | 버섯류 |
+| `green_onion` | 🌿 대파 | 조미채소 |
+| `mandarin` | 🍊 감귤 | 과일류 |
+| `enoki_mushroom` | 🍄 팽이버섯 | 버섯류 |
+
+> ⚠️ 이전 버전에서 `cabbage` 는 배추였지만, 지금은 **`cabbage` = 양배추, `napa_cabbage` = 배추** 입니다.
+> 프론트는 품목 목록을 하드코딩하지 말고 `GET /items` 로 받아 쓰면 품목이 늘거나 줄어도 화면 코드를 고칠 필요가 없습니다.
 
 > 정의 위치: `ml-api/app/core/catalog.py`. 품목을 추가·변경하면 이 표도 같이 고쳐주세요.
 
@@ -92,8 +107,8 @@ URL과 API 모두 아래 영어 코드를 씁니다. (프론트 주소 `/market?
 **응답 200**
 ```json
 [
-  { "code": "cabbage", "name": "배추", "unit": "10kg", "category": "엽채류" },
-  { "code": "lettuce", "name": "상추", "unit": "4kg",  "category": "엽채류" }
+  { "code": "potato", "name": "감자", "unit": "kg", "category": "근채류", "emoji": "🥔" },
+  { "code": "onion",  "name": "양파", "unit": "kg", "category": "조미채소", "emoji": "🧅" }
 ]
 ```
 
@@ -122,18 +137,18 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | `horizon` | number | O | 며칠 뒤까지 예측할지. **`7`, `14`, `30` 중 하나** |
 
 ```json
-{ "item": "lettuce", "region": "gyeonggi", "horizon": 14 }
+{ "item": "napa_cabbage", "region": "gyeonggi", "horizon": 14 }
 ```
 
 **응답 200**
 
 | 필드 | 타입 | 설명 | 화면 위치 |
 |---|---|---|---|
-| `item` / `item_name` / `unit` | string | 품목 코드 / 이름 / 단위 | |
+| `item` / `item_name` / `unit` | string | 품목 코드 / 이름 / 단위(항상 `kg`) | |
 | `region` | string | 지역 코드 | |
 | `horizon` | number | 요청한 예측 기간 | |
 | `base_date` | string | 기준일 (오늘) | 그래프 실제↔예측 경계 |
-| `base_price` | number | 기준일 도매가 | |
+| `base_price` | number | 기준일 도매가 (원/kg) | |
 | `history` | 배열 | 최근 실제 시세 `{date, price}` (기준일 포함 15일) | 그래프 검은 선 "실제" |
 | `forecast` | 배열 | 예측 `{date, price, lower, upper}` — 기준일 다음 날부터 `horizon`일 | 초록 점선 "예측" + 초록 영역 "오차범위" |
 | `predicted_price` | number | `horizon`일 후 예상 도매가 (= forecast 마지막 값) | "14일 후 예상 도매가" 금액 |
@@ -153,32 +168,32 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 
 ```json
 {
-  "item": "lettuce",
-  "item_name": "상추",
-  "unit": "4kg",
+  "item": "napa_cabbage",
+  "item_name": "배추",
+  "unit": "kg",
   "region": "gyeonggi",
   "horizon": 14,
-  "base_date": "2026-10-15",
-  "base_price": 18200,
+  "base_date": "2026-10-19",
+  "base_price": 800,
   "history": [
-    { "date": "2026-10-01", "price": 16289 },
-    { "date": "2026-10-02", "price": 16586 },
+    { "date": "2026-10-05", "price": 690 },
+    { "date": "2026-10-06", "price": 668 },
     "... (중략) ...",
-    { "date": "2026-10-15", "price": 18200 }
+    { "date": "2026-10-19", "price": 800 }
   ],
   "forecast": [
-    { "date": "2026-10-16", "price": 18325, "lower": 17776, "upper": 18875 },
-    { "date": "2026-10-17", "price": 18351, "lower": 17572, "upper": 19130 },
+    { "date": "2026-10-20", "price": 799, "lower": 775, "upper": 823 },
+    { "date": "2026-10-21", "price": 796, "lower": 762, "upper": 830 },
     "... (중략) ...",
-    { "date": "2026-10-29", "price": 19323, "lower": 17154, "upper": 21492 }
+    { "date": "2026-11-02", "price": 812, "lower": 721, "upper": 903 }
   ],
-  "predicted_price": 19323,
-  "change_pct": 6.2,
-  "confidence": 84,
+  "predicted_price": 812,
+  "change_pct": 1.5,
+  "confidence": 83,
   "alerts": [
     {
-      "start": "2026-10-22",
-      "end": "2026-10-24",
+      "start": "2026-10-26",
+      "end": "2026-10-28",
       "reason": "[더미] 기온 편차 +2.4σ, 강수량 평년 대비 180% 예상",
       "mape_normal": 6.2,
       "mape_anomaly": 19.8
@@ -201,7 +216,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 이름 | 기본값 | 설명 |
 |---|---|---|
 | `horizon` | `7` | 며칠 뒤 기준 (`7`, `14`, `30`) |
-| `limit` | `4` | 몇 개 받을지 (1~8) |
+| `limit` | `4` | 몇 개 받을지 (1~품목 수) |
 | `region` | `gyeonggi` | 지역 코드 |
 
 예) `GET /predict/top-movers?horizon=7&limit=4`
@@ -209,18 +224,18 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 **응답 200**
 ```json
 [
-  { "item": "hot_pepper", "item_name": "청양고추", "unit": "10kg",
-    "predicted_price": 58763, "change_pct": 8.8, "confidence": 89 },
-  { "item": "garlic", "item_name": "깐마늘", "unit": "1kg",
-    "predicted_price": 10636, "change_pct": 8.5, "confidence": 84 }
+  { "item": "onion", "item_name": "양파", "unit": "kg",
+    "predicted_price": 1092, "change_pct": -9.0, "confidence": 84 },
+  { "item": "apple", "item_name": "사과", "unit": "kg",
+    "predicted_price": 5355, "change_pct": 7.3, "confidence": 89 }
 ]
 ```
 
 | 필드 | 화면 위치 |
 |---|---|
-| `item_name` | 카드 제목 "상추" |
+| `item_name` | 카드 제목 (예: "배추") |
 | `change_pct` | "▲ 18.1%" (음수면 ▼) |
-| `predicted_price` | "7일 후 예상 21,501원" |
+| `predicted_price` | "7일 후 예상 OO원/kg" |
 | `confidence` | "AI 신뢰도 88%" |
 
 ---
@@ -231,7 +246,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 
 | 화면 | 필요한 데이터 | 주소 (예정) |
 |---|---|---|
-| 홈 › 상단 시세 띠, 오늘의 주요 시세 | 품목별 오늘 중도매가, 전일 대비 | |
+| 홈 › 상단 시세 띠, 오늘의 주요 시세 | 품목별 오늘 도매가(원/kg), **직전 조사일 대비 금액·%와 비교 날짜** | |
 | 홈 › 실시간 농업 날씨, 기상특보 | 지역 날씨, 특보 문구 | |
 | 홈 › 인기 경매 | 진행 중 경매 목록 | |
 | 시세·수급 › 품목 표 | 중도매가, 전일 대비, 소매가, 유통마진 | |
@@ -257,3 +272,4 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 날짜 | 내용 | 작성자 |
 |---|---|---|
 | 2026-10-15 | 최초 작성 (ML API) | |
+| 2026-10-19 | 가격 단위 원/kg 통일, 품목 16개로 변경(`cabbage`=양배추), `/items`에 `emoji` 추가, 가격 비교 기준 명시 | |

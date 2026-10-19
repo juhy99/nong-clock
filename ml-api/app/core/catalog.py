@@ -43,7 +43,13 @@ ITEMS: dict[str, Item] = {
     ]
 }
 
+# 'national'(전국)은 지역 구분 없는 예측. 항상 첫 번째에 두고 기본값으로 쓴다.
+# 나중에 전국 예측만 남기려면 아래에서 'national' 외의 줄만 지우면 된다
+# (API 형식은 그대로라 프론트·Spring 은 수정할 필요 없음).
+NATIONAL = "national"
+
 REGIONS: dict[str, str] = {
+    NATIONAL: "전국",
     "gyeonggi": "경기",
     "gangwon": "강원",
     "chungbuk": "충북",

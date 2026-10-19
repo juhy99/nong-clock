@@ -46,6 +46,7 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 - 가격 단위는 전 품목 **원/kg** (`unit` 은 항상 `"kg"`)
+- `region` 은 생략 가능하며 기본값은 `national`(전국)
 - `horizon`: 7 / 14 / 30 중 하나 (그 외 422)
 - 없는 품목·지역 코드: 404
 

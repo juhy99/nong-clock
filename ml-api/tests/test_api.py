@@ -17,7 +17,16 @@ def test_items_and_regions():
     assert len(items) == 16
     assert any(i["code"] == "napa_cabbage" for i in items)
     assert all(i["unit"] == "kg" and i["emoji"] for i in items)
-    assert any(r["code"] == "gyeonggi" for r in client.get("/regions").json())
+    regions = client.get("/regions").json()
+    assert regions[0] == {"code": "national", "name": "전국"}
+    assert any(r["code"] == "gyeonggi" for r in regions)
+
+
+def test_region_defaults_to_national():
+    res = client.post("/predict", json={"item": "napa_cabbage", "horizon": 7})
+    assert res.status_code == 200
+    assert res.json()["region"] == "national"
+    assert client.get("/predict/top-movers").status_code == 200
 
 
 @pytest.mark.parametrize("horizon", [7, 14, 30])

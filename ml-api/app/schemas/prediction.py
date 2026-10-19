@@ -3,12 +3,14 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.core.catalog import NATIONAL
+
 Horizon = Literal[7, 14, 30]
 
 
 class PredictRequest(BaseModel):
     item: str = Field(examples=["napa_cabbage"], description="품목 코드 (GET /items 참고)")
-    region: str = Field(examples=["gyeonggi"], description="재배 지역 코드 (GET /regions 참고)")
+    region: str = Field(NATIONAL, examples=[NATIONAL], description="지역 코드 (GET /regions 참고). 생략하면 전국")
     horizon: Horizon = Field(examples=[14], description="예측 시점(일)")
 
 

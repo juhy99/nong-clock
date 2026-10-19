@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.core.catalog import ITEMS, REGIONS
+from app.core.catalog import ITEMS, NATIONAL, REGIONS
 from app.schemas.prediction import Horizon, PredictRequest, PredictResponse, TopMover
 from app.services.predictor import Predictor, get_predictor
 
@@ -26,7 +26,7 @@ def top_movers(
     predictor: PredictorDep,
     horizon: Horizon = 7,
     limit: Annotated[int, Query(ge=1, le=len(ITEMS))] = 4,
-    region: str = "gyeonggi",
+    region: str = NATIONAL,
 ) -> list[TopMover]:
     if region not in REGIONS:
         raise HTTPException(status_code=404, detail=f"unknown region: {region}")

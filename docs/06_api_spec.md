@@ -53,9 +53,14 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 
 | 코드 | 이름 | 코드 | 이름 | 코드 | 이름 |
 |---|---|---|---|---|---|
-| `gyeonggi` | 경기 | `chungnam` | 충남 | `gyeongbuk` | 경북 |
-| `gangwon` | 강원 | `jeonbuk` | 전북 | `gyeongnam` | 경남 |
-| `chungbuk` | 충북 | `jeonnam` | 전남 | `jeju` | 제주 |
+| **`national`** | **전국** | `chungnam` | 충남 | `gyeongbuk` | 경북 |
+| `gyeonggi` | 경기 | `jeonbuk` | 전북 | `gyeongnam` | 경남 |
+| `gangwon` | 강원 | `jeonnam` | 전남 | `jeju` | 제주 |
+| `chungbuk` | 충북 | | | | |
+
+- `national`(전국)은 지역 구분 없는 예측이며 **기본값**입니다. `GET /regions` 응답의 항상 첫 번째입니다.
+- 나중에 지역별 예측을 없애고 전국만 남기면 `GET /regions` 가 `[{"code":"national","name":"전국"}]` 만 돌려줍니다. 요청·응답 형식은 그대로입니다.
+- **프론트 규칙:** 지역 선택 박스는 `GET /regions` 로 채우고, **결과가 1개뿐이면 선택 박스를 숨깁니다.** 이렇게 해두면 전국만 남아도 화면 코드를 고칠 필요가 없습니다.
 
 ### 에러 응답
 
@@ -117,6 +122,7 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 **응답 200**
 ```json
 [
+  { "code": "national", "name": "전국" },
   { "code": "gyeonggi", "name": "경기" },
   { "code": "gangwon",  "name": "강원" }
 ]
@@ -133,11 +139,12 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
 | `item` | string | O | 품목 코드 |
-| `region` | string | O | 지역 코드 |
+| `region` | string | X | 지역 코드. **생략하면 `national`(전국)** |
 | `horizon` | number | O | 며칠 뒤까지 예측할지. **`7`, `14`, `30` 중 하나** |
 
 ```json
 { "item": "napa_cabbage", "region": "gyeonggi", "horizon": 14 }
+// 전국 예측: { "item": "napa_cabbage", "horizon": 14 }
 ```
 
 **응답 200**
@@ -145,7 +152,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 필드 | 타입 | 설명 | 화면 위치 |
 |---|---|---|---|
 | `item` / `item_name` / `unit` | string | 품목 코드 / 이름 / 단위(항상 `kg`) | |
-| `region` | string | 지역 코드 | |
+| `region` | string | 지역 코드 (`national` = 전국) | |
 | `horizon` | number | 요청한 예측 기간 | |
 | `base_date` | string | 기준일 (오늘) | 그래프 실제↔예측 경계 |
 | `base_price` | number | 기준일 도매가 (원/kg) | |
@@ -217,7 +224,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 |---|---|---|
 | `horizon` | `7` | 며칠 뒤 기준 (`7`, `14`, `30`) |
 | `limit` | `4` | 몇 개 받을지 (1~품목 수) |
-| `region` | `gyeonggi` | 지역 코드 |
+| `region` | `national` | 지역 코드 (생략하면 전국) |
 
 예) `GET /predict/top-movers?horizon=7&limit=4`
 
@@ -272,4 +279,5 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 날짜 | 내용 | 작성자 |
 |---|---|---|
 | 2026-10-15 | 최초 작성 (ML API) | |
+| 2026-10-19 | 지역에 `national`(전국) 추가 및 기본값으로 지정, `region` 생략 가능 | |
 | 2026-10-19 | 가격 단위 원/kg 통일, 품목 16개로 변경(`cabbage`=양배추), `/items`에 `emoji` 추가, 가격 비교 기준 명시 | |

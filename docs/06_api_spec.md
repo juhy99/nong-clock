@@ -64,14 +64,10 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 
 ### 예측 기간 (`horizon`)
 
-| 값(일) | 화면 이름 |
-|---|---|
-| `7` | 1주 |
-| `14` | 2주 |
-| `30` | 1개월 |
-
-- **프론트 규칙:** 기간 버튼은 `GET /horizons` 로 받아 그립니다. 기간이 바뀌어도 화면 코드를 고칠 필요가 없습니다.
-- 그 외 값을 보내면 `422` 입니다.
+- **오늘(기준일)로부터 며칠 뒤까지 예측할지, `1` ~ `30` 중 아무 정수.** 화면에서 사용자가 날짜를 고르면 `고른 날짜 - 오늘` 일수를 보냅니다.
+- `GET /horizons` 의 `7`(1주) · `14`(2주) · `30`(1개월)은 **빠른 선택 버튼**용이고, 이 중 가장 큰 값이 고를 수 있는 최대 날짜입니다.
+- 0 이하나 31 이상을 보내면 `422` 입니다.
+- ⚠️ **모델 담당 확인 필요:** 1~30일 **매일**의 예측값이 필요합니다 (7·14·30일만 예측하는 모델이면 사이 날짜를 어떻게 채울지 정해야 함).
 
 ### 에러 응답
 
@@ -81,11 +77,11 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 | `422` | 요청 형식이 틀림 (빠진 값, 허용 안 되는 값) | 아래 참고 |
 
 ```json
-// 422 예시: horizon 에 10 을 보낸 경우
+// 422 예시: horizon 에 31 을 보낸 경우
 {
   "detail": [
-    { "type": "literal_error", "loc": ["body", "horizon"],
-      "msg": "Input should be 7, 14 or 30", "input": 10 }
+    { "type": "less_than_equal", "loc": ["body", "horizon"],
+      "msg": "Input should be less than or equal to 30", "input": 31 }
   ]
 }
 ```
@@ -104,7 +100,7 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 | GET | `/health` | 서버 상태 확인 | - |
 | GET | `/items` | 품목 목록 | AI 가격예측 › 품종 선택 |
 | GET | `/regions` | 지역 목록 (현재 전국만) | AI 가격예측 › 지역 선택 (1개면 숨김) |
-| GET | `/horizons` | 예측 기간 목록 | AI 가격예측 › 기간 버튼 |
+| GET | `/horizons` | 빠른 선택 기간 (최대 30일) | AI 가격예측 › 날짜 선택 옆 버튼, 홈 기간 버튼 |
 | POST | `/predict` | 가격 예측 | AI 가격예측 (`/ai`) |
 | GET | `/predict/top-movers` | 급등락 예상 품목 | 홈 › AI 추천 · 급등락 예상 품목 |
 
@@ -162,7 +158,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 |---|---|---|---|
 | `item` | string | O | 품목 코드 |
 | `region` | string | X | 지역 코드. **생략하면 `national`(전국)** |
-| `horizon` | number | O | 예측 기간(일). **`GET /horizons` 의 `days` 값 중 하나** (현재 7, 14, 30) |
+| `horizon` | number | O | 예측 기간(일). **1 ~ 30 중 아무 값** (화면에서 고른 날짜 - 오늘) |
 
 ```json
 { "item": "napa_cabbage", "horizon": 14 }
@@ -232,7 +228,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 }
 ```
 
-**에러**: 없는 `item`·`region` → `404`, `horizon`이 7/14/30이 아님 → `422`
+**에러**: 없는 `item`·`region` → `404`, `horizon`이 1~30 밖 → `422`
 
 ---
 
@@ -244,7 +240,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 
 | 이름 | 기본값 | 설명 |
 |---|---|---|
-| `horizon` | `7` | 예측 기간 (`GET /horizons` 참고) |
+| `horizon` | `7` | 예측 기간 1~30일 |
 | `limit` | `4` | 몇 개 받을지 (1~품목 수) |
 | `region` | `national` | 지역 코드 (생략하면 전국) |
 
@@ -283,7 +279,13 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | GET | `/api/prices/{item}/history?days=30` | 최근 N 조사일 도매·소매 | 시세 › 가격 동향 | `getPriceHistory` |
 | GET | `/api/prices/{item}/markets` | 시장별 가격 | 시세 › 유통처별 비교 | `getMarketCompare` |
 | GET | `/api/supply/{item}` | 월별 생산량 vs 평년 | 시세 › 수급 리포트 | `getSupply` |
-| GET | `/api/weather` | 농업 날씨 | 홈 날씨 카드 | `getWeather` |
+| GET | `/api/weather/regions` | 시·도 17곳 오늘 날씨 + 특보 | 홈 날씨 지도 | `getRegionalWeather` |
+| POST | `/api/uploads` (multipart, `files` 여러 개) | 사진 업로드 → 사진 주소 목록 | 경매 등록, 게시판 글쓰기 | `uploadImages` |
+| GET | `/api/posts?category=&q=&page=` | 게시글 목록 (숨김 제외, 15개씩) | 게시판 | `getPosts` |
+| GET | `/api/posts/{id}` | 게시글 보기 (조회수 +1) | 게시판 › 글 | `getPost` |
+| POST · PUT · DELETE | `/api/posts` · `/api/posts/{id}` | 글쓰기·수정·삭제 (작성자 본인만) | 게시판 › 글쓰기 | `createPost` · `updatePost` · `deletePost` |
+| GET | `/api/admin/posts` | 전체 글 (숨김 포함) | 관리자 › 게시판 관리 | `getAllPosts` |
+| PATCH · DELETE | `/api/admin/posts/{id}` `{ "hidden", "reason" }` | 숨김·다시 보이기·삭제 (작성자에게 알림) | 관리자 › 게시판 관리 | `setPostHidden` · `adminDeletePost` |
 | GET | `/api/auctions?sort=popular\|ending\|price` | 진행 중 경매 목록 | 홈 인기 경매, 경매 마켓 | `getAuctions` |
 | GET | `/api/auctions/{id}` | 경매 상세 + 입찰 기록 | 경매 상세 | `getAuction` |
 | POST | `/api/auctions/{id}/bids` `{ "amount": 240000 }` | 입찰 (로그인 필요) | 경매 상세 | `placeBid` |
@@ -370,6 +372,35 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 - `days`: 1 / 3 / 5 / 7. 사진 업로드는 Spring 연결 때 추가
 - 회원 탈퇴는 정보를 지우지 않고 `status: "탈퇴"` 로 바꿈 (지난 거래 기록 보존). 같은 이메일로 재가입 불가
 
+### 2-7. 지역 날씨 예시 (`GET /api/weather/regions`)
+
+```json
+{ "base_time": "2026-10-19T05:00:00+09:00",
+  "regions": [
+    { "id": "gangwon", "name": "강원", "temp": 10, "min": 3, "max": 14, "icon": "☁️", "sky": "흐림",
+      "rain_prob": 20, "humidity": 70, "wind": 3.4, "soil_temp": 9, "warning": "서리 주의보",
+      "note": "일교차 큼 · 엽채류 냉해 주의" }
+  ] }
+```
+- `id` 는 지도 데이터(`@svg-maps/south-korea`)의 지역 id: `seoul, busan, daegu, incheon, gwangju, daejeon, ulsan, sejong, gyeonggi, gangwon, north-chungcheong, south-chungcheong, north-jeolla, south-jeolla, north-gyeongsang, south-gyeongsang, jeju`
+- `name` 은 회원 지역과 같은 이름 (로그인하면 내 지역을 먼저 보여줌). 데이터는 기상청 단기예보·기상특보를 시·도 대표 지점으로 모으는 것을 제안
+
+### 2-8. 사진 업로드 (`POST /api/uploads`)
+- `multipart/form-data`, 필드 이름 `files` (여러 장). JPG·PNG·WEBP·GIF, 장당 10MB 이하, 한 번에 5장까지
+- 응답: `{ "urls": ["https://.../a1b2.jpg", ...] }` → 경매 등록 `images`, 게시글 `images` 에 그대로 넣음 (첫 번째가 대표 사진)
+- 사진 파일은 서버 폴더나 S3 같은 저장소에, DB 에는 **주소만** 저장
+
+### 2-9. 게시글 예시 (`GET /api/posts`)
+
+```json
+{ "rows": [ { "id": 18, "category": "정보", "title": "배추 가격 다음 주에 오를 것 같네요", "images": [],
+              "author": "seller1", "author_name": "박농부", "created_at": "2026-10-19T15:01:00+09:00", "views": 132 } ],
+  "total": 18, "page": 1, "pages": 2 }
+```
+- 말머리(`category`): `자유` / `질문` / `정보` / `거래후기`. 글쓰기 요청: `{ "category", "title"(2~80자), "body", "images" }`
+- 목록 맨 위 공지는 `GET /api/notices` 를 그대로 사용 (관리자 › 공지사항에서 작성)
+- 조회수는 같은 사람이 새로고침할 때마다 오르지 않게 서버에서 막는 것을 권장
+
 ## 3. 정해야 할 것
 
 - [ ] 프론트가 ML API를 **직접 호출**할지, **Spring을 거쳐** 호출할지
@@ -378,6 +409,9 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 - [ ] 품목·지역 코드를 위 영어 코드로 확정할지 (KAMIS 품목코드와의 매핑 포함)
 - [ ] 비정상 입찰 판단 기준 (지금은 관리자가 신고를 보고 직접 골라 취소. 입찰 IP 저장 여부)
 - [ ] 새 DB 테이블: 관심 품목, 알림, 신고 (+ 입찰에 `cancelled`, 회원에 `status`·알림 설정)
+- [ ] 새 DB 테이블: 게시글(숨김 여부·사유 포함), 사진 주소(경매·게시글 공용), 경매에 사진 목록
+- [ ] 예측 모델이 1~30일 **매일** 값을 낼 수 있는지 (사용자가 아무 날짜나 고름)
+- [ ] 관리자 사이트 배포 주소 (같은 도메인 `/admin/` 또는 `admin.` 서브도메인)
 
 ---
 
@@ -391,3 +425,4 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 2026-10-19 | 지역에 `national`(전국) 추가 및 기본값으로 지정, `region` 생략 가능 | |
 | 2026-10-19 | 가격 단위 원/kg 통일, 품목 16개로 변경(`cabbage`=양배추), `/items`에 `emoji` 추가, 가격 비교 기준 명시 | |
 | 2026-10-19 | Spring API 제안 추가: 내 정보 수정·탈퇴, 경매 등록·취소, 알림, 신고, 관리자 입찰 취소·신고 결과 알림 | |
+| 2026-10-19 | 예측 기간 `horizon` 을 1~30일 아무 값으로 확장 (`/horizons` 는 빠른 선택용). Spring 제안 추가: 지역별 날씨, 사진 업로드, 게시판, 관리자 게시판 관리 | |

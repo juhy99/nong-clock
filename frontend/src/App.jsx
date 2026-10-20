@@ -9,6 +9,8 @@ import AuctionDetail from "./pages/AuctionDetail";
 import MyPage from "./pages/mypage/MyPage";
 import NewAuction from "./pages/mypage/NewAuction";
 import About from "./pages/About";
+import News from "./pages/News";
+import Search from "./pages/Search";
 import BoardList from "./pages/board/BoardList";
 import { NoticeView, PostView } from "./pages/board/PostView";
 import PostWrite from "./pages/board/PostWrite";
@@ -26,6 +28,8 @@ export default function App() {
         <Route path="auctions/:id" element={<AuctionDetail />} />
         <Route path="mypage" element={<RequireAuth><MyPage /></RequireAuth>} />
         <Route path="mypage/auctions/new" element={<RequireAuth><NewAuction /></RequireAuth>} />
+        <Route path="news" element={<News />} />
+        <Route path="search" element={<Search />} />
         <Route path="about" element={<About />} />
         <Route path="board" element={<BoardList />} />
         <Route path="board/write" element={<RequireAuth><PostWrite /></RequireAuth>} />

@@ -32,6 +32,8 @@ npm run dev        # 사용자 사이트 http://localhost:5173  ·  관리자 �
 | `/market` | 시세·수급 (표, 추이, 시장별, 수급) | 가짜 |
 | `/ai?item=&date=` | AI 가격예측 (내일 ~ 30일 뒤 날짜 선택) | **ML API** |
 | `/auctions`, `/auctions/:id` | 경매 목록·상세(사진)·입찰·신고 | 가짜 |
+| `/news?category=&item=&mine=1` | 농업 뉴스 (분류·품목·내 관심 품목 필터, 많이 나온 품목, 홈에는 헤드라인 6개) | 가짜 (실제: Spring 이 1시간마다 네이버 뉴스 검색 API 수집) |
+| `/search?q=&tab=` | 통합 검색: 품목(시세·2주 예측)·경매·뉴스·게시판·공지 한 번에, 탭별 전체 보기. 헤더 검색창 자동완성 | 가짜 + ML API |
 | `/board`, `/board/:id`, `/board/write` | 게시판 (맨 위 공지 + 회원 글, 말머리·검색·페이지, 사진 첨부, 댓글·답글, 글·댓글 신고) | 가짜 |
 | `/mypage` | 관심 품목·내 경매·입찰 참여·알림·신고 내역·내 정보 수정·탈퇴 (로그인 필요, 탭은 `?tab=`) | 가짜 |
 | `/mypage/auctions/new` | 경매 등록 (관리자 외 모든 회원, 관리자 승인 후 노출) | 가짜 + AI 참고가 |
@@ -51,16 +53,18 @@ src/
   api/        서버 호출. 화면은 반드시 여기 함수만 부른다
     client.js   API 주소 (한 곳에서만 관리)
     ml.js       ML API — 실제 연결
-    market.js · auction.js · auth.js · admin.js · board.js · notify.js · report.js   Spring 담당 — 지금은 mocks/ 반환
+    market.js · auction.js · auth.js · admin.js · board.js · notify.js · report.js · news.js · search.js   Spring 담당 — 지금은 mocks/ 반환
     upload.js   사진 업로드 (지금은 브라우저 IndexedDB, Spring 이 생기면 POST /api/uploads)
   mocks/      가짜 데이터 (Spring API가 생기면 지운다)
   components/ 공통 부품 (레이아웃, 가격 변동 표시, 로딩·에러 처리)
   pages/      사용자 사이트 화면
   admin/      관리자 사이트 (main.jsx 진입점, AdminApp.jsx 메뉴·로그인, pages/ 화면)
   utils/format.js  가격(원/kg)·날짜 표시
+  utils/itemMatch.js  글에서 품목 찾기 (품목 별칭·한 글자 품목 규칙) — 통합 검색과 뉴스 품목 태그가 같이 씀
 ```
 
 - **Spring API 연결 방법:** `api/market.js` 등의 함수 안쪽만 `request(주소, "/api/...")` 로 바꾸면 됩니다. 화면 코드는 고칠 필요 없습니다. 응답 모양은 `docs/06_api_spec.md` 2번 섹션의 제안을 따릅니다.
+- **농업 뉴스:** 기사 제목·요약만 보여주고 누르면 언론사 원문이 새 탭으로 열린다 (본문은 옮기지 않음). 지금 기사는 화면 확인용 예시(링크는 example.com). 네이버 API 키는 서버에만 두므로 화면이 네이버를 직접 부르지 않는다 (명세 2-14)
 - **품목 사진:** `src/assets/items/<품목코드>.png` 처럼 넣으면 자동으로 쓰입니다 (없으면 이모지). 규칙은 그 폴더의 `README.md`.
 - **디자인:** 사용자 사이트는 A안(산뜻한 마켓형) — 색·모서리 값은 `styles.css` 맨 위 변수. 관리자 사이트는 `src/admin/admin.css` 에서 이전 색을 따로 고정.
 - **품목·기간·지역은 하드코딩하지 않는다:** `GET /items`, `/horizons`, `/regions` 로 받아서 그립니다. 지역이 1개면 선택 박스를 숨깁니다.

@@ -69,3 +69,11 @@ export function SectionHead({ title, desc, right }) {
     </div>
   );
 }
+
+/** 글 안의 검색어를 노란색으로 강조 */
+export function Highlight({ text, q }) {
+  const word = q?.trim();
+  if (!word) return text;
+  const parts = String(text).split(new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+  return parts.map((p, i) => (i % 2 ? <mark key={i}>{p}</mark> : p));
+}

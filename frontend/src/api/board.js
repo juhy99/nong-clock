@@ -35,8 +35,16 @@ function checkCanWrite(user) {
   return null;
 }
 
+/** 검색 결과에 보여줄 본문 일부 (검색어 앞뒤) */
+function snippetOf(body, keyword, len = 70) {
+  const at = body.toLowerCase().indexOf(keyword);
+  const start = at < 0 ? 0 : Math.max(0, at - 20);
+  const text = body.slice(start, start + len);
+  return `${start > 0 ? "…" : ""}${text}${start + len < body.length ? "…" : ""}`;
+}
+
 /**
- * 글 목록 (숨김 글 제외)
+ * 글 목록 (숨김 글 제외). 검색어가 있으면 본문 일부(snippet)도 함께
  * @param {{category?: string, q?: string, page?: number}} opts
  * @returns {Promise<{rows: object[], total: number, page: number, pages: number}>}
  */
@@ -52,7 +60,11 @@ export function getPosts({ category = "", q = "", page = 1 } = {}) {
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const cur = Math.min(Math.max(1, page), pages);
   return fake({
-    rows: rows.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE).map(({ body, ...p }) => ({ ...withAuthor(users)(p), comment_count: counts[p.id] ?? 0 })),
+    rows: rows.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE).map(({ body, ...p }) => ({
+      ...withAuthor(users)(p),
+      comment_count: counts[p.id] ?? 0,
+      ...(keyword && { snippet: snippetOf(body, keyword) }),
+    })),
     total: rows.length,
     page: cur,
     pages,

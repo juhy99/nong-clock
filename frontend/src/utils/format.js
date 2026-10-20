@@ -84,3 +84,33 @@ export function boardDate(iso) {
   if (d.toDateString() === now.toDateString()) return `${p(d.getHours())}:${p(d.getMinutes())}`;
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
+
+/** 뉴스 시각: "32분 전", "5시간 전", "어제", "3일 전", 일주일 넘으면 "10/12" */
+export function timeAgo(iso, now = Date.now()) {
+  const min = Math.floor((now - new Date(iso)) / 60000);
+  if (min < 1) return "방금";
+  if (min < 60) return `${min}분 전`;
+  const h = Math.floor(min / 60);
+  const d = new Date(iso);
+  const today = new Date(now);
+  const yesterday = new Date(now - 86400000);
+  if (d.toDateString() === today.toDateString()) return `${h}시간 전`;
+  if (d.toDateString() === yesterday.toDateString()) return "어제";
+  const days = Math.floor(h / 24);
+  return days < 7 ? `${days}일 전` : `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+/** 뉴스 날짜 묶음 제목: "오늘 · 10월 20일 (화)" */
+export function dayLabel(iso, now = Date.now()) {
+  const d = new Date(iso);
+  const text = `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
+  if (d.toDateString() === new Date(now).toDateString()) return `오늘 · ${text}`;
+  if (d.toDateString() === new Date(now - 86400000).toDateString()) return `어제 · ${text}`;
+  return text;
+}
+
+/** "14:00" */
+export const hourMinute = (iso) => {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};

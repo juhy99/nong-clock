@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getNotices } from "../api/admin";
 import { getAuctions } from "../api/auction";
 import { getHorizons, getItems, getTopMovers, predict } from "../api/ml";
 import { getTodayPrices } from "../api/market";
+import { getNews, getNewsTrend } from "../api/news";
+import { useAuth } from "../components/AuthContext";
 import { Async, PctChange, PriceChange, useAsync } from "../components/common";
 import ItemImage from "../components/ItemImage";
 import ForecastChart from "../components/ForecastChart";
+import { NewsRow, NewsTrend, NewsUpdated } from "../components/NewsParts";
 import WeatherMap from "../components/WeatherMap";
 import { AuctionCard } from "./Auctions";
 import { addDays, md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
@@ -56,6 +59,59 @@ function TodayPrices() {
           </>
         )}
       </Async>
+    </section>
+  );
+}
+
+/** 오늘의 농업 뉴스: 헤드라인만, 누르면 언론사 기사로 */
+function NewsHeadlines() {
+  const { user } = useAuth();
+  const nav = useNavigate();
+  const favorites = user?.favorites ?? [];
+  const news = useAsync(() => getNews({ size: 6 }));
+  const trend = useAsync(() => getNewsTrend({ days: 7, limit: 5 }));
+  const mine = useAsync(() => (favorites.length ? getNews({ items: favorites, size: 3 }) : Promise.resolve(null)), [favorites.join()]);
+  return (
+    <section>
+      <div className="sec-head">
+        <div>
+          <h2>오늘의 농업 뉴스</h2>
+          <p>
+            팜비드 품목 관련 기사 · 제목을 누르면 언론사 기사로 이동해요
+            {news.data && <> · <NewsUpdated at={news.data.updated_at} /></>}
+          </p>
+        </div>
+        <Link className="link" to="/news">뉴스 더 보기 →</Link>
+      </div>
+      <div className="home-news">
+        <div className="news-list boxed">
+          <Async state={news} minHeight={240}>
+            {(d) => d.rows.map((n) => <NewsRow key={n.id} n={n} />)}
+          </Async>
+        </div>
+        <div className="home-news-side">
+          <div className="news-box">
+            <h3>이번 주 뉴스에 많이 나온 품목</h3>
+            <p className="muted small">누르면 그 품목 기사만 모아 봐요</p>
+            {trend.data && <NewsTrend rows={trend.data} onPick={(c) => nav(`/news?item=${c}`)} />}
+          </div>
+          <div className="news-box line">
+            <h3>내 관심 품목 뉴스</h3>
+            {!user && <p className="muted small"><Link className="link" to="/login">로그인</Link>하면 관심 품목 기사만 모아 보여줘요</p>}
+            {user && !favorites.length && <p className="muted small">마이페이지 › 관심 품목을 고르면 여기에 기사가 모여요</p>}
+            {mine.data?.rows.map((n) => {
+              const tag = n.item_tags.find((t) => favorites.includes(t.item));
+              return (
+                <a key={n.id} className="mine-row" href={n.url} target="_blank" rel="noreferrer">
+                  <span className="news-item-tag">{tag?.emoji} {tag?.name}</span>
+                  <span className="t">{n.title}</span>
+                </a>
+              );
+            })}
+            {mine.data && !mine.data.rows.length && <p className="muted small">아직 관심 품목 기사가 없어요</p>}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -191,6 +247,7 @@ export default function Home() {
       {/* 예측을 가장 먼저, 오늘 시세는 그 아래에 */}
       <ForecastHero />
       <TodayPrices />
+      <NewsHeadlines />
       <WeatherMap />
       <PopularAuctions />
     </div>

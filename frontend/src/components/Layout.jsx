@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { getTodayPrices } from "../api/market";
 import { ML_API_BASE } from "../api/client";
-import { getItems, onMlOffline } from "../api/ml";
+import { onMlOffline } from "../api/ml";
+import { suggest } from "../api/search";
 import { pct, won } from "../utils/format";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
-import { useAsync } from "./common";
+import { Highlight, useAsync } from "./common";
+import ItemImage from "./ItemImage";
 import NotificationBell from "./NotificationBell";
 
 function Ticker() {
@@ -32,26 +34,99 @@ function Ticker() {
 }
 
 /**
- * 헤더 검색: 품목 이름과 같으면 그 품목 시세로, 아니면 게시판 검색으로 보낸다.
- * (경매·게시판을 함께 찾는 통합 검색은 Spring 검색 API 가 생기면 바꾼다)
+ * 헤더 검색: 입력하는 동안 품목·경매·게시글·뉴스를 미리 보여주고, Enter 를 누르면 통합 검색 결과(/search?q=)로 간다.
  */
 function HeaderSearch() {
   const nav = useNavigate();
+  const loc = useLocation();
+  const [params] = useSearchParams();
   const [q, setQ] = useState("");
-  const { data: items } = useAsync(getItems);
+  const [open, setOpen] = useState(false);
+  const [hints, setHints] = useState(null);
+
+  // 검색 결과 화면에서는 검색어를 그대로 보여준다
+  const current = loc.pathname === "/search" ? params.get("q") ?? "" : "";
+  useEffect(() => setQ(current), [current]);
+
+  useEffect(() => {
+    const word = q.trim();
+    if (!word || word === current) {
+      setHints(null);
+      return;
+    }
+    let alive = true;
+    const t = setTimeout(() => suggest(word).then((h) => alive && setHints(h)), 200);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [q, current]);
+
+  function go(to) {
+    setOpen(false);
+    nav(to);
+  }
   function submit(e) {
     e.preventDefault();
     const word = q.trim();
-    if (!word) return;
-    const item = items?.find((i) => i.name === word || word.includes(i.name));
-    nav(item ? `/market?item=${item.code}` : `/board?q=${encodeURIComponent(word)}`);
-    setQ("");
+    if (word) go(`/search?q=${encodeURIComponent(word)}`);
   }
+  const empty = hints && !hints.items.length && !hints.auctions.length && !hints.posts.length && !hints.news.length;
+  // 목록을 누르는 동안 입력창의 blur 로 닫히지 않게
+  const keep = (e) => e.preventDefault();
+
   return (
-    <form className="search" role="search" onSubmit={submit}>
+    <form className="search" role="search" onSubmit={submit} onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
       <span aria-hidden>🔍</span>
-      <input placeholder="품목 시세, 게시글 검색" value={q} onChange={(e) => setQ(e.target.value)} aria-label="검색" />
+      <input
+        placeholder="품목·경매·뉴스·게시글 검색"
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        aria-label="검색"
+        aria-autocomplete="list"
+      />
       <button>검색</button>
+      {open && hints && (
+        <div className="search-dd" onMouseDown={keep}>
+          {hints.items.length > 0 && <div className="g">품목</div>}
+          {hints.items.map((i) => (
+            <button type="button" key={i.code} className="o" onClick={() => go(`/market?item=${i.code}`)}>
+              <span className="e"><ItemImage code={i.code} emoji={i.emoji} className="xs" /></span>
+              <b><Highlight text={i.name} q={q} /></b>
+              <small>시세 바로가기 ›</small>
+            </button>
+          ))}
+          {hints.auctions.length > 0 && <div className="g">경매</div>}
+          {hints.auctions.map((a) => (
+            <button type="button" key={a.id} className="o" onClick={() => go(`/auctions/${a.id}`)}>
+              <span className="e">{a.emoji}</span>
+              <span className="t"><Highlight text={a.title} q={q} /></span>
+            </button>
+          ))}
+          {hints.posts.length > 0 && <div className="g">게시글</div>}
+          {hints.posts.map((p) => (
+            <button type="button" key={p.id} className="o" onClick={() => go(`/board/${p.id}`)}>
+              <span className="e">📝</span>
+              <span className="t"><Highlight text={p.title} q={q} /></span>
+            </button>
+          ))}
+          {hints.news.length > 0 && <div className="g">뉴스</div>}
+          {hints.news.map((n) => (
+            <a key={n.id} className="o" href={n.url} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
+              <span className="e">📰</span>
+              <span className="t"><Highlight text={n.title} q={q} /></span>
+              <small>↗</small>
+            </a>
+          ))}
+          {empty && <div className="g">바로 보여줄 결과가 없어요</div>}
+          <button type="button" className="o all" onClick={submit}>'{q.trim()}' 전체 결과 보기 ›</button>
+        </div>
+      )}
     </form>
   );
 }
@@ -64,6 +139,7 @@ function Header() {
     ["/market", "시세·수급"],
     ["/ai", "AI 가격예측"],
     ["/auctions", "경매 마켓"],
+    ["/news", "농업 뉴스"],
     ["/board", "게시판"],
     ["/about", "서비스 소개"],
   ];

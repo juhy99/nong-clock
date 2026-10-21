@@ -7,7 +7,7 @@ import { md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
 
 // 시세·수급: 날짜 · 시장 · 품목을 고르면 등급별 가격, 가격 추이, 출하지역, 반입 동향이 바뀐다.
 // 처음 열면 전국 도매시장 · 상 등급. 소매가는 전국 소매가 하나뿐이라 등급을 바꿔도 같다.
-const QUICK_MARKETS = ["national", "garak", "busan_eomgung", "daegu_bukbu"];
+const QUICK_MARKETS = ["national", "110001", "210001", "220001"]; // 전국 · 서울가락 · 부산엄궁 · 대구북부
 const ITEM_PILLS = 7;
 const gradeName = (code) => GRADES.find((g) => g.code === code)?.name ?? code;
 const tipWon = (v) => (v == null ? "거래 없음" : wonPerKg(v));
@@ -319,7 +319,10 @@ export default function Market() {
   const market = params.get("market") || DEFAULT_MARKET;
   const date = params.get("date") || "";
   const grade = params.get("grade") || DEFAULT_GRADE;
-  const marketName = markets.data?.find((m) => m.code === market)?.name ?? "";
+  const marketInfo = markets.data?.find((m) => m.code === market);
+  const marketName = marketInfo?.name ?? "";
+  // 그 시장에서 거래하지 않는 품목이면 아래 정보 대신 안내 (예: 안동은 버섯류·무·대파 거래 기록 없음)
+  const notTraded = marketInfo?.items && item && !marketInfo.items.includes(item);
 
   // 주소(?item=&market=&date=&grade=)에 조건을 담아 새로고침·공유해도 같은 화면이 나온다. 기본값은 주소에서 뺀다.
   const set = (key, value, fallback) => {
@@ -373,7 +376,17 @@ export default function Market() {
         </div>
       </section>
 
-      {item && (
+      {notTraded && (
+        <section className="card state">
+          <p style={{ margin: "0 0 12px" }}>{marketName} 도매시장은 최근 1년 동안 {itemName} 거래 기록이 없어요. 다른 품목을 골라 보세요.</p>
+          <div className="pills" style={{ justifyContent: "center" }}>
+            {items.filter((i) => marketInfo.items.includes(i.item)).map((i) => (
+              <button key={i.item} className="pill sm" onClick={() => set("item", i.item)}>{i.name}</button>
+            ))}
+          </div>
+        </section>
+      )}
+      {item && !notTraded && (
         <>
           <div>
             <div className="mk-sec"><h2>등급별 가격 한눈에 보기</h2><span>{marketName} · {itemName}</span></div>

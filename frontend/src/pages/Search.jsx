@@ -37,7 +37,7 @@ function ItemSummary({ item, p }) {
               <PriceChange change={row.change} changePct={row.change_pct} comparedDate={today.data.compared_date} className="small" />
             </div>
             <div>
-              <div className="muted small">마트 소매가 (참고)</div>
+              <div className="muted small">소매가</div>
               <div className="v num">{won(row.retail_price)}원<small>/kg</small></div>
               <span className="muted small">도매가보다 {row.margin_pct}% 비싸요</span>
             </div>

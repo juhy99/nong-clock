@@ -22,6 +22,16 @@
   - 화면 예: `▲ 80원 (+6.9%) 10/16(금) 대비`
 - 퍼센트: 소수 첫째 자리까지 숫자 (예: `23.1` = 23.1%, 하락이면 음수 `-5.5`)
 
+### 가격 기준 (시장 · 등급)
+- **따로 고르지 않는 가격은 모두 전국 도매시장 평균(`national`) · 상 등급(`HIGH`) · 원/kg** 이다
+  - 홈 시세 띠·오늘의 주요 시세, 통합 검색 품목 요약, 마이페이지 관심 품목, 경매 등록 AI 참고가, 가격 알림
+  - **AI 예측(ML API)도 전국 · 상 등급 하나만** 예측한다
+- 시장·등급은 시세·수급 화면(`/market`)에서만 고를 수 있다 (처음 열면 전국 · 상)
+- 도매 등급 코드 = DB `price_daily.grade`: `SPECIAL`(특) · `HIGH`(상) · `MID`(중) · `LOW`(하) · `ALL`(평균, 거래량 반영)
+- 소매가는 **전국 소매가 하나** (시장·등급 구분 없음)
+- 품목은 16개이고 **품종은 나누지 않는다** (예: 무 = 가을무·고랭지무 모두 `radish`)
+- 화면에는 기준을 군데군데 적지 않고, 서비스 소개 화면(`/about#price-basis`)에 모아서 안내한다
+
 ### 품목 코드 (`item`)
 URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/market?item=napa_cabbage`) 단위는 전부 `kg` 입니다.
 
@@ -275,10 +285,13 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 
 | 메서드 | 주소 (제안) | 설명 | 사용 화면 | 프론트 함수 |
 |---|---|---|---|---|
-| GET | `/api/prices/today` | 오늘 시세 + 직전 조사일 대비 | 홈 시세 띠·카드, 시세 표 | `getTodayPrices` |
-| GET | `/api/prices/{item}/history?days=30` | 최근 N 조사일 도매·소매 | 시세 › 가격 동향 | `getPriceHistory` |
-| GET | `/api/prices/{item}/markets` | 시장별 가격 | 시세 › 유통처별 비교 | `getMarketCompare` |
-| GET | `/api/supply/{item}` | 월별 생산량 vs 평년 | 시세 › 수급 리포트 | `getSupply` |
+| GET | `/api/prices/today` | 오늘 시세 (전국 · 상 등급) + 전국 소매가, 직전 거래일 대비 | 홈 시세 띠·카드, 검색 품목 요약, 마이페이지 관심 품목 | `getTodayPrices` |
+| GET | `/api/markets` | 도매시장 목록 (전국 평균 + 32곳) | 시세 › 시장 선택 | `getMarkets` |
+| GET | `/api/prices/{item}/grades?market=&date=` | 등급별(특·상·중·하·평균) 가격 + 전국 소매가, 최근 5거래일 | 시세 › 등급별 가격 | `getGradePrices` |
+| GET | `/api/prices/{item}/history?market=&grade=&date=&days=8` | 한 등급의 날짜별 가격·최고·최저·반입량 + 전국 소매가 | 시세 › 가격 추이 | `getPriceHistory` |
+| GET | `/api/prices/{item}/origins?market=&date=` | 출하지역(시·도)별 평균 가격·반입량 | 시세 › 출하지역별 가격 | `getOriginPrices` |
+| GET | `/api/volumes/{item}?market=&date=` | 순(10일) 단위 출하지역별 반입량 + 이번 순 요약 | 시세 › 반입 동향 | `getVolumeTrend` |
+| GET | `/api/prices/{item}/markets` | 시장별 오늘 가격 (상 등급) | 통합 검색 › 시장별 오늘 시세 | `getMarketCompare` |
 | GET | `/api/weather/regions` | 시·도 17곳 오늘 날씨 + 특보 | 홈 날씨 지도 | `getRegionalWeather` |
 | POST | `/api/uploads` (multipart, `files` 여러 개) | 사진 업로드 → 사진 주소 목록 | 경매 등록, 게시판 글쓰기 | `uploadImages` |
 | GET | `/api/posts?category=&q=&page=` | 게시글 목록 (숨김 제외, 15개씩) | 게시판 | `getPosts` |
@@ -322,7 +335,8 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 {
   "base_date": "2026-10-19",
   "compared_date": "2026-10-16",
-  "market": "가락시장",
+  "market": "national",
+  "grade": "HIGH",
   "unit": "kg",
   "items": [
     { "item": "napa_cabbage", "name": "배추", "emoji": "🥬", "category": "엽채류",
@@ -332,6 +346,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 }
 ```
 - `compared_date` 는 직전 조사일 (주말·공휴일 제외) → 화면에 "10/16(금) 대비" 로 표시
+- `price` 는 전국 도매시장 · 상 등급, `retail_price` 는 전국 소매가 (0번 "가격 기준")
 - 품목 코드·이름·이모지는 ML API `GET /items` 와 같은 값
 
 ### 2-2. 경매 목록 항목 예시 (`GET /api/auctions`)
@@ -502,6 +517,65 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 - 기사 **본문은 저장·표시하지 않음** (저작권). 제목·요약 + 원문 링크만, 화면에 "뉴스 제공: 네이버 검색 API · 각 언론사" 표시
 - `GET /api/news/trend` 응답: `[ { "item": "napa_cabbage", "name": "배추", "emoji": "🥬", "count": 48 } ]`
 
+### 2-15. 시세·수급 (`/market`)
+
+화면 순서: 조건(날짜 · 시장 · 품목) → 등급별 가격 한눈에 보기 → 가격 추이 · 출하지역별 가격 → 반입 동향. 유통마진·유통처별 비교·월별 생산량(수급 리포트)은 뺐다.
+
+공통 파라미터
+- `market`: `GET /api/markets` 의 `code` (생략 = `national` 전국 평균)
+- `date`: 생략하면 최근 거래일. 거래가 없는 날(주말 등)을 주면 **그 전 가장 가까운 거래일** (`base_date` 로 돌려줌)
+- `grade`: `SPECIAL` · `HIGH` · `MID` · `LOW` · `ALL` (생략 = `HIGH`)
+- 그 날 그 등급 거래가 없으면 가격은 `null` → 화면은 비워 두고 "이 날은 하 등급 거래가 없어요"
+
+`GET /api/markets`
+```json
+[{ "code": "national", "name": "전국 도매시장 평균" }, { "code": "garak", "name": "서울가락" }]
+```
+
+`GET /api/prices/radish/grades?market=national&date=2026-10-20`
+```json
+{
+  "item": "radish", "market": "national", "base_date": "2026-10-20", "compared_date": "2026-10-19", "unit": "kg",
+  "grades": [
+    { "grade": "HIGH", "price": 639, "prev_price": 692, "change": -53, "change_pct": -7.7, "year_ago_pct": 0.3,
+      "points": [{ "date": "2026-10-14", "price": 750 }, { "date": "2026-10-20", "price": 639 }] },
+    { "grade": "LOW", "price": null, "prev_price": 541, "change": null, "change_pct": null, "year_ago_pct": null,
+      "points": [{ "date": "2026-10-20", "price": null }] }
+  ],
+  "retail": { "price": 1480, "prev_price": 1460, "change": 20, "change_pct": 1.4, "year_ago_pct": 12.0,
+              "points": [{ "date": "2026-10-20", "price": 1480 }] }
+}
+```
+- `grades` 는 `SPECIAL`·`HIGH`·`MID`·`LOW`·`ALL` 5개 모두, `points` 는 최근 5거래일 (예시는 줄임)
+- `year_ago_pct`: 1년 전 같은 무렵 거래일 대비
+
+`GET /api/prices/radish/history?market=national&grade=HIGH&days=8`
+```json
+{ "item": "radish", "market": "national", "grade": "HIGH", "unit": "kg",
+  "points": [{ "date": "2026-10-20", "price": 639, "change": -53, "change_pct": -7.7, "high": 660, "low": 610, "volume_t": 429, "retail": 1480 }] }
+```
+- `volume_t`: 그 날 반입량(톤, 등급 합계). `retail` 은 등급과 상관없이 같은 값
+
+`GET /api/prices/radish/origins?market=national&date=2026-10-20`
+```json
+{ "item": "radish", "market": "national", "base_date": "2026-10-20", "compared_date": "2026-10-19", "unit": "kg",
+  "regions": [{ "region": "강원", "price": 588, "change": -42, "change_pct": -6.7, "high": 640, "low": 520, "volume_t": 296 }] }
+```
+- 출하지역은 **시·도** 단위 (DB `price_daily.origin_region_id`), 가격은 등급 평균(`ALL`), 반입량 많은 순
+
+`GET /api/volumes/radish?market=national&date=2026-10-20`
+```json
+{ "item": "radish", "market": "national", "unit": "톤",
+  "periods": [{ "period": "10월 중순", "start": "2026-10-11", "end": "2026-10-20",
+                "top1": { "region": "강원", "volume_t": 4561 }, "top2": { "region": "경기", "volume_t": 733 },
+                "others_t": 1514, "total_t": 6808 }],
+  "summary": { "period": "10월 중순",
+               "top": [{ "region": "강원", "volume_t": 4561, "share_pct": 67, "year_ago_pct": 17.0 }],
+               "others_t": 1514, "total_t": 6808, "change_t": 758, "change_pct": 12.5 } }
+```
+- 순 = 1~10일 상순, 11~20일 중순, 21일~말일 하순. 최근 9순, 오래된 순 → 최근 순
+- 이번 순은 `date` 까지의 누적이라, `change_t`·`change_pct` 는 **지난 순의 같은 거래일 수까지** 더한 값과 비교한다
+
 ## 3. 정해야 할 것
 
 - [ ] 프론트가 ML API를 **직접 호출**할지, **Spring을 거쳐** 호출할지
@@ -518,6 +592,10 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 - [ ] 새 DB 테이블: 뉴스(`url` 고유, 제목·요약·언론사·발행 시각·분류·품목 목록), 수집 기록(마지막 성공 시각)
 - [ ] 네이버 개발자센터 애플리케이션 등록·API 키 발급 담당 (키는 `.env`, 커밋 금지)
 - [ ] 뉴스 수집을 Spring 스케줄러에서 할지, 별도 수집 스크립트(시세·날씨 수집과 같은 곳)에서 할지
+- [ ] 도매시장 32곳의 이름·코드 확정 (DB `market` 테이블과 프론트 가짜 목록 `mocks/market.js` 맞추기)
+- [ ] KAMIS·aT 원본 등급(특·상·중·하 / 상품·중품 등)을 `SPECIAL`·`HIGH`·`MID`·`LOW` 로 바꾸는 규칙, 평균(`ALL`) 계산 방법
+- [ ] 한 품목의 여러 품종(예: 무 = 가을무·고랭지무)을 하나로 합치는 방법 (거래량 가중 평균 등)
+- [ ] 월별 생산량(`supply_stat`)은 화면에서 뺐음 → 테이블을 남길지
 
 ---
 
@@ -534,3 +612,4 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 2026-10-19 | 예측 기간 `horizon` 을 1~30일 아무 값으로 확장 (`/horizons` 는 빠른 선택용). Spring 제안 추가: 지역별 날씨, 사진 업로드, 게시판, 관리자 게시판 관리 | |
 | 2026-10-20 | 회원 유형 선택 제거(모두 판매 가능), 댓글·답글, 게시글·댓글 신고, 게시판 이용 제한, 품목 대표 사진 규칙 추가 | |
 | 2026-10-20 | 통합 검색(`/api/search`, 자동완성), 농업 뉴스(`/api/news`, 1시간마다 네이버 뉴스 검색 API 수집·품목·분류 규칙) 제안 추가 | |
+| 2026-10-21 | 가격 기준 확정(전국 도매시장 · 상 등급, 예측도 같은 기준). 시세 API 제안 변경: 등급별·출하지역별·순별 반입량·시장 목록 추가, 수급 리포트(`/api/supply`) 삭제 | |

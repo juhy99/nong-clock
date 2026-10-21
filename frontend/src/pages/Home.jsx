@@ -40,7 +40,7 @@ function TodayPrices() {
             <div className="sec-head">
               <div>
                 <h2>오늘의 주요 시세</h2>
-                <p>{shortDate(d.base_date)} {d.market} 도매가 · 1kg 기준 · {shortDate(d.compared_date)} 대비</p>
+                <p>{shortDate(d.base_date)} 도매가 · 1kg 기준 · {shortDate(d.compared_date)} 대비</p>
               </div>
               <Link className="link" to="/market">전체 시세 →</Link>
             </div>

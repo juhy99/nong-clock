@@ -17,6 +17,20 @@ const FEATURES = [
   ["🔔", "관심 품목 알림", "관심 품목의 시세 변동과 이상기후 소식, 입찰 결과를 알림으로 받아보세요.", "/mypage"],
 ];
 
+// 가격 기준 안내 (/about#price-basis). 다른 화면에는 기준을 따로 적지 않고 여기에 모아 둔다.
+const BASIS = [
+  ["기본 기준 · 전국 상 등급", "고르는 칸이 없는 화면", ["홈의 시세 띠 · 오늘의 주요 시세", "홈과 AI 예측 화면의 예측 가격", "통합 검색의 품목 요약", "마이페이지 관심 품목 가격 변동", "경매 등록의 AI 참고가 · 가격 알림"]],
+  ["직접 고를 수 있어요", "시세·수급 화면", ["시장: 전국 평균 또는 32개 도매시장", "등급: 특 · 상 · 중 · 하 · 평균", "처음 열면 전국 · 상 등급이 선택돼 있어요", "통합 검색의 \"시장별 오늘 시세\"는 시장마다 보여 줘요"]],
+  ["따로 정한 기준", "예측 · 소매가 · 품목", ["AI 예측은 전국 · 상 등급 하나만 해요", "소매가는 전국 소매가 하나예요 (등급 구분 없음)", "품목은 16가지이고 품종은 나누지 않아요 (예: 무 = 가을무·고랭지무 모두)", "날짜 비교는 직전 거래일 대비예요"]],
+];
+const GRADE_ROWS = [
+  ["특", "도매시장 경매에서 가장 좋은 품질로 매긴 등급", "시세·수급에서 골라 볼 수 있어요"],
+  ["상", "거래가 꾸준한 좋은 품질 등급 · 팜비드의 기본 기준", "기본 가격 · AI 예측"],
+  ["중", "보통 품질 등급", "시세·수급에서 골라 볼 수 있어요"],
+  ["하", "품질이 낮은 등급 · 거래가 없는 날이 많아요", "시세·수급에서 골라 볼 수 있어요"],
+  ["평균", "모든 등급을 거래량만큼 반영한 가격", "시세·수급에서 골라 볼 수 있어요"],
+];
+
 const FLOW = [
   ["① 수집", "KAMIS 도매가격, 기상청 날씨, 명절·공휴일 데이터를 모아요"],
   ["② 학습", "품목별 가격 예측 모델을 학습하고, 과거 기간으로 오차를 검증해요"],
@@ -66,6 +80,40 @@ export default function About() {
         </div>
         <p className="hint" style={{ marginBottom: 0 }}>
           예측은 참고용 정보예요. 실제 가격은 수급·유통 상황에 따라 달라질 수 있어요.
+        </p>
+      </section>
+
+      <section className="card" id="price-basis">
+        <h2 style={{ marginBottom: 12 }}>가격은 이렇게 보여드려요</h2>
+        <div className="basis-lead">
+          <div className="big">따로 고르지 않는 곳의 가격은 모두<br /><em>전국 도매시장 · 상 등급 · 1kg</em> 기준이에요</div>
+          <div className="basis-chips"><span>전국 도매시장 평균</span><span>상 등급</span><span>원/kg</span></div>
+        </div>
+        <div className="basis-grid">
+          {BASIS.map(([tag, title, lines], i) => (
+            <div key={tag}>
+              <span className={`basis-tag t${i}`}>{tag}</span>
+              <h3>{title}</h3>
+              <ul>{lines.map((l) => <li key={l}>{l}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+        <div className="table-wrap">
+          <table className="table grade-table">
+            <thead><tr><th>등급</th><th>뜻</th><th>어디에 쓰나요</th></tr></thead>
+            <tbody>
+              {GRADE_ROWS.map(([g, desc, use]) => (
+                <tr key={g} className={g === "상" ? "main" : ""}>
+                  <td><span className="g">{g}</span></td>
+                  <td>{desc}</td>
+                  <td className={g === "상" ? "" : "muted"}>{use}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="hint" style={{ marginBottom: 0 }}>
+          시세·수급 화면에서 다른 시장이나 등급을 고르면, 홈이나 예측 화면의 가격과 숫자가 다를 수 있어요. 기준이 달라서 생기는 차이예요.
         </p>
       </section>
 

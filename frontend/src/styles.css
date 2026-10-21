@@ -307,7 +307,8 @@ button.thumb.on { outline: 2px solid var(--green); outline-offset: 1px; }
 .price-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 .weather-map { padding: 0; overflow: hidden; border-radius: 28px; }
 .weather-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
-.map-wrap { background: var(--soft); padding: 18px; display: grid; justify-items: center; gap: 6px; }
+.map-wrap { background: var(--soft); padding: 18px; display: grid; justify-items: center; gap: 6px; position: relative; }
+.map-reset { position: absolute; top: 14px; left: 14px; }
 .korea-map { width: 100%; max-width: 440px; max-height: 470px; }
 .korea-map .region { stroke: #fff; stroke-width: 1.2; cursor: pointer; transition: filter 0.15s; outline: none; }
 .korea-map .region:hover, .korea-map .region:focus-visible { filter: brightness(0.92); stroke: var(--green); stroke-width: 2; }
@@ -325,6 +326,21 @@ button.thumb.on { outline: 2px solid var(--green); outline-offset: 1px; }
 .weather-detail .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .weather-detail .stats div { background: var(--soft); border-radius: 14px; padding: 11px 12px; font-size: 13px; }
 .warn-chip { display: inline-flex; align-self: start; justify-self: start; background: var(--warn-bg); color: #9a6300; border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
+.korea-map.zoomed { background: #e9f1f5; border-radius: 18px; box-shadow: inset 0 0 0 1px #dbe6ea; }
+.korea-map .mkt { cursor: pointer; }
+.korea-map .mkt circle { fill: var(--green); stroke: #fff; }
+.korea-map .mkt.on circle { fill: var(--green-dark); }
+.mkt-label { font-weight: 800; fill: var(--green-dark); paint-order: stroke; stroke: #fff; pointer-events: none; }
+.korea-map .mkt:hover circle { fill: var(--green-dark); }
+.mkt-key { margin-left: 12px; display: inline-flex; align-items: center; gap: 5px; }
+.mkt-key::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px #cfe8d8; }
+.region-markets { border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.rm-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.region-markets ul { list-style: none; margin: 0; padding: 0; display: grid; }
+.region-markets li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px dashed var(--line); font-size: 14px; }
+.region-markets li:first-child { border-top: none; }
+.region-markets .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green-dark); flex-shrink: 0; }
+.region-markets .go { margin-left: auto; color: var(--green-dark); font-weight: 700; }
 .map-credit { margin: 0; font-size: 11px; opacity: 0.6; }
 
 /* ── 게시판 ── */

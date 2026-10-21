@@ -22,7 +22,10 @@ export const ITEM_WORDS = {
 };
 
 /** 품목 이름이 들어 있지만 품목 뜻이 아닌 말. 먼저 지우고 찾는다. */
-const NOT_ITEM = ["사과문", "사과했", "사과하", "사과드", "사과를 요구", "부사장", "당근마켓", "당근과 채찍", "팽이치기"];
+const NOT_ITEM = [
+  "사과문", "사과했", "사과하", "사과드", "사과를 요구", "부사장", "당근마켓", "당근과 채찍", "팽이치기",
+  "배가 아프", "배 아프", "배가 고프", "배고프", "배를 채우", "배가 불러", "배부르",
+];
 
 // 긴 이름부터 찾아야 "양배추" 안의 "배추", "배추" 안의 "배"를 잘못 세지 않는다
 const WORDS = Object.entries(ITEM_WORDS)
@@ -34,8 +37,12 @@ const HANGUL = /[가-힣]/;
 // 앞에 한글이 없고, 뒤에 한글이 없거나 조사·"값" 같은 짧은 말이 올 때만 품목으로 본다.
 const AFTER_SINGLE = "값가는도를와과의은이랑·,";
 
+// "3배", "1.7배", "두 배", "몇 배"처럼 수를 세는 말 뒤의 한 글자는 품목이 아니다 (배수 표현)
+const COUNT_BEFORE = /([0-9.,]|(^|[^가-힣])(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|몇|수|수십|수백|수천|십|백|천|만|두세|서너|여러))\s*$/;
+
 function okBoundary(text, start, w) {
   if (w.length > 1) return true;
+  if (COUNT_BEFORE.test(text.slice(Math.max(0, start - 8), start))) return false;
   const before = text[start - 1];
   const after = text[start + 1];
   if (before && HANGUL.test(before)) return false;

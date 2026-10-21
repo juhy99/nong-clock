@@ -446,6 +446,7 @@ mark { background: #fff1a8; color: inherit; padding: 0 1px; border-radius: 3px; 
 .news-cat.dist { background: var(--green-soft); color: var(--green-dark); }
 .news-item-tag { font-size: 12px; font-weight: 700; background: var(--soft); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
 a.news-item-tag:hover { background: var(--green-soft); }
+.news-item-tag.crop { font-weight: 600; color: var(--muted); }
 .news-updated { font-size: 13px; color: var(--muted); font-weight: 500; white-space: nowrap; }
 .news-list { border-top: 2px solid var(--text); }
 .news-list.boxed { border: 1px solid var(--line); border-radius: 24px; padding: 6px 22px; }

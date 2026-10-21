@@ -5,7 +5,7 @@
 import { liveGet } from "../client";
 import { ITEMS } from "../../mocks/catalog";
 import { categorize, isAgriNews } from "../../mocks/news";
-import { findItems } from "../../utils/itemMatch";
+import { findCrops, findItems } from "../../utils/itemMatch";
 
 /** 언론사 이름 (API 가 주지 않아 원문 주소 도메인으로 붙인다. 없으면 도메인 그대로) */
 const PRESS = {
@@ -70,6 +70,7 @@ function toRows(raw) {
       url,
       published_at: new Date(a.pubDate).toISOString(),
       items: findItems(`${title} ${summary}`),
+      crops: findCrops(`${title} ${summary}`),
       category: categorize(title, summary),
     });
   }

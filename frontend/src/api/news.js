@@ -6,6 +6,7 @@ import { DATA_SOURCE, fake } from "./client";
 import { liveNewsPool } from "./live/naverNews";
 import { ITEMS } from "../mocks/catalog";
 import { NEWS_CATEGORIES, labelNews } from "../mocks/news";
+import { OTHER_CROPS, cropOfQuery } from "../utils/itemMatch";
 
 export { NEWS_CATEGORIES };
 export const NEWS_REFRESH_MINUTES = 60;
@@ -29,23 +30,30 @@ const newestFirst = (a, b) => new Date(b.published_at) - new Date(a.published_at
 const itemInfo = (code) => ITEMS.find((i) => i.code === code);
 
 /** 화면에 품목 이름·이모지를 바로 쓰도록 붙여 준다 (Spring 응답도 같은 모양 제안) */
-const withTags = (n) => ({ ...n, item_tags: n.items.map((c) => ({ item: c, name: itemInfo(c)?.name ?? c, emoji: itemInfo(c)?.emoji ?? "🧺" })) });
+const withTags = (n) => ({
+  ...n,
+  item_tags: n.items.map((c) => ({ item: c, name: itemInfo(c)?.name ?? c, emoji: itemInfo(c)?.emoji ?? "🧺" })),
+  // 16개 품목 밖 작물 (시세·예측 화면이 없어 링크 없이 표시)
+  crop_tags: (n.crops ?? []).map((c) => ({ crop: c, name: OTHER_CROPS[c]?.name ?? c, emoji: OTHER_CROPS[c]?.emoji ?? "🌱" })),
+});
 
 /**
  * 뉴스 목록 (최신순)
  * @param {{category?: string, item?: string, items?: string[], q?: string, qItem?: string, page?: number, size?: number}} opts
  *   item: 품목 하나, items: 이 중 하나라도 걸린 기사 (내 관심 품목만),
  *   q: 제목·요약 검색, qItem: 검색어가 가리키는 품목 (예: "부사" → apple 태그 기사도 함께)
+ *   검색어가 품목 밖 작물이면 그 작물 태그 기사도 함께 (예: "포도" → 샤인머스캣 기사)
  * @returns {Promise<{rows: object[], total: number, page: number, pages: number, updated_at: string, next_update_at: string}>}
  */
 export async function getNews({ category = "", item = "", items = null, q = "", qItem = null, page = 1, size = NEWS_PAGE_SIZE } = {}) {
   const word = q.trim().toLowerCase();
+  const qCrop = word ? cropOfQuery(word) : null;
   const { rows: pool, fetchedAt } = await newsPool();
   const rows = pool
     .filter((n) => !category || n.category === category)
     .filter((n) => !item || n.items.includes(item))
     .filter((n) => !items || n.items.some((c) => items.includes(c)))
-    .filter((n) => !word || `${n.title} ${n.summary}`.toLowerCase().includes(word) || (qItem && n.items.includes(qItem)))
+    .filter((n) => !word || `${n.title} ${n.summary}`.toLowerCase().includes(word) || (qItem && n.items.includes(qItem)) || (qCrop && n.crops?.includes(qCrop)))
     .sort(newestFirst);
   const pages = Math.max(1, Math.ceil(rows.length / size));
   const cur = Math.min(Math.max(1, page), pages);

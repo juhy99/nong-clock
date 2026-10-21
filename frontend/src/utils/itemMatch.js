@@ -23,14 +23,35 @@ export const ITEM_WORDS = {
 
 /** 품목 이름이 들어 있지만 품목 뜻이 아닌 말. 먼저 지우고 찾는다. */
 const NOT_ITEM = [
-  "사과문", "사과했", "사과하", "사과드", "사과를 요구", "부사장", "당근마켓", "당근과 채찍", "팽이치기",
+  "사과했", "사과하", "사과드", "사과를 요구", "부사장", "당근마켓", "당근과 채찍", "팽이치기",
   "배가 아프", "배 아프", "배가 고프", "배고프", "배를 채우", "배가 불러", "배부르",
+  // 사과(謝過)·별명·비유
+  "사과는커녕", "사과 요구", "사과를 촉구", "사과 촉구", "공식 사과", "대국민 사과", "사과의 뜻", "사과 한마디", "사과 없", "사과받", "사과문",
+  "감자님", "고구마님", "고구마 전개", "고구마 같은", "고구마 답답",
+  // 다른 작물 이름이 들어 있지만 작물이 아닌 말
+  "고추장", "포도당", "포도막", "오이도",
 ];
 
+/**
+ * 팜비드 16개 품목 밖이지만 기사에 자주 나오는 작물. 뉴스 태그로만 보여 준다 (시세·예측 화면이 없으므로 링크 없음).
+ * 품목이 늘어나면 여기서 ITEM_WORDS 로 옮기면 된다.
+ */
+export const OTHER_CROPS = {
+  grape: { name: "포도", emoji: "🍇", words: ["포도", "샤인머스캣", "샤인머스켓", "캠벨얼리", "거봉", "청포도", "적포도"] },
+  peach: { name: "복숭아", emoji: "🍑", words: ["복숭아"] },
+  strawberry: { name: "딸기", emoji: "🍓", words: ["딸기", "설향"] },
+  garlic: { name: "마늘", emoji: "🧄", words: ["마늘", "깐마늘"] },
+  pepper: { name: "고추", emoji: "🌶️", words: ["고추", "건고추", "홍고추", "풋고추"] },
+  paprika: { name: "파프리카", emoji: "🫑", words: ["파프리카"] },
+  oriental_melon: { name: "참외", emoji: "🍈", words: ["참외"] },
+  cucumber: { name: "오이", emoji: "🥒", words: ["오이"] },
+  pumpkin: { name: "호박", emoji: "🎃", words: ["애호박", "단호박", "늙은호박"] },
+};
+
 // 긴 이름부터 찾아야 "양배추" 안의 "배추", "배추" 안의 "배"를 잘못 세지 않는다
-const WORDS = Object.entries(ITEM_WORDS)
-  .flatMap(([code, words]) => words.map((w) => ({ code, w })))
-  .sort((a, b) => b.w.length - a.w.length);
+const byLength = (entries) => entries.flatMap(([code, words]) => words.map((w) => ({ code, w }))).sort((a, b) => b.w.length - a.w.length);
+const WORDS = byLength(Object.entries(ITEM_WORDS));
+const CROP_WORDS = byLength(Object.entries(OTHER_CROPS).map(([code, c]) => [code, c.words]));
 
 const HANGUL = /[가-힣]/;
 // 한 글자 품목(배, 무, 귤)은 "배송", "무료"처럼 다른 낱말의 일부인 경우가 많다.
@@ -54,12 +75,20 @@ function okBoundary(text, start, w) {
  * @param {string} text
  * @returns {string[]}
  */
-export function findItems(text) {
+export const findItems = (text) => matchCodes(text, WORDS);
+
+/** 16개 품목 밖 작물 코드 (OTHER_CROPS 의 키, 예: "샤인머스캣 수출" → ["grape"]) */
+export const findCrops = (text) => matchCodes(text, CROP_WORDS);
+
+/** 검색어가 가리키는 품목 밖 작물 하나 (예: "샤인머스캣" → grape). 없으면 null */
+export const cropOfQuery = (q) => findCrops(q)[0] ?? null;
+
+function matchCodes(text, words) {
   let t = String(text ?? "");
   for (const n of NOT_ITEM) t = t.replaceAll(n, " ".repeat(n.length));
   const taken = new Array(t.length).fill(false);
   const hits = [];
-  for (const { code, w } of WORDS) {
+  for (const { code, w } of words) {
     let i = t.indexOf(w);
     while (i !== -1) {
       const free = !taken.slice(i, i + w.length).some(Boolean);

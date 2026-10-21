@@ -34,6 +34,7 @@ export function NewsArticle({ n, q, links = true }) {
       <div className="mt">
         <NewsCat category={n.category} />
         {n.item_tags.map((t) => <ItemTag key={t.item} tag={t} />)}
+        {n.crop_tags?.map((t) => <span key={t.crop} className="news-item-tag crop" title="팜비드 시세·예측 품목은 아니에요">{t.emoji} {t.name}</span>)}
         <span>{n.press} · {timeAgo(n.published_at)}</span>
         {links && first && (
           <Link className="go" to={n.category === "가격·수급" ? `/market?item=${first.item}` : `/ai?item=${first.item}`}>

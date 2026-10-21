@@ -48,16 +48,20 @@ function search(query) {
 }
 
 /** 서버가 저장할 때 하는 일과 같게: 농업 기사만, 같은 기사 한 번만, 품목·분류 붙이기 */
+// 같은 보도자료를 여러 언론사가 그대로 싣는 경우가 많아 제목(띄어쓰기·기호 뺀 것)이 같으면 한 번만
+const titleKey = (t) => t.replace(/[^가-힣a-zA-Z0-9]/g, "");
+
 function toRows(raw) {
   const seen = new Set();
   const rows = [];
-  for (const a of raw) {
+  for (const a of [...raw].sort((x, y) => new Date(y.pubDate) - new Date(x.pubDate))) {
     const url = a.originallink || a.link;
-    if (!url || seen.has(url)) continue;
-    seen.add(url);
     const title = clean(a.title);
+    if (!url || seen.has(url) || seen.has(titleKey(title))) continue;
+    seen.add(url);
+    seen.add(titleKey(title));
     const summary = clean(a.description);
-    if (!isAgriNews(`${title} ${summary}`)) continue;
+    if (!isAgriNews(title, summary)) continue;
     rows.push({
       id: url,
       title,

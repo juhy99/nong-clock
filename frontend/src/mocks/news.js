@@ -13,11 +13,33 @@ const CATEGORY_WORDS = {
   "유통·경매": ["경매", "도매시장", "온라인", "유통", "판로", "직거래", "수출", "판매", "물류"],
 };
 
-/** 농업 기사로 볼 단어. 하나도 없으면 품목 이름이 나와도 담지 않는다 ("사과문", "배 위에서" 같은 기사 거르기). */
-const AGRI_WORDS = ["농산물", "농가", "산지", "도매", "출하", "작황", "재배", "수확", "시세", "가격", "kg", "과원", "농업", "경매", "저장"];
+/**
+ * 농업 기사 거르기 (점수). 단어가 제목에 나오면 2점, 요약에만 나오면 1점 (같은 단어는 한 번만 센다).
+ * - 농업 단어: 농산물 생산·유통·시세를 말할 때 쓰는 말. "가격"·"값"처럼 어디에나 나오는 말은 넣지 않는다
+ * - 잡음 단어: 맛집·축제·증시처럼 농산물 이름이 나와도 주제가 다른 기사. 제목 -3점, 요약 -2점
+ * - 정규식은 다른 낱말 속 글자를 피하려고 쓴다 ("부산지검"의 "산지"는 세지 않음)
+ * 3점 이상이면 담는다. 제목에 우리 품목이 있으면 잡음만 없으면(0점 이상) 담는다 ("배 수출 물량 늘어" 같은 짧은 제목)
+ */
+const AGRI_WORDS = [
+  "농산물", "농가", "농민", "농업", "농협", "농식품부", "농촌진흥청", /(^|[^가-힣]|주)산지/, "도매", "공판장", "가락시장", "경락", "경매",
+  "출하", "작황", "수급", "재배", "수확", "생육", "생산량", "반입", "저장", "비축", "과수", "과원", "채소", "청과", "시세",
+  "냉해", "병해충", "서리", "김장", "할당관세", "kg",
+];
+const NOISE_WORDS = [
+  "맛집", "레시피", "요리", "메뉴", "식당", "먹거리", "생생정보", "축제", "여행", "관광", "맛있", "디저트", "카페",
+  "금리", "금통위", "증시", "주가", "코스피", "코스닥", "환율", "부동산", "아파트", "채권", "연예", "드라마", "예능", "결혼",
+  "야구", "축구", "골프", "화장품", "우호도시",
+];
 
-export function isAgriNews(text) {
-  return AGRI_WORDS.some((w) => text.includes(w));
+export function agriScore(title, summary) {
+  const has = (text, w) => (typeof w === "string" ? text.includes(w) : w.test(text));
+  const score = (words, t, s) => words.reduce((n, w) => n + (has(title, w) ? t : has(summary, w) ? s : 0), 0);
+  return score(AGRI_WORDS, 2, 1) - score(NOISE_WORDS, 3, 2);
+}
+
+export function isAgriNews(title, summary = "") {
+  const s = agriScore(title, summary);
+  return s >= 3 || (s >= 0 && findItems(title).length > 0);
 }
 
 export function categorize(title, summary) {
@@ -68,7 +90,7 @@ const RAW = [
 /** 수집한 기사에 품목·분류를 붙이고, 농업 기사가 아닌 것은 뺀다 (서버가 저장할 때 하는 일) */
 export function labelNews(now = Date.now()) {
   return RAW.map(([hoursAgo, press, title, summary], i) => ({ id: i + 1, hoursAgo, press, title, summary }))
-    .filter((n) => isAgriNews(`${n.title} ${n.summary}`))
+    .filter((n) => isAgriNews(n.title, n.summary))
     .map(({ id, hoursAgo, press, title, summary }) => ({
       id,
       title,

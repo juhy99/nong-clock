@@ -20,7 +20,7 @@ Spring·DB 가 생기기 전에 **내 PC에서만** 기상청·네이버 실제 
 
 1. `frontend/.env.example` 아래쪽을 `frontend/.env` 에 복사해 주석(`#`)을 풀고 키를 채웁니다
    - `DATA_GO_KR_KEY`: 공공데이터포털 일반 인증키(Decoding). 기상청 단기예보·기상특보 활용신청 필요
-   - `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET`: 네이버 개발자센터 "검색" API
+   - `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET`: **NAVER API HUB**(네이버클라우드 콘솔) Application 의 Client ID · Client Secret, 검색(뉴스) API 선택. 네이버 개발자센터 검색 API 는 2026-07-31 에 신규 신청이 끝났습니다
 2. `npm run dev` 를 다시 실행 → 화면 왼쪽 아래에 보라색 **테스트 모드** 표시
 
 | 화면 | 실제로 바뀌는 것 |

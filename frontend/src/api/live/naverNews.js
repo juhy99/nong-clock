@@ -1,6 +1,7 @@
 // 테스트 모드(live) 전용: 네이버 뉴스 검색 API 로 기사를 직접 받아 품목·분류를 붙인다.
 // 실제 서비스에서는 수집기가 1시간마다 이 일을 하고 DB에 쌓는다 (명세 2-14). 여기서는 화면을 열 때 받아 10분간 재사용한다.
-// 주소는 /live/naver/... → Vite 개발 서버가 openapi.naver.com 으로 보내며 Client ID·Secret 헤더를 붙인다 (vite.config.js).
+// 주소는 /live/naver/... → Vite 개발 서버가 NAVER API HUB(naverapihub.apigw.ntruss.com)로 보내며 Client ID·Secret 헤더를 붙인다 (vite.config.js).
+// HUB 뉴스 검색 응답의 items(title·originallink·link·description·pubDate)는 예전 개발자센터 API 와 같은 모양이다.
 import { liveGet } from "../client";
 import { ITEMS } from "../../mocks/catalog";
 import { categorize, isAgriNews } from "../../mocks/news";
@@ -37,8 +38,8 @@ function search(query) {
   const hit = cache.get(query);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.promise;
   const q = new URLSearchParams({ query, display: 50, sort: "date" });
-  const promise = liveGet(`/live/naver/v1/search/news.json?${q}`).then((d) => {
-    if (!Array.isArray(d?.items)) throw new Error(`네이버: ${d?.errorMessage ?? "응답 형식이 다릅니다"}`);
+  const promise = liveGet(`/live/naver/search/v1/news?${q}`).then((d) => {
+    if (!Array.isArray(d?.items)) throw new Error(`네이버: ${d?.error?.message ?? d?.errorMessage ?? "응답 형식이 다릅니다"}`);
     return d.items;
   });
   promise.catch(() => cache.delete(query));

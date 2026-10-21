@@ -35,11 +35,12 @@ const liveProxy = (env) => {
       changeOrigin: true,
       rewrite: (p) => `${p.replace(/^\/live\/kma/, "")}${p.includes("?") ? "&" : "?"}serviceKey=${serviceKey}`,
     },
+    // 네이버 검색 API 는 2026-07-31 부터 NAVER API HUB(네이버클라우드)로 이전 → HUB 주소·헤더 사용
     "/live/naver": {
-      target: "https://openapi.naver.com",
+      target: "https://naverapihub.apigw.ntruss.com",
       changeOrigin: true,
       rewrite: (p) => p.replace(/^\/live\/naver/, ""),
-      headers: { "X-Naver-Client-Id": env.NAVER_CLIENT_ID ?? "", "X-Naver-Client-Secret": env.NAVER_CLIENT_SECRET ?? "" },
+      headers: { "X-NCP-APIGW-API-KEY-ID": (env.NAVER_CLIENT_ID ?? "").trim(), "X-NCP-APIGW-API-KEY": (env.NAVER_CLIENT_SECRET ?? "").trim() },
     },
   };
 };

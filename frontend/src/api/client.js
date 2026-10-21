@@ -56,7 +56,11 @@ export async function liveGet(path, { timeoutMs = 15000 } = {}) {
       if (msg) throw new ApiError(`API 오류: ${msg}`, res.status);
       throw new ApiError(text ? `API 응답을 읽을 수 없습니다 (HTTP ${res.status})` : "외부 API 에 연결하지 못했습니다 (인터넷 연결 확인)", res.status);
     }
-    if (!res.ok) throw new ApiError(`API 오류: ${data?.errorMessage ?? data?.message ?? `HTTP ${res.status}`}`, res.status);
+    if (!res.ok) {
+      const e = data?.error; // NAVER API HUB: { error: { errorCode, message, details } }
+      const msg = e ? `${e.message}${e.details ? ` (${e.details})` : ""}` : data?.errorMessage ?? data?.message ?? `HTTP ${res.status}`;
+      throw new ApiError(`API 오류: ${msg}`, res.status);
+    }
     return data;
   } catch (e) {
     if (e instanceof ApiError) throw e;

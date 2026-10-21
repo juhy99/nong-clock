@@ -1,7 +1,8 @@
 // 시세·날씨 (Spring 담당). 지금은 가짜 데이터를 돌려준다.
 // Spring API 가 생기면 각 함수 안쪽만 request(SPRING_API_BASE, "/api/...") 로 바꾸면 화면은 그대로 동작한다.
 // 기준: 따로 고르지 않는 가격은 모두 전국 도매시장(national) · 상 등급(HIGH) · 원/kg. 안내는 서비스 소개 화면에 있다.
-import { fake } from "./client";
+import { DATA_SOURCE, fake } from "./client";
+import { liveRegionalWeather } from "./live/kmaWeather";
 import {
   MARKETS, mockGradePrices, mockMarketCompare, mockOriginPrices, mockPriceHistory, mockTodayPrices, mockVolumeTrend,
 } from "../mocks/market";
@@ -39,5 +40,5 @@ export const getVolumeTrend = (item, { market, date } = {}) => fake(mockVolumeTr
 /** 시장별 오늘 가격 (통합 검색) */
 export const getMarketCompare = (item) => fake(mockMarketCompare(item));
 
-/** 홈 날씨 지도: 시·도 17곳의 오늘 날씨와 특보 */
-export const getRegionalWeather = () => fake(mockRegionalWeather());
+/** 홈 날씨 지도: 시·도 17곳의 오늘 날씨와 특보 (테스트 모드에서는 기상청 실제 값) */
+export const getRegionalWeather = () => (DATA_SOURCE === "live" ? liveRegionalWeather() : fake(mockRegionalWeather()));

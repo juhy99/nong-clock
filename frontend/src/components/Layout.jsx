@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { getTodayPrices } from "../api/market";
-import { ML_API_BASE } from "../api/client";
+import { DATA_SOURCE, ML_API_BASE } from "../api/client";
 import { onMlOffline } from "../api/ml";
 import { suggest } from "../api/search";
 import { pct, won } from "../utils/format";
@@ -214,6 +214,11 @@ export default function Layout() {
       <main className="container">
         <Outlet />
       </main>
+      {DATA_SOURCE === "live" && (
+        <div className="live-badge" title="frontend/.env 의 VITE_DATA_SOURCE=live · 날씨·뉴스만 실제 API, 나머지는 가짜 데이터">
+          테스트 모드 · 날씨·뉴스 실제 데이터
+        </div>
+      )}
       <footer className="footer">
         FarmBid · 시세·경매·회원 데이터는 개발용 가상 데이터입니다 (실서비스 연동 시 KAMIS·aT 도매시장 API) ·{" "}
         <Link to="/about" className="link small">서비스 소개 · 문의</Link>

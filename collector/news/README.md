@@ -26,7 +26,7 @@ python -m unittest -v            # 검사
 | 새 기사만 | 지난 수집 시각(− 2시간 여유) 이후 기사만. 처음엔 검색어마다 100건 |
 | 같은 기사 한 번만 | 원문 주소가 같거나, 띄어쓰기·기호를 뺀 제목이 같으면 (보도자료를 여러 언론사가 실은 경우) |
 | 거르기·태그 | `rules.py` — 농업 기사 점수, 품목·작물 태그, 분류, 언론사 이름 |
-| 저장 | `data/news.json` 최신순, 90일 지난 기사는 지움 |
+| 저장 | `data/news.json` 최신순 90일 · `data/news-recent.json` 최근 7일 (화면용) |
 | 기록 | `data/collect_log.json` (최근 100회), 이번에 거른 기사 `data/rejected.json` |
 | 실패 | 기존 기사는 그대로 두고 다음 수집 때 다시. 키 오류(401·403)면 바로 멈춤 |
 
@@ -53,6 +53,13 @@ python -m unittest -v            # 검사
 
 DB 가 생기면 `save_news()` 만 테이블 저장으로 바꾸면 됩니다 (뉴스 테이블: `url` 고유, 제목·요약·언론사·발행 시각·분류·품목 목록 / 수집 기록: 마지막 성공 시각).
 
+`data/news-recent.json` 은 최근 7일만 담은 화면용 파일입니다 (90일 전체는 수십 MB 가 되어 화면이 받기에 큼).
+
+## 서버에서 돌리기
+
+팀 서버 컴퓨터에서는 `docker compose` 의 `news-collector` 서비스로 1시간마다 돌고, 화면은 `http://서버주소/data/news-recent.json` 을 읽습니다 → **`deploy/README.md`**.
+
 ## 화면에서 보기
 
-프론트 테스트 모드(`VITE_DATA_SOURCE=live`)로 `npm run dev` 를 켜면 이 파일이 있을 때 화면 뉴스가 **수집한 기사**로 나옵니다 (없으면 네이버를 직접 부름).
+- 서버에 모인 기사: `frontend/.env` 에 `VITE_NEWS_URL=http://서버주소/data/news-recent.json`
+- 내 PC 에서 돌린 기사: 프론트 테스트 모드(`VITE_DATA_SOURCE=live`)로 `npm run dev` 를 켜면 이 폴더의 `data/` 파일을 읽음 (없으면 네이버를 직접 부름)

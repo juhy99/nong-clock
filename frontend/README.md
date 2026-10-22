@@ -32,7 +32,8 @@ Spring·DB 가 생기기 전에 **내 PC에서만** 기상청·네이버 실제 
 - 받은 데이터는 10분간 다시 쓰고, 그 뒤 화면을 열면 새로 받습니다 (뉴스 18회·날씨 35회 호출)
 - **임시 구조입니다.** 실제 서비스는 수집기 → DB → Spring API → 화면. 빌드한 배포본은 항상 가짜 데이터(mock)로 동작합니다
 - 시세·경매·회원은 테스트 모드에서도 가짜 데이터입니다
-- **뉴스 거르기 규칙:** `mocks/news.js` 의 `agriScore`·`isAgriNews` (농업 단어 +, 맛집·증시 같은 잡음 단어 −, 같은 제목 기사는 한 번만). 품목 별칭은 `utils/itemMatch.js`. 16개 품목 밖 작물(포도·샤인머스캣, 복숭아, 딸기, 마늘, 고추 등)은 `OTHER_CROPS` 로 링크 없는 회색 태그만 붙습니다 (검색 "포도" → 샤인머스캣 기사도 나옴)
+- **뉴스 거르기 규칙:** 단어 목록·기준 점수는 저장소 맨 위 `shared/news_rules.json` (뉴스 수집기 `collector/news` 와 같이 씀). 찾는 방식은 `utils/itemMatch.js`·`mocks/news.js`. 16개 품목 밖 작물(포도·샤인머스캣, 복숭아, 딸기, 마늘, 고추 등)은 링크 없는 회색 태그만 붙습니다 (검색 "포도" → 샤인머스캣 기사도 나옴)
+- **수집한 기사로 보기:** `collector/news` 에서 `python collect_news.py` 로 모은 `data/news.json` 이 있으면 테스트 모드 뉴스가 그 기사로 나옵니다 (없으면 네이버 직접 호출)
 - **규칙 다듬기용 표본:** 테스트 모드로 `npm run dev` 를 켜 둔 채 `node scripts/news-sample.mjs` → `frontend/news-sample.json` (네이버 원본, 커밋 안 됨)
 
 ## 데모 계정 (로그인 화면에서 클릭하면 입력됨)

@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
@@ -45,9 +46,29 @@ const liveProxy = (env) => {
   };
 };
 
+// 테스트 모드: 뉴스 수집기(collector/news)가 저장한 기사 파일을 /live/collected-news 로 보여준다. 파일이 없으면 404 → 화면이 네이버를 직접 부름
+const collectedNews = (env) => ({
+  name: "collected-news",
+  configureServer(server) {
+    if (env.VITE_DATA_SOURCE !== "live") return;
+    server.middlewares.use("/live/collected-news", async (_req, res) => {
+      try {
+        const body = await readFile(resolve(__dirname, "../collector/news/data/news.json"));
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(body);
+      } catch {
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(JSON.stringify({ message: "수집한 기사가 없습니다 (collector/news 에서 python collect_news.py)" }));
+      }
+    });
+  },
+});
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), adminFallback()],
-  server: { port: 5173, proxy: liveProxy(loadEnv(mode, __dirname, "")) },
+  plugins: [react(), adminFallback(), collectedNews(loadEnv(mode, __dirname, ""))],
+  // shared/news_rules.json(수집기와 같이 쓰는 뉴스 규칙)이 frontend 밖에 있어 한 단계 위까지 읽게 허용
+  server: { port: 5173, proxy: liveProxy(loadEnv(mode, __dirname, "")), fs: { allow: [".."] } },
   build: {
     rollupOptions: {
       input: { main: resolve(__dirname, "index.html"), admin: resolve(__dirname, "admin/index.html") },

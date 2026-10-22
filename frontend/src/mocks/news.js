@@ -1,62 +1,45 @@
 // 농업 뉴스 가짜 데이터 (Spring 담당 API 가 생기기 전까지 사용).
-// 실제로는 서버가 1시간마다 네이버 뉴스 검색 API 로 기사를 모으고, 아래 규칙으로 품목·분류를 붙여 저장한다.
+// 실제로는 수집기(collector/news)가 1시간마다 네이버 뉴스 검색 API 로 기사를 모으고, 아래와 같은 규칙으로 품목·분류를 붙여 저장한다.
 // 기사 제목·언론사는 모두 화면 확인용으로 지어낸 예시이고, 링크는 example.com 으로 간다.
+import RULES from "../../../shared/news_rules.json";
 import { findCrops, findItems } from "../utils/itemMatch";
 
-export const NEWS_CATEGORIES = ["가격·수급", "기상·재해", "정책·지원", "유통·경매"];
-
-/** 분류별 단어. 제목에 나오면 2점, 요약에 나오면 1점. 점수가 가장 높은 분류를 붙이고, 없으면 "기타". */
-const CATEGORY_WORDS = {
-  "가격·수급": ["가격", "시세", "도매가", "값", "출하", "반입", "수급", "폭등", "하락", "상승", "강세", "약세", "작황"],
-  "기상·재해": ["서리", "한파", "폭염", "호우", "장마", "태풍", "냉해", "가뭄", "병해충", "우박", "기상", "저온"],
-  "정책·지원": ["정부", "농식품부", "대책", "지원", "비축", "할당관세", "예산", "보조금", "보험", "제도"],
-  "유통·경매": ["경매", "도매시장", "온라인", "유통", "판로", "직거래", "수출", "판매", "물류"],
-};
+export const NEWS_CATEGORIES = Object.keys(RULES.categories);
 
 /**
- * 농업 기사 거르기 (점수). 단어가 제목에 나오면 2점, 요약에만 나오면 1점 (같은 단어는 한 번만 센다).
- * - 농업 단어: 농산물 생산·유통·시세를 말할 때 쓰는 말. "가격"·"값"처럼 어디에나 나오는 말은 넣지 않는다
- * - 잡음 단어: 맛집·축제·증시처럼 농산물 이름이 나와도 주제가 다른 기사. 제목 -3점, 요약 -2점
- * - 정규식은 다른 낱말 속 글자를 피하려고 쓴다 ("부산지검"의 "산지"는 세지 않음)
- * 담는 기준
- * - 4점 이상, 또는 3점 이상이면서 제목에 농업 단어·작물 이름·작물 맥락 말(가격 등)이 있을 때 (요약에만 농업 얘기가 스친 정치·경제 기사 거르기)
- * - 제목에 작물 이름(16개 품목 + OTHER_CROPS)이 있으면 잡음이 없고(0점 이상) 가격·수출 같은 작물 맥락 말이 하나라도 있을 때
+ * 농업 기사 거르기 (점수). 단어 목록·기준 점수는 shared/news_rules.json (수집기 collector/news/rules.py 와 같은 규칙).
+ * - 농업 단어(agri_words)는 제목 2점·요약 1점, 잡음 단어(noise_words)는 제목 -3점·요약 -2점, 같은 단어는 한 번만
+ * - 4점 이상, 또는 3점 이상이면서 제목에 농업 단어·작물 이름·작물 맥락 말(가격 등)이 있을 때 담는다
+ * - 제목에 작물 이름이 있으면 잡음이 없고(0점 이상) 글에 작물 맥락 말이 하나라도 있을 때 담는다
  *   ("배 수출 물량 늘어"는 담고, "사과는커녕 도발", "과장님 대신 감자님"은 거른다)
  */
-const AGRI_WORDS = [
-  "농산물", "농가", "농민", "농업", "농협", "농식품부", "농촌진흥청", /(^|[^가-힣]|주)산지/, "도매", "공판장", "가락시장", "경락", "경매",
-  "출하", "작황", "수급", "재배", "수확", "생육", "생산량", "반입", "저장", "비축", "과수", "과원", "채소", "청과", "시세",
-  "냉해", "병해충", "서리", "김장", "할당관세", "kg", "농축산물", "농·축산물", "신선식품", "채소값", "과일값", "장바구니 물가", "방제", "종자",
-];
-const NOISE_WORDS = [
-  "맛집", "레시피", "요리", "메뉴", "식당", "먹거리", "생생정보", "축제", "여행", "관광", "맛있", "디저트", "카페",
-  "금리", "금통위", "증시", "주가", "코스피", "코스닥", "환율", "부동산", "아파트", "채권", "연예", "드라마", "예능", "결혼",
-  "야구", "축구", "골프", "화장품", "우호도시",
-];
-
-/** 작물 이름이 작물 뜻으로 쓰였는지 볼 말 (농업 단어보다 넓게) */
-const CONTEXT_WORDS = ["가격", "값", "수출", "수입", "물량", "생산", "소비", "판매", "품종", "제철", "산업", "당도", "열매", "농사", "출하", "재배", "수확", "농가", "농작물", "밭", "피해"];
+const toMatcher = (w) => (typeof w === "string" ? w : new RegExp(w.re));
+const AGRI_WORDS = RULES.agri_words.map(toMatcher);
+const NOISE_WORDS = RULES.noise_words.map(toMatcher);
+const CONTEXT_WORDS = RULES.context_words.map(toMatcher);
+const SCORE = RULES.score;
 
 const has = (text, w) => (typeof w === "string" ? text.includes(w) : w.test(text));
 
 export function agriScore(title, summary) {
   const score = (words, t, s) => words.reduce((n, w) => n + (has(title, w) ? t : has(summary, w) ? s : 0), 0);
-  return score(AGRI_WORDS, 2, 1) - score(NOISE_WORDS, 3, 2);
+  return score(AGRI_WORDS, SCORE.agri_title, SCORE.agri_summary) - score(NOISE_WORDS, SCORE.noise_title, SCORE.noise_summary);
 }
 
 export function isAgriNews(title, summary = "") {
   const s = agriScore(title, summary);
   const cropInTitle = findItems(title).length > 0 || findCrops(title).length > 0;
   const topicInTitle = cropInTitle || [...AGRI_WORDS, ...CONTEXT_WORDS].some((w) => has(title, w));
-  if (s >= 4 || (s >= 3 && topicInTitle)) return true;
+  if (s >= SCORE.keep || (s >= SCORE.keep_with_topic && topicInTitle)) return true;
   const text = `${title} ${summary}`;
-  return cropInTitle && s >= 0 && [...CONTEXT_WORDS, ...AGRI_WORDS].some((w) => has(text, w));
+  return cropInTitle && s >= SCORE.keep_crop_in_title && [...CONTEXT_WORDS, ...AGRI_WORDS].some((w) => has(text, w));
 }
 
+/** 분류별 단어가 제목에 나오면 2점, 요약에 나오면 1점. 점수가 가장 높은 분류, 없으면 "기타" */
 export function categorize(title, summary) {
   let best = "기타";
   let bestScore = 0;
-  for (const [cat, words] of Object.entries(CATEGORY_WORDS)) {
+  for (const [cat, words] of Object.entries(RULES.categories)) {
     const score = words.reduce((s, w) => s + (title.includes(w) ? 2 : 0) + (summary.includes(w) ? 1 : 0), 0);
     if (score > bestScore) [best, bestScore] = [cat, score];
   }

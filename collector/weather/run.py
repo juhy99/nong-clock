@@ -74,14 +74,16 @@ def write_json(path, obj):
 
 
 def append_log(path, run):
-    try:
-        runs = json.loads(path.read_text(encoding='utf-8')).get('runs', []) if path.exists() else []
-    except (ValueError, OSError):
-        bad = path.with_name(path.name + f'.깨짐_{now():%Y%m%d_%H%M%S}')
-        shutil.copy2(path, bad)                     # 깨진 기록은 옮겨 두고 새로 시작
-        runs = []
-    runs = (runs + [run])[-KEEP_RUNS:]
-    write_json(path, {'runs': runs})
+    # 예보(3시간마다)와 관측(매일)이 같이 돌다 동시에 끝나도 기록이 덮어써지지 않게 잠금 (서버 scheduler.py 는 둘을 따로 실행)
+    with Lock('log', wait=120):
+        try:
+            runs = json.loads(path.read_text(encoding='utf-8')).get('runs', []) if path.exists() else []
+        except (ValueError, OSError):
+            bad = path.with_name(path.name + f'.깨짐_{now():%Y%m%d_%H%M%S}')
+            shutil.copy2(path, bad)                     # 깨진 기록은 옮겨 두고 새로 시작
+            runs = []
+        runs = (runs + [run])[-KEEP_RUNS:]
+        write_json(path, {'runs': runs})
 
 
 class Lock:

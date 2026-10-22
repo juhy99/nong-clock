@@ -2,6 +2,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import southKorea from "@svg-maps/south-korea";
 import { getMarkets, getRegionalWeather } from "../api/market";
+import { getWeatherHistory } from "../api/weather";
+import RecentWeather from "./RecentWeather";
 import { useAuth } from "./AuthContext";
 import { Async, useAsync } from "./common";
 import { dateTime } from "../utils/format";
@@ -154,6 +156,7 @@ export default function WeatherMap() {
   const { user } = useAuth();
   const state = useAsync(getRegionalWeather);
   const marketState = useAsync(getMarkets);
+  const historyState = useAsync(getWeatherHistory);
   const markets = (marketState.data ?? []).filter((m) => m.lat != null);
   const [picked, setPicked] = useState(null);
   const [zoom, setZoom] = useState(false);
@@ -205,6 +208,7 @@ export default function WeatherMap() {
                   <div>🌡️ 지온 {val(sel.soil_temp, "°")}</div>
                 </div>
                 <p className="small" style={{ margin: 0 }}>🌱 {sel.note}</p>
+                <RecentWeather state={historyState} sido={sel.name} />
                 {markets.length > 0 && <RegionMarkets region={sel} markets={markets} center={boxes[sel.id]} favorites={user?.favorites} />}
                 {warnings.length > 0 && (
                   <p className="small muted" style={{ margin: 0 }}>

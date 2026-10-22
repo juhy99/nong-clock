@@ -8,7 +8,7 @@ export default function SystemStatus() {
     <section className="card">
       <SectionHead
         title="서버·API 상태"
-        desc={`화면 버전·뉴스 수집기·ML API(${ML_API_BASE}/health)는 실제로 확인합니다. Spring·DB 는 개발 전입니다.`}
+        desc={`화면 버전·뉴스·날씨 수집기·ML API(${ML_API_BASE}/health)는 실제로 확인합니다. Spring·DB 는 개발 전입니다.`}
         right={<button className="btn sm" onClick={state.reload} disabled={state.loading}>{state.loading ? "확인 중…" : "다시 확인"}</button>}
       />
       <Async state={state}>

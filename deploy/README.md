@@ -77,7 +77,7 @@ VITE_ML_API_BASE=http://서버주소/ml
 
 1. 내 PC 에서 브랜치 → 커밋 → push → PR
 2. PR 이 **main 에 합쳐지면** 10분 안에 서버가 받아서 바뀐 서비스만 다시 빌드
-3. 확인: `deploy\deploy.log` (서버) 또는 `docker compose ps`
+3. 확인: 관리자 화면 오른쪽 위 **배포 커밋 번호** (관리자 › 대시보드 › 서버·API 상태에 커밋 메시지·시각), 또는 서버의 `deploy\deploy.log`
 
 바로 반영하고 싶으면 서버에서 `powershell -ExecutionPolicy Bypass -File deploy\deploy.ps1`.
 
@@ -98,5 +98,5 @@ docker cp nong-clock-news-collector:/app/collector/news/data .\news-backup   # �
 | 서버 화면이 안 열림 | Docker Desktop 이 켜져 있는지, `docker compose ps` 에서 `web` 이 running 인지 |
 | 내 PC 에서만 안 열림 | 방화벽 규칙(2번), 같은 내부망인지 / Tailscale 이 둘 다 연결됐는지 |
 | 80 번을 다른 프로그램이 씀 | `.env` 의 `WEB_PORT=8080` → `deploy.ps1 -Force` → `http://서버주소:8080` |
-| 뉴스가 안 쌓임 | `http://서버주소/data/collect_log.json` 의 `errors` (키 오류면 `.env` 의 NAVER 값 확인 후 `docker compose up -d news-collector`) |
+| 뉴스가 안 쌓임 | 관리자 › 데이터 수집 › 뉴스 수집 (오류·해결 방법 표시) 또는 `http://서버주소/data/collect_log.json` 의 `errors` (키 오류면 `.env` 의 NAVER 값 확인 후 `docker compose up -d news-collector`) |
 | 자동 배포가 안 됨 | `deploy\deploy.log` 에 "직접 고친 파일" → 서버에서 `git status` 확인 후 `git checkout -- .` 로 되돌림 |

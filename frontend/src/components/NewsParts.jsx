@@ -1,6 +1,7 @@
 // 농업 뉴스 부품. 홈 헤드라인·뉴스 페이지·통합 검색이 같이 쓴다.
 // 기사는 제목·요약만 보여주고, 누르면 언론사 원문이 새 탭으로 열린다 (본문을 옮겨 오지 않는다 — 저작권).
 import { Link } from "react-router-dom";
+import { DATA_SOURCE, NEWS_URL } from "../api/client";
 import { hourMinute, timeAgo } from "../utils/format";
 import { Highlight } from "./common";
 
@@ -33,6 +34,7 @@ export function NewsArticle({ n, q, links = true }) {
       <div className="mt">
         <NewsCat category={n.category} />
         {n.item_tags.map((t) => <ItemTag key={t.item} tag={t} />)}
+        {n.crop_tags?.map((t) => <span key={t.crop} className="news-item-tag crop" title="팜비드 시세·예측 품목은 아니에요">{t.emoji} {t.name}</span>)}
         <span>{n.press} · {timeAgo(n.published_at)}</span>
         {links && first && (
           <Link className="go" to={n.category === "가격·수급" ? `/market?item=${first.item}` : `/ai?item=${first.item}`}>
@@ -63,5 +65,5 @@ export function NewsTrend({ rows, active, onPick }) {
 export const NewsUpdated = ({ at }) => <span className="news-updated">🔄 {hourMinute(at)} 업데이트 · 1시간마다</span>;
 
 export const NewsSource = () => (
-  <p className="news-source">뉴스 제공: 네이버 검색 API · 각 언론사. 제목과 요약 일부만 보여 주고, 기사 본문은 언론사 사이트에서 열려요. (지금은 화면 확인용 예시 기사)</p>
+  <p className="news-source">뉴스 제공: 네이버 검색 API · 각 언론사. 제목과 요약 일부만 보여 주고, 기사 본문은 언론사 사이트에서 열려요. {NEWS_URL ? "(서버가 1시간마다 모은 기사)" : DATA_SOURCE === "live" ? "(테스트 모드: 네이버 실제 기사)" : "(지금은 화면 확인용 예시 기사)"}</p>
 );

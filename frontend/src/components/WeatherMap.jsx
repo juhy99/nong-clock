@@ -19,8 +19,12 @@ const marketPoint = (m) => {
   return [x + dx, y + dy];
 };
 
+/** 값이 없으면(테스트 모드에서 기상청 결측) "—" */
+const val = (v, unit = "") => (v == null ? "—" : `${v}${unit}`);
+
 /** 기온 → 지도 색 (낮으면 파랑, 높으면 주황) */
 function tempColor(t) {
+  if (t == null) return "#eee";
   const x = Math.min(1, Math.max(0, (t - 4) / 18));
   const cold = [205, 225, 247];
   const warm = [250, 196, 140];
@@ -66,12 +70,12 @@ function KoreaMap({ regions, markets, selected, zoom, onSelect, onMeasure }) {
             key={loc.id}
             ref={(el) => el && (refs.current[loc.id] = el)}
             d={loc.path}
-            fill={r ? tempColor(r.temp) : "#eee"}
+            fill={tempColor(r?.temp)}
             vectorEffect="non-scaling-stroke"
             className={`region ${selected === loc.id ? "on" : ""} ${r?.warning ? "warn" : ""}`}
             role="button"
             tabIndex={0}
-            aria-label={`${r?.name} ${r?.temp}도`}
+            aria-label={`${r?.name} ${val(r?.temp, "도")}`}
             aria-pressed={selected === loc.id}
             onClick={() => onSelect(loc.id)}
             onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onSelect(loc.id))}
@@ -83,7 +87,7 @@ function KoreaMap({ regions, markets, selected, zoom, onSelect, onMeasure }) {
           <text key={id} x={b.cx} y={b.cy} className={`map-label ${id === selected ? "on" : ""}`} textAnchor="middle"
             style={{ fontSize: (id === selected ? 15 : 13) * k, strokeWidth: 3 * k }}>
             <tspan x={b.cx} dy="-0.2em">{byId[id]?.name}</tspan>
-            <tspan x={b.cx} dy="1.15em" className="t">{byId[id]?.temp}°</tspan>
+            <tspan x={b.cx} dy="1.15em" className="t">{val(byId[id]?.temp, "°")}</tspan>
           </text>
         ) : null,
       )}
@@ -189,16 +193,16 @@ export default function WeatherMap() {
                   <div className="big-icon">{sel.icon}</div>
                   <div>
                     <div className="muted small">{sel.name}</div>
-                    <div className="temp">{sel.temp}°</div>
-                    <div>{sel.sky} · 최저 {sel.min}° / 최고 {sel.max}°</div>
+                    <div className="temp">{val(sel.temp, "°")}</div>
+                    <div>{sel.sky} · 최저 {val(sel.min, "°")} / 최고 {val(sel.max, "°")}</div>
                   </div>
                 </div>
                 {sel.warning && <span className="warn-chip">⚠️ {sel.name} {sel.warning}</span>}
                 <div className="stats">
-                  <div>☔ 강수확률 {sel.rain_prob}%</div>
-                  <div>💧 습도 {sel.humidity}%</div>
-                  <div>🌬️ 풍속 {sel.wind}m/s</div>
-                  <div>🌡️ 지온 {sel.soil_temp}°</div>
+                  <div>☔ 강수확률 {val(sel.rain_prob, "%")}</div>
+                  <div>💧 습도 {val(sel.humidity, "%")}</div>
+                  <div>🌬️ 풍속 {val(sel.wind, "m/s")}</div>
+                  <div>🌡️ 지온 {val(sel.soil_temp, "°")}</div>
                 </div>
                 <p className="small" style={{ margin: 0 }}>🌱 {sel.note}</p>
                 {markets.length > 0 && <RegionMarkets region={sel} markets={markets} center={boxes[sel.id]} favorites={user?.favorites} />}

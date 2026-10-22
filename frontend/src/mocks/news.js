@@ -1,29 +1,45 @@
 // 농업 뉴스 가짜 데이터 (Spring 담당 API 가 생기기 전까지 사용).
-// 실제로는 서버가 1시간마다 네이버 뉴스 검색 API 로 기사를 모으고, 아래 규칙으로 품목·분류를 붙여 저장한다.
+// 실제로는 수집기(collector/news)가 1시간마다 네이버 뉴스 검색 API 로 기사를 모으고, 아래와 같은 규칙으로 품목·분류를 붙여 저장한다.
 // 기사 제목·언론사는 모두 화면 확인용으로 지어낸 예시이고, 링크는 example.com 으로 간다.
-import { findItems } from "../utils/itemMatch";
+import RULES from "../../../shared/news_rules.json";
+import { findCrops, findItems } from "../utils/itemMatch";
 
-export const NEWS_CATEGORIES = ["가격·수급", "기상·재해", "정책·지원", "유통·경매"];
+export const NEWS_CATEGORIES = Object.keys(RULES.categories);
 
-/** 분류별 단어. 제목에 나오면 2점, 요약에 나오면 1점. 점수가 가장 높은 분류를 붙이고, 없으면 "기타". */
-const CATEGORY_WORDS = {
-  "가격·수급": ["가격", "시세", "도매가", "값", "출하", "반입", "수급", "폭등", "하락", "상승", "강세", "약세", "작황"],
-  "기상·재해": ["서리", "한파", "폭염", "호우", "장마", "태풍", "냉해", "가뭄", "병해충", "우박", "기상", "저온"],
-  "정책·지원": ["정부", "농식품부", "대책", "지원", "비축", "할당관세", "예산", "보조금", "보험", "제도"],
-  "유통·경매": ["경매", "도매시장", "온라인", "유통", "판로", "직거래", "수출", "판매", "물류"],
-};
+/**
+ * 농업 기사 거르기 (점수). 단어 목록·기준 점수는 shared/news_rules.json (수집기 collector/news/rules.py 와 같은 규칙).
+ * - 농업 단어(agri_words)는 제목 2점·요약 1점, 잡음 단어(noise_words)는 제목 -3점·요약 -2점, 같은 단어는 한 번만
+ * - 4점 이상, 또는 3점 이상이면서 제목에 농업 단어·작물 이름·작물 맥락 말(가격 등)이 있을 때 담는다
+ * - 제목에 작물 이름이 있으면 잡음이 없고(0점 이상) 글에 작물 맥락 말이 하나라도 있을 때 담는다
+ *   ("배 수출 물량 늘어"는 담고, "사과는커녕 도발", "과장님 대신 감자님"은 거른다)
+ */
+const toMatcher = (w) => (typeof w === "string" ? w : new RegExp(w.re));
+const AGRI_WORDS = RULES.agri_words.map(toMatcher);
+const NOISE_WORDS = RULES.noise_words.map(toMatcher);
+const CONTEXT_WORDS = RULES.context_words.map(toMatcher);
+const SCORE = RULES.score;
 
-/** 농업 기사로 볼 단어. 하나도 없으면 품목 이름이 나와도 담지 않는다 ("사과문", "배 위에서" 같은 기사 거르기). */
-const AGRI_WORDS = ["농산물", "농가", "산지", "도매", "출하", "작황", "재배", "수확", "시세", "가격", "kg", "과원", "농업", "경매", "저장"];
+const has = (text, w) => (typeof w === "string" ? text.includes(w) : w.test(text));
 
-export function isAgriNews(text) {
-  return AGRI_WORDS.some((w) => text.includes(w));
+export function agriScore(title, summary) {
+  const score = (words, t, s) => words.reduce((n, w) => n + (has(title, w) ? t : has(summary, w) ? s : 0), 0);
+  return score(AGRI_WORDS, SCORE.agri_title, SCORE.agri_summary) - score(NOISE_WORDS, SCORE.noise_title, SCORE.noise_summary);
 }
 
+export function isAgriNews(title, summary = "") {
+  const s = agriScore(title, summary);
+  const cropInTitle = findItems(title).length > 0 || findCrops(title).length > 0;
+  const topicInTitle = cropInTitle || [...AGRI_WORDS, ...CONTEXT_WORDS].some((w) => has(title, w));
+  if (s >= SCORE.keep || (s >= SCORE.keep_with_topic && topicInTitle)) return true;
+  const text = `${title} ${summary}`;
+  return cropInTitle && s >= SCORE.keep_crop_in_title && [...CONTEXT_WORDS, ...AGRI_WORDS].some((w) => has(text, w));
+}
+
+/** 분류별 단어가 제목에 나오면 2점, 요약에 나오면 1점. 점수가 가장 높은 분류, 없으면 "기타" */
 export function categorize(title, summary) {
   let best = "기타";
   let bestScore = 0;
-  for (const [cat, words] of Object.entries(CATEGORY_WORDS)) {
+  for (const [cat, words] of Object.entries(RULES.categories)) {
     const score = words.reduce((s, w) => s + (title.includes(w) ? 2 : 0) + (summary.includes(w) ? 1 : 0), 0);
     if (score > bestScore) [best, bestScore] = [cat, score];
   }
@@ -68,7 +84,7 @@ const RAW = [
 /** 수집한 기사에 품목·분류를 붙이고, 농업 기사가 아닌 것은 뺀다 (서버가 저장할 때 하는 일) */
 export function labelNews(now = Date.now()) {
   return RAW.map(([hoursAgo, press, title, summary], i) => ({ id: i + 1, hoursAgo, press, title, summary }))
-    .filter((n) => isAgriNews(`${n.title} ${n.summary}`))
+    .filter((n) => isAgriNews(n.title, n.summary))
     .map(({ id, hoursAgo, press, title, summary }) => ({
       id,
       title,
@@ -77,6 +93,7 @@ export function labelNews(now = Date.now()) {
       url: `https://example.com/news/${id}`,
       published_at: new Date(now - hoursAgo * 3600 * 1000).toISOString(),
       items: findItems(`${title} ${summary}`),
+      crops: findCrops(`${title} ${summary}`),
       category: categorize(title, summary),
     }));
 }

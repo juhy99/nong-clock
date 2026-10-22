@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { getTodayPrices } from "../api/market";
-import { ML_API_BASE } from "../api/client";
+import { DATA_SOURCE, ML_API_BASE, NEWS_URL } from "../api/client";
 import { onMlOffline } from "../api/ml";
 import { suggest } from "../api/search";
 import { pct, won } from "../utils/format";
@@ -205,6 +205,14 @@ function OfflineBanner() {
   );
 }
 
+/** 개발 중(npm run dev)에만: 어떤 데이터가 진짜인지 왼쪽 아래에 표시 */
+const DEV_BADGE = import.meta.env.DEV && (() => {
+  const parts = [];
+  if (DATA_SOURCE === "live") parts.push(NEWS_URL ? "날씨 실제 데이터" : "날씨·뉴스 실제 데이터");
+  if (NEWS_URL) parts.push("뉴스 서버 수집");
+  return parts.length ? `테스트 모드 · ${parts.join(" · ")}` : null;
+})();
+
 export default function Layout() {
   return (
     <>
@@ -214,6 +222,7 @@ export default function Layout() {
       <main className="container">
         <Outlet />
       </main>
+      {DEV_BADGE && <div className="live-badge" title="frontend/.env 의 VITE_DATA_SOURCE · VITE_NEWS_URL. 나머지는 가짜 데이터">{DEV_BADGE}</div>}
       <footer className="footer">
         FarmBid · 시세·경매·회원 데이터는 개발용 가상 데이터입니다 (실서비스 연동 시 KAMIS·aT 도매시장 API) ·{" "}
         <Link to="/about" className="link small">서비스 소개 · 문의</Link>

@@ -446,6 +446,7 @@ mark { background: #fff1a8; color: inherit; padding: 0 1px; border-radius: 3px; 
 .news-cat.dist { background: var(--green-soft); color: var(--green-dark); }
 .news-item-tag { font-size: 12px; font-weight: 700; background: var(--soft); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
 a.news-item-tag:hover { background: var(--green-soft); }
+.news-item-tag.crop { font-weight: 600; color: var(--muted); }
 .news-updated { font-size: 13px; color: var(--muted); font-weight: 500; white-space: nowrap; }
 .news-list { border-top: 2px solid var(--text); }
 .news-list.boxed { border: 1px solid var(--line); border-radius: 24px; padding: 6px 22px; }
@@ -546,6 +547,8 @@ select.input.mk-days { width: auto; margin-left: auto; padding: 6px 10px; font-s
 .mk-sum .ring .v { font-size: 15px; font-weight: 800; }
 .mk-sum .total { margin-top: 16px; font-size: 15px; }
 
+/* 테스트 모드(VITE_DATA_SOURCE=live) 표시 */
+.live-badge { position: fixed; left: 12px; bottom: 12px; z-index: 50; padding: 6px 10px; border-radius: 999px; background: #6d28d9; color: #fff; font-size: 12px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.18); pointer-events: none; }
 .footer { border-top: 1px solid var(--line); padding: 22px 0; text-align: center; color: var(--muted); font-size: 13px; }
 
 @media (max-width: 900px) {

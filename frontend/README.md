@@ -14,6 +14,28 @@ npm run dev        # 사용자 사이트 http://localhost:5173  ·  관리자 �
 - ML API가 꺼져 있으면 화면 위에 "데모 데이터" 안내가 뜨고 가짜 예측으로 대신 보여줍니다.
 - API 주소를 바꾸려면 `.env.example`을 `.env`로 복사해서 `VITE_ML_API_BASE`를 고칩니다.
 
+## 테스트 모드 (날씨·뉴스 실제 데이터)
+
+Spring·DB 가 생기기 전에 **내 PC에서만** 기상청·네이버 실제 데이터로 화면을 확인하는 모드입니다.
+
+1. `frontend/.env.example` 아래쪽을 `frontend/.env` 에 복사해 주석(`#`)을 풀고 키를 채웁니다
+   - `DATA_GO_KR_KEY`: 공공데이터포털 일반 인증키(Decoding). 기상청 단기예보·기상특보 활용신청 필요
+   - `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET`: **NAVER API HUB**(네이버클라우드 콘솔) Application 의 Client ID · Client Secret, 검색(뉴스) API 선택. 네이버 개발자센터 검색 API 는 2026-07-31 에 신규 신청이 끝났습니다
+2. `npm run dev` 를 다시 실행 → 화면 왼쪽 아래에 보라색 **테스트 모드** 표시
+
+| 화면 | 실제로 바뀌는 것 |
+|---|---|
+| 홈 날씨 지도 | 시·도 17곳 기온·최저/최고·강수확률·습도·풍속 (단기예보), 특보 (기상특보). 지온은 아직 없음(—) |
+| 홈 뉴스·농업 뉴스·검색의 뉴스 | 네이버 뉴스 검색 결과 (농산물 가격·수급 + 품목 16개), 품목·분류 태그는 `utils/itemMatch.js`·`mocks/news.js` 규칙 |
+
+- 키는 `VITE_` 없이 적어서 **브라우저에 전달되지 않습니다.** Vite 개발 서버가 `/live/...` 요청에 키를 붙여 대신 보냅니다 (`vite.config.js`)
+- 받은 데이터는 10분간 다시 쓰고, 그 뒤 화면을 열면 새로 받습니다 (뉴스 18회·날씨 35회 호출)
+- **임시 구조입니다.** 실제 서비스는 수집기 → DB → Spring API → 화면. 빌드한 배포본은 항상 가짜 데이터(mock)로 동작합니다
+- 시세·경매·회원은 테스트 모드에서도 가짜 데이터입니다
+- **뉴스 거르기 규칙:** 단어 목록·기준 점수는 저장소 맨 위 `shared/news_rules.json` (뉴스 수집기 `collector/news` 와 같이 씀). 찾는 방식은 `utils/itemMatch.js`·`mocks/news.js`. 16개 품목 밖 작물(포도·샤인머스캣, 복숭아, 딸기, 마늘, 고추 등)은 링크 없는 회색 태그만 붙습니다 (검색 "포도" → 샤인머스캣 기사도 나옴)
+- **서버에 모인 기사로 보기:** `frontend/.env` 에 `VITE_NEWS_URL=http://서버주소/data/news-recent.json` (서버 운영은 저장소 맨 위 `deploy/README.md`). 내 PC 의 `collector/news` 로 모은 기사는 테스트 모드(`live`)에서 자동으로 읽습니다
+- **규칙 다듬기용 표본:** 테스트 모드로 `npm run dev` 를 켜 둔 채 `node scripts/news-sample.mjs` → `frontend/news-sample.json` (네이버 원본, 커밋 안 됨)
+
 ## 데모 계정 (로그인 화면에서 클릭하면 입력됨)
 
 | 유형 | 이메일 | 비밀번호 |
@@ -51,7 +73,8 @@ npm run dev        # 사용자 사이트 http://localhost:5173  ·  관리자 �
 ```
 src/
   api/        서버 호출. 화면은 반드시 여기 함수만 부른다
-    client.js   API 주소 (한 곳에서만 관리)
+    client.js   API 주소 (한 곳에서만 관리), 데이터 출처(mock · live)
+    live/       테스트 모드 전용: 기상청·네이버 응답 → 화면 모양 변환 (나중에 수집기·Spring 이 옮겨 쓸 규칙)
     ml.js       ML API — 실제 연결
     market.js · auction.js · auth.js · admin.js · board.js · notify.js · report.js · news.js · search.js   Spring 담당 — 지금은 mocks/ 반환
     upload.js   사진 업로드 (지금은 브라우저 IndexedDB, Spring 이 생기면 POST /api/uploads)
@@ -64,7 +87,7 @@ src/
 ```
 
 - **Spring API 연결 방법:** `api/market.js` 등의 함수 안쪽만 `request(주소, "/api/...")` 로 바꾸면 됩니다. 화면 코드는 고칠 필요 없습니다. 응답 모양은 `docs/06_api_spec.md` 2번 섹션의 제안을 따릅니다.
-- **농업 뉴스:** 기사 제목·요약만 보여주고 누르면 언론사 원문이 새 탭으로 열린다 (본문은 옮기지 않음). 지금 기사는 화면 확인용 예시(링크는 example.com). 네이버 API 키는 서버에만 두므로 화면이 네이버를 직접 부르지 않는다 (명세 2-14)
+- **농업 뉴스:** 기사 제목·요약만 보여주고 누르면 언론사 원문이 새 탭으로 열린다 (본문은 옮기지 않음). 지금 기사는 화면 확인용 예시(링크는 example.com). 네이버 API 키는 서버에만 두므로 화면이 네이버를 직접 부르지 않는다 (명세 2-14). 테스트 모드에서만 Vite 개발 서버가 대신 부른다
 - **품목 사진:** `src/assets/items/<품목코드>.png` 처럼 넣으면 자동으로 쓰입니다 (없으면 이모지). 규칙은 그 폴더의 `README.md`.
 - **디자인:** 사용자 사이트는 A안(산뜻한 마켓형) — 색·모서리 값은 `styles.css` 맨 위 변수. 관리자 사이트는 `src/admin/admin.css` 에서 이전 색을 따로 고정.
 - **품목·기간·지역은 하드코딩하지 않는다:** `GET /items`, `/horizons`, `/regions` 로 받아서 그립니다. 지역이 1개면 선택 박스를 숨깁니다.

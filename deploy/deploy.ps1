@@ -1,0 +1,36 @@
+﻿# 서버 컴퓨터용: GitHub main 의 최신 코드를 받아 바뀐 서비스만 다시 빌드·실행한다.
+#   powershell -ExecutionPolicy Bypass -File deploy\deploy.ps1          새 커밋이 있을 때만
+#   powershell -ExecutionPolicy Bypass -File deploy\deploy.ps1 -Force   처음 실행·강제 재빌드
+param([switch]$Force)
+
+$repo = Split-Path $PSScriptRoot -Parent
+Set-Location $repo
+$logFile = Join-Path $PSScriptRoot "deploy.log"
+
+function Log($msg) {
+    $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $msg"
+    Write-Host $line
+    Add-Content -Path $logFile -Value $line -Encoding UTF8
+}
+
+git fetch origin main --quiet
+if ($LASTEXITCODE -ne 0) { Log "git fetch 실패 (인터넷·GitHub 로그인 확인)"; exit 1 }
+
+$local = (git rev-parse HEAD).Trim()
+$remote = (git rev-parse origin/main).Trim()
+if ($local -eq $remote -and -not $Force) { exit 0 }  # 바뀐 것 없음 (10분마다 도는 자동 배포가 로그를 채우지 않게 조용히 끝냄)
+
+# 서버에서 직접 고친 파일이 있으면 덮어쓰지 않고 멈춘다 (코드는 내 PC 에서 고쳐 push)
+$dirty = git status --porcelain --untracked-files=no
+if ($dirty) { Log "서버에서 직접 고친 파일이 있어 멈춤 → git status 로 확인:`n$dirty"; exit 1 }
+
+git checkout main --quiet
+git pull --ff-only origin main --quiet
+if ($LASTEXITCODE -ne 0) { Log "git pull 실패"; exit 1 }
+Log "코드 받음: $($local.Substring(0, 7)) → $($remote.Substring(0, 7))"
+
+docker compose up -d --build --remove-orphans
+if ($LASTEXITCODE -ne 0) { Log "docker compose 실패 (Docker Desktop 이 켜져 있는지 확인)"; exit 1 }
+docker image prune -f | Out-Null  # 다시 빌드하며 남은 옛 이미지 정리
+Log "배포 완료"
+docker compose ps

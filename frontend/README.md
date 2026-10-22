@@ -33,6 +33,7 @@ Spring·DB 가 생기기 전에 **내 PC에서만** 기상청·네이버 실제 
 - **임시 구조입니다.** 실제 서비스는 수집기 → DB → Spring API → 화면. 빌드한 배포본은 항상 가짜 데이터(mock)로 동작합니다
 - 시세·경매·회원은 테스트 모드에서도 가짜 데이터입니다
 - **뉴스 거르기 규칙:** 단어 목록·기준 점수는 저장소 맨 위 `shared/news_rules.json` (뉴스 수집기 `collector/news` 와 같이 씀). 찾는 방식은 `utils/itemMatch.js`·`mocks/news.js`. 16개 품목 밖 작물(포도·샤인머스캣, 복숭아, 딸기, 마늘, 고추 등)은 링크 없는 회색 태그만 붙습니다 (검색 "포도" → 샤인머스캣 기사도 나옴)
+- **지난 날씨 (관측):** 홈 날씨 지도의 "지난 날씨"는 서버 날씨 수집기(`collector/weather`)의 전처리 결과를 `collector/weather_site` 가 바꾼 `/data/weather/*.json` 을 읽습니다 (`api/weather.js`). `VITE_NEWS_URL` 을 서버로 두면 같은 서버의 날씨도 읽고, 테스트 모드에서는 내 PC 의 `collector/weather_site/data/`, 둘 다 아니면 예시 데이터. 파일이 없거나 오류면 이 칸만 숨깁니다. 위쪽 "오늘 날씨"(단기예보)는 아직 예시·테스트 모드
 - **서버에 모인 기사로 보기:** `frontend/.env` 에 `VITE_NEWS_URL=http://서버주소/data/news-recent.json` (서버 운영은 저장소 맨 위 `deploy/README.md`). 내 PC 의 `collector/news` 로 모은 기사는 테스트 모드(`live`)에서 자동으로 읽습니다
 - **규칙 다듬기용 표본:** 테스트 모드로 `npm run dev` 를 켜 둔 채 `node scripts/news-sample.mjs` → `frontend/news-sample.json` (네이버 원본, 커밋 안 됨)
 
@@ -50,7 +51,7 @@ Spring·DB 가 생기기 전에 **내 PC에서만** 기상청·네이버 실제 
 
 | 주소 | 화면 | 데이터 |
 |---|---|---|
-| `/` | 홈 (AI 예측, 오늘의 시세, 지역별 날씨 지도, 인기 경매) | 가짜 + ML API |
+| `/` | 홈 (AI 예측, 오늘의 시세, 지역별 날씨 지도 + 지난 날씨, 인기 경매) | 가짜 + ML API, 지난 날씨는 서버 날씨 수집기 |
 | `/market` | 시세·수급 (날짜·시장·품목 → 등급별 가격, 가격 추이, 출하지역별 가격, 반입 동향) | 가짜 |
 | `/ai?item=&date=` | AI 가격예측 (내일 ~ 30일 뒤 날짜 선택) | **ML API** |
 | `/auctions`, `/auctions/:id` | 경매 목록·상세(사진)·입찰·신고 | 가짜 |
@@ -67,7 +68,7 @@ Spring·DB 가 생기기 전에 **내 PC에서만** 기상청·네이버 실제 
 - 사용자 사이트와 메뉴·로그인이 완전히 분리된 화면입니다 (`admin/index.html` → `src/admin/`). 관리자 계정만 들어갈 수 있습니다.
 - 지금은 가짜 데이터를 같은 브라우저 저장소에서 공유해야 해서 같은 주소(`/admin/`)에 둡니다. Spring 이 생기면 다른 도메인(예: `admin.farmbid.kr`)에 따로 올려도 됩니다. 그때는 `.env` 의 `VITE_SITE_URL` 에 사용자 사이트 주소를 넣습니다.
 - `npm run build` 하면 `dist/index.html`(사용자)과 `dist/admin/index.html`(관리자)이 따로 나옵니다. 배포 서버에는 `/admin/*` → `dist/admin/index.html`, 그 밖의 주소 → `dist/index.html` 규칙이 필요합니다 (개발 서버는 `vite.config.js` 가 처리).
-- **데이터 수집·서버 상태:** 서버(`VITE_NEWS_URL` 의 폴더 `/data/`)의 수집 기록을 읽어 뉴스 수집 현황·거른 기사·원천별 보유 기간, 배포 버전, 수집이 멈추면 대시보드 경고를 보여줍니다 (`api/collection.js`). 서버에 연결하지 않으면 예시 데이터
+- **데이터 수집·서버 상태:** 서버(`VITE_NEWS_URL` 의 폴더 `/data/`)의 수집 기록을 읽어 뉴스 수집 현황·거른 기사·원천별 보유 기간, 날씨 수집기(예보·관측·장기전망·전처리) 상태, 배포 버전, 수집이 멈추면 대시보드 경고를 보여줍니다 (`api/collection.js`, `api/weather.js`). 서버에 연결하지 않으면 예시 데이터
 
 ## 구조와 규칙
 

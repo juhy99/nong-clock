@@ -252,3 +252,13 @@ python3 collect_asos.py --self-test                    # ASOS 파싱·저장·�
 python3 -m unittest tests/test_auth_stop.py -v         # 키 없음·401·403·결과코드 30 → STOP, 22 → 한도, 500 → 일시 오류
 ```
 시험은 로컬 http.server를 띄우고 `KMA_APIHUB_BASE`, `DATA_GO_KR_BASE` 환경변수로 주소를 바꿔서 실행합니다(실제 API는 부르지 않음).
+
+## 11. 팀 서버 (Windows + Docker) — 서버 담당이 추가
+
+- 팀 서버는 리눅스 cron 대신 `docker compose` 의 **`weather-collector`** 로 돕니다 (`Dockerfile`, `scheduler.py`).
+  `scheduler.py` 가 위 3번 시간표(예보 02·05·…·23시 20분, 관측·장기전망·전처리 매일 10:40)대로 `run.py` 를 부릅니다.
+- `DATA_DIR` 은 도커 볼륨 `weatherraw` (`/app/collector/weather/data`), 키는 서버 `.env` 의 `KMA_APIHUB_KEY`·`DATA_GO_KR_KEY`.
+- 전처리 결과 `site/날씨_대통합_일별.csv` 와 `collect_log.json`·`preprocess_log.json` 은 `collector/weather_site` 가 읽어
+  홈 "지난 날씨"·관리자 데이터 수집 화면에 씁니다. **CSV 열 이름이나 `시도_일` 구분을 바꾸면 서버 담당에게 알려 주세요.**
+- 처음 설치·PC 원본 옮기기·STOP 파일 지우기는 `deploy/README.md` 1-1.
+- `run.py` 에서 바꾼 것: `append_log` 에 잠금 추가 (예보·관측 실행이 동시에 끝나도 `collect_log.json` 기록이 덮어써지지 않게).

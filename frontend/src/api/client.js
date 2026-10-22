@@ -6,6 +6,10 @@ export const ML_API_BASE = import.meta.env.VITE_ML_API_BASE || "http://localhost
 // live 는 Vite 개발 서버(npm run dev)가 키를 붙여 중계해 줄 때만 동작한다. 빌드한 배포본에서는 항상 mock.
 export const DATA_SOURCE = import.meta.env.DEV && import.meta.env.VITE_DATA_SOURCE === "live" ? "live" : "mock";
 
+// 서버 컴퓨터의 뉴스 수집기가 모은 기사 파일 주소. 있으면 뉴스는 가짜·직접 호출 대신 이 파일을 읽는다.
+// 서버 화면(web 컨테이너)은 /data/news-recent.json, 내 PC 의 npm run dev 는 http://서버주소/data/news-recent.json
+export const NEWS_URL = import.meta.env.VITE_NEWS_URL || "";
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message);

@@ -11,6 +11,7 @@ services:
     volumes:
       - ./db/init:/docker-entrypoint-initdb.d
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped  # 서버 컴퓨터를 다시 켜도 자동으로
 
   ml-api:
     build: ./ml-api
@@ -21,6 +22,35 @@ services:
       ENABLE_REGIONAL_FORECAST: ${ENABLE_REGIONAL_FORECAST:-false}
     ports:
       - "8000:8000"
+    restart: unless-stopped
+
+  # 농업 뉴스 수집기: 켜자마자 한 번, 그 뒤 1시간마다 수집 → 볼륨 newsdata (collector/news/README.md)
+  news-collector:
+    build:
+      context: .
+      dockerfile: collector/news/Dockerfile
+    container_name: nong-clock-news-collector
+    environment:
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+    volumes:
+      - newsdata:/app/collector/news/data
+    restart: unless-stopped
+
+  # 서버 화면: http://서버주소 (사용자) · /admin/ (관리자) · /ml/ (ML API) · /data/ (수집한 뉴스)
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: nong-clock-web
+    ports:
+      - "${WEB_PORT:-80}:80"
+    volumes:
+      - newsdata:/srv/news:ro
+    depends_on:
+      - ml-api
+    restart: unless-stopped
 
 volumes:
   pgdata:
+  newsdata:

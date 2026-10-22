@@ -26,15 +26,17 @@ import rules
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
-NEWS_FILE = DATA / "news.json"
+NEWS_FILE = DATA / "news.json"            # 90일 전체 (DB 가 생기면 옮길 원본)
+RECENT_FILE = DATA / "news-recent.json"   # 최근 7일 (화면이 읽는 파일. 전체는 수십 MB 가 되어 화면이 받기엔 큼)
 LOG_FILE = DATA / "collect_log.json"
 REJECTED_FILE = DATA / "rejected.json"
 
-API_URL = "https://naverapihub.apigw.ntruss.com/search/v1/news"
+API_URL = os.environ.get("NAVER_NEWS_API_URL", "https://naverapihub.apigw.ntruss.com/search/v1/news")  # 바꿀 일은 거의 없음 (검사용 가짜 서버 등)
 KST = timezone(timedelta(hours=9))
 DISPLAY = 100          # 한 번에 받는 기사 수 (최대 100)
 MAX_START = 1000       # 네이버 검색은 start 1000 까지만
 KEEP_DAYS = 90         # 보관 기간
+RECENT_DAYS = 7        # 화면용 파일 기간 ("이번 주 많이 나온 품목"이 7일)
 INTERVAL_MIN = 60      # --loop 간격
 CALL_GAP_SEC = 0.15    # 호출 사이 쉬는 시간 (키당 초당 50회 제한보다 넉넉히)
 LOG_KEEP = 100         # 수집 기록 보관 개수
@@ -139,12 +141,14 @@ def label(a):
 def save_news(articles, updated_at):
     """기사 저장 (지금은 JSON 파일. DB 가 생기면 여기만 바꾼다)"""
     articles.sort(key=lambda n: n["published_at"], reverse=True)
-    write_json(NEWS_FILE, {
-        "updated_at": updated_at.isoformat(),
-        "next_update_at": (updated_at + timedelta(minutes=INTERVAL_MIN)).isoformat(),
-        "count": len(articles),
-        "articles": articles,
-    })
+    recent_limit = (updated_at - timedelta(days=RECENT_DAYS)).isoformat()
+    for path, rows in ((NEWS_FILE, articles), (RECENT_FILE, [n for n in articles if n["published_at"] >= recent_limit])):
+        write_json(path, {
+            "updated_at": updated_at.isoformat(),
+            "next_update_at": (updated_at + timedelta(minutes=INTERVAL_MIN)).isoformat(),
+            "count": len(rows),
+            "articles": rows,
+        })
 
 
 def drop_old(articles, at):

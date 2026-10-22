@@ -93,9 +93,10 @@ class CollectTest(unittest.TestCase):
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.tmp = TemporaryDirectory()
         d = Path(self.tmp.name)
-        self.saved = {k: getattr(collect_news, k) for k in ("API_URL", "NEWS_FILE", "LOG_FILE", "REJECTED_FILE", "CALL_GAP_SEC")}
+        self.saved = {k: getattr(collect_news, k) for k in ("API_URL", "NEWS_FILE", "RECENT_FILE", "LOG_FILE", "REJECTED_FILE", "CALL_GAP_SEC")}
         collect_news.API_URL = f"http://127.0.0.1:{self.server.server_port}/search/v1/news"
         collect_news.NEWS_FILE, collect_news.LOG_FILE, collect_news.REJECTED_FILE = d / "news.json", d / "log.json", d / "rejected.json"
+        collect_news.RECENT_FILE = d / "news-recent.json"
         collect_news.CALL_GAP_SEC = 0
         collect_news.os.environ.update(NAVER_CLIENT_ID="id", NAVER_CLIENT_SECRET="secret")
         FakeNaver.fail, FakeNaver.calls = False, []
@@ -124,6 +125,7 @@ class CollectTest(unittest.TestCase):
         a = news["articles"][0]
         self.assertEqual((a["title"], a["press"], a["items"], a["category"]), ("배추 도매가 하락… 김장철 출하 늘어", "연합뉴스", ["napa_cabbage"], "가격·수급"))
         self.assertEqual(len(self.read(collect_news.REJECTED_FILE)["articles"]), 1)
+        self.assertEqual(self.read(collect_news.RECENT_FILE)["count"], 1)  # 화면용 최근 7일 파일도 함께
         self.assertEqual(len(FakeNaver.calls), len(rules.queries()))  # 처음엔 검색어마다 한 페이지
 
         # 다음 수집: 새 기사 하나만 더해지고, 이미 있는 기사는 다시 저장하지 않는다
@@ -154,6 +156,13 @@ class CollectTest(unittest.TestCase):
         after = self.read(collect_news.NEWS_FILE)
         self.assertEqual(after["count"], 1)                             # 농업 기사가 아니게 된 것은 뺌
         self.assertEqual(after["articles"][0]["items"], ["napa_cabbage"])  # 태그 다시 붙임
+
+    def test_recent_file_only_last_week(self):
+        now = collect_news.now()
+        rows = [{"published_at": (now - timedelta(days=d)).isoformat()} for d in (1, 6, 8, 30)]
+        collect_news.save_news(rows, now)
+        self.assertEqual(self.read(collect_news.NEWS_FILE)["count"], 4)
+        self.assertEqual(self.read(collect_news.RECENT_FILE)["count"], 2)
 
     def test_old_articles_dropped(self):
         old = (collect_news.now() - timedelta(days=collect_news.KEEP_DAYS + 1)).isoformat()

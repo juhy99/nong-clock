@@ -53,7 +53,8 @@ const collectedNews = (env) => ({
     if (env.VITE_DATA_SOURCE !== "live") return;
     server.middlewares.use("/live/collected-news", async (_req, res) => {
       try {
-        const body = await readFile(resolve(__dirname, "../collector/news/data/news.json"));
+        const dir = resolve(__dirname, "../collector/news/data");
+        const body = await readFile(resolve(dir, "news-recent.json")).catch(() => readFile(resolve(dir, "news.json")));
         res.setHeader("Content-Type", "application/json; charset=utf-8");
         res.end(body);
       } catch {

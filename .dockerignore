@@ -1,0 +1,10 @@
+# docker compose 의 web·news-collector 는 저장소 맨 위를 빌드 위치로 쓴다 → 필요 없는 큰 폴더·비밀 파일 제외
+.git
+**/node_modules
+**/dist
+**/.env
+**/__pycache__
+**/.venv
+collector/**/data
+python-ml/data
+backend-spring/build

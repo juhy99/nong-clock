@@ -2,24 +2,36 @@ import { Link } from "react-router-dom";
 import { getAllAuctions, getReports, getUsers } from "../../api/admin";
 import { getNewsCollection, newsHealth } from "../../api/collection";
 import { getAllPosts } from "../../api/board";
+import { collectorHealth, getWeatherStatus, worstHealth } from "../../api/weather";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { dateTime } from "../../utils/format";
 import SystemStatus from "./SystemStatus";
 
-/** 뉴스 수집이 멈췄거나 실패 중이면 첫 화면 맨 위에 경고 (서버에 연결된 경우만) */
+/**
+ * 수집이 멈췄거나 실패 중이면 첫 화면 맨 위에 경고 (서버에 연결된 경우만)
+ * 뉴스: 지연·실패·멈춤 / 예보: 실패·멈춤 (지난 발표는 다시 못 받아 급함) / 관측·전처리: 멈춤
+ */
 function CollectionAlert() {
-  const state = useAsync(() => getNewsCollection().catch(() => null));
-  const news = state.data;
-  if (!news || news.sample) return null;
-  const h = newsHealth(news.log);
-  if (h.level === "ok") return null;
-  return (
-    <div className={`alert-band ${h.level}`} role="alert">
-      <b>⚠️ 뉴스 수집 {h.label}</b>
+  const state = useAsync(() =>
+    Promise.all([getNewsCollection().catch(() => null), getWeatherStatus().catch(() => null)]).then(([news, weather]) => {
+      const bands = [];
+      if (news && !news.sample) bands.push(["뉴스 수집", newsHealth(news.log)]);
+      if (weather?.collect) {
+        const fcst = collectorHealth(weather.collect, "fcst");
+        if (fcst.level !== "ok" && fcst.label !== "지연") bands.push(["예보 수집", fcst]);
+        const obs = worstHealth([...["asos", "aws", "agri"].map((s) => collectorHealth(weather.collect, s)), weather.preprocess && collectorHealth(weather.preprocess, "preprocess")]);
+        if (obs.level === "bad") bands.push(["관측 수집·전처리", obs]);
+      }
+      return bands.filter(([, h]) => h.level !== "ok");
+    }),
+  );
+  return (state.data ?? []).map(([what, h]) => (
+    <div key={what} className={`alert-band ${h.level}`} role="alert">
+      <b>⚠️ {what} {h.label}</b>
       <span>{h.detail}</span>
       <Link className="link" to="/data">데이터 수집 보기 →</Link>
     </div>
-  );
+  ));
 }
 
 /** 관리자 첫 화면: 처리할 일 + 서버 상태 */

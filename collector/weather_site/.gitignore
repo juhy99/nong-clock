@@ -1,0 +1,6 @@
+# 만든 화면 파일 (커밋하지 않음)
+data/
+# 데이터 담당이 준 CSV (커밋하지 않음). 폴더만 남긴다
+input/*
+!input/.gitkeep
+__pycache__/

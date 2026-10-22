@@ -6,5 +6,6 @@
 **/__pycache__
 **/.venv
 collector/**/data
+collector/**/input
 python-ml/data
 backend-spring/build

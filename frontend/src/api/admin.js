@@ -5,10 +5,11 @@ import { recalc } from "./auction";
 import { pingMl } from "./ml";
 import { notify, notifyAll } from "./notify";
 import { BUILD, getNewsCollection, newsHealth } from "./collection";
+import { collectorHealth, getWeatherStatus, worstHealth } from "./weather";
 import { DATA_SOURCES, INITIAL_NOTICES, INITIAL_REPORTS, MODEL_PERFORMANCE } from "../mocks/admin";
 import { auctionsDb, usersDb } from "../mocks/auctions";
 import { load, save } from "../mocks/store";
-import { dateTime } from "../utils/format";
+import { dateTime, daysBetween, todayIso } from "../utils/format";
 
 // ── 신고·분쟁 ──
 export const getReports = () => fake(load("reports", INITIAL_REPORTS));
@@ -92,7 +93,11 @@ export function deleteNotice(id) {
 
 // ── 서버·API 상태 ──
 export async function getSystemStatus() {
-  const [ml, news] = await Promise.all([pingMl(), getNewsCollection().catch((e) => ({ error: e.message }))]);
+  const [ml, news, weather] = await Promise.all([
+    pingMl(),
+    getNewsCollection().catch((e) => ({ error: e.message })),
+    getWeatherStatus().catch((e) => ({ meta: { ok: false, error: e.message, unreachable: true } })),
+  ]);
   const health = news.log && !news.sample ? newsHealth(news.log) : null;
   return [
     { name: "웹 화면 (배포 버전)", ok: true, ms: null, detail: buildText() },
@@ -104,10 +109,25 @@ export async function getSystemStatus() {
       ms: null,
       detail: health ? `${health.label} · ${health.detail}` : news.error ?? "서버에 연결하지 않음 (VITE_NEWS_URL)",
     },
+    weatherSystemRow(weather),
     { name: "ML API (FastAPI)", ok: ml.ok, ms: ml.ms, detail: ml.ok ? `model ${ml.detail.model_version}` : ml.detail },
     { name: "Backend (Spring Boot)", ok: false, ms: null, detail: "아직 개발 전 — 가짜 데이터 사용 중", pending: true },
     { name: "Database (PostgreSQL)", ok: false, ms: null, detail: "Spring 연결 후 확인 가능", pending: true },
   ];
+}
+
+/** 서버 상태의 "날씨 수집기" 줄: 예보·관측·전처리 중 가장 나쁜 상태 */
+export function weatherSystemRow(weather) {
+  const name = "날씨 수집기";
+  if (weather.sample) return { name, ok: false, pending: true, ms: null, detail: "서버에 연결하지 않음 (VITE_NEWS_URL)" };
+  if (!weather.collect) return { name, ok: false, pending: true, ms: null, detail: weather.meta?.unreachable ? weather.meta.error : "수집 기록 없음 (수집기가 아직 안 돌았어요)" };
+  const parts = { 예보: collectorHealth(weather.collect, "fcst"), 관측: worstHealth(["asos", "aws", "agri"].map((s) => collectorHealth(weather.collect, s))) };
+  if (weather.preprocess) parts.전처리 = collectorHealth(weather.preprocess, "preprocess");
+  const worst = worstHealth(Object.values(parts));
+  return {
+    name, ok: worst.level === "ok", warn: worst.level === "warn", ms: null,
+    detail: Object.entries(parts).map(([k, h]) => `${k} ${h.label}`).join(" · ") + (worst.level !== "ok" ? ` · ${worst.detail}` : ""),
+  };
 }
 
 /** 배포 버전 한 줄: "abc1234 · Merge pull request #7 … · 커밋 10/22 15:37 · 빌드 10/22 15:45" */
@@ -124,21 +144,57 @@ export function buildText() {
  * @returns {Promise<{rows: object[], news: object}>}
  */
 export async function getCollectionStatus() {
-  const news = await getNewsCollection().catch((e) => ({ error: e.message }));
+  const [news, weather] = await Promise.all([
+    getNewsCollection().catch((e) => ({ error: e.message })),
+    getWeatherStatus().catch((e) => ({ meta: { ok: false, error: e.message, unreachable: true } })),
+  ]);
   const health = news.log ? newsHealth(news.log) : null;
   const latest = news.log?.runs?.find((r) => r.ok);
-  const rows = DATA_SOURCES.map((s) =>
-    s.key !== "news"
-      ? s
-      : {
-          ...s,
-          last_run: news.log?.runs?.[0]?.finished_at ?? null,
-          ranges: latest?.oldest_at ? [[latest.oldest_at.slice(0, 10), null]] : undefined,
-          rangeText: latest ? `기사 ${latest.stored_total ?? "?"}건` : news.error ? "서버 연결 안 됨" : "-",
-          health,
-        },
-  );
+  const wx = weatherRows(weather);
+  const rows = DATA_SOURCES.map((s) => {
+    if (s.key === "news")
+      return {
+        ...s,
+        last_run: news.log?.runs?.[0]?.finished_at ?? null,
+        ranges: latest?.oldest_at ? [[latest.oldest_at.slice(0, 10), null]] : undefined,
+        rangeText: latest ? `기사 ${latest.stored_total ?? "?"}건` : news.error ? "서버 연결 안 됨" : "-",
+        health,
+      };
+    return wx[s.key] ? { ...s, ...wx[s.key] } : s;
+  });
   return { rows, news };
+}
+
+/**
+ * 날씨 수집기 기록 + 화면 파일(meta.json) → 원천 표의 날씨 줄들 (예보·지난 날씨·장기전망)
+ * 지난 날씨는 관측 수집(ASOS·AWS·농업기상)·전처리·화면 파일 중 가장 나쁜 상태, 관측이 3일 넘게 늦으면 "지연"
+ */
+export function weatherRows({ meta, collect, preprocess, sample }, today = todayIso()) {
+  if (sample) return { weather_obs: { rangeText: "서버에 연결하지 않음" }, forecast: {}, longrange: {} };
+  const day = meta.ranges?.["시도_일"];
+  const sgg = meta.ranges?.["시군구_일"] ?? meta.ranges?.["시군구_월"];
+  const late = day ? daysBetween(day[1], today) - 1 : null;
+  const file = meta.unreachable
+    ? { level: "bad", label: "연결 안 됨", detail: meta.error }
+    : !meta.ok
+      ? { level: "bad", label: "오류", detail: meta.error }
+      : late > 3
+        ? { level: "warn", label: "지연", detail: `관측이 ${day[1]} 까지예요 (${late}일 전)` }
+        : { level: "ok", label: "정상", detail: `${meta.source?.file} · 파일 시각 ${dateTime(meta.source?.modified_at)}` };
+  const lastRun = (src) => collect?.runs?.filter((r) => r.sources?.[src]).at(-1)?.finished_at ?? null;
+  const fromLog = (src) => (collect ? collectorHealth(collect, src) : null);
+  const obs = [file, ...(collect ? ["asos", "aws", "agri"].map(fromLog) : []), preprocess ? collectorHealth(preprocess, "preprocess") : null];
+  const notConnected = { rangeText: "수집 기록 없음 (서버 연결 전)" };
+  return {
+    weather_obs: {
+      last_run: preprocess?.runs?.at(-1)?.finished_at ?? meta.generated_at ?? null,
+      ranges: day ? [[day[0], day[1]]] : undefined,
+      rangeText: day ? `시도 ${day[0].slice(0, 4)}~ · 시군구 ${sgg ? sgg[0].slice(0, 4) : "-"}~ · ${day[1].slice(5).replace("-", "/")}까지` : meta.error ? "파일 없음" : "-",
+      health: worstHealth(obs),
+    },
+    forecast: collect ? { last_run: lastRun("fcst"), health: fromLog("fcst") } : notConnected,
+    longrange: collect ? { last_run: lastRun("longrange"), health: fromLog("longrange") } : notConnected,
+  };
 }
 
 // ── 모델 성능 ──

@@ -52,12 +52,14 @@ const collectedNews = (env) => ({
   configureServer(server) {
     if (env.VITE_DATA_SOURCE !== "live") return;
     // 관리자 › 데이터 수집: 수집 기록·거른 기사 (collect_log.json, rejected.json, news-recent.json)
+    // weather/… 는 날씨 화면 파일 (collector/weather_site 에서 python export_weather.py 로 만든 data/)
     server.middlewares.use("/live/collector-data", async (req, res) => {
-      const name = req.url.replace(/^\//, "").split("?")[0];
+      const path = req.url.replace(/^\//, "").split("?")[0];
+      const [dir, name] = path.startsWith("weather/") ? ["../collector/weather_site/data", path.slice(8)] : ["../collector/news/data", path];
       if (!/^[a-z_-]+\.json$/.test(name)) return void ((res.statusCode = 404), res.end());
       try {
         res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.end(await readFile(resolve(__dirname, "../collector/news/data", name)));
+        res.end(await readFile(resolve(__dirname, dir, name)));
       } catch {
         res.statusCode = 404;
         res.end("{}");

@@ -35,7 +35,7 @@ export const AUCTION_REPORT_TYPES = {
 
 // 데이터 수집 현황. 실제로는 수집 스크립트가 DB 에 남긴 기록을 Spring/ML API 가 돌려준다.
 /**
- * 데이터 원천 목록 (관리자 › 데이터 수집). news 줄은 서버 수집 기록으로 채운다 (api/admin.js getCollectionStatus).
+ * 데이터 원천 목록 (관리자 › 데이터 수집). news 줄은 뉴스 수집 기록, 날씨 줄(forecast·weather_obs·longrange)은 날씨 수집기 기록·화면 파일로 채운다 (api/admin.js getCollectionStatus).
  * mode: server(서버 수집기가 모음) · test(테스트 모드에서 화면이 그때그때 부름) · file(받은 파일) · none(미연결)
  * ranges: 보유 기간 [[시작, 끝], …] (끝 null = 오늘까지), 막대로 그린다. 기간을 모르면 rangeText 만
  */
@@ -47,10 +47,16 @@ export const DATA_SOURCES = [
     note: "빈 기간 2025-03~04, 2025-10~2026-03 · 등급·출하지역·소매가 없음",
   },
   { key: "auction", source: "도매시장 실시간 경락", provider: "aT 공영도매시장", schedule: "-", mode: "none", note: "시세 담당 결정 후 연결" },
-  { key: "forecast", source: "단기예보 (기온·강수확률·습도·풍속)", provider: "기상청", schedule: "화면을 열 때", mode: "test", rangeText: "오늘~모레", note: "테스트 모드에서만 · 서버 수집기 개발 전" },
+  {
+    key: "forecast", source: "단기·중기예보", provider: "기상청 · 데이터 담당 수집기 (collector/weather)", schedule: "3시간마다 (02:20~23:20)", mode: "server",
+    rangeText: "10/21 17시 발표부터", note: "단기 격자 218곳 · 중기 구역 10·도시 27 · 지난 발표는 다시 못 받음 · 홈 날씨 연결 전 (지금 홈은 예시·테스트 모드)",
+  },
   { key: "warning", source: "기상특보", provider: "기상청", schedule: "화면을 열 때", mode: "test", rangeText: "지금 발효 중", note: "테스트 모드에서만" },
-  { key: "asos", source: "ASOS 일자료 (지난 날씨)", provider: "기상청", schedule: "-", mode: "none", note: "키 승인됨 · 수집기 개발 전 (이상기후 판단·모델 학습용)" },
-  { key: "agro", source: "농업기상 관측 (지온)", provider: "농촌진흥청", schedule: "-", mode: "none", note: "키 승인됨 · 홈 날씨 '지온' 채울 예정" },
+  {
+    key: "weather_obs", source: "지난 날씨 (관측 통합)", provider: "기상청 ASOS·AWS + 농진청 농업기상 → 데이터 담당 전처리", schedule: "매일 10:40 수집·전처리", mode: "server",
+    note: "날씨_대통합_일별.csv → 홈 날씨 '지난 날씨' (5분마다 확인) · 지온은 아직 없음",
+  },
+  { key: "longrange", source: "장기전망 (1개월·3개월)", provider: "기상청 날씨누리 PDF", schedule: "매일 확인", mode: "server", note: "평년보다 높음·낮음 확률 · 참고용 (강수 적중 낮음) · 화면 연결 전" },
   { key: "holiday", source: "명절·공휴일", provider: "천문연 특일 정보", schedule: "연 1회", mode: "file", rangeText: "2029년까지", note: "holidays.csv 695건 (모델 학습용)" },
 ];
 

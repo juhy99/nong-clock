@@ -1,0 +1,8 @@
+# 날씨 수집·전처리 (Python 3.9 이상, 리눅스). 시험한 버전: Python 3.13, pandas 3.0.5, numpy 2.5.3, pypdf 5.9.0
+# collect_asos.py · collect_agri.py · collect_fcst.py · run.py 는 표준 라이브러리만 사용
+pandas>=2.0        # collect_aws.py(통합 CSV), preprocess_weather.py, build_weather_daily.py
+numpy>=1.24        # preprocess_weather.py, build_weather_daily.py
+pypdf>=4.0         # collect_longrange.py (장기전망 PDF 글자 추출)
+# 선택: HTTPS 인증서 문제가 있을 때만 (collect_longrange.py가 있으면 자동으로 씀)
+# truststore>=0.9
+# certifi

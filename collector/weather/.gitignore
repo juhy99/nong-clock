@@ -1,0 +1,15 @@
+# 수집 원본·결과·키는 올리지 않음
+data/
+.env
+__pycache__/
+*.pyc
+*.sqlite3
+*.sqlite3-journal
+*.csv
+*.csv.gz
+*.txt.gz
+*.log
+*.pdf
+# 코드가 쓰는 작은 참고 파일은 올림
+!ref/
+!ref/*.csv

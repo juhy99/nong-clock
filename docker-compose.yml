@@ -42,6 +42,10 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:  # 배포 버전 (deploy/deploy.ps1 이 채움, 관리자 화면에 표시)
+        BUILD_SHA: ${BUILD_SHA:-}
+        BUILD_MSG: ${BUILD_MSG:-}
+        BUILD_TIME: ${BUILD_TIME:-}
     container_name: nong-clock-web
     ports:
       - "${WEB_PORT:-80}:80"

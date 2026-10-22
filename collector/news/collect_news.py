@@ -75,8 +75,12 @@ def write_json(path, data):
     os.replace(tmp, path)
 
 
+CALLS = {"n": 0}  # 이번 수집의 네이버 호출 수 (월 한도 확인용)
+
+
 def search(query, start=1):
     """뉴스 검색 한 번. 실패하면 RuntimeError (메시지에 네이버 오류 문구)"""
+    CALLS["n"] += 1
     params = urllib.parse.urlencode({"query": query, "display": DISPLAY, "start": start, "sort": "date"})
     req = urllib.request.Request(f"{API_URL}?{params}", headers={
         "X-NCP-APIGW-API-KEY-ID": os.environ.get("NAVER_CLIENT_ID", "").strip(),
@@ -159,6 +163,7 @@ def drop_old(articles, at):
 def collect():
     """한 번 수집. 반환: 수집 기록 한 줄"""
     started = now()
+    CALLS["n"] = 0
     log = read_json(LOG_FILE, {"last_success_at": None, "runs": []})
     since = datetime.fromisoformat(log["last_success_at"]) - OVERLAP if log.get("last_success_at") else None
     stored = read_json(NEWS_FILE, {"articles": []})["articles"]
@@ -192,13 +197,22 @@ def collect():
     finished = now()
     run = {
         "started_at": started.isoformat(), "finished_at": finished.isoformat(), "ok": ok,
-        "queries": len(queries), "received": len(raw), "added": len(added), "rejected": len(rejected), "errors": errors,
+        "queries": len(queries), "calls": CALLS["n"], "received": len(raw), "added": len(added), "rejected": len(rejected), "errors": errors,
     }
     if ok:
-        save_news(drop_old(stored + added, finished), finished)
+        kept = drop_old(stored + added, finished)
+        save_news(kept, finished)
+        # 관리자 화면용 요약 (90일 파일은 커서 화면이 받지 않음)
+        recent_limit = (finished - timedelta(days=RECENT_DAYS)).isoformat()
+        run |= {
+            "stored_total": len(kept),
+            "stored_recent": sum(n["published_at"] >= recent_limit for n in kept),
+            "oldest_at": min((n["published_at"] for n in kept), default=None),
+        }
         write_json(REJECTED_FILE, {"collected_at": finished.isoformat(), "articles": rejected})
         # 다음 수집은 이번 시작 시각(- 2시간) 이후 기사부터
         log["last_success_at"] = started.isoformat()
+    log["interval_min"] = INTERVAL_MIN
     log["runs"] = ([run] + log.get("runs", []))[:LOG_KEEP]
     write_json(LOG_FILE, log)
     return run

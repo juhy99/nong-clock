@@ -51,6 +51,18 @@ const collectedNews = (env) => ({
   name: "collected-news",
   configureServer(server) {
     if (env.VITE_DATA_SOURCE !== "live") return;
+    // 관리자 › 데이터 수집: 수집 기록·거른 기사 (collect_log.json, rejected.json, news-recent.json)
+    server.middlewares.use("/live/collector-data", async (req, res) => {
+      const name = req.url.replace(/^\//, "").split("?")[0];
+      if (!/^[a-z_-]+\.json$/.test(name)) return void ((res.statusCode = 404), res.end());
+      try {
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(await readFile(resolve(__dirname, "../collector/news/data", name)));
+      } catch {
+        res.statusCode = 404;
+        res.end("{}");
+      }
+    });
     server.middlewares.use("/live/collected-news", async (_req, res) => {
       try {
         const dir = resolve(__dirname, "../collector/news/data");
@@ -68,6 +80,8 @@ const collectedNews = (env) => ({
 
 export default defineConfig(({ mode }) => ({
   plugins: [react(), adminFallback(), collectedNews(loadEnv(mode, __dirname, ""))],
+  // 관리자 › 서버 상태의 "빌드 시각" (배포 버전은 VITE_BUILD_SHA·MSG·TIME, deploy/deploy.ps1 이 넣음)
+  define: { __BUILT_AT__: JSON.stringify(new Date().toISOString()) },
   // shared/news_rules.json(수집기와 같이 쓰는 뉴스 규칙)이 frontend 밖에 있어 한 단계 위까지 읽게 허용
   server: { port: 5173, proxy: liveProxy(loadEnv(mode, __dirname, "")), fs: { allow: [".."] } },
   build: {

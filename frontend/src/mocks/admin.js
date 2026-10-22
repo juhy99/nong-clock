@@ -34,11 +34,24 @@ export const AUCTION_REPORT_TYPES = {
 };
 
 // 데이터 수집 현황. 실제로는 수집 스크립트가 DB 에 남긴 기록을 Spring/ML API 가 돌려준다.
-export const COLLECTION_STATUS = [
-  { source: "KAMIS 일별 도·소매가격", schedule: "평일 1회", last_run: ago(3), latest_data: "직전 조사일", rows: 0, status: "미연결", note: "수집 스크립트 개발 예정" },
-  { source: "기상청 ASOS 일자료", schedule: "매일 1회", last_run: null, latest_data: "-", rows: 0, status: "미연결", note: "API 활용신청 확인 필요" },
-  { source: "기상청 기상특보", schedule: "1시간마다", last_run: ago(1), latest_data: "최근 6일", rows: 0, status: "테스트", note: "API 제한: 최근 6일만 조회" },
-  { source: "명절·공휴일 (특일정보)", schedule: "연 1회", last_run: ago(90), latest_data: "2029년까지", rows: 695, status: "정상", note: "holidays.csv 생성 완료" },
+/**
+ * 데이터 원천 목록 (관리자 › 데이터 수집). news 줄은 서버 수집 기록으로 채운다 (api/admin.js getCollectionStatus).
+ * mode: server(서버 수집기가 모음) · test(테스트 모드에서 화면이 그때그때 부름) · file(받은 파일) · none(미연결)
+ * ranges: 보유 기간 [[시작, 끝], …] (끝 null = 오늘까지), 막대로 그린다. 기간을 모르면 rangeText 만
+ */
+export const DATA_SOURCES = [
+  { key: "news", source: "농업 뉴스", provider: "NAVER API HUB 뉴스 검색", schedule: "1시간마다", mode: "server", note: "collector/news · 90일 보관" },
+  {
+    key: "market", source: "도매시장 32곳 일별 시세", provider: "팀 데이터 (CSV)", schedule: "받은 파일", mode: "file",
+    ranges: [["2020-01-01", "2025-02-28"], ["2025-05-01", "2025-09-30"], ["2026-04-01", "2026-08-31"]],
+    note: "빈 기간 2025-03~04, 2025-10~2026-03 · 등급·출하지역·소매가 없음",
+  },
+  { key: "auction", source: "도매시장 실시간 경락", provider: "aT 공영도매시장", schedule: "-", mode: "none", note: "시세 담당 결정 후 연결" },
+  { key: "forecast", source: "단기예보 (기온·강수확률·습도·풍속)", provider: "기상청", schedule: "화면을 열 때", mode: "test", rangeText: "오늘~모레", note: "테스트 모드에서만 · 서버 수집기 개발 전" },
+  { key: "warning", source: "기상특보", provider: "기상청", schedule: "화면을 열 때", mode: "test", rangeText: "지금 발효 중", note: "테스트 모드에서만" },
+  { key: "asos", source: "ASOS 일자료 (지난 날씨)", provider: "기상청", schedule: "-", mode: "none", note: "키 승인됨 · 수집기 개발 전 (이상기후 판단·모델 학습용)" },
+  { key: "agro", source: "농업기상 관측 (지온)", provider: "농촌진흥청", schedule: "-", mode: "none", note: "키 승인됨 · 홈 날씨 '지온' 채울 예정" },
+  { key: "holiday", source: "명절·공휴일", provider: "천문연 특일 정보", schedule: "연 1회", mode: "file", rangeText: "2029년까지", note: "holidays.csv 695건 (모델 학습용)" },
 ];
 
 // 모델 성능: 팀원 모델 v1 결과(v1_화면용_예측.csv)의 과거적중% (7일·2주·1개월)

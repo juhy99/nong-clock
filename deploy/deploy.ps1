@@ -3,6 +3,9 @@
 #   powershell -ExecutionPolicy Bypass -File deploy\deploy.ps1 -Force   처음 실행·강제 재빌드
 param([switch]$Force)
 
+# git 이 내보내는 한글(커밋 메시지)을 Windows PowerShell 5.1 에서도 깨지지 않게 읽는다
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 $repo = Split-Path $PSScriptRoot -Parent
 Set-Location $repo
 $logFile = Join-Path $PSScriptRoot "deploy.log"
@@ -28,6 +31,11 @@ git checkout main --quiet
 git pull --ff-only origin main --quiet
 if ($LASTEXITCODE -ne 0) { Log "git pull 실패"; exit 1 }
 Log "코드 받음: $($local.Substring(0, 7)) → $($remote.Substring(0, 7))"
+
+# 관리자 화면에 보일 배포 버전 (docker-compose.yml 의 web build args)
+$env:BUILD_SHA = (git rev-parse --short HEAD).Trim()
+$env:BUILD_MSG = (git log -1 --format=%s).Trim()
+$env:BUILD_TIME = (git log -1 --format=%cI).Trim()
 
 docker compose up -d --build --remove-orphans
 if ($LASTEXITCODE -ne 0) { Log "docker compose 실패 (Docker Desktop 이 켜져 있는지 확인)"; exit 1 }

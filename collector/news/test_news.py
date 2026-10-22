@@ -127,6 +127,8 @@ class CollectTest(unittest.TestCase):
         self.assertEqual(len(self.read(collect_news.REJECTED_FILE)["articles"]), 1)
         self.assertEqual(self.read(collect_news.RECENT_FILE)["count"], 1)  # 화면용 최근 7일 파일도 함께
         self.assertEqual(len(FakeNaver.calls), len(rules.queries()))  # 처음엔 검색어마다 한 페이지
+        run = self.read(collect_news.LOG_FILE)["runs"][0]
+        self.assertEqual((run["calls"], run["stored_total"], run["stored_recent"]), (len(rules.queries()), 1, 1))  # 관리자 화면용 요약
 
         # 다음 수집: 새 기사 하나만 더해지고, 이미 있는 기사는 다시 저장하지 않는다
         FakeNaver.articles.insert(0, article("양파 저장 물량 넉넉… 약보합 전망", "산지 출하 조절이 변수", "https://www.nongmin.com/4", 1, collect_news.now()))

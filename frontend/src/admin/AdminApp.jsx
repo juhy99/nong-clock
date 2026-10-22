@@ -12,6 +12,8 @@ import Members from "./pages/Members";
 import ModelPerformance from "./pages/ModelPerformance";
 import Notices from "./pages/Notices";
 import Reports from "./pages/Reports";
+import { buildText } from "../api/admin";
+import { BUILD } from "../api/collection";
 
 const MENU = [
   ["", "📊 대시보드"],
@@ -98,6 +100,7 @@ function AdminLayout() {
           <button className="btn sm admin-menu-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="메뉴">☰</button>
           <a className="link small" href={`${SITE_URL}/`} target="_blank" rel="noreferrer">사용자 사이트 열기 ↗</a>
           <span style={{ flex: 1 }} />
+          {BUILD.sha && <span className="admin-version num" title={buildText()}>배포 {BUILD.sha}</span>}
           <span className="small">🛠️ <b>{user.name}</b></span>
           <button className="btn sm" onClick={logout}>로그아웃</button>
         </header>

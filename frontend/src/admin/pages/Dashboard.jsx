@@ -1,9 +1,26 @@
 import { Link } from "react-router-dom";
 import { getAllAuctions, getReports, getUsers } from "../../api/admin";
+import { getNewsCollection, newsHealth } from "../../api/collection";
 import { getAllPosts } from "../../api/board";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { dateTime } from "../../utils/format";
 import SystemStatus from "./SystemStatus";
+
+/** 뉴스 수집이 멈췄거나 실패 중이면 첫 화면 맨 위에 경고 (서버에 연결된 경우만) */
+function CollectionAlert() {
+  const state = useAsync(() => getNewsCollection().catch(() => null));
+  const news = state.data;
+  if (!news || news.sample) return null;
+  const h = newsHealth(news.log);
+  if (h.level === "ok") return null;
+  return (
+    <div className={`alert-band ${h.level}`} role="alert">
+      <b>⚠️ 뉴스 수집 {h.label}</b>
+      <span>{h.detail}</span>
+      <Link className="link" to="/data">데이터 수집 보기 →</Link>
+    </div>
+  );
+}
 
 /** 관리자 첫 화면: 처리할 일 + 서버 상태 */
 export default function Dashboard() {
@@ -27,6 +44,7 @@ export default function Dashboard() {
   return (
     <>
       <h1>대시보드</h1>
+      <CollectionAlert />
       <Async state={state}>
         {(d) => (
           <>

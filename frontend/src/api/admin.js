@@ -4,9 +4,11 @@ import { fake } from "./client";
 import { recalc } from "./auction";
 import { pingMl } from "./ml";
 import { notify, notifyAll } from "./notify";
-import { COLLECTION_STATUS, INITIAL_NOTICES, INITIAL_REPORTS, MODEL_PERFORMANCE } from "../mocks/admin";
+import { BUILD, getNewsCollection, newsHealth } from "./collection";
+import { DATA_SOURCES, INITIAL_NOTICES, INITIAL_REPORTS, MODEL_PERFORMANCE } from "../mocks/admin";
 import { auctionsDb, usersDb } from "../mocks/auctions";
 import { load, save } from "../mocks/store";
+import { dateTime } from "../utils/format";
 
 // ── 신고·분쟁 ──
 export const getReports = () => fake(load("reports", INITIAL_REPORTS));
@@ -90,16 +92,54 @@ export function deleteNotice(id) {
 
 // ── 서버·API 상태 ──
 export async function getSystemStatus() {
-  const ml = await pingMl();
+  const [ml, news] = await Promise.all([pingMl(), getNewsCollection().catch((e) => ({ error: e.message }))]);
+  const health = news.log && !news.sample ? newsHealth(news.log) : null;
   return [
+    { name: "웹 화면 (배포 버전)", ok: true, ms: null, detail: buildText() },
+    {
+      name: "뉴스 수집기",
+      ok: health?.level === "ok",
+      warn: health?.level === "warn",
+      pending: !health && !news.error,
+      ms: null,
+      detail: health ? `${health.label} · ${health.detail}` : news.error ?? "서버에 연결하지 않음 (VITE_NEWS_URL)",
+    },
     { name: "ML API (FastAPI)", ok: ml.ok, ms: ml.ms, detail: ml.ok ? `model ${ml.detail.model_version}` : ml.detail },
     { name: "Backend (Spring Boot)", ok: false, ms: null, detail: "아직 개발 전 — 가짜 데이터 사용 중", pending: true },
     { name: "Database (PostgreSQL)", ok: false, ms: null, detail: "Spring 연결 후 확인 가능", pending: true },
   ];
 }
 
+/** 배포 버전 한 줄: "abc1234 · Merge pull request #7 … · 커밋 10/22 15:37 · 빌드 10/22 15:45" */
+export function buildText() {
+  if (BUILD.dev) return "개발 중 (npm run dev)";
+  if (!BUILD.sha) return `버전 정보 없음 · 빌드 ${BUILD.builtAt ? dateTime(BUILD.builtAt) : "-"}`;
+  return [BUILD.sha, BUILD.message, BUILD.committedAt && `커밋 ${dateTime(BUILD.committedAt)}`, BUILD.builtAt && `빌드 ${dateTime(BUILD.builtAt)}`].filter(Boolean).join(" · ");
+}
+
 // ── 데이터 수집 현황 ──
-export const getCollectionStatus = () => fake(COLLECTION_STATUS);
+
+/**
+ * 데이터 원천 목록 + 뉴스 수집 현황. 뉴스 줄은 서버 수집 기록으로 채운다 (서버에 못 가면 news.error)
+ * @returns {Promise<{rows: object[], news: object}>}
+ */
+export async function getCollectionStatus() {
+  const news = await getNewsCollection().catch((e) => ({ error: e.message }));
+  const health = news.log ? newsHealth(news.log) : null;
+  const latest = news.log?.runs?.find((r) => r.ok);
+  const rows = DATA_SOURCES.map((s) =>
+    s.key !== "news"
+      ? s
+      : {
+          ...s,
+          last_run: news.log?.runs?.[0]?.finished_at ?? null,
+          ranges: latest?.oldest_at ? [[latest.oldest_at.slice(0, 10), null]] : undefined,
+          rangeText: latest ? `기사 ${latest.stored_total ?? "?"}건` : news.error ? "서버 연결 안 됨" : "-",
+          health,
+        },
+  );
+  return { rows, news };
+}
 
 // ── 모델 성능 ──
 export const getModelPerformance = () => fake(MODEL_PERFORMANCE);

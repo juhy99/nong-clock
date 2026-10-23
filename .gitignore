@@ -13,3 +13,7 @@ __pycache__/
 .env
 .vscode/
 .idea/
+
+# 서버 배포 기록 (deploy/deploy.ps1)
+/deploy/deploy.log
+/deploy/deployed.txt

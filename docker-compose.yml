@@ -13,6 +13,21 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped  # 서버 컴퓨터를 다시 켜도 자동으로
 
+  # 회원·게시판 백엔드 (backend-spring). 서버 .env 에 COMPOSE_PROFILES=spring 을 넣어야 켜진다 (deploy/README.md "회원 백엔드 켜기")
+  # DB 주소·비밀번호는 여기서 덮어쓴다 (application.yml 은 각자 PC 용). 밖으로는 열지 않고 web 의 /api/ 로만
+  backend:
+    build: ./backend-spring
+    container_name: nong-clock-backend
+    profiles: ["spring"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/farmdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      ML_API_URL: http://ml-api:8000
+    depends_on:
+      - db
+    restart: unless-stopped
+
   ml-api:
     build: ./ml-api
     container_name: nong-clock-ml-api
@@ -68,12 +83,13 @@ services:
       - weatherdata:/app/collector/weather_site/data
     restart: unless-stopped
 
-  # 서버 화면: http://서버주소 (사용자) · /admin/ (관리자) · /ml/ (ML API) · /data/ (수집한 뉴스) · /data/weather/ (날씨)
+  # 서버 화면: http://서버주소 (사용자) · /admin/ (관리자) · /api/ (회원 백엔드) · /ml/ (ML API) · /data/ (수집한 뉴스) · /data/weather/ (날씨)
   web:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      args:  # 배포 버전 (deploy/deploy.ps1 이 채움, 관리자 화면에 표시)
+      args:  # 배포 버전 (deploy/deploy.ps1 이 채움, 관리자 화면에 표시) · 회원 기능 mock/spring (서버 .env 의 AUTH_MODE)
+        VITE_AUTH: ${AUTH_MODE:-mock}
         BUILD_SHA: ${BUILD_SHA:-}
         BUILD_MSG: ${BUILD_MSG:-}
         BUILD_TIME: ${BUILD_TIME:-}

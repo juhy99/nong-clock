@@ -37,6 +37,17 @@ Spring·DB 가 생기기 전에 **내 PC에서만** 기상청·네이버 실제 
 - **서버에 모인 기사로 보기:** `frontend/.env` 에 `VITE_NEWS_URL=http://서버주소/data/news-recent.json` (서버 운영은 저장소 맨 위 `deploy/README.md`). 내 PC 의 `collector/news` 로 모은 기사는 테스트 모드(`live`)에서 자동으로 읽습니다
 - **규칙 다듬기용 표본:** 테스트 모드로 `npm run dev` 를 켜 둔 채 `node scripts/news-sample.mjs` → `frontend/news-sample.json` (네이버 원본, 커밋 안 됨)
 
+## 회원 기능: 가짜 계정 / 회원 백엔드 (`VITE_AUTH`)
+
+| `frontend/.env` | 동작 |
+|---|---|
+| 없음 또는 `VITE_AUTH=mock` (기본) | 아래 데모 계정 · 브라우저에 저장되는 가짜 계정. 서버 사이트도 백엔드가 준비될 때까지 이 방식 |
+| `VITE_AUTH=spring` | 회원가입·로그인을 `backend-spring` 의 `/api/auth/signup` · `/api/auth/login` 으로. Vite 가 `/api` 를 `SPRING_URL`(기본 `http://localhost:8080`)로 넘김 |
+
+- `spring` 에서 백엔드에 아직 없는 내 정보 수정·비밀번호 변경·탈퇴는 "아직 준비 중" 오류가 납니다 (성공한 척하지 않음). 관심 품목만 그동안 이 브라우저에 저장됩니다. 가입하면 바로 로그인까지 합니다
+- 백엔드 응답(`farmName`, `type: MEMBER/ADMIN`, `status: ACTIVE/SUSPENDED/WITHDRAWN`)을 화면 값(`farm_name`, `member/admin`, `정상/정지/탈퇴`)으로 바꾸는 곳은 `api/auth.js` 아래쪽 한 곳
+- 서버 사이트를 바꾸는 방법은 `deploy/README.md` "회원 백엔드 켜기"
+
 ## 데모 계정 (로그인 화면에서 클릭하면 입력됨)
 
 | 유형 | 이메일 | 비밀번호 |

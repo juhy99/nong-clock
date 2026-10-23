@@ -13,6 +13,8 @@
 | `web` → `/data/` | 수집한 뉴스 파일 (읽기 전용) | `/data/news-recent.json` (7일) · `/data/news.json` (90일) · `/data/collect_log.json` (수집 기록) · `/data/rejected.json` (거른 기사) |
 | `web` → `/data/weather/` | 날씨 화면 파일 (읽기 전용) | `/data/weather/meta.json` (상태) · `regions-daily.json` · `regions-monthly.json` · `collect_log.json` (날씨 수집 기록) |
 | `web` → `/ml/` | ML API 중계 | `/ml/items` |
+| `web` → `/api/` | 회원 백엔드 중계 (켰을 때만, 1-2) | `/api/auth/login` |
+| `backend` | 회원·게시판 백엔드 (Spring). **서버 `.env` 에서 켜야 뜸** (1-2) | — |
 | `news-collector` | 켜자마자 한 번, 그 뒤 1시간마다 뉴스 수집 | — |
 | `weather-collector` | 날씨 수집(예보 3시간마다, 관측·장기전망 매일 10:40) + 통합 전처리 → 볼륨 `weatherraw` | — |
 | `weather-export` | 5분마다 전처리 결과(날씨 CSV)가 바뀌었는지 보고 화면 파일로 다시 만듦 | — |
@@ -91,6 +93,28 @@
 
 손으로 CSV 를 넣어 화면만 먼저 볼 때(수집기 없이): 데이터 담당 CSV 를 `C:\farmbid\collector\weather_site\input\` 에 넣으면 5분 안에 반영됩니다. 수집기 표가 생기면 더 최근 파일을 씁니다.
 
+## 1-2. 회원 백엔드 켜기 (나중에: 백엔드가 준비되면)
+
+지금 서버 사이트의 회원가입·로그인은 **가짜 계정 방식**(브라우저에만 저장)입니다 (`.env` 의 `AUTH_MODE=mock`, 기본값).
+백엔드(`backend-spring`)가 회원 정보 수정·비밀번호 변경·탈퇴·회원 유형까지 갖추면 아래 순서로 바꿉니다.
+
+1. **DB 에 테이블 만들기 (한 번만).** `db/init` 의 SQL 은 DB 볼륨이 처음 생길 때만 자동으로 실행되는데, 서버에는 이미 볼륨이 있어서 직접 실행합니다.
+   ```powershell
+   docker compose exec db psql -U postgres -d farmdb -f /docker-entrypoint-initdb.d/farm_table.sql
+   docker compose exec db psql -U postgres -d farmdb -c "\dt"     # users · post 가 보이면 됨
+   ```
+   이미 있는 테이블이면 `already exists` 오류가 납니다. 나중에 표 구조가 바뀌면 백엔드 담당에게 **바뀐 부분만 고치는 SQL**(`ALTER TABLE …`)을 받아 같은 방법으로 실행합니다.
+   ⚠️ 테이블을 처음부터 다시 만들겠다고 `docker compose down -v` 를 쓰지 않습니다 (날씨·뉴스 볼륨까지 지워짐).
+2. **서버 `.env` 에 두 줄 추가·수정**
+   ```
+   AUTH_MODE=spring
+   COMPOSE_PROFILES=spring
+   ```
+3. `powershell -ExecutionPolicy Bypass -File deploy\deploy.ps1 -Force` → `docker compose ps` 에 `backend` 가 running
+4. 확인: `docker compose logs --tail 30 backend` 에 `Started BackendApplication`, 사이트에서 회원가입 → 바로 로그인 상태
+
+되돌리기: `.env` 를 `AUTH_MODE=mock` 으로, `COMPOSE_PROFILES` 줄을 지우고 `docker compose stop backend` → `deploy.ps1 -Force`.
+
 ## 2. 접속
 
 ### 같은 곳 (학원·학교 내부망)
@@ -152,3 +176,5 @@ docker cp nong-clock-news-collector:/app/collector/news/data .\news-backup   # �
 | 지난 날씨가 안 보임 | `docker compose logs --tail 20 weather-export` (전처리 결과 CSV 가 아직 없으면 "입력 파일이 없어요") |
 | 뉴스가 안 쌓임 | 관리자 › 데이터 수집 › 뉴스 수집 (오류·해결 방법 표시) 또는 `http://서버주소/data/collect_log.json` 의 `errors` (키 오류면 `.env` 의 NAVER 값 확인 후 `docker compose up -d news-collector`) |
 | 자동 배포가 안 됨 | `deploy\deploy.log` 에 "직접 고친 파일" → 서버에서 `git status` 확인 후 `git checkout -- .` 로 되돌림 |
+| `deploy.log` 에 "docker compose 실패" | Docker Desktop 이 켜져 있는지. 켜져 있으면 10분 뒤 자동으로 다시 빌드합니다 ("지난 배포가 끝나지 않아 다시 빌드"). 계속 실패하면 `deploy.ps1` 을 직접 실행해 오류 확인 |
+| 회원가입·로그인 오류 (`AUTH_MODE=spring` 일 때) | `docker compose logs --tail 50 backend` (DB 연결·표 구조 오류). 급하면 1-2의 되돌리기 |

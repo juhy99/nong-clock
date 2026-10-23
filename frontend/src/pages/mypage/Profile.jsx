@@ -17,8 +17,12 @@ function InfoForm() {
     e.preventDefault();
     if (f.name.trim().length < 2) return setMsg({ ok: false, text: "이름을 2자 이상 입력하세요" });
     if (!/^01\d-\d{3,4}-\d{4}$/.test(f.phone)) return setMsg({ ok: false, text: "휴대폰 번호를 확인하세요 (예: 010-1234-5678)" });
-    await updateProfile({ ...f, name: f.name.trim(), notify });
-    setMsg({ ok: true, text: "저장했습니다" });
+    try {
+      await updateProfile({ ...f, name: f.name.trim(), notify });
+      setMsg({ ok: true, text: "저장했습니다" });
+    } catch (err) {
+      setMsg({ ok: false, text: err.message });
+    }
   }
 
   return (

@@ -46,6 +46,10 @@ const liveProxy = (env) => {
   };
 };
 
+// 회원 백엔드(VITE_AUTH=spring): 화면이 /api/... 를 부르면 이 개발 서버가 Spring(SPRING_URL, 기본 localhost:8080)으로 넘긴다
+// 서버 화면에서는 nginx 가 같은 일을 한다 (frontend/nginx.conf). 주소(Host)를 바꾸지 않고 넘겨야 Spring 이 같은 사이트 요청으로 보고 CORS 로 막지 않는다
+const springProxy = (env) => (env.VITE_AUTH === "spring" ? { "/api": { target: env.SPRING_URL || "http://localhost:8080" } } : {});
+
 // 테스트 모드: 뉴스 수집기(collector/news)가 저장한 기사 파일을 /live/collected-news 로 보여준다. 파일이 없으면 404 → 화면이 네이버를 직접 부름
 const collectedNews = (env) => ({
   name: "collected-news",
@@ -85,7 +89,7 @@ export default defineConfig(({ mode }) => ({
   // 관리자 › 서버 상태의 "빌드 시각" (배포 버전은 VITE_BUILD_SHA·MSG·TIME, deploy/deploy.ps1 이 넣음)
   define: { __BUILT_AT__: JSON.stringify(new Date().toISOString()) },
   // shared/news_rules.json(수집기와 같이 쓰는 뉴스 규칙)이 frontend 밖에 있어 한 단계 위까지 읽게 허용
-  server: { port: 5173, proxy: liveProxy(loadEnv(mode, __dirname, "")), fs: { allow: [".."] } },
+  server: { port: 5173, proxy: { ...liveProxy(loadEnv(mode, __dirname, "")), ...springProxy(loadEnv(mode, __dirname, "")) }, fs: { allow: [".."] } },
   build: {
     rollupOptions: {
       input: { main: resolve(__dirname, "index.html"), admin: resolve(__dirname, "admin/index.html") },

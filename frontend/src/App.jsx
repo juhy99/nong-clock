@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import { RequireAuth } from "./components/AuthContext";
 import Home from "./pages/Home";
@@ -16,6 +16,8 @@ import { NoticeView, PostView } from "./pages/board/PostView";
 import PostWrite from "./pages/board/PostWrite";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Recommend from "./pages/Recommend";
+import { AUCTION_ENABLED } from "./features";
 
 export default function App() {
   return (
@@ -24,10 +26,21 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="market" element={<Market />} />
         <Route path="ai" element={<Predict />} />
-        <Route path="auctions" element={<Auctions />} />
-        <Route path="auctions/:id" element={<AuctionDetail />} />
+        <Route path="recommend" element={<Recommend />} />
+        {AUCTION_ENABLED ? (
+          <>
+            <Route path="auctions" element={<Auctions />} />
+            <Route path="auctions/:id" element={<AuctionDetail />} />
+            <Route path="mypage/auctions/new" element={<RequireAuth><NewAuction /></RequireAuth>} />
+          </>
+        ) : (
+          // 경매 보류 중: 예전 링크로 들어와도 홈으로
+          <>
+            <Route path="auctions/*" element={<Navigate to="/" replace />} />
+            <Route path="mypage/auctions/*" element={<Navigate to="/mypage" replace />} />
+          </>
+        )}
         <Route path="mypage" element={<RequireAuth><MyPage /></RequireAuth>} />
-        <Route path="mypage/auctions/new" element={<RequireAuth><NewAuction /></RequireAuth>} />
         <Route path="news" element={<News />} />
         <Route path="search" element={<Search />} />
         <Route path="about" element={<About />} />

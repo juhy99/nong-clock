@@ -4,6 +4,7 @@ import { notify } from "./notify";
 import { INITIAL_REPORTS } from "../mocks/admin";
 import { commentsDb, postsDb } from "../mocks/board";
 import { load, save } from "../mocks/store";
+import { AUCTION_ENABLED, isAuctionReport } from "../features";
 
 const OPEN = ["접수", "검토중"];
 
@@ -57,4 +58,4 @@ export function submitReport(user, form) {
 
 /** 내가 한 신고와 처리 결과 */
 export const getMyReports = (userId) =>
-  fake(load("reports", INITIAL_REPORTS).filter((r) => r.reporter === userId).sort((a, b) => b.id - a.id));
+  fake(load("reports", INITIAL_REPORTS).filter((r) => r.reporter === userId && (AUCTION_ENABLED || !isAuctionReport(r))).sort((a, b) => b.id - a.id));

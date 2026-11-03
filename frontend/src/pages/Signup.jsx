@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { isEmailTaken } from "../api/auth";
 import { useAuth } from "../components/AuthContext";
 import { SIDO, formatPhone } from "../utils/format";
+import { AUCTION_ENABLED } from "../features";
 
 const TERMS = [
   ["service", "[필수] 서비스 이용약관 동의", true],
@@ -70,7 +71,7 @@ export default function Signup() {
         {step === 1 ? (
           <div style={{ display: "grid", gap: 16 }}>
             <h1>회원가입</h1>
-            <p className="muted small" style={{ margin: 0 }}>가입하면 경매 입찰과 상품 판매(경매 등록)를 모두 할 수 있어요.</p>
+            {AUCTION_ENABLED && <p className="muted small" style={{ margin: 0 }}>가입하면 경매 입찰과 상품 판매(경매 등록)를 모두 할 수 있어요.</p>}
             <div className="field">
               <label>약관 동의</label>
               <label className="check" style={{ fontWeight: 700 }}>
@@ -105,7 +106,7 @@ export default function Signup() {
               </select>
               {fieldErr("region") && <span className="hint error">{errors.region}</span>}
             </div>
-            {input("farm_name", "농장·상호명 (선택)", { placeholder: "예: 이천 햇살농장", hint: "경매에 판매자 이름으로 함께 표시돼요" })}
+            {input("farm_name", "농장·상호명 (선택)", { placeholder: "예: 이천 햇살농장", hint: AUCTION_ENABLED ? "경매에 판매자 이름으로 함께 표시돼요" : undefined })}
             {error && <span className="hint error">{error}</span>}
             <div style={{ display: "flex", gap: 8 }}>
               <button type="button" className="btn" onClick={() => setStep(1)}>이전</button>

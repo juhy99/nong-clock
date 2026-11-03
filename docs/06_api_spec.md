@@ -113,6 +113,10 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 | GET | `/horizons` | 빠른 선택 기간 (최대 30일) | AI 가격예측 › 날짜 선택 옆 버튼, 홈 기간 버튼 |
 | POST | `/predict` | 가격 예측 | AI 가격예측 (`/ai`) |
 | GET | `/predict/top-movers` | 급등락 예상 품목 | 홈 › AI 추천 · 급등락 예상 품목 |
+| GET | `/recommend/crops` | 작물 추천에 쓰는 작물 목록 | 작물 추천 › 작물 선택 |
+| POST | `/recommend/crops` | 내 땅·시작 날짜 → 심을 수 있는 작물, 마진 높은 순 | 작물 추천 (`/recommend`) › 내 땅으로 작물 고르기 |
+| POST | `/recommend/planting-dates` | 작물 → 앞으로 1년 심는 날별 마진, 가장 좋은 날 | 작물 추천 › 작물로 심을 날짜 고르기 |
+| GET | `/recommend/crops/{code}/prices` | 작물의 13개월 예상 도매가(주 단위) | 작물 추천 › 상세 그래프 |
 
 ---
 
@@ -272,6 +276,48 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | `change_pct` | "▲ 18.1%" (음수면 ▼) |
 | `predicted_price` | "7일 후 예상 OO원/kg" |
 | `confidence` | "AI 신뢰도 88%" |
+
+---
+
+### 1-6. 작물 추천 `/recommend`
+
+> ⚠️ 작물 달력(작형별 심는 시기·재배 일수)은 농사로 재배력 기준이고, **10a당 수량·생산비와 월별 예상가는 샘플 값**이에요(`ml-api/app/core/crop_calendar.py`). 장기 가격 모델과 농촌진흥청 소득자료가 붙으면 그 파일만 바꾸면 돼요.
+
+**마진** = 예상 수확량 × 수확기 예상 도매가 − 생산비
+- 예상 수확량 = 10a당 수량 × 면적(평 ÷ 302.5)
+- 수확기 예상 도매가 = 심는 날 + 첫 수확까지 일수 ~ 수확 끝 사이의 예상 도매가 평균
+- 땅 종류: `open` 노지 · `house` 시설 · `paddy` 논 · `orchard` 과수원 (과수는 다년생이라 날짜별 비교 안 함)
+
+**`POST /recommend/crops`** 내 땅으로 작물 고르기
+```json
+// 요청 — start_date 는 오늘 ~ 30일 뒤 (밖이면 422)
+{ "lands": [{ "type": "open", "area_pyeong": 1200 }, { "type": "house", "area_pyeong": 600 }], "start_date": "2026-11-10" }
+// 응답 (일부) — results 는 margin 높은 순, 금액은 원
+{ "start_date": "2026-11-10",
+  "results": [{ "crop": "tomato", "crop_name": "토마토", "emoji": "🍅", "land_type": "house", "area_pyeong": 600,
+                "cropping": "촉성재배", "plant_date": "2026-11-10", "harvest_start": "2027-02-03", "harvest_end": "2027-05-14",
+                "price_per_kg": 4317, "error_pct": 20, "yield_t": 19.83, "revenue": 85620000, "cost": 51570000,
+                "margin": 34050000, "margin_rate": 39.8, "margin_per_pyeong": 56754, "yield_t_per_10a": 10, "cost_per_10a": 26000000 }],
+  "unavailable": [{ "crop": "garlic", "crop_name": "마늘", "reason": "심는 시기가 아니에요", "next_plant_date": "2027-09-21", "next_cropping": "보통재배" }],
+  "model_version": "dummy-0.1+crop-calendar-sample" }
+```
+
+**`POST /recommend/planting-dates`** 작물로 가장 좋은 심는 날 고르기
+```json
+// 요청
+{ "crop": "tomato", "area_pyeong": 600 }
+// 응답 — points 는 오늘부터 53주, 심을 수 없는 주는 option: null
+{ "crop": { "code": "tomato", "name": "토마토", "land_type": "house", "perennial": false },
+  "best": { ...위 results 항목과 같은 모양 },
+  "top": [ 작형마다 가장 좋은 날, 마진률 높은 순, 최대 3개 ],
+  "points": [{ "plant_date": "2026-11-03", "option": { ... } }, { "plant_date": "2027-03-02", "option": null }],
+  "note": null }
+```
+- `best`: 마진률이 가장 높은 날. 0.5%p 안으로 비슷하면 더 가까운 날
+- 다년생(`apple` 등): `note` 에 안내 문구, `points`·`top` 은 빈 배열, `best` 는 null
+- 없는 작물 → `404`
+
+**`GET /recommend/crops/{code}/prices`** 오늘부터 57주 예상 도매가 `{ date, price, lower, upper }` (원/kg, 80% 범위)
 
 ---
 
@@ -619,3 +665,4 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 2026-10-20 | 통합 검색(`/api/search`, 자동완성), 농업 뉴스(`/api/news`, 1시간마다 네이버 뉴스 검색 API 수집·품목·분류 규칙) 제안 추가 | |
 | 2026-10-21 | 가격 기준 확정(전국 도매시장 · 상 등급, 예측도 같은 기준). 시세 API 제안 변경: 등급별·출하지역별·순별 반입량·시장 목록 추가, 수급 리포트(`/api/supply`) 삭제 | |
 | 2026-10-21 | `GET /api/markets` 에 팀 데이터 시장코드·위치·물량 1위 품목·거래 품목 추가 (홈 지도 도매시장 표시) | |
+| 2026-11-03 | 작물 추천 API(`/recommend/*`) 추가 (작물 달력 샘플 값). 경매는 팀 결정으로 보류: 화면에서 숨김(경매 API 제안은 그대로 둠) | |

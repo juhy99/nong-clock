@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from
 import { getTodayPrices } from "../api/market";
 import { DATA_SOURCE, ML_API_BASE, NEWS_URL } from "../api/client";
 import { onMlOffline } from "../api/ml";
+import { AUCTION_ENABLED } from "../features";
 import { suggest } from "../api/search";
 import { pct, won } from "../utils/format";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
@@ -79,7 +80,7 @@ function HeaderSearch() {
     <form className="search" role="search" onSubmit={submit} onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
       <span aria-hidden>🔍</span>
       <input
-        placeholder="품목·경매·뉴스·게시글 검색"
+        placeholder={AUCTION_ENABLED ? "품목·경매·뉴스·게시글 검색" : "품목·뉴스·게시글 검색"}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -138,7 +139,8 @@ function Header() {
     ["/", "홈"],
     ["/market", "시세·수급"],
     ["/ai", "AI 가격예측"],
-    ["/auctions", "경매 마켓"],
+    ["/recommend", "작물 추천"],
+    ...(AUCTION_ENABLED ? [["/auctions", "경매 마켓"]] : []),
     ["/news", "농업 뉴스"],
     ["/board", "게시판"],
     ["/about", "서비스 소개"],
@@ -224,7 +226,7 @@ export default function Layout() {
       </main>
       {DEV_BADGE && <div className="live-badge" title="frontend/.env 의 VITE_DATA_SOURCE · VITE_NEWS_URL. 나머지는 가짜 데이터">{DEV_BADGE}</div>}
       <footer className="footer">
-        FarmBid · 시세·경매·회원 데이터는 개발용 가상 데이터입니다 (실서비스 연동 시 KAMIS·aT 도매시장 API) ·{" "}
+        FarmBid · 시세·{AUCTION_ENABLED && "경매·"}회원 데이터는 개발용 가상 데이터입니다 (실서비스 연동 시 KAMIS·aT 도매시장 API) ·{" "}
         <Link to="/about" className="link small">서비스 소개 · 문의</Link>
       </footer>
     </>

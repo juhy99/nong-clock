@@ -14,6 +14,7 @@ import Notices from "./pages/Notices";
 import Reports from "./pages/Reports";
 import { buildText } from "../api/admin";
 import { BUILD } from "../api/collection";
+import { AUCTION_ENABLED } from "../features";
 
 const MENU = [
   ["", "📊 대시보드"],
@@ -21,7 +22,7 @@ const MENU = [
   ["board", "📝 게시판 관리"],
   ["notices", "📢 공지사항"],
   ["members", "👥 회원 관리"],
-  ["auctions", "🔨 경매 관리"],
+  ...(AUCTION_ENABLED ? [["auctions", "🔨 경매 관리"]] : []),
   ["data", "📥 데이터 수집"],
   ["model", "📈 모델 성능"],
 ];
@@ -86,7 +87,7 @@ function AdminLayout() {
         <button
           className="btn sm danger"
           onClick={async () => {
-            if (!confirm("가짜 데이터(회원가입·입찰·게시글·사진·신고 처리 기록)를 처음 상태로 되돌릴까요?")) return;
+            if (!confirm(`가짜 데이터(회원가입·${AUCTION_ENABLED ? "입찰·" : ""}게시글·사진·신고 처리 기록)를 처음 상태로 되돌릴까요?`)) return;
             resetAll();
             await clearImages().catch(() => {});
             location.href = "/admin/";
@@ -124,7 +125,7 @@ export default function AdminApp() {
         <Route path="board" element={<BoardAdmin />} />
         <Route path="notices" element={<Notices />} />
         <Route path="members" element={<Members />} />
-        <Route path="auctions" element={<AuctionsAdmin />} />
+        <Route path="auctions" element={AUCTION_ENABLED ? <AuctionsAdmin /> : <Navigate to="/" replace />} />
         <Route path="data" element={<DataStatus />} />
         <Route path="model" element={<ModelPerformance />} />
         <Route path="system" element={<Navigate to="/" replace />} />

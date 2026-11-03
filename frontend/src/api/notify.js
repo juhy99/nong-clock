@@ -4,6 +4,10 @@
 import { fake } from "./client";
 import { DEFAULT_NOTIFY, notificationsDb } from "../mocks/notifications";
 import { usersDb } from "../mocks/auctions";
+import { AUCTION_ENABLED } from "../features";
+
+// 경매 보류 중이면 예전 경매 알림은 보여주지 않는다
+const visible = (n) => AUCTION_ENABLED || n.type !== "auction";
 
 export const POLL_MS = 30_000;
 
@@ -18,10 +22,10 @@ const changed = () => listeners.forEach((fn) => fn());
 const newestFirst = (a, b) => new Date(b.at) - new Date(a.at);
 
 export const getNotifications = (userId) =>
-  fake(notificationsDb.all().filter((n) => n.user === userId).sort(newestFirst), 120);
+  fake(notificationsDb.all().filter((n) => n.user === userId && visible(n)).sort(newestFirst), 120);
 
 export const getUnreadCount = (userId) =>
-  fake(notificationsDb.all().filter((n) => n.user === userId && !n.read).length, 50);
+  fake(notificationsDb.all().filter((n) => n.user === userId && !n.read && visible(n)).length, 50);
 
 export function markRead(userId, id) {
   notificationsDb.saveAll(notificationsDb.all().map((n) => (n.user === userId && (id == null || n.id === id) ? { ...n, read: true } : n)));

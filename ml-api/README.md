@@ -26,6 +26,12 @@ uvicorn app.main:app --reload --port 8000
 | GET | `/horizons` | 예측 기간 목록 (1주/2주/1개월) | 기간 버튼 |
 | POST | `/predict` | 품목·지역·기간별 예측 | AI 가격예측 |
 | GET | `/predict/top-movers?horizon=7&limit=4` | 변동률 절댓값 큰 순 품목 | 홈 · AI 추천 급등락 예상 품목 |
+| GET | `/recommend/crops` | 작물 추천용 작물 목록 | 작물 추천 |
+| POST | `/recommend/crops` | 보유 토지·시작 날짜 → 마진 높은 작물 순 | 작물 추천 › 내 땅으로 |
+| POST | `/recommend/planting-dates` | 작물 → 1년 중 가장 좋은 심는 날 | 작물 추천 › 작물로 |
+| GET | `/recommend/crops/{code}/prices` | 13개월 예상 도매가 | 작물 추천 › 상세 그래프 |
+
+작물 추천의 작물 달력·수량·생산비·월별 예상가는 `app/core/crop_calendar.py` 한 파일에 있어요(지금은 샘플 값). 자세한 형식은 `docs/06_api_spec.md` 1-6.
 
 ### POST /predict 예시
 

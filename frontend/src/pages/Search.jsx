@@ -10,6 +10,7 @@ import ForecastChart from "../components/ForecastChart";
 import ItemImage from "../components/ItemImage";
 import { NewsArticle, NewsRow, NewsSource, NewsUpdated } from "../components/NewsParts";
 import { AuctionCard } from "./Auctions";
+import { AUCTION_ENABLED } from "../features";
 import { boardDate, md, won, wonPerKg } from "../utils/format";
 
 const PREVIEW = { auctions: 3, news: 4, posts: 4 }; // "전체" 탭에서 미리 보여주는 개수
@@ -96,7 +97,7 @@ function ItemSide({ item, p }) {
       )}
       <div className="search-box">
         <h3>{item.name} 소식 받기</h3>
-        <p className="muted small" style={{ margin: "0 0 10px" }}>관심 품목에 넣으면 경매·이상기후 알림을 받고, 농업 뉴스에서 모아 볼 수 있어요.</p>
+        <p className="muted small" style={{ margin: "0 0 10px" }}>관심 품목에 넣으면 {AUCTION_ENABLED ? "경매·" : ""}이상기후 알림을 받고, 농업 뉴스에서 모아 볼 수 있어요.</p>
         <Link className="link" to={`/news?item=${item.code}`}>📰 {item.name} 뉴스 모아 보기 ›</Link>
       </div>
     </aside>
@@ -190,7 +191,7 @@ function Results({ d, tab, setTab }) {
   const tabs = [
     ["all", "전체", null],
     ["item", "시세·예측", item ? 1 : 0],
-    ["auctions", "경매", d.auctions.length],
+    ...(AUCTION_ENABLED ? [["auctions", "경매", d.auctions.length]] : []),
     ["news", "뉴스", d.news.total],
     ["posts", "게시판", d.posts.total],
     ["notices", "공지", d.notices.length],
@@ -285,7 +286,7 @@ export default function Search() {
   if (!q) {
     return (
       <div className="page">
-        <div className="page-head"><h1>검색</h1><p>위 검색창에 품목 이름이나 궁금한 단어를 넣어 보세요. 시세·예측·경매·뉴스·게시판을 한 번에 찾아 드려요.</p></div>
+        <div className="page-head"><h1>검색</h1><p>위 검색창에 품목 이름이나 궁금한 단어를 넣어 보세요. 시세·예측·{AUCTION_ENABLED && "경매·"}뉴스·게시판을 한 번에 찾아 드려요.</p></div>
       </div>
     );
   }
@@ -296,7 +297,7 @@ export default function Search() {
         <h1>'<em>{q}</em>' 검색 결과</h1>
         {d && d.total > 0 && (
           <span className="muted">
-            {[d.item && "품목 1", `경매 ${d.auctions.length}`, `뉴스 ${d.news.total}`, `게시글 ${d.posts.total}`, `공지 ${d.notices.length}`].filter(Boolean).join(" · ")}
+            {[d.item && "품목 1", AUCTION_ENABLED && `경매 ${d.auctions.length}`, `뉴스 ${d.news.total}`, `게시글 ${d.posts.total}`, `공지 ${d.notices.length}`].filter(Boolean).join(" · ")}
           </span>
         )}
       </div>

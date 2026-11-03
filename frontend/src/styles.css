@@ -620,3 +620,34 @@ select.input.mk-days { width: auto; margin-left: auto; padding: 6px 10px; font-s
 @media (max-width: 520px) {
   .grade-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ── 작물 추천 (/recommend) ── */
+.rc-layout { grid-template-columns: 320px minmax(0, 1fr); }
+.rc-col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; min-width: 0; }
+.rc-land { display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; cursor: pointer; }
+.rc-land.on { border-color: var(--green); background: var(--green-soft); }
+.rc-land input[type="checkbox"] { accent-color: var(--green); width: 16px; height: 16px; }
+.rc-land b { display: block; font-size: 14px; }
+.rc-land small { display: block; color: var(--muted); font-size: 12px; }
+.rc-py { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.rc-py .input { width: 86px; text-align: right; padding: 6px 8px; font-weight: 700; color: var(--text); }
+.rc-table td { white-space: nowrap; }
+.rc-crop { display: flex; gap: 10px; align-items: center; }
+.rc-crop small { display: block; color: var(--muted); font-size: 12px; }
+.rc-emo { font-size: 24px; width: 36px; height: 36px; display: grid; place-items: center; background: var(--soft); border-radius: 10px; }
+.rc-tl { position: relative; height: 12px; background: #eef1ec; border-radius: 6px; min-width: 160px; }
+.rc-tl i { position: absolute; top: 0; height: 12px; border-radius: 6px; }
+.rc-tl i.g { left: 0; background: #cfd8cb; }
+.rc-tl i.h { background: var(--green); }
+.rc-off { cursor: default; background: var(--soft); color: var(--muted); border-color: var(--line); }
+.rc-off small { font-weight: 400; margin-left: 4px; }
+.rc-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.rc-kv div { background: var(--soft); border-radius: 14px; padding: 12px 14px; }
+.rc-kv div.hl { background: var(--green-soft); }
+.rc-kv span { display: block; font-size: 12px; color: var(--muted); }
+.rc-kv b { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rc-kv em { display: block; font-style: normal; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.rc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+.rc-legend i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: 0; }
+.rc-legend i.dotl { width: 10px; height: 10px; border-radius: 50%; }
+@media (max-width: 900px) { .rc-layout { grid-template-columns: 1fr; } }

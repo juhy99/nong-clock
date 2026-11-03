@@ -10,9 +10,11 @@ import { DATA_SOURCES, INITIAL_NOTICES, INITIAL_REPORTS, MODEL_PERFORMANCE } fro
 import { auctionsDb, usersDb } from "../mocks/auctions";
 import { load, save } from "../mocks/store";
 import { dateTime, daysBetween, todayIso } from "../utils/format";
+import { AUCTION_ENABLED, isAuctionReport } from "../features";
 
 // ── 신고·분쟁 ──
-export const getReports = () => fake(load("reports", INITIAL_REPORTS));
+// 경매 보류 중이면 경매 신고는 목록·대시보드에서 뺀다 (기록은 그대로)
+export const getReports = () => fake(load("reports", INITIAL_REPORTS).filter((r) => AUCTION_ENABLED || !isAuctionReport(r)));
 
 const RESULT_TEXT = { 처리완료: "조치를 완료했어요", 반려: "확인 결과 문제가 없어 종료했어요", 검토중: "검토를 시작했어요" };
 

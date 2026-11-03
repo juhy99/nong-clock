@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { getMarketCompare, getTodayPrices } from "../api/market";
 import { getItems, predict } from "../api/ml";
 import { NEWS_PAGE_SIZE, getNews } from "../api/news";
-import { recentSearches, removeRecentSearch, saveRecentSearch, searchAll } from "../api/search";
+import { recentSearches, recommendLink, removeRecentSearch, saveRecentSearch, searchAll } from "../api/search";
 import { useAuth } from "../components/AuthContext";
 import { Async, Highlight, PctChange, PriceChange, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
@@ -17,7 +17,7 @@ const PREVIEW = { auctions: 3, news: 4, posts: 4 }; // "전체" 탭에서 미리
 const FORECAST_DAYS = 14;
 
 /** 검색한 품목 요약: 오늘 시세 + 2주 AI 예측 */
-function ItemSummary({ item, p }) {
+function ItemSummary({ item, p, crops }) {
   const { user, updateProfile } = useAuth();
   const today = useAsync(getTodayPrices);
   const row = today.data?.items.find((x) => x.item === item.code);
@@ -47,6 +47,7 @@ function ItemSummary({ item, p }) {
         <div className="acts">
           <Link className="btn primary sm" to={`/market?item=${item.code}`}>📈 시세 자세히</Link>
           <Link className="btn sm" to={`/ai?item=${item.code}`}>🤖 AI 예측</Link>
+          {crops?.some((c) => c.code === item.code) && <Link className="btn primary sm" to={recommendLink(item.code)}>🌱 심는 날 추천</Link>}
           {user ? (
             <button className={`btn sm ${fav ? "fav-on" : ""}`} onClick={toggleFav}>{fav ? "♥ 관심 품목" : "♡ 관심 품목"}</button>
           ) : (
@@ -209,8 +210,23 @@ function Results({ d, tab, setTab }) {
 
       <div className={item && (all || tab === "item") ? "search-layout" : ""}>
         <div className="search-main">
-          {item && (all || tab === "item") && <ItemSummary item={item} p={p} />}
-          {tab === "item" && !item && <div className="state">'{q}'은(는) 팜비드 품목이 아니에요. 품목 이름(예: 사과, 배추)으로 검색하면 시세와 예측을 보여드려요.</div>}
+          {item && (all || tab === "item") && <ItemSummary item={item} p={p} crops={d.crops} />}
+          {(all || tab === "item") && d.crops.length > 0 && (
+            <section className="card rc-search">
+              <div>
+                <b>🌱 작물 추천</b>
+                <p className="muted small" style={{ margin: "2px 0 0" }}>언제 심어야 수확할 때 가장 많이 남는지, 앞으로 1년 중 가장 좋은 심는 날을 알려 드려요 ({won(600)}평 기준, 화면에서 바꿀 수 있어요)</p>
+              </div>
+              <div className="pills">
+                {d.crops.slice(0, 4).map((c) => (
+                  <Link key={c.code} className="btn primary" to={recommendLink(c.code)}>
+                    {c.emoji} {c.name} {c.perennial ? "작물 정보" : "심는 날 추천"} ›
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+          {tab === "item" && !item && !d.crops.length && <div className="state">'{q}'은(는) 팜비드 품목이 아니에요. 품목 이름(예: 사과, 배추)으로 검색하면 시세와 예측을 보여드려요.</div>}
 
           {(all ? d.auctions.length > 0 : tab === "auctions") && (
             <section>

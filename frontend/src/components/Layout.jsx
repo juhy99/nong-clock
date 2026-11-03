@@ -4,7 +4,7 @@ import { getTodayPrices } from "../api/market";
 import { DATA_SOURCE, ML_API_BASE, NEWS_URL } from "../api/client";
 import { onMlOffline } from "../api/ml";
 import { AUCTION_ENABLED } from "../features";
-import { suggest } from "../api/search";
+import { recommendLink, suggest } from "../api/search";
 import { pct, won } from "../utils/format";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
 import { Highlight, useAsync } from "./common";
@@ -72,7 +72,7 @@ function HeaderSearch() {
     const word = q.trim();
     if (word) go(`/search?q=${encodeURIComponent(word)}`);
   }
-  const empty = hints && !hints.items.length && !hints.auctions.length && !hints.posts.length && !hints.news.length;
+  const empty = hints && !hints.items.length && !hints.crops.length && !hints.auctions.length && !hints.posts.length && !hints.news.length;
   // 목록을 누르는 동안 입력창의 blur 로 닫히지 않게
   const keep = (e) => e.preventDefault();
 
@@ -100,6 +100,14 @@ function HeaderSearch() {
               <span className="e"><ItemImage code={i.code} emoji={i.emoji} className="xs" /></span>
               <b><Highlight text={i.name} q={q} /></b>
               <small>시세 바로가기 ›</small>
+            </button>
+          ))}
+          {hints.crops.length > 0 && <div className="g">작물 추천</div>}
+          {hints.crops.map((c) => (
+            <button type="button" key={`crop-${c.code}`} className="o" onClick={() => go(recommendLink(c.code))}>
+              <span className="e">{c.emoji}</span>
+              <b><Highlight text={c.name} q={q} /></b>
+              <small>{c.perennial ? "작물 정보 ›" : "심는 날 추천 ›"}</small>
             </button>
           ))}
           {hints.auctions.length > 0 && <div className="g">경매</div>}

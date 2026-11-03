@@ -281,31 +281,48 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 
 ### 1-6. 작물 추천 `/recommend`
 
-> ⚠️ 작물 달력(작형별 심는 시기·재배 일수)은 농사로 재배력 기준이고, **10a당 수량·생산비와 월별 예상가는 샘플 값**이에요(`ml-api/app/core/crop_calendar.py`). 장기 가격 모델과 농촌진흥청 소득자료가 붙으면 그 파일만 바꾸면 돼요.
+> ⚠️ 값의 출처 (`ml-api/app/core/crop_calendar.py`, 프론트 예비 데이터 `frontend/src/mocks/recommend.js` 와 같음)
+> - 10a당 수량·경영비·가격 수준: **농촌진흥청 2024년도 농산물소득조사**. 조사표 행과 맞는 작형은 `source: "rda"`, 나머지 작형과 조사표에 없는 작물(양파·봄동·마늘·쌀·콩)은 `source: "est"`(추정)
+> - 심는 시기·수확 기간: 농사로 재배력 작형 기준. 보관 일수·상품화율·계절 가격 모양·출하 비중: 추정
+> - 시장별 가격: 전국 평균 예측 × 시장 계수(0.9~1.1, 시세 가짜 데이터와 같은 규칙). 지역별 도매시장 가격 예측 모델이 붙으면 `app/core/markets.py` 의 `market_factor` 자리를 바꾼다
 
-**마진** = 예상 수확량 × 수확기 예상 도매가 − 생산비
-- 예상 수확량 = 10a당 수량 × 면적(평 ÷ 302.5)
-- 수확기 예상 도매가 = 심는 날 + 첫 수확까지 일수 ~ 수확 끝 사이의 예상 도매가 평균
+**순이익(마진)** = 예상 매출 − 총경영비
+- 예상 매출 = Σ(월별 판매량 × 판 도매시장의 월별 예상가). 수확 기간(첫 수확 `harvest_start` ~ 마지막 수확 `harvest_end`)을 주 단위로 나눠, 여러 번 따는 작형(`multi_harvest`, 토마토·오이 등)은 처음·끝에 적고 가운데 많이 출하
+- 판매량 = 10a당 수량 × 면적(평 ÷ 302.5) × 상품화율 (조사표 작물은 조사표 가격에 비품이 섞여 있어 상품화율 1)
+- 총경영비 = 10a당 경영비(전국 평균, 고용 인건비 포함·자가노동비 제외) × 면적 + 사용자가 넣은 임대료(토지·농기계·시설, 그대로 더함). 전국 평균 경영비에도 평균 임차료·위탁영농비가 일부 들어 있어 조금 겹칠 수 있음
+- `margin_low`·`margin_high` = 가격이 예측 오차(`error_pct`)만큼 내리거나 올랐을 때
 - 땅 종류: `open` 노지 · `house` 시설 · `paddy` 논 · `orchard` 과수원 (과수는 다년생이라 날짜별 비교 안 함)
+- 팔 시장: `region`(시·도, 기본 서울) 에서 가장 가까운 공영 도매시장. `market` 에 시장 코드(`GET /api/markets` 와 같음)나 `national`(전국 평균)을 주면 그 시장. 운송비는 아직 안 들어감
 
 **`POST /recommend/crops`** 내 땅으로 작물 고르기
 ```json
-// 요청 — start_date 는 오늘 ~ 30일 뒤 (밖이면 422)
-{ "lands": [{ "type": "open", "area_pyeong": 1200 }, { "type": "house", "area_pyeong": 600 }], "start_date": "2026-11-10" }
+// 요청 — start_date 는 오늘 ~ 30일 뒤 (밖이면 422). 임대료는 이번 작기 만원, 생략하면 0
+{ "region": "전남", "market": null,
+  "lands": [{ "type": "open", "area_pyeong": 1200 }, { "type": "house", "area_pyeong": 600, "land_rent": 80, "machine_rent": 30 }],
+  "start_date": "2026-11-10" }
 // 응답 (일부) — results 는 margin 높은 순, 금액은 원
-{ "start_date": "2026-11-10",
-  "results": [{ "crop": "tomato", "crop_name": "토마토", "emoji": "🍅", "land_type": "house", "area_pyeong": 600,
-                "cropping": "촉성재배", "plant_date": "2026-11-10", "harvest_start": "2027-02-03", "harvest_end": "2027-05-14",
-                "price_per_kg": 4317, "error_pct": 20, "yield_t": 19.83, "revenue": 85620000, "cost": 51570000,
-                "margin": 34050000, "margin_rate": 39.8, "margin_per_pyeong": 56754, "yield_t_per_10a": 10, "cost_per_10a": 26000000 }],
-  "unavailable": [{ "crop": "garlic", "crop_name": "마늘", "reason": "심는 시기가 아니에요", "next_plant_date": "2027-09-21", "next_cropping": "보통재배" }],
+{ "start_date": "2026-11-10", "region": "전남", "market": { "code": "240004", "name": "광주서부", "km": 33 },
+  "results": [{ "crop": "tomato", "crop_name": "토마토", "land_type": "house", "area_pyeong": 600, "cropping": "촉성재배",
+                "plant_date": "2026-11-10", "harvest_start": "2027-01-29", "harvest_end": "2027-06-28",
+                "days_to_harvest": 80, "harvest_days": 150, "multi_harvest": true, "storage_days": 10, "storage_end": "2027-07-08",
+                "region": "전남", "market": { "code": "240004", "name": "광주서부", "km": 33 }, "factor": 1.0192,
+                "price_per_kg": 3133, "national_price_per_kg": 3074, "error_pct": 20,
+                "yield_t": 12.3, "sellable_t": 12.3, "marketable_rate": 1,
+                "revenue": 38529895, "base_cost": 19378512, "land_rent": 800000, "machine_rent": 300000, "cost": 20478512,
+                "margin": 18051383, "margin_rate": 46.9, "margin_low": 10345404, "margin_high": 25757362, "national_margin": 17326771,
+                "source": "rda", "rda": { "row": "토마토(토경)", "revenue": 20510000, "cost": 9768000, "income": 10741000, "kg": 6226, "price": 3294 },
+                "per_10a": { "revenue": 19425489, "cost": 9770000, "income": 9655489 },
+                "shipments": [{ "month": "2027-01", "t": 0.27, "price_per_kg": 3913, "revenue": 1037914 }, "…"],
+                "market_compare": [{ "code": "240004", "name": "광주서부", "km": 33, "price_per_kg": 3133, "revenue": 38529895,
+                                     "margin": 18051383, "margin_rate": 46.9, "factor": 1.0192 }, "… 가까운 4곳 + 서울가락 + 전국 평균"] }],
+  "unavailable": [{ "crop": "garlic", "crop_name": "마늘", "reason": "심는 시기가 아니에요", "next_plant_date": "2027-09-21", "next_cropping": "난지형" }],
   "model_version": "dummy-0.1+crop-calendar-sample" }
 ```
 
 **`POST /recommend/planting-dates`** 작물로 가장 좋은 심는 날 고르기
 ```json
-// 요청
-{ "crop": "tomato", "area_pyeong": 600 }
+// 요청 — region·market·임대료는 위와 같음 (생략 가능)
+{ "crop": "tomato", "area_pyeong": 600, "region": "충남", "market": null, "land_rent": 0, "machine_rent": 0 }
 // 응답 — points 는 오늘부터 53주, 심을 수 없는 주는 option: null
 { "crop": { "code": "tomato", "name": "토마토", "land_type": "house", "perennial": false },
   "best": { ...위 results 항목과 같은 모양 },
@@ -317,7 +334,7 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 - 다년생(`apple` 등): `note` 에 안내 문구, `points`·`top` 은 빈 배열, `best` 는 null
 - 없는 작물 → `404`
 
-**`GET /recommend/crops/{code}/prices`** 오늘부터 57주 예상 도매가 `{ date, price, lower, upper }` (원/kg, 80% 범위)
+**`GET /recommend/crops/{code}/prices`** 오늘부터 57주 전국 평균 예상 도매가 `{ date, price, lower, upper }` (원/kg, 80% 범위). 고른 시장 그래프는 × `factor`
 
 ---
 
@@ -666,3 +683,4 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 2026-10-21 | 가격 기준 확정(전국 도매시장 · 상 등급, 예측도 같은 기준). 시세 API 제안 변경: 등급별·출하지역별·순별 반입량·시장 목록 추가, 수급 리포트(`/api/supply`) 삭제 | |
 | 2026-10-21 | `GET /api/markets` 에 팀 데이터 시장코드·위치·물량 1위 품목·거래 품목 추가 (홈 지도 도매시장 표시) | |
 | 2026-11-03 | 작물 추천 API(`/recommend/*`) 추가 (작물 달력 샘플 값). 경매는 팀 결정으로 보류: 화면에서 숨김(경매 API 제안은 그대로 둠) | |
+| 2026-11-04 | 작물 추천: 농진청 2024 소득조사 값·실제 작형 수확 기간·보관 일수, 월별 출하량 × 월별 예상가, 임대료 입력, 토지 위치(`region`)·판 도매시장(`market`)·시장별 비교, 가격 하락·상승 시나리오, 출처 표시(`source`) | |

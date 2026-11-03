@@ -651,3 +651,4 @@ select.input.mk-days { width: auto; margin-left: auto; padding: 6px 10px; font-s
 .rc-legend i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: 0; }
 .rc-legend i.dotl { width: 10px; height: 10px; border-radius: 50%; }
 @media (max-width: 900px) { .rc-layout { grid-template-columns: 1fr; } }
+.rc-search { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; background: var(--green-soft); border-color: #cfe9da; margin-bottom: 16px; }

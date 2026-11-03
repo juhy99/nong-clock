@@ -6,6 +6,7 @@ import { collectorHealth, getWeatherStatus, worstHealth } from "../../api/weathe
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { dateTime } from "../../utils/format";
 import SystemStatus from "./SystemStatus";
+import { AUCTION_ENABLED } from "../../features";
 
 /**
  * 수집이 멈췄거나 실패 중이면 첫 화면 맨 위에 경고 (서버에 연결된 경우만)
@@ -44,8 +45,12 @@ export default function Dashboard() {
       openReports: reports.filter((r) => r.status === "접수" || r.status === "검토중"),
       tiles: [
         ["처리 대기 신고", reports.filter((r) => r.status === "접수" || r.status === "검토중").length, "/reports", "red"],
-        ["승인 대기 경매", auctions.filter((a) => a.status === "승인대기").length, "/auctions", "amber"],
-        ["진행 중 경매", live.length, "/auctions"],
+        ...(AUCTION_ENABLED
+          ? [
+              ["승인 대기 경매", auctions.filter((a) => a.status === "승인대기").length, "/auctions", "amber"],
+              ["진행 중 경매", live.length, "/auctions"],
+            ]
+          : []),
         ["오늘 올라온 글", posts.filter((p) => new Date(p.created_at).toDateString() === today).length, "/board"],
         ["숨김 처리된 글", posts.filter((p) => p.hidden).length, "/board"],
         ["활동 회원", users.filter((u) => u.status === "정상").length, "/members"],

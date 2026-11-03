@@ -6,6 +6,7 @@ import axios from "axios";
 import { fake } from "./client";
 import { auctionsDb, usersDb } from "../mocks/auctions";
 import { load, save } from "../mocks/store";
+import { AUCTION_ENABLED } from "../features";
 
 export const AUTH_MODE = import.meta.env.VITE_AUTH === "spring" ? "spring" : "mock";
 const SPRING = AUTH_MODE === "spring";
@@ -94,6 +95,7 @@ export function changePassword(id, current, next) {
 
 /** 탈퇴를 막는 이유 목록. 비어 있으면 탈퇴 가능 */
 export function withdrawBlockers(id) {
+  if (!AUCTION_ENABLED) return []; // 경매 보류 중
   if (SPRING) return []; // 경매가 아직 가짜 데이터라 확인할 수 없음 (백엔드 DELETE /api/me 가 409 로 알려줄 예정)
   const now = new Date();
   const live = (a) => (a.status === "진행중" && new Date(a.ends_at) > now) || a.status === "승인대기";

@@ -7,12 +7,14 @@ import { getPosts } from "./board";
 import { getNews } from "./news";
 import { ITEMS } from "../mocks/catalog";
 import { auctionsDb } from "../mocks/auctions";
+import { AUCTION_ENABLED } from "../features";
 import { itemOfQuery, suggestItemName } from "../utils/itemMatch";
 
 const PUBLIC_STATUS = ["진행중", "낙찰", "유찰"];
 
 /** 검색어에 걸린 경매 (진행 중 먼저, 그다음 마감 임박 순) */
 function findAuctions(word, item) {
+  if (!AUCTION_ENABLED) return [];
   return auctionsDb
     .all()
     .map(({ bids, ...a }) => ({ ...a, shown_status: displayStatus(a) }))

@@ -4,6 +4,7 @@ import { getNotifications, markRead, onNotificationsChanged } from "../../api/no
 import { useAuth } from "../../components/AuthContext";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { NotificationItem } from "../../components/NotificationBell";
+import { AUCTION_ENABLED } from "../../features";
 
 export default function MyNotifications() {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ export default function MyNotifications() {
     <section className="card" style={{ paddingBottom: 8 }}>
       <SectionHead
         title="알림"
-        desc="경매·입찰, 이상기후, 공지, 신고 처리 결과 · 받을 종류는 내 정보에서 고를 수 있어요"
+        desc={`${AUCTION_ENABLED ? "경매·입찰, " : ""}이상기후, 공지, 신고 처리 결과 · 받을 종류는 내 정보에서 고를 수 있어요`}
         right={<button className="link" onClick={() => markRead(user.id)}>모두 읽음</button>}
       />
       <Async state={state} empty="받은 알림이 없습니다">

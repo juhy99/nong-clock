@@ -12,6 +12,7 @@ import ForecastChart from "../components/ForecastChart";
 import { NewsRow, NewsTrend, NewsUpdated } from "../components/NewsParts";
 import WeatherMap from "../components/WeatherMap";
 import { AuctionCard } from "./Auctions";
+import { AUCTION_ENABLED } from "../features";
 import { addDays, md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
 
 const HOME_PRICE_COUNT = 8; // 홈에는 일부만, 전체는 시세·수급 화면에서
@@ -249,7 +250,7 @@ export default function Home() {
       <TodayPrices />
       <NewsHeadlines />
       <WeatherMap />
-      <PopularAuctions />
+      {AUCTION_ENABLED && <PopularAuctions />}
     </div>
   );
 }

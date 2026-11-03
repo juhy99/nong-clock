@@ -90,6 +90,7 @@ services:
       dockerfile: frontend/Dockerfile
       args:  # 배포 버전 (deploy/deploy.ps1 이 채움, 관리자 화면에 표시) · 회원 기능 mock/spring (서버 .env 의 AUTH_MODE)
         VITE_AUTH: ${AUTH_MODE:-mock}
+        VITE_ENABLE_AUCTION: ${ENABLE_AUCTION:-false}
         BUILD_SHA: ${BUILD_SHA:-}
         BUILD_MSG: ${BUILD_MSG:-}
         BUILD_TIME: ${BUILD_TIME:-}

@@ -4,6 +4,7 @@ import { changePassword, withdrawBlockers } from "../../api/auth";
 import { useAuth } from "../../components/AuthContext";
 import { SectionHead } from "../../components/common";
 import { DEFAULT_NOTIFY, NOTIFY_TYPES } from "../../mocks/notifications";
+import { AUCTION_ENABLED } from "../../features";
 import { SIDO, formatPhone } from "../../utils/format";
 
 function InfoForm() {
@@ -51,13 +52,13 @@ function InfoForm() {
         </div>
       </div>
       <div className="field">
-        <label htmlFor="p-farm">농장·상호명 <span className="muted small">(선택, 경매 판매자 이름으로 표시)</span></label>
+        <label htmlFor="p-farm">농장·상호명 <span className="muted small">(선택{AUCTION_ENABLED && ", 경매 판매자 이름으로 표시"})</span></label>
         <input id="p-farm" className="input" value={f.farm_name} onChange={set("farm_name")} />
       </div>
       <div className="field">
         <label>알림 받기</label>
         <div className="pills">
-          {Object.entries(NOTIFY_TYPES).map(([k, t]) => (
+          {Object.entries(NOTIFY_TYPES).filter(([k]) => AUCTION_ENABLED || k !== "auction").map(([k, t]) => (
             <button type="button" key={k} className={`pill ${notify[k] ? "on" : ""}`} onClick={() => setNotify({ ...notify, [k]: !notify[k] })}>
               {t.icon} {t.label}
             </button>
@@ -129,9 +130,14 @@ function Withdraw() {
     <form className="card danger-zone" style={{ display: "grid", gap: 10 }} onSubmit={submit}>
       <h3 style={{ color: "var(--danger)" }}>회원 탈퇴</h3>
       <p className="muted small" style={{ margin: 0 }}>
-        탈퇴하면 관심 품목과 알림이 사라지고 로그인할 수 없어요. 지난 낙찰·거래 기록은 분쟁 처리를 위해 보관돼요.
-        <br />
-        <b>진행 중인 내 경매나 최고가로 입찰 중인 경매가 있으면 탈퇴할 수 없어요.</b>
+        탈퇴하면 관심 품목과 알림이 사라지고 로그인할 수 없어요.
+        {AUCTION_ENABLED && (
+          <>
+            {" "}지난 낙찰·거래 기록은 분쟁 처리를 위해 보관돼요.
+            <br />
+            <b>진행 중인 내 경매나 최고가로 입찰 중인 경매가 있으면 탈퇴할 수 없어요.</b>
+          </>
+        )}
       </p>
       {blockers.length > 0 && (
         <div className="banner small">

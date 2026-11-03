@@ -3,6 +3,7 @@ import { getMyReports } from "../../api/report";
 import { useAuth } from "../../components/AuthContext";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { dateTime } from "../../utils/format";
+import { AUCTION_ENABLED } from "../../features";
 
 const STATUS_BADGE = { 접수: "red", 검토중: "amber", 처리완료: "green", 반려: "" };
 
@@ -11,7 +12,7 @@ export default function MyReports() {
   const state = useAsync(() => getMyReports(user.id), [user.id]);
   return (
     <section className="card">
-      <SectionHead title="신고 내역" desc="경매·게시글·댓글의 🚨 신고 버튼으로 접수한 신고와 처리 결과" />
+      <SectionHead title="신고 내역" desc={`${AUCTION_ENABLED ? "경매·" : ""}게시글·댓글의 🚨 신고 버튼으로 접수한 신고와 처리 결과`} />
       <Async state={state} empty="접수한 신고가 없습니다">
         {(rows) => (
           <div className="table-wrap">

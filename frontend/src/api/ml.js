@@ -3,6 +3,7 @@
 import { ML_API_BASE, request } from "./client";
 import { HORIZONS, ITEMS, REGIONS } from "../mocks/catalog";
 import { mockPredict, mockTopMovers } from "../mocks/prediction";
+import { mockCropList, mockPlantingDates, mockPricePath, mockRecommendCrops } from "../mocks/recommend";
 
 const listeners = new Set();
 let offline = false;
@@ -45,6 +46,21 @@ export const getTopMovers = ({ horizon = 7, limit = 4 } = {}) =>
     () => request(ML_API_BASE, `/predict/top-movers?horizon=${horizon}&limit=${limit}`),
     () => mockTopMovers(horizon, limit),
   );
+
+// ── 작물 추천 (docs/06_api_spec.md 1-6) ──
+export const getRecommendCrops = () => withFallback(() => request(ML_API_BASE, "/recommend/crops"), mockCropList);
+
+/** 내 땅으로 작물 고르기. @param {{lands: {type: string, area_pyeong: number}[], start_date: string}} req */
+export const recommendCrops = (req) =>
+  withFallback(() => request(ML_API_BASE, "/recommend/crops", { method: "POST", body: req }), () => mockRecommendCrops(req));
+
+/** 작물로 가장 좋은 심는 날 고르기. @param {{crop: string, area_pyeong: number}} req */
+export const recommendPlantingDates = (req) =>
+  withFallback(() => request(ML_API_BASE, "/recommend/planting-dates", { method: "POST", body: req }), () => mockPlantingDates(req));
+
+/** 작물의 앞으로 13개월 예상 도매가 (주 단위) */
+export const getCropPricePath = (code) =>
+  withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}/prices`), () => mockPricePath(code));
 
 /** 개발자 페이지: 응답 속도까지 재는 상태 확인 */
 export async function pingMl() {

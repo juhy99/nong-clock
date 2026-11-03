@@ -6,15 +6,16 @@ import MyBids from "./MyBids";
 import MyNotifications from "./MyNotifications";
 import MyReports from "./MyReports";
 import Profile from "./Profile";
+import { AUCTION_ENABLED } from "../../features";
 
 export default function MyPage() {
   const { user } = useAuth();
-  const seller = canSell(user);
+  const seller = AUCTION_ENABLED && canSell(user);
   const [params, setParams] = useSearchParams();
   const tabs = [
     ["watch", "관심 품목", FavoritePicker],
     ...(seller ? [["auctions", "내 경매", MyAuctions]] : []),
-    ["bids", "입찰 참여", MyBids],
+    ...(AUCTION_ENABLED ? [["bids", "입찰 참여", MyBids]] : []),
     ["notifications", "알림", MyNotifications],
     ["reports", "신고 내역", MyReports],
     ["profile", "내 정보", Profile],

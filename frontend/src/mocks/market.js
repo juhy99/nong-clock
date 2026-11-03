@@ -93,7 +93,7 @@ function wave(item, iso, smooth = false) {
   return smooth ? 1 + (w - 1) * 0.3 : w + 0.03 * (noise(`d|${item}|${iso}`) - 0.5);
 }
 
-const marketFactor = (item, market) => (market === "national" ? 1 : 0.9 + noise(`m|${item}|${market}`) * 0.2);
+export const marketFactor = (item, market) => (market === "national" ? 1 : 0.9 + noise(`m|${item}|${market}`) * 0.2);
 
 /** 해당 날짜에 그 등급 거래가 없었으면 true (하 등급은 자주, 특 등급은 가끔 비어 있다) */
 function noTrade(item, market, grade, iso) {

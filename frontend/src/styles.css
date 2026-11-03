@@ -652,3 +652,49 @@ select.input.mk-days { width: auto; margin-left: auto; padding: 6px 10px; font-s
 .rc-legend i.dotl { width: 10px; height: 10px; border-radius: 50%; }
 @media (max-width: 900px) { .rc-layout { grid-template-columns: 1fr; } }
 .rc-search { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; background: var(--green-soft); border-color: #cfe9da; margin-bottom: 16px; }
+
+/* 작물 추천 표: 가로 스크롤 없이 한 화면에 */
+.rc-fit { width: 100%; table-layout: fixed; }
+.rc-fit th, .rc-fit td { white-space: normal; padding-left: 8px; padding-right: 8px; vertical-align: middle; }
+.rc-fit th small, .rc-fit td small { display: block; font-size: 12px; font-weight: 600; }
+.rc-fit th small { font-weight: 500; color: var(--muted); }
+.rc-fit .rc-crop b { white-space: nowrap; }
+.rc-gb-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rc-gb-key { display: inline-flex; align-items: center; gap: 4px 10px; font-weight: 500; font-size: 12px; color: var(--muted); }
+.rc-gb-key i, .rc-gb-leg i { display: inline-block; width: 12px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.rc-ruler { position: relative; height: 16px; margin-top: 6px; }
+.rc-ruler span.jan { color: var(--text); font-weight: 700; }
+.rc-ruler span { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.rc-gb-txt { font-size: 13.5px; margin-bottom: 5px; white-space: nowrap; }
+.rc-gb-bar { position: relative; height: 18px; background: #f3f5f1; border-radius: 5px; }
+.rc-gb-bar i.tick { position: absolute; top: -2px; bottom: -2px; width: 1px; background: #dde3d8; }
+.rc-gb-bar i.seg { position: absolute; top: 2px; bottom: 2px; }
+.rc-gb-bar i.seg.grow { border-radius: 4px 0 0 4px; }
+.rc-gb-bar i.seg.store { border-radius: 0 4px 4px 0; }
+.rc-gb-bar i.seg.store.cut { border-radius: 0; -webkit-mask: linear-gradient(90deg, #000 70%, transparent); mask: linear-gradient(90deg, #000 70%, transparent); }
+i.grow { background: #a9dcb9; }
+i.harv { background: #138a48; }
+i.store { background: repeating-linear-gradient(135deg, #f2a33a 0 5px, #f8cd8c 5px 9px); }
+.rc-gb-leg { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 5px; font-size: 12px; color: var(--muted); }
+.rc-gb-leg i { width: 9px; height: 9px; border-radius: 2px; }
+.rc-rate { color: var(--green); }
+.rc-rent { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.rc-rent b { color: var(--text); font-size: 13px; min-width: 36px; }
+.rc-rent label { display: flex; flex-direction: column; gap: 3px; }
+.rc-rent .input { padding: 6px 8px; text-align: right; font-weight: 700; color: var(--text); width: 100%; }
+.rc-est { font-style: normal; font-size: 11px; font-weight: 700; color: #9a5b00; background: #fff1d6; border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; }
+.rc-scn { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.rc-scn div { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; text-align: center; }
+.rc-scn div.mid { border-color: var(--green); background: var(--green-soft); }
+.rc-scn span { display: block; font-size: 12px; color: var(--muted); }
+.rc-scn b { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rc-ship { overflow-x: auto; margin-bottom: 8px; }
+.rc-ship .table { font-size: 13px; }
+.rc-ship td, .rc-ship th { white-space: nowrap; padding: 6px 8px; }
+.rc-src { margin: 4px 0 12px; line-height: 1.6; }
+.rc-rent.two { grid-template-columns: 1fr 1fr; }
+.rc-region { display: grid; grid-template-columns: 92px 1fr; gap: 8px; }
+.rc-sub { font-size: 15px; margin: 6px 0 8px; }
+.rc-tag { font-style: normal; font-size: 11px; font-weight: 700; color: var(--green); background: var(--green-soft); border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
+.rc-tag.best { color: #9a5b00; background: #fff1d6; }
+.rc-layout .seg button { white-space: nowrap; }

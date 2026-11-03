@@ -27,11 +27,11 @@ uvicorn app.main:app --reload --port 8000
 | POST | `/predict` | 품목·지역·기간별 예측 | AI 가격예측 |
 | GET | `/predict/top-movers?horizon=7&limit=4` | 변동률 절댓값 큰 순 품목 | 홈 · AI 추천 급등락 예상 품목 |
 | GET | `/recommend/crops` | 작물 추천용 작물 목록 | 작물 추천 |
-| POST | `/recommend/crops` | 보유 토지·시작 날짜 → 마진 높은 작물 순 | 작물 추천 › 내 땅으로 |
+| POST | `/recommend/crops` | 토지 위치·판 시장·보유 토지·임대료·시작 날짜 → 순이익 높은 작물 순 | 작물 추천 › 내 땅으로 |
 | POST | `/recommend/planting-dates` | 작물 → 1년 중 가장 좋은 심는 날 | 작물 추천 › 작물로 |
 | GET | `/recommend/crops/{code}/prices` | 13개월 예상 도매가 | 작물 추천 › 상세 그래프 |
 
-작물 추천의 작물 달력·수량·생산비·월별 예상가는 `app/core/crop_calendar.py` 한 파일에 있어요(지금은 샘플 값). 자세한 형식은 `docs/06_api_spec.md` 1-6.
+작물 추천의 작물 달력·수량·경영비·월별 예상가는 `app/core/crop_calendar.py`(농진청 2024 농산물소득조사 + 추정값, `source` 로 구분), 도매시장 목록·시장 계수는 `app/core/markets.py` 에 있어요. 자세한 형식은 `docs/06_api_spec.md` 1-6.
 
 ### POST /predict 예시
 

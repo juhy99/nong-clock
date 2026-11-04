@@ -182,7 +182,7 @@ function ForecastHero() {
             "AI가 앞으로의 가격을 알려드려요"
           )}
         </h1>
-        <p className="lead">날씨·명절·과거 시세를 학습한 AI가 앞으로 30일의 전국 도매가를 매일 예측해요. 품목을 골라 보세요.</p>
+        <p className="lead">날씨·명절·과거 시세를 학습한 AI가 앞으로 1년의 도매가를 매일 예측해요. 품목을 골라 보세요.</p>
         {options.data && (
           <div className="pills">
             {options.data.items.slice(0, 9).map((i) => (

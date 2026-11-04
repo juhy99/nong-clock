@@ -1,0 +1,908 @@
+{
+ "_about": "품목 107개 (공영도매시장 거래 품목, 2026-11-04 팀 회의). 화면(frontend/src/mocks/catalog.js)과 ml-api(app/core/catalog.py)가 이 파일 하나를 같이 읽는다. code = 영어 코드(URL·다른 화면에서 씀, 기존 16개는 바꾸지 않음), code4 = 공영 품목코드(모델 결과를 붙이는 키), category = 공영 부류(품목코드 앞 2자리), emoji 가 null 이면 부류 기본 이모지, base_price = 가짜 시세·가짜 예측용 기준가(원/kg) — 가짜 값 (기존 16개는 팀원 모델 v1 의 7일 예측값 근처, 나머지는 도매가 수준을 어림한 값). 순서 = 거래 물량이 많은 순.",
+ "category_by_code4_prefix": {
+  "03": "두류",
+  "04": "잡곡",
+  "05": "서류",
+  "06": "과일류",
+  "07": "견과류",
+  "08": "과채류",
+  "09": "과채류",
+  "10": "엽경채류",
+  "11": "근채류",
+  "12": "조미채소류",
+  "13": "양채류",
+  "14": "산채류",
+  "17": "버섯류"
+ },
+ "category_emoji": {
+  "두류": "🫘",
+  "잡곡": "🌽",
+  "서류": "🥔",
+  "과일류": "🍏",
+  "견과류": "🌰",
+  "과채류": "🫑",
+  "엽경채류": "🥬",
+  "근채류": "🥕",
+  "조미채소류": "🧄",
+  "양채류": "🥦",
+  "산채류": "🌿",
+  "버섯류": "🍄"
+ },
+ "legacy_codes": [
+  "potato",
+  "onion",
+  "carrot",
+  "apple",
+  "watermelon",
+  "napa_cabbage",
+  "radish",
+  "tomato",
+  "cabbage",
+  "sweet_potato",
+  "button_mushroom",
+  "pear",
+  "king_oyster_mushroom",
+  "green_onion",
+  "mandarin",
+  "enoki_mushroom"
+ ],
+ "items": [
+  {
+   "code": "onion",
+   "name": "양파",
+   "code4": "1201",
+   "category": "조미채소류",
+   "emoji": "🧅",
+   "base_price": 1200
+  },
+  {
+   "code": "radish",
+   "name": "무",
+   "code4": "1101",
+   "category": "근채류",
+   "emoji": "🌱",
+   "base_price": 770
+  },
+  {
+   "code": "napa_cabbage",
+   "name": "배추",
+   "code4": "1001",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "base_price": 800
+  },
+  {
+   "code": "apple",
+   "name": "사과",
+   "code4": "0601",
+   "category": "과일류",
+   "emoji": "🍎",
+   "base_price": 4990
+  },
+  {
+   "code": "cucumber",
+   "name": "오이",
+   "code4": "0901",
+   "category": "과채류",
+   "emoji": "🥒",
+   "base_price": 2400
+  },
+  {
+   "code": "watermelon",
+   "name": "수박",
+   "code4": "0801",
+   "category": "과채류",
+   "emoji": "🍉",
+   "base_price": 2290
+  },
+  {
+   "code": "green_onion",
+   "name": "대파",
+   "code4": "1202",
+   "category": "조미채소류",
+   "emoji": "🌿",
+   "base_price": 1470
+  },
+  {
+   "code": "cabbage",
+   "name": "양배추",
+   "code4": "1004",
+   "category": "엽경채류",
+   "emoji": "🥗",
+   "base_price": 1390
+  },
+  {
+   "code": "potato",
+   "name": "감자",
+   "code4": "0501",
+   "category": "서류",
+   "emoji": "🥔",
+   "base_price": 1420
+  },
+  {
+   "code": "mandarin",
+   "name": "감귤",
+   "code4": "0614",
+   "category": "과일류",
+   "emoji": "🍊",
+   "base_price": 5200
+  },
+  {
+   "code": "squash",
+   "name": "호박",
+   "code4": "0902",
+   "category": "과채류",
+   "emoji": "🎃",
+   "base_price": 2200
+  },
+  {
+   "code": "banana",
+   "name": "바나나",
+   "code4": "0612",
+   "category": "과일류",
+   "emoji": "🍌",
+   "base_price": 2300
+  },
+  {
+   "code": "sweet_potato",
+   "name": "고구마",
+   "code4": "0502",
+   "category": "서류",
+   "emoji": "🍠",
+   "base_price": 2050
+  },
+  {
+   "code": "carrot",
+   "name": "당근",
+   "code4": "1103",
+   "category": "근채류",
+   "emoji": "🥕",
+   "base_price": 2100
+  },
+  {
+   "code": "tomato",
+   "name": "토마토",
+   "code4": "0803",
+   "category": "과채류",
+   "emoji": "🍅",
+   "base_price": 3810
+  },
+  {
+   "code": "grape",
+   "name": "포도",
+   "code4": "0603",
+   "category": "과일류",
+   "emoji": "🍇",
+   "base_price": 7500
+  },
+  {
+   "code": "young_napa_cabbage",
+   "name": "얼갈이배추",
+   "code4": "1002",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 1300
+  },
+  {
+   "code": "pear",
+   "name": "배",
+   "code4": "0602",
+   "category": "과일류",
+   "emoji": "🍐",
+   "base_price": 2540
+  },
+  {
+   "code": "green_chili",
+   "name": "풋고추",
+   "code4": "1205",
+   "category": "조미채소류",
+   "emoji": "🌶️",
+   "base_price": 5500
+  },
+  {
+   "code": "korean_melon",
+   "name": "참외",
+   "code4": "0802",
+   "category": "과채류",
+   "emoji": "🍈",
+   "base_price": 5000
+  },
+  {
+   "code": "peach",
+   "name": "복숭아",
+   "code4": "0604",
+   "category": "과일류",
+   "emoji": "🍑",
+   "base_price": 5500
+  },
+  {
+   "code": "strawberry",
+   "name": "딸기",
+   "code4": "0804",
+   "category": "과채류",
+   "emoji": "🍓",
+   "base_price": 12000
+  },
+  {
+   "code": "lettuce",
+   "name": "상추",
+   "code4": "1005",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 4500
+  },
+  {
+   "code": "cherry_tomato",
+   "name": "방울토마토",
+   "code4": "0806",
+   "category": "과채류",
+   "emoji": "🍅",
+   "base_price": 5500
+  },
+  {
+   "code": "king_oyster_mushroom",
+   "name": "새송이버섯",
+   "code4": "1711",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "base_price": 3270
+  },
+  {
+   "code": "young_radish",
+   "name": "열무",
+   "code4": "1006",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 1500
+  },
+  {
+   "code": "chive",
+   "name": "부추",
+   "code4": "1010",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 4000
+  },
+  {
+   "code": "sweet_persimmon",
+   "name": "단감",
+   "code4": "0605",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 3000
+  },
+  {
+   "code": "spinach",
+   "name": "시금치",
+   "code4": "1008",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 4500
+  },
+  {
+   "code": "garlic",
+   "name": "마늘",
+   "code4": "1209",
+   "category": "조미채소류",
+   "emoji": "🧄",
+   "base_price": 7000
+  },
+  {
+   "code": "eggplant",
+   "name": "가지",
+   "code4": "0903",
+   "category": "과채류",
+   "emoji": "🍆",
+   "base_price": 3000
+  },
+  {
+   "code": "ponytail_radish",
+   "name": "알타리무",
+   "code4": "1102",
+   "category": "근채류",
+   "emoji": "",
+   "base_price": 1600
+  },
+  {
+   "code": "paprika",
+   "name": "파프리카",
+   "code4": "1326",
+   "category": "양채류",
+   "emoji": "🫑",
+   "base_price": 4500
+  },
+  {
+   "code": "enoki_mushroom",
+   "name": "팽이버섯",
+   "code4": "1705",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "base_price": 1870
+  },
+  {
+   "code": "orange",
+   "name": "오렌지",
+   "code4": "0618",
+   "category": "과일류",
+   "emoji": "🍊",
+   "base_price": 3800
+  },
+  {
+   "code": "iceberg_lettuce",
+   "name": "양상추",
+   "code4": "1301",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 2000
+  },
+  {
+   "code": "scallion",
+   "name": "쪽파",
+   "code4": "1203",
+   "category": "조미채소류",
+   "emoji": "",
+   "base_price": 4500
+  },
+  {
+   "code": "oyster_mushroom",
+   "name": "느타리버섯",
+   "code4": "1701",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "base_price": 4500
+  },
+  {
+   "code": "melon",
+   "name": "멜론",
+   "code4": "0805",
+   "category": "과채류",
+   "emoji": "🍈",
+   "base_price": 4000
+  },
+  {
+   "code": "bok_choy",
+   "name": "청경채",
+   "code4": "1031",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 3000
+  },
+  {
+   "code": "broccoli",
+   "name": "브로콜리",
+   "code4": "1306",
+   "category": "양채류",
+   "emoji": "🥦",
+   "base_price": 4000
+  },
+  {
+   "code": "perilla_leaf",
+   "name": "깻잎",
+   "code4": "1011",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 9000
+  },
+  {
+   "code": "water_parsley",
+   "name": "미나리",
+   "code4": "1009",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 5000
+  },
+  {
+   "code": "plum",
+   "name": "자두",
+   "code4": "0608",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 5000
+  },
+  {
+   "code": "corn",
+   "name": "옥수수",
+   "code4": "0401",
+   "category": "잡곡",
+   "emoji": "🌽",
+   "base_price": 2500
+  },
+  {
+   "code": "astringent_persimmon",
+   "name": "떫은감",
+   "code4": "0606",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 2500
+  },
+  {
+   "code": "hybrid_citrus",
+   "name": "만감",
+   "code4": "0615",
+   "category": "과일류",
+   "emoji": "🍊",
+   "base_price": 6000
+  },
+  {
+   "code": "shiitake",
+   "name": "표고버섯",
+   "code4": "1704",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "base_price": 12000
+  },
+  {
+   "code": "pineapple",
+   "name": "파인애플",
+   "code4": "0613",
+   "category": "과일류",
+   "emoji": "🍍",
+   "base_price": 2500
+  },
+  {
+   "code": "shishito_pepper",
+   "name": "꽈리고추",
+   "code4": "1206",
+   "category": "조미채소류",
+   "emoji": "🌶️",
+   "base_price": 6000
+  },
+  {
+   "code": "bomdong",
+   "name": "봄동배추",
+   "code4": "1003",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 2000
+  },
+  {
+   "code": "bell_pepper",
+   "name": "피망",
+   "code4": "1302",
+   "category": "양채류",
+   "emoji": "🫑",
+   "base_price": 4000
+  },
+  {
+   "code": "red_chili",
+   "name": "홍고추",
+   "code4": "1208",
+   "category": "조미채소류",
+   "emoji": "🌶️",
+   "base_price": 6000
+  },
+  {
+   "code": "bean_sprout",
+   "name": "콩나물",
+   "code4": "1016",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 1500
+  },
+  {
+   "code": "crown_daisy",
+   "name": "쑥갓",
+   "code4": "1012",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 4000
+  },
+  {
+   "code": "kiwi",
+   "name": "키위",
+   "code4": "0611",
+   "category": "과일류",
+   "emoji": "🥝",
+   "base_price": 5000
+  },
+  {
+   "code": "mustard_leaf",
+   "name": "갓",
+   "code4": "1013",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 1500
+  },
+  {
+   "code": "red_cabbage",
+   "name": "적채",
+   "code4": "1305",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 2000
+  },
+  {
+   "code": "ginger",
+   "name": "생강",
+   "code4": "1210",
+   "category": "조미채소류",
+   "emoji": "🫚",
+   "base_price": 5000
+  },
+  {
+   "code": "chicory",
+   "name": "치커리",
+   "code4": "1303",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 5000
+  },
+  {
+   "code": "chamnamul",
+   "name": "참나물",
+   "code4": "1406",
+   "category": "산채류",
+   "emoji": "",
+   "base_price": 8000
+  },
+  {
+   "code": "kohlrabi",
+   "name": "콜라비",
+   "code4": "1314",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 1500
+  },
+  {
+   "code": "mung_bean_sprout",
+   "name": "숙주나물",
+   "code4": "1017",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 1500
+  },
+  {
+   "code": "chard",
+   "name": "근대",
+   "code4": "1014",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 3000
+  },
+  {
+   "code": "beet",
+   "name": "비트",
+   "code4": "1311",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 2000
+  },
+  {
+   "code": "celery",
+   "name": "셀러리",
+   "code4": "1304",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 3000
+  },
+  {
+   "code": "lemon",
+   "name": "레몬",
+   "code4": "0617",
+   "category": "과일류",
+   "emoji": "🍋",
+   "base_price": 5000
+  },
+  {
+   "code": "mango",
+   "name": "망고",
+   "code4": "0636",
+   "category": "과일류",
+   "emoji": "🥭",
+   "base_price": 12000
+  },
+  {
+   "code": "mallow",
+   "name": "아욱",
+   "code4": "1015",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 3000
+  },
+  {
+   "code": "chwinamul",
+   "name": "취나물",
+   "code4": "1401",
+   "category": "산채류",
+   "emoji": "",
+   "base_price": 8000
+  },
+  {
+   "code": "button_mushroom",
+   "name": "양송이",
+   "code4": "1702",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "base_price": 17730
+  },
+  {
+   "code": "lotus_root",
+   "name": "연근",
+   "code4": "1105",
+   "category": "근채류",
+   "emoji": "",
+   "base_price": 5000
+  },
+  {
+   "code": "sweet_potato_stem",
+   "name": "고구마순",
+   "code4": "1019",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 4000
+  },
+  {
+   "code": "romaine",
+   "name": "로메인",
+   "code4": "1328",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 4000
+  },
+  {
+   "code": "thin_scallion",
+   "name": "실파",
+   "code4": "1204",
+   "category": "조미채소류",
+   "emoji": "",
+   "base_price": 5000
+  },
+  {
+   "code": "cherry",
+   "name": "체리",
+   "code4": "0657",
+   "category": "과일류",
+   "emoji": "🍒",
+   "base_price": 15000
+  },
+  {
+   "code": "fig",
+   "name": "무화과",
+   "code4": "0627",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 10000
+  },
+  {
+   "code": "kale",
+   "name": "케일",
+   "code4": "1307",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 4000
+  },
+  {
+   "code": "beech_mushroom",
+   "name": "만가닥",
+   "code4": "1706",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "base_price": 5000
+  },
+  {
+   "code": "grapefruit",
+   "name": "자몽",
+   "code4": "0619",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 3500
+  },
+  {
+   "code": "blueberry",
+   "name": "블루베리",
+   "code4": "0659",
+   "category": "과일류",
+   "emoji": "🫐",
+   "base_price": 20000
+  },
+  {
+   "code": "dried_persimmon",
+   "name": "곶감",
+   "code4": "0607",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 15000
+  },
+  {
+   "code": "avocado",
+   "name": "아보카도",
+   "code4": "0634",
+   "category": "과일류",
+   "emoji": "🥑",
+   "base_price": 8000
+  },
+  {
+   "code": "burdock",
+   "name": "우엉",
+   "code4": "1104",
+   "category": "근채류",
+   "emoji": "",
+   "base_price": 4000
+  },
+  {
+   "code": "jujube",
+   "name": "대추",
+   "code4": "0702",
+   "category": "견과류",
+   "emoji": "",
+   "base_price": 10000
+  },
+  {
+   "code": "apricot",
+   "name": "살구",
+   "code4": "0610",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 6000
+  },
+  {
+   "code": "yam",
+   "name": "마",
+   "code4": "1408",
+   "category": "산채류",
+   "emoji": "",
+   "base_price": 5000
+  },
+  {
+   "code": "bracken",
+   "name": "고사리",
+   "code4": "1402",
+   "category": "산채류",
+   "emoji": "",
+   "base_price": 10000
+  },
+  {
+   "code": "butterbur_stem",
+   "name": "머위대",
+   "code4": "1024",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 4000
+  },
+  {
+   "code": "stonecrop",
+   "name": "돌나물",
+   "code4": "1027",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 6000
+  },
+  {
+   "code": "bellflower_root",
+   "name": "도라지",
+   "code4": "1407",
+   "category": "산채류",
+   "emoji": "",
+   "base_price": 8000
+  },
+  {
+   "code": "soybean",
+   "name": "콩",
+   "code4": "0301",
+   "category": "두류",
+   "emoji": "🫘",
+   "base_price": 6000
+  },
+  {
+   "code": "pomegranate",
+   "name": "석류",
+   "code4": "0624",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 6000
+  },
+  {
+   "code": "kidney_bean",
+   "name": "강낭콩",
+   "code4": "0305",
+   "category": "두류",
+   "emoji": "🫘",
+   "base_price": 7000
+  },
+  {
+   "code": "pea",
+   "name": "완두",
+   "code4": "0304",
+   "category": "두류",
+   "emoji": "🫛",
+   "base_price": 8000
+  },
+  {
+   "code": "radish_sprout",
+   "name": "무순",
+   "code4": "1039",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 10000
+  },
+  {
+   "code": "amaranth",
+   "name": "비름",
+   "code4": "1021",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 5000
+  },
+  {
+   "code": "coriander",
+   "name": "고수",
+   "code4": "1052",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 10000
+  },
+  {
+   "code": "bangpung",
+   "name": "방풍나물",
+   "code4": "1420",
+   "category": "산채류",
+   "emoji": "",
+   "base_price": 8000
+  },
+  {
+   "code": "cauliflower",
+   "name": "콜리플라워",
+   "code4": "1312",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 4000
+  },
+  {
+   "code": "vitamin_greens",
+   "name": "비타민",
+   "code4": "1325",
+   "category": "양채류",
+   "emoji": "",
+   "base_price": 5000
+  },
+  {
+   "code": "dallae",
+   "name": "달래",
+   "code4": "1020",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 8000
+  },
+  {
+   "code": "dragon_fruit",
+   "name": "용과",
+   "code4": "0658",
+   "category": "과일류",
+   "emoji": "",
+   "base_price": 8000
+  },
+  {
+   "code": "chestnut",
+   "name": "밤",
+   "code4": "0701",
+   "category": "견과류",
+   "emoji": "🌰",
+   "base_price": 6000
+  },
+  {
+   "code": "shepherds_purse",
+   "name": "냉이",
+   "code4": "1018",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 8000
+  },
+  {
+   "code": "mustard_greens",
+   "name": "겨자채",
+   "code4": "1050",
+   "category": "엽경채류",
+   "emoji": "",
+   "base_price": 6000
+  },
+  {
+   "code": "dureup",
+   "name": "두릅",
+   "code4": "1403",
+   "category": "산채류",
+   "emoji": "",
+   "base_price": 20000
+  }
+ ]
+}

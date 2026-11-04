@@ -5,14 +5,15 @@ from pydantic import BaseModel, Field
 
 from app.core.catalog import MAX_HORIZON, NATIONAL
 
-# 오늘로부터 며칠 뒤까지 예측할지. 1 ~ MAX_HORIZON(30)일 중 아무 값이나 가능
+# 오늘로부터 며칠 뒤까지 예측할지. 1 ~ MAX_HORIZON(365)일 중 아무 값이나 가능
 Horizon = Annotated[int, Field(ge=1, le=MAX_HORIZON)]
 
 
 class PredictRequest(BaseModel):
     item: str = Field(examples=["napa_cabbage"], description="품목 코드 (GET /items 참고)")
-    region: str = Field(NATIONAL, examples=[NATIONAL], description="지역 코드 (GET /regions 참고). 생략하면 전국")
-    horizon: Horizon = Field(examples=[14], description="예측 기간(일). 1~30 중 아무 값 (화면에서 고른 날짜 - 기준일)")
+    market: str = Field(NATIONAL, examples=["110001"], description="도매시장 코드 (GET /markets). 생략하거나 national 이면 전국 도매시장 평균")
+    region: str = Field(NATIONAL, examples=[NATIONAL], description="(예전 방식) 지역 코드. 지금은 national 만 — market 을 쓰세요")
+    horizon: Horizon = Field(examples=[90], description="예측 기간(일). 1~365 중 아무 값 (화면에서 고른 날짜 - 기준일). forecast 에 오늘 다음 날부터 그날까지 일별 경로가 온다")
 
 
 class PricePoint(BaseModel):
@@ -38,13 +39,16 @@ class WeatherAlert(BaseModel):
 class PredictResponse(BaseModel):
     item: str
     item_name: str
+    code4: str = Field("", description="공영도매 품목코드")
     unit: str
+    market: str = Field(NATIONAL, description="도매시장 코드")
+    market_name: str = Field("전국 평균")
     region: str
     horizon: Horizon
     base_date: date
     base_price: int = Field(description="기준일 도매가(원/kg)")
     history: list[PricePoint] = Field(description="최근 실제 시세")
-    forecast: list[ForecastPoint] = Field(description="기준일 다음 날부터 horizon 일까지 예측")
+    forecast: list[ForecastPoint] = Field(description="기준일 다음 날부터 horizon 일까지 일별 예측 (90일 넘는 구간은 오차범위를 더 넓힘)")
     predicted_price: int = Field(description="horizon 일 후 예상 도매가(원/kg)")
     change_pct: float = Field(description="기준가 대비 변동률(%)")
     confidence: int = Field(ge=0, le=100, description="신뢰도 지수")

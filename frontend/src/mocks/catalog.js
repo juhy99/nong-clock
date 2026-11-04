@@ -1,23 +1,16 @@
-// ML API(GET /items, /regions, /horizons)가 꺼져 있을 때 쓰는 예비 데이터.
-// 실제 목록의 기준은 ml-api/app/core/catalog.py 이다. 화면 코드는 이 파일을 직접 쓰지 말고 api/ml.js 를 거친다.
-export const ITEMS = [
-  { code: "potato", name: "감자", unit: "kg", category: "근채류", emoji: "🥔" },
-  { code: "onion", name: "양파", unit: "kg", category: "조미채소", emoji: "🧅" },
-  { code: "carrot", name: "당근", unit: "kg", category: "근채류", emoji: "🥕" },
-  { code: "apple", name: "사과", unit: "kg", category: "과일류", emoji: "🍎" },
-  { code: "watermelon", name: "수박", unit: "kg", category: "과채류", emoji: "🍉" },
-  { code: "napa_cabbage", name: "배추", unit: "kg", category: "엽채류", emoji: "🥬" },
-  { code: "radish", name: "무", unit: "kg", category: "근채류", emoji: "🌱" },
-  { code: "tomato", name: "토마토", unit: "kg", category: "과채류", emoji: "🍅" },
-  { code: "cabbage", name: "양배추", unit: "kg", category: "엽채류", emoji: "🥗" },
-  { code: "sweet_potato", name: "고구마", unit: "kg", category: "근채류", emoji: "🍠" },
-  { code: "button_mushroom", name: "양송이", unit: "kg", category: "버섯류", emoji: "🍄" },
-  { code: "pear", name: "배", unit: "kg", category: "과일류", emoji: "🍐" },
-  { code: "king_oyster_mushroom", name: "새송이", unit: "kg", category: "버섯류", emoji: "🍄" },
-  { code: "green_onion", name: "대파", unit: "kg", category: "조미채소", emoji: "🌿" },
-  { code: "mandarin", name: "감귤", unit: "kg", category: "과일류", emoji: "🍊" },
-  { code: "enoki_mushroom", name: "팽이버섯", unit: "kg", category: "버섯류", emoji: "🍄" },
-];
+// ML API(GET /items, /markets, /horizons)가 꺼져 있을 때 쓰는 예비 데이터. 화면 코드는 이 파일을 직접 쓰지 말고 api/ml.js 를 거친다.
+// 품목 107개의 기준은 shared/items.json 한 파일 (ml-api/app/core/catalog.py 도 같은 파일을 읽음). 품목을 바꿀 때는 그 파일만 고친다.
+// code4 = 공영 품목코드(모델 결과를 붙이는 키), category = 공영 부류. 기존 16개 영어 코드는 URL·다른 화면에서 쓰므로 바꾸지 않는다.
+import CATALOG from "../../../shared/items.json";
+
+// 부류별 기본 이모지 (품목 이모지가 없을 때)
+export const CATEGORY_EMOJI = CATALOG.category_emoji;
+export const CATEGORIES = Object.keys(CATEGORY_EMOJI);
+
+// 순서 = 거래 물량이 많은 순
+export const ITEMS = CATALOG.items.map(({ code, name, code4, category, emoji }) => ({ code, name, code4, unit: "kg", category, emoji: emoji ?? CATEGORY_EMOJI[category] }));
+// 예전부터 있던 16개 (뉴스 검색어 등 품목 수가 늘면 곤란한 곳에서 씀)
+export const LEGACY_CODES = CATALOG.legacy_codes;
 
 export const REGIONS = [{ code: "national", name: "전국" }];
 
@@ -25,12 +18,10 @@ export const HORIZONS = [
   { days: 7, label: "1주" },
   { days: 14, label: "2주" },
   { days: 30, label: "1개월" },
+  { days: 90, label: "3개월" },
+  { days: 180, label: "6개월" },
+  { days: 365, label: "1년" },
 ];
 
-// 가짜 시세용 기준가(원/kg). 팀원 모델 v1 결과의 7일 예측값 근처.
-export const BASE_PRICE = {
-  potato: 1420, onion: 1200, carrot: 2100, apple: 4990, watermelon: 2290,
-  napa_cabbage: 800, radish: 770, tomato: 3810, cabbage: 1390, sweet_potato: 2050,
-  button_mushroom: 17730, pear: 2540, king_oyster_mushroom: 3270, green_onion: 1470,
-  mandarin: 5200, enoki_mushroom: 1870,
-};
+// 가짜 시세·가짜 예측용 기준가(원/kg) — 가짜 값 (shared/items.json 의 base_price)
+export const BASE_PRICE = Object.fromEntries(CATALOG.items.map((i) => [i.code, i.base_price]));

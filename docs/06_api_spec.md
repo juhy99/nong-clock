@@ -25,73 +25,197 @@
 ### 가격 기준 (시장 · 등급)
 - **따로 고르지 않는 가격은 모두 전국 도매시장 평균(`national`) · 상 등급(`HIGH`) · 원/kg** 이다
   - 홈 시세 띠·오늘의 주요 시세, 통합 검색 품목 요약, 마이페이지 관심 품목, 경매 등록 AI 참고가, 가격 알림
-  - **AI 예측(ML API)도 전국 · 상 등급 하나만** 예측한다
-- 시장·등급은 시세·수급 화면(`/market`)에서만 고를 수 있다 (처음 열면 전국 · 상)
+- **AI 예측(ML API)은 도매시장 32곳별** (11/4 팀 결정: "전국 평균 예측"이 아니라 "시장별 가격 예측"). `market` 을 생략하면 전국 평균
+  - 시장별 모델은 아직 없어서 지금은 `시장별 가격 = 전국 예측 × 시장 계수` (`ml-api/app/core/markets.py`). 실제 시장별 모델이 붙으면 계수 자리만 바뀌고 API 형식은 그대로
+- 시장·등급은 시세·수급 화면(`/market`)에서 고를 수 있다 (처음 열면 전국 · 상). AI 예측(`/ai`)은 시장을 고른다 (처음 열면 서울가락)
 - 도매 등급 코드 = DB `price_daily.grade`: `SPECIAL`(특) · `HIGH`(상) · `MID`(중) · `LOW`(하) · `ALL`(평균, 거래량 반영)
 - 소매가는 **전국 소매가 하나** (시장·등급 구분 없음)
-- 품목은 16개이고 **품종은 나누지 않는다** (예: 무 = 가을무·고랭지무 모두 `radish`)
+- 품목은 107개이고 **품종은 나누지 않는다** (예: 무 = 가을무·고랭지무 모두 `radish`)
 - 화면에는 기준을 군데군데 적지 않고, 서비스 소개 화면(`/about#price-basis`)에 모아서 안내한다
 
 ### 품목 코드 (`item`)
 URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/market?item=napa_cabbage`) 단위는 전부 `kg` 입니다.
 
-| 코드 | 이름 | 분류 |
-|---|---|---|
-| `potato` | 🥔 감자 | 근채류 |
-| `onion` | 🧅 양파 | 조미채소 |
-| `carrot` | 🥕 당근 | 근채류 |
-| `apple` | 🍎 사과 | 과일류 |
-| `watermelon` | 🍉 수박 | 과채류 |
-| `napa_cabbage` | 🥬 배추 | 엽채류 |
-| `radish` | 🌱 무 | 근채류 |
-| `tomato` | 🍅 토마토 | 과채류 |
-| `cabbage` | 🥗 양배추 | 엽채류 |
-| `sweet_potato` | 🍠 고구마 | 근채류 |
-| `button_mushroom` | 🍄 양송이 | 버섯류 |
-| `pear` | 🍐 배 | 과일류 |
-| `king_oyster_mushroom` | 🍄 새송이 | 버섯류 |
-| `green_onion` | 🌿 대파 | 조미채소 |
-| `mandarin` | 🍊 감귤 | 과일류 |
-| `enoki_mushroom` | 🍄 팽이버섯 | 버섯류 |
+- **품목 107개** = 공영도매시장 거래 품목 (11/4 팀 회의). 순서 = 거래 물량이 많은 순
+- `code4` = **공영도매 품목코드(4자리)**. 모델 결과는 이 코드로 붙인다
+- `category` = **공영 부류** (품목코드 앞 2자리: 03 두류 · 04 잡곡 · 05 서류 · 06 과일류 · 07 견과류 · 08·09 과채류 · 10 엽경채류 · 11 근채류 · 12 조미채소류 · 13 양채류 · 14 산채류 · 17 버섯류)
+- 이모지가 없는 품목은 부류 기본 이모지 (두류 🫘 · 잡곡 🌽 · 서류 🥔 · 과일류 🍏 · 견과류 🌰 · 과채류 🫑 · 엽경채류 🥬 · 근채류 🥕 · 조미채소류 🧄 · 양채류 🥦 · 산채류 🌿 · 버섯류 🍄)
+- 기존 16개 영어 코드(`napa_cabbage` 등)는 URL·다른 화면에서 쓰므로 **바꾸지 않았다**. 새 품목도 같은 방식의 영어 코드
+- 상추(`lettuce`, 1005)는 잎상추(청상추·적상추·포기상추 합산), 양상추(`iceberg_lettuce`, 1301)는 결구상추 — **다른 품목**
+- 이름은 화면 표시용으로 줄였다 (예: 브로콜리(녹색꽃양배추) → 브로콜리, 참다래(키위) → 키위)
 
-> ⚠️ 이전 버전에서 `cabbage` 는 배추였지만, 지금은 **`cabbage` = 양배추, `napa_cabbage` = 배추** 입니다.
+> ⚠️ `cabbage` = 양배추, `napa_cabbage` = 배추 입니다.
 > 프론트는 품목 목록을 하드코딩하지 말고 `GET /items` 로 받아 쓰면 품목이 늘거나 줄어도 화면 코드를 고칠 필요가 없습니다.
 
-> 정의 위치: `ml-api/app/core/catalog.py`. 품목을 추가·변경하면 이 표도 같이 고쳐주세요.
+> 정의 위치: **`shared/items.json` 한 파일** (ml-api `app/core/catalog.py` 와 화면 `frontend/src/mocks/catalog.js` 가 같이 읽음). 가짜 시세·가짜 예측용 기준가 `base_price` 도 이 파일에 있고 **가짜 값**입니다.
 
-### 지역 코드 (`region`)
+<details><summary>품목 107개 전체 표 (펼치기)</summary>
 
-**현재는 `national`(전국) 예측만 제공합니다.** `region` 은 생략하면 `national` 입니다.
+| 코드 | 이름 | code4 | 부류 |
+|---|---|---|---|
+| `onion` | 🧅 양파 | `1201` | 조미채소류 |
+| `radish` | 🌱 무 | `1101` | 근채류 |
+| `napa_cabbage` | 🥬 배추 | `1001` | 엽경채류 |
+| `apple` | 🍎 사과 | `0601` | 과일류 |
+| `cucumber` | 🥒 오이 | `0901` | 과채류 |
+| `watermelon` | 🍉 수박 | `0801` | 과채류 |
+| `green_onion` | 🌿 대파 | `1202` | 조미채소류 |
+| `cabbage` | 🥗 양배추 | `1004` | 엽경채류 |
+| `potato` | 🥔 감자 | `0501` | 서류 |
+| `mandarin` | 🍊 감귤 | `0614` | 과일류 |
+| `squash` | 🎃 호박 | `0902` | 과채류 |
+| `banana` | 🍌 바나나 | `0612` | 과일류 |
+| `sweet_potato` | 🍠 고구마 | `0502` | 서류 |
+| `carrot` | 🥕 당근 | `1103` | 근채류 |
+| `tomato` | 🍅 토마토 | `0803` | 과채류 |
+| `grape` | 🍇 포도 | `0603` | 과일류 |
+| `young_napa_cabbage` | 🥬 얼갈이배추 | `1002` | 엽경채류 |
+| `pear` | 🍐 배 | `0602` | 과일류 |
+| `green_chili` | 🌶️ 풋고추 | `1205` | 조미채소류 |
+| `korean_melon` | 🍈 참외 | `0802` | 과채류 |
+| `peach` | 🍑 복숭아 | `0604` | 과일류 |
+| `strawberry` | 🍓 딸기 | `0804` | 과채류 |
+| `lettuce` | 🥬 상추 | `1005` | 엽경채류 |
+| `cherry_tomato` | 🍅 방울토마토 | `0806` | 과채류 |
+| `king_oyster_mushroom` | 🍄 새송이버섯 | `1711` | 버섯류 |
+| `young_radish` | 🥬 열무 | `1006` | 엽경채류 |
+| `chive` | 🥬 부추 | `1010` | 엽경채류 |
+| `sweet_persimmon` | 🍏 단감 | `0605` | 과일류 |
+| `spinach` | 🥬 시금치 | `1008` | 엽경채류 |
+| `garlic` | 🧄 마늘 | `1209` | 조미채소류 |
+| `eggplant` | 🍆 가지 | `0903` | 과채류 |
+| `ponytail_radish` | 🥕 알타리무 | `1102` | 근채류 |
+| `paprika` | 🫑 파프리카 | `1326` | 양채류 |
+| `enoki_mushroom` | 🍄 팽이버섯 | `1705` | 버섯류 |
+| `orange` | 🍊 오렌지 | `0618` | 과일류 |
+| `iceberg_lettuce` | 🥦 양상추 | `1301` | 양채류 |
+| `scallion` | 🧄 쪽파 | `1203` | 조미채소류 |
+| `oyster_mushroom` | 🍄 느타리버섯 | `1701` | 버섯류 |
+| `melon` | 🍈 멜론 | `0805` | 과채류 |
+| `bok_choy` | 🥬 청경채 | `1031` | 엽경채류 |
+| `broccoli` | 🥦 브로콜리 | `1306` | 양채류 |
+| `perilla_leaf` | 🥬 깻잎 | `1011` | 엽경채류 |
+| `water_parsley` | 🥬 미나리 | `1009` | 엽경채류 |
+| `plum` | 🍏 자두 | `0608` | 과일류 |
+| `corn` | 🌽 옥수수 | `0401` | 잡곡 |
+| `astringent_persimmon` | 🍏 떫은감 | `0606` | 과일류 |
+| `hybrid_citrus` | 🍊 만감 | `0615` | 과일류 |
+| `shiitake` | 🍄 표고버섯 | `1704` | 버섯류 |
+| `pineapple` | 🍍 파인애플 | `0613` | 과일류 |
+| `shishito_pepper` | 🌶️ 꽈리고추 | `1206` | 조미채소류 |
+| `bomdong` | 🥬 봄동배추 | `1003` | 엽경채류 |
+| `bell_pepper` | 🫑 피망 | `1302` | 양채류 |
+| `red_chili` | 🌶️ 홍고추 | `1208` | 조미채소류 |
+| `bean_sprout` | 🥬 콩나물 | `1016` | 엽경채류 |
+| `crown_daisy` | 🥬 쑥갓 | `1012` | 엽경채류 |
+| `kiwi` | 🥝 키위 | `0611` | 과일류 |
+| `mustard_leaf` | 🥬 갓 | `1013` | 엽경채류 |
+| `red_cabbage` | 🥦 적채 | `1305` | 양채류 |
+| `ginger` | 🫚 생강 | `1210` | 조미채소류 |
+| `chicory` | 🥦 치커리 | `1303` | 양채류 |
+| `chamnamul` | 🌿 참나물 | `1406` | 산채류 |
+| `kohlrabi` | 🥦 콜라비 | `1314` | 양채류 |
+| `mung_bean_sprout` | 🥬 숙주나물 | `1017` | 엽경채류 |
+| `chard` | 🥬 근대 | `1014` | 엽경채류 |
+| `beet` | 🥦 비트 | `1311` | 양채류 |
+| `celery` | 🥦 셀러리 | `1304` | 양채류 |
+| `lemon` | 🍋 레몬 | `0617` | 과일류 |
+| `mango` | 🥭 망고 | `0636` | 과일류 |
+| `mallow` | 🥬 아욱 | `1015` | 엽경채류 |
+| `chwinamul` | 🌿 취나물 | `1401` | 산채류 |
+| `button_mushroom` | 🍄 양송이 | `1702` | 버섯류 |
+| `lotus_root` | 🥕 연근 | `1105` | 근채류 |
+| `sweet_potato_stem` | 🥬 고구마순 | `1019` | 엽경채류 |
+| `romaine` | 🥦 로메인 | `1328` | 양채류 |
+| `thin_scallion` | 🧄 실파 | `1204` | 조미채소류 |
+| `cherry` | 🍒 체리 | `0657` | 과일류 |
+| `fig` | 🍏 무화과 | `0627` | 과일류 |
+| `kale` | 🥦 케일 | `1307` | 양채류 |
+| `beech_mushroom` | 🍄 만가닥 | `1706` | 버섯류 |
+| `grapefruit` | 🍏 자몽 | `0619` | 과일류 |
+| `blueberry` | 🫐 블루베리 | `0659` | 과일류 |
+| `dried_persimmon` | 🍏 곶감 | `0607` | 과일류 |
+| `avocado` | 🥑 아보카도 | `0634` | 과일류 |
+| `burdock` | 🥕 우엉 | `1104` | 근채류 |
+| `jujube` | 🌰 대추 | `0702` | 견과류 |
+| `apricot` | 🍏 살구 | `0610` | 과일류 |
+| `yam` | 🌿 마 | `1408` | 산채류 |
+| `bracken` | 🌿 고사리 | `1402` | 산채류 |
+| `butterbur_stem` | 🥬 머위대 | `1024` | 엽경채류 |
+| `stonecrop` | 🥬 돌나물 | `1027` | 엽경채류 |
+| `bellflower_root` | 🌿 도라지 | `1407` | 산채류 |
+| `soybean` | 🫘 콩 | `0301` | 두류 |
+| `pomegranate` | 🍏 석류 | `0624` | 과일류 |
+| `kidney_bean` | 🫘 강낭콩 | `0305` | 두류 |
+| `pea` | 🫛 완두 | `0304` | 두류 |
+| `radish_sprout` | 🥬 무순 | `1039` | 엽경채류 |
+| `amaranth` | 🥬 비름 | `1021` | 엽경채류 |
+| `coriander` | 🥬 고수 | `1052` | 엽경채류 |
+| `bangpung` | 🌿 방풍나물 | `1420` | 산채류 |
+| `cauliflower` | 🥦 콜리플라워 | `1312` | 양채류 |
+| `vitamin_greens` | 🥦 비타민 | `1325` | 양채류 |
+| `dallae` | 🥬 달래 | `1020` | 엽경채류 |
+| `dragon_fruit` | 🍏 용과 | `0658` | 과일류 |
+| `chestnut` | 🌰 밤 | `0701` | 견과류 |
+| `shepherds_purse` | 🥬 냉이 | `1018` | 엽경채류 |
+| `mustard_greens` | 🥬 겨자채 | `1050` | 엽경채류 |
+| `dureup` | 🌿 두릅 | `1403` | 산채류 |
 
-| 코드 | 이름 | 상태 |
-|---|---|---|
-| `national` | 전국 | ✅ 사용 중 (기본값) |
-| `gyeonggi` 경기 · `gangwon` 강원 · `chungbuk` 충북 · `chungnam` 충남 · `jeonbuk` 전북 · `jeonnam` 전남 · `gyeongbuk` 경북 · `gyeongnam` 경남 · `jeju` 제주 | | ⏸ 예정 (지역별 모델 준비 후) |
+</details>
 
-- 지역별 예측은 ML API 환경변수 `ENABLE_REGIONAL_FORECAST=true` 로 켭니다. 켜면 `GET /regions` 에 위 9개 지역이 추가되고, 요청·응답 형식은 그대로입니다.
-- 꺼져 있을 때 `national` 외 코드를 보내면 `404` 입니다.
-- **프론트 규칙:** 지역 선택 박스는 `GET /regions` 로 채우고, **결과가 1개뿐이면 숨깁니다.** → 지금은 숨겨지고, 지역별 예측을 켜면 코드 수정 없이 나타납니다.
+### 도매시장 코드 (`market`)
+
+**가격은 공영 도매시장 32곳별로 예측합니다.** 시장 목록은 **`GET /markets`** (새로 만듦). 예전 `GET /regions`(전국 1개)는 그대로 두되 쓰지 않습니다.
+- 시장 코드 = 팀 데이터 정산 자료의 도매시장코드 (`110001` 서울가락 등). 시세 화면 `GET /api/markets` 와 같은 코드
+- `national` = 전국 도매시장 평균 (`market` 생략 시)
+- **정의 위치: `shared/markets.json` 한 파일** (ml-api `app/core/markets.py` 와 화면 `frontend/src/mocks/market.js` 가 같이 읽음). 시장을 지역 단위로 묶는 방식이 정해지면 이 파일과 `markets.py` 만 고친다
+- 없는 시장 코드 → `404`
+
+| 시·도 | 도매시장 (코드) |
+|---|---|
+| 서울 | 서울가락 `110001` · 서울강서 `110008` |
+| 부산 | 부산엄궁 `210001` · 부산반여 `210009` |
+| 대구 | 대구북부 `220001` |
+| 인천 | 인천남촌 `230001` · 인천삼산 `230003` |
+| 광주 | 광주각화 `240001` · 광주서부 `240004` |
+| 대전 | 대전오정 `250001` · 대전노은 `250003` |
+| 울산 | 울산 `380201` |
+| 경기 | 수원 `310101` · 안양 `310401` · 안산 `310901` · 구리 `311201` |
+| 강원 | 춘천 `320101` · 원주 `320201` · 강릉 `320301` |
+| 충북 | 청주 `330101` · 충주 `330201` |
+| 충남 | 천안 `340101` |
+| 전북 | 전주 `350101` · 익산 `350301` · 정읍 `350402` |
+| 전남 | 순천 `360301` |
+| 경북 | 포항 `370101` · 안동 `370401` · 구미 `371501` |
+| 경남 | 창원팔용 `380101` · 창원내서 `380303` · 진주 `380401` |
+| 세종 · 제주 | 공영 도매시장 없음 |
+
+### 지역 코드 (`region`, 예전 방식)
+
+`national`(전국)만 있습니다. 가격은 위 `market` 으로 고릅니다. (`ENABLE_REGIONAL_FORECAST` 는 남아 있지만 쓰지 않음)
 
 ### 예측 기간 (`horizon`)
 
-- **오늘(기준일)로부터 며칠 뒤까지 예측할지, `1` ~ `30` 중 아무 정수.** 화면에서 사용자가 날짜를 고르면 `고른 날짜 - 오늘` 일수를 보냅니다.
-- `GET /horizons` 의 `7`(1주) · `14`(2주) · `30`(1개월)은 **빠른 선택 버튼**용이고, 이 중 가장 큰 값이 고를 수 있는 최대 날짜입니다.
-- 0 이하나 31 이상을 보내면 `422` 입니다.
-- ⚠️ **모델 담당 확인 필요:** 1~30일 **매일**의 예측값이 필요합니다 (7·14·30일만 예측하는 모델이면 사이 날짜를 어떻게 채울지 정해야 함).
+- **오늘(기준일)로부터 며칠 뒤까지 예측할지, `1` ~ `365` 중 아무 정수** (11/4: 최대 30일 → 1년). 화면에서 사용자가 날짜를 고르면 `고른 날짜 - 오늘` 일수를 보냅니다.
+- `GET /horizons` 의 `7`(1주) · `14`(2주) · `30`(1개월) · `90`(3개월) · `180`(6개월) · `365`(1년)은 **빠른 선택 버튼**용입니다.
+- 0 이하나 366 이상을 보내면 `422` 입니다.
+- 응답 `forecast` 에는 **오늘 다음 날부터 고른 날까지 일별 예측 경로**가 옵니다.
+- **90일(3개월)이 넘는 구간은 오차가 커서** 오차범위를 더 넓히고, 화면에 "장기 예측은 참고용"을 표시합니다.
+- ⚠️ **모델 담당 확인 필요:** 1~365일 **매일**의 예측값이 필요합니다 (월 단위 장기 모델이면 일별 경로를 어떻게 채울지 정해야 함).
 
 ### 에러 응답
 
 | 상태 코드 | 의미 | 예시 |
 |---|---|---|
-| `404` | 없는 품목·지역 코드 | `{"detail": "unknown item: banana"}` |
+| `404` | 없는 품목·시장·지역 코드 | `{"detail": "unknown item: durian"}` |
 | `422` | 요청 형식이 틀림 (빠진 값, 허용 안 되는 값) | 아래 참고 |
 
 ```json
-// 422 예시: horizon 에 31 을 보낸 경우
+// 422 예시: horizon 에 366 을 보낸 경우
 {
   "detail": [
     { "type": "less_than_equal", "loc": ["body", "horizon"],
-      "msg": "Input should be less than or equal to 30", "input": 31 }
+      "msg": "Input should be less than or equal to 365", "input": 366 }
   ]
 }
 ```
@@ -101,22 +225,24 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 ## 1. ML API (FastAPI)
 
 > ⚠️ **현재는 더미(가짜) 예측값**을 돌려줍니다. 응답 **형식은 최종과 동일**하므로 이 형식대로 화면·연동을 개발하면 됩니다.
-> 같은 품목·지역·날짜로 요청하면 항상 같은 값이 나옵니다.
+> 같은 품목·시장·날짜로 요청하면 항상 같은 값이 나옵니다.
 
 ### 한눈에 보기
 
 | 메서드 | 주소 | 설명 | 사용 화면 |
 |---|---|---|---|
 | GET | `/health` | 서버 상태 확인 | - |
-| GET | `/items` | 품목 목록 | AI 가격예측 › 품종 선택 |
-| GET | `/regions` | 지역 목록 (현재 전국만) | AI 가격예측 › 지역 선택 (1개면 숨김) |
-| GET | `/horizons` | 빠른 선택 기간 (최대 30일) | AI 가격예측 › 날짜 선택 옆 버튼, 홈 기간 버튼 |
-| POST | `/predict` | 가격 예측 | AI 가격예측 (`/ai`) |
+| GET | `/items` | 품목 목록 (107개, `code4`·공영 부류) | AI 가격예측·시세 › 품목 선택 상자 |
+| GET | `/markets` | 공영 도매시장 32곳 (새로 만듦) | AI 가격예측 › 도매시장 선택 |
+| GET | `/regions` | (예전 방식) 지역 목록 — 전국만, 화면에서 안 씀 | - |
+| GET | `/horizons` | 빠른 선택 기간 (1주 ~ 1년) | AI 가격예측 › 날짜 선택 옆 버튼, 홈 기간 버튼 |
+| POST | `/predict` | 품목·도매시장별 가격 예측 (최대 365일, 일별 경로) | AI 가격예측 (`/ai`) |
 | GET | `/predict/top-movers` | 급등락 예상 품목 | 홈 › AI 추천 · 급등락 예상 품목 |
-| GET | `/recommend/crops` | 작물 추천에 쓰는 작물 목록 | 작물 추천 › 작물 선택 |
-| POST | `/recommend/crops` | 내 땅·시작 날짜 → 심을 수 있는 작물, 마진 높은 순 | 작물 추천 (`/recommend`) › 내 땅으로 작물 고르기 |
-| POST | `/recommend/planting-dates` | 작물 → 앞으로 1년 심는 날별 마진, 가장 좋은 날 | 작물 추천 › 작물로 심을 날짜 고르기 |
-| GET | `/recommend/crops/{code}/prices` | 작물의 13개월 예상 도매가(주 단위) | 작물 추천 › 상세 그래프 |
+| GET | `/recommend/crops` | 작물 추천에 쓰는 작물 목록 | 작물 추천 › 작물 정보 › 작물 고르기 |
+| POST | `/recommend/crops` | 토지 위치(시·도)·토지별 평수·임대료·기존 작물·시작 날짜 → 심을 수 있는 작물(순이익 순, pH 를 낮춰야 하는 작물은 맨 아래) + 빠진 작물과 이유(`excluded`) | 작물 추천 (`/recommend`) › 내 땅으로 작물 고르기, 작물 정보 |
+| GET | `/recommend/crops/{code}` | 작물 정보: 작형별 심는 기간·일수·10a당 수량·경영비·알맞은 pH (새로 만듦) | 작물 추천 › 작물 정보 (`/recommend?tab=info`) |
+| POST | `/recommend/planting-dates` | 작물 → 앞으로 1년 심는 날별 마진 — **화면에서는 안 씀**(남겨 둠) | - |
+| GET | `/recommend/crops/{code}/prices` | 작물의 13개월 예상 도매가(주 단위) | 작물 추천 › 상세 그래프, 작물 정보 |
 
 ---
 
@@ -131,23 +257,27 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 
 ### 1-2. `GET /items` 품목 목록
 
-**응답 200**
+**응답 200** — 107개, 거래 물량 순
 ```json
 [
-  { "code": "potato", "name": "감자", "unit": "kg", "category": "근채류", "emoji": "🥔" },
-  { "code": "onion",  "name": "양파", "unit": "kg", "category": "조미채소", "emoji": "🧅" }
+  { "code": "onion", "name": "양파", "code4": "1201", "unit": "kg", "category": "조미채소류", "emoji": "🧅" },
+  { "code": "radish", "name": "무", "code4": "1101", "unit": "kg", "category": "근채류", "emoji": "🌱" }
 ]
 ```
 
-### 1-3. `GET /regions` 지역 목록
+### 1-3. `GET /markets` 도매시장 목록 (새로 만듦)
 
-**응답 200**
+`/regions` 를 바꾸지 않고 **`/markets` 를 새로 만들었습니다** (지역과 시장은 다른 개념이라 따로 둠, 예전 `/regions` 를 쓰는 곳이 깨지지 않게).
+
+**응답 200** — 32곳
 ```json
 [
-  { "code": "national", "name": "전국" }
+  { "code": "110001", "name": "서울가락", "sido": "서울", "sigungu": "송파구", "lat": 37.493, "lon": 127.112 },
+  { "code": "110008", "name": "서울강서", "sido": "서울", "sigungu": "강서구", "lat": 37.564, "lon": 126.83 }
 ]
 ```
-지역별 예측을 켜면 `{ "code": "gyeonggi", "name": "경기" }` … 9개가 뒤에 추가됩니다.
+
+`GET /regions` (예전 방식) 은 `[{ "code": "national", "name": "전국" }]` 그대로입니다.
 
 ### 1-3-1. `GET /horizons` 예측 기간 목록
 
@@ -156,7 +286,10 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 [
   { "days": 7,  "label": "1주" },
   { "days": 14, "label": "2주" },
-  { "days": 30, "label": "1개월" }
+  { "days": 30, "label": "1개월" },
+  { "days": 90, "label": "3개월" },
+  { "days": 180, "label": "6개월" },
+  { "days": 365, "label": "1년" }
 ]
 ```
 
@@ -164,32 +297,33 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 
 ### 1-4. `POST /predict` 가격 예측
 
-AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출합니다.
+AI 가격예측 화면에서 품목·도매시장·예측 날짜(내일 ~ 1년 뒤)를 고르면 호출합니다.
 
 **요청 본문**
 
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
 | `item` | string | O | 품목 코드 |
-| `region` | string | X | 지역 코드. **생략하면 `national`(전국)** |
-| `horizon` | number | O | 예측 기간(일). **1 ~ 30 중 아무 값** (화면에서 고른 날짜 - 오늘) |
+| `market` | string | X | 도매시장 코드 (`GET /markets`). **생략하면 `national`(전국 평균)** |
+| `horizon` | number | O | 예측 기간(일). **1 ~ 365 중 아무 값** (화면에서 고른 날짜 - 오늘) |
+| `region` | string | X | (예전 방식) `national` 만. 쓰지 않아도 됨 |
 
 ```json
-{ "item": "napa_cabbage", "horizon": 14 }
-// 지역별 예측을 켠 뒤: { "item": "napa_cabbage", "region": "gyeonggi", "horizon": 14 }
+{ "item": "tomato", "market": "110001", "horizon": 90 }
 ```
 
 **응답 200**
 
 | 필드 | 타입 | 설명 | 화면 위치 |
 |---|---|---|---|
-| `item` / `item_name` / `unit` | string | 품목 코드 / 이름 / 단위(항상 `kg`) | |
-| `region` | string | 지역 코드 (`national` = 전국) | |
+| `item` / `item_name` / `code4` / `unit` | string | 품목 코드 / 이름 / 공영 품목코드 / 단위(항상 `kg`) | |
+| `market` / `market_name` | string | 도매시장 코드·이름 (`national` = 전국 평균) | "서울가락 도매시장 기준" |
+| `region` | string | (예전 방식) 항상 `national` | |
 | `horizon` | number | 요청한 예측 기간 | |
 | `base_date` | string | 기준일 (오늘) | 그래프 실제↔예측 경계 |
 | `base_price` | number | 기준일 도매가 (원/kg) | |
 | `history` | 배열 | 최근 실제 시세 `{date, price}` (기준일 포함 15일) | 그래프 검은 선 "실제" |
-| `forecast` | 배열 | 예측 `{date, price, lower, upper}` — 기준일 다음 날부터 `horizon`일 | 초록 점선 "예측" + 초록 영역 "오차범위" |
+| `forecast` | 배열 | 일별 예측 `{date, price, lower, upper}` — 기준일 다음 날부터 `horizon`일 (90일 넘는 구간은 범위를 더 넓힘) | 초록 점선 "예측" + 초록 영역 "오차범위", 화면이 이 안에서 가장 비싼 날·싼 날을 찾음 |
 | `predicted_price` | number | `horizon`일 후 예상 도매가 (= forecast 마지막 값) | "14일 후 예상 도매가" 금액 |
 | `change_pct` | number | 기준가 대비 변동률 (%) | "▲ OO% vs 오늘" |
 | `confidence` | number | 신뢰도 지수 (0~100) | "신뢰도 지수 OO/100" |
@@ -209,7 +343,10 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 {
   "item": "napa_cabbage",
   "item_name": "배추",
+  "code4": "1001",
   "unit": "kg",
+  "market": "national",
+  "market_name": "전국 평균",
   "region": "national",
   "horizon": 14,
   "base_date": "2026-10-19",
@@ -242,7 +379,9 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 }
 ```
 
-**에러**: 없는 `item`·`region` → `404`, `horizon`이 1~30 밖 → `422`
+**화면이 응답으로 계산하는 것** (서버가 따로 주지 않음): 오늘 ~ 고른 날짜 사이 `forecast` 에서 **가장 비싼 날·가장 싼 날** (같은 값이면 가까운 날), 오늘 대비 % = `(price - base_price) / base_price`
+
+**에러**: 없는 `item`·`market`·`region` → `404`, `horizon`이 1~365 밖 → `422`
 
 ---
 
@@ -254,9 +393,9 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 
 | 이름 | 기본값 | 설명 |
 |---|---|---|
-| `horizon` | `7` | 예측 기간 1~30일 |
+| `horizon` | `7` | 예측 기간 1~365일 |
 | `limit` | `4` | 몇 개 받을지 (1~품목 수) |
-| `region` | `national` | 지역 코드 (생략하면 전국) |
+| `market` | `national` | 도매시장 코드 (생략하면 전국 평균) |
 
 예) `GET /predict/top-movers?horizon=7&limit=4`
 
@@ -284,59 +423,87 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 > ⚠️ 값의 출처 (`ml-api/app/core/crop_calendar.py`, 프론트 예비 데이터 `frontend/src/mocks/recommend.js` 와 같음)
 > - 10a당 수량·경영비·가격 수준: **농촌진흥청 2024년도 농산물소득조사**. 조사표 행과 맞는 작형은 `source: "rda"`, 나머지 작형과 조사표에 없는 작물(양파·봄동·마늘·쌀·콩)은 `source: "est"`(추정)
 > - 심는 시기·수확 기간: 농사로 재배력 작형 기준. 보관 일수·상품화율·계절 가격 모양·출하 비중: 추정
-> - 시장별 가격: 전국 평균 예측 × 시장 계수(0.9~1.1, 시세 가짜 데이터와 같은 규칙). 지역별 도매시장 가격 예측 모델이 붙으면 `app/core/markets.py` 의 `market_factor` 자리를 바꾼다
+> - 알맞은 흙 pH: 팀 자료 「작물별 땅 조건」 v4 엑셀 → **`shared/soil_ph.json`** (화면·ml-api `app/core/soil_ph.py` 가 같이 읽음). 값이 없는 작물은 추정해서 채우지 않음
+> - 시장별 가격: 전국 평균 예측 × 시장 계수(0.9~1.1, 시세 가짜 데이터와 같은 규칙). 시장별 모델이 붙으면 `app/core/markets.py` 의 `market_factor` 자리를 바꾼다
 
-**순이익(마진)** = 예상 매출 − 총경영비
+**계산 기준**
+- **순이익(마진)** = 예상 매출 − 총경영비
 - 예상 매출 = Σ(월별 판매량 × 판 도매시장의 월별 예상가). 수확 기간(첫 수확 `harvest_start` ~ 마지막 수확 `harvest_end`)을 주 단위로 나눠, 여러 번 따는 작형(`multi_harvest`, 토마토·오이 등)은 처음·끝에 적고 가운데 많이 출하
 - 판매량 = 10a당 수량 × 면적(평 ÷ 302.5) × 상품화율 (조사표 작물은 조사표 가격에 비품이 섞여 있어 상품화율 1)
-- 총경영비 = 10a당 경영비(전국 평균, 고용 인건비 포함·자가노동비 제외) × 면적 + 사용자가 넣은 임대료(토지·농기계·시설, 그대로 더함). 전국 평균 경영비에도 평균 임차료·위탁영농비가 일부 들어 있어 조금 겹칠 수 있음
+- 총경영비 = 10a당 경영비(전국 평균, 고용 인건비 포함·자가노동비 제외) × 면적 + 사용자가 넣은 임대료(토지·농기계·시설, **만원 단위**, 그대로 더함)
 - `margin_low`·`margin_high` = 가격이 예측 오차(`error_pct`)만큼 내리거나 올랐을 때
 - 땅 종류: `open` 노지 · `house` 시설 · `paddy` 논 · `orchard` 과수원 (과수는 다년생이라 날짜별 비교 안 함)
-- 팔 시장: `region`(시·도, 기본 서울) 에서 가장 가까운 공영 도매시장. `market` 에 시장 코드(`GET /api/markets` 와 같음)나 `national`(전국 평균)을 주면 그 시장. 운송비는 아직 안 들어감
+- **팔 시장 (11/4 팀 결정):** 수확한 지역 안의 도매시장에서 판다고 가정하고, **운송비와 유통 마진은 계산하지 않는다.**
+  - `region`(시·도) 안의 공영 도매시장끼리 비교해서 작물마다 **순이익이 가장 높은 시장**을 결과로 준다 (예: 경기 → 수원·안양·안산·구리). 시장이 1곳이면 그 시장(예: 충남 → 천안)
+  - 시·도 안에 공영 도매시장이 없으면(세종·제주) **다른 지역 시장을 섞지 않고 전국 도매시장 평균**으로 계산하고 `no_market: true`
+  - "가까운 시장" 거리 계산은 없앴다 (토지 위치를 좌표가 아니라 시·도로만 받아서 정확히 계산할 수 없음)
+- **기존 작물과 흙 pH:** 토지마다 기존에 키우던 작물(`lands[].prev_crop`, 선택)을 받으면
+  - 흙 pH 어림 = 기존 작물 알맞은 pH 범위의 **가운데** (그 작물에 맞춰 관리해 왔다고 봄)
+  - 흙 pH 가 후보 작물 알맞은 pH 최고값보다 **0.5 이상 높으면** pH 를 내리는 데 몇 달이 걸려서 **순이익과 상관없이 맨 아래로** (`demoted: true`, `ph.kind: "lower"`)
+  - 0.5 보다 덜 높으면 `near`, 최저값보다 낮으면 `raise`(석회로 몇 주면 올림) — 순위는 그대로, 화면에 안내만
+  - 기존 작물을 안 주면 pH 비교를 하지 않는다 (따로 키우던 작물 없음)
 
 **`POST /recommend/crops`** 내 땅으로 작물 고르기
 ```json
-// 요청 — start_date 는 오늘 ~ 30일 뒤 (밖이면 422). 임대료는 이번 작기 만원, 생략하면 0
-{ "region": "전남", "market": null,
-  "lands": [{ "type": "open", "area_pyeong": 1200 }, { "type": "house", "area_pyeong": 600, "land_rent": 80, "machine_rent": 30 }],
-  "start_date": "2026-11-10" }
-// 응답 (일부) — results 는 margin 높은 순, 금액은 원
-{ "start_date": "2026-11-10", "region": "전남", "market": { "code": "240004", "name": "광주서부", "km": 33 },
-  "results": [{ "crop": "tomato", "crop_name": "토마토", "land_type": "house", "area_pyeong": 600, "cropping": "촉성재배",
-                "plant_date": "2026-11-10", "harvest_start": "2027-01-29", "harvest_end": "2027-06-28",
-                "days_to_harvest": 80, "harvest_days": 150, "multi_harvest": true, "storage_days": 10, "storage_end": "2027-07-08",
-                "region": "전남", "market": { "code": "240004", "name": "광주서부", "km": 33 }, "factor": 1.0192,
-                "price_per_kg": 3133, "national_price_per_kg": 3074, "error_pct": 20,
-                "yield_t": 12.3, "sellable_t": 12.3, "marketable_rate": 1,
-                "revenue": 38529895, "base_cost": 19378512, "land_rent": 800000, "machine_rent": 300000, "cost": 20478512,
-                "margin": 18051383, "margin_rate": 46.9, "margin_low": 10345404, "margin_high": 25757362, "national_margin": 17326771,
-                "source": "rda", "rda": { "row": "토마토(토경)", "revenue": 20510000, "cost": 9768000, "income": 10741000, "kg": 6226, "price": 3294 },
-                "per_10a": { "revenue": 19425489, "cost": 9770000, "income": 9655489 },
-                "shipments": [{ "month": "2027-01", "t": 0.27, "price_per_kg": 3913, "revenue": 1037914 }, "…"],
-                "market_compare": [{ "code": "240004", "name": "광주서부", "km": 33, "price_per_kg": 3133, "revenue": 38529895,
-                                     "margin": 18051383, "margin_rate": 46.9, "factor": 1.0192 }, "… 가까운 4곳 + 서울가락 + 전국 평균"] }],
-  "unavailable": [{ "crop": "garlic", "crop_name": "마늘", "reason": "심는 시기가 아니에요", "next_plant_date": "2027-09-21", "next_cropping": "난지형" }],
+// 요청 — start_date 는 오늘 ~ 30일 뒤 (밖이면 422). 임대료는 이번 작기 만원, 생략하면 0. prev_crop 은 shared/soil_ph.json 의 작물 이름, 생략 가능
+{ "region": "경기",
+  "lands": [{ "type": "open", "area_pyeong": 1200, "land_rent": 120 },
+            { "type": "house", "area_pyeong": 600, "machine_rent": 35, "prev_crop": "상추" }],
+  "start_date": "2026-11-11" }
+// market 은 그 시·도 안 특정 시장으로 고정할 때만 (생략하면 순이익이 가장 높은 시장)
+```
+```json
+// 응답 (일부) — results 는 순이익 높은 순, pH 를 낮춰야 하는 작물(demoted)은 맨 아래. 금액은 원
+{ "start_date": "2026-11-11", "region": "경기", "no_market": false,
+  "markets": [{ "code": "310101", "name": "수원" }, { "code": "310401", "name": "안양" }, { "code": "310901", "name": "안산" }, { "code": "311201", "name": "구리" }],
+  "results": [{ "crop": "cucumber", "crop_name": "오이", "land_type": "house", "cropping": "촉성재배",
+                "plant_date": "2026-11-11", "harvest_start": "2026-12-21", "harvest_end": "2027-04-10",
+                "region": "경기", "market": { "code": "311201", "name": "구리" }, "no_market": false,
+                "prev_crop": "상추", "soil_ph": 6.9, "ph": { "kind": "near", "min": 5.5, "max": 6.8, "gap": 0.1 }, "demoted": false,
+                "price_per_kg": 2589, "revenue": 53915947, "cost": 24746694, "margin": 29169253, "margin_rate": 54.1,
+                "market_compare": [
+                  { "code": "310101", "name": "수원", "price_per_kg": 2445, "margin": 26166750, "margin_rate": 51.4, "factor": 1.0305, "best": false },
+                  "… 안양 · 안산 …",
+                  { "code": "311201", "name": "구리", "price_per_kg": 2589, "margin": 29169253, "margin_rate": 54.1, "factor": 1.0913, "best": true }],
+                "…": "판매량·월별 출하·시나리오·조사표 비교 등 (아래 표)" }],
+  "excluded": [{ "crop": "lettuce", "crop_name": "상추", "land_type": "house", "kind": "low",
+                 "reason": "심을 수는 있지만 예상 마진률이 44%로, 추천 상위(3위 안)에 들지 못했어요. (5개 중 4위)" },
+               { "crop": "paprika", "crop_name": "파프리카", "land_type": "house", "kind": "season",
+                 "reason": "지금(11월)은 심는 시기가 아니에요. 시설 장기재배 8월 상순~8월 하순이에요. 다음 심는 때: 8/1부터(장기재배)" }],
+  "unavailable": [ "… 심는 시기가 아닌 작물과 다음 심는 날 (예전 형식 그대로) …" ],
   "model_version": "dummy-0.1+crop-calendar-sample" }
 ```
 
-**`POST /recommend/planting-dates`** 작물로 가장 좋은 심는 날 고르기
+`results[]` 의 그 밖의 항목: `days_to_harvest` · `harvest_days`(첫 수확 ~ 마지막 수확) · `multi_harvest` · `storage_days` · `storage_end` · `factor` · `national_price_per_kg` · `error_pct` · `yield_t` · `sellable_t` · `marketable_rate` · `base_cost` · `land_rent` · `machine_rent` · `margin_per_pyeong` · `margin_low` · `margin_high` · `national_margin` · `source` · `rda`(조사표 10a당 값) · `per_10a` · `shipments`(달마다 판매량·예상가·매출)
+
+**빠진 이유(`excluded`)는 서버에서 계산합니다.** 작물 정보 탭이 ① 탭 입력으로 이 API 를 부르고, 고른 작물이 `excluded` 에 있으면 `reason` 을 그대로 보여 줍니다 (상위 3위 안이면 "추천 N위에 있어요").
+
+| `kind` | 뜻 | 예 |
+|---|---|---|
+| `perennial` | 다년생 | 다년생 작물이라 날짜별 추천을 하지 않아요. |
+| `land` | 고른 토지에서 못 기름 | 논 토지에서만 재배할 수 있어요. 고른 토지: 노지·시설 |
+| `season` | 지금 심는 시기 아님 | 지금(11월)은 심는 시기가 아니에요. 노지 봄재배 3월 상순~3월 하순 … |
+| `ph` | 흙 pH 를 낮춰야 해서 맨 아래로 | 심을 수는 있지만 노지 토지 흙(기존 작물 상추 기준 pH 약 6.9)이 알맞은 pH 5~6보다 0.9 높아서 … |
+| `low` | 심을 수 있지만 상위 3위 밖 | 심을 수는 있지만 예상 마진률이 44%로, 추천 상위(3위 안)에 들지 못했어요. |
+
+**`GET /recommend/crops/{code}`** 작물 정보 (새로 만듦, 작물 정보 탭)
+```json
+{ "crop": { "code": "cucumber", "name": "오이", "emoji": "🥒", "land_type": "house", "land_type_name": "시설", "perennial": false },
+  "note": null, "marketable_rate": 1.0,
+  "rda": { "row": "시설오이", "revenue": 25184000, "cost": 12300000, "income": 12884000, "kg": 10505, "price": 2397 },
+  "soil_ph": { "name": "오이", "min": 5.5, "max": 6.8, "memo": "pH 4.3 이하 말라 죽음" },
+  "croppings": [{ "name": "촉성재배", "plant_from": [10, 11], "plant_to": [12, 10], "days_to_harvest": 40, "harvest_days": 110,
+                  "storage_days": 7, "multi_harvest": true, "yield_t_per_10a": 10.5, "cost_per_10a": 12300000, "source": "rda" }, "…"],
+  "model_version": "dummy-0.1+crop-calendar-sample" }
+```
+- 다년생(`apple` 등): `note` 에 안내 문구, `croppings` 는 빈 배열 · 없는 작물 → `404`
+
+**`POST /recommend/planting-dates`** 작물로 가장 좋은 심는 날 고르기 — **화면에서는 쓰지 않음** (11/4: "작물로 심을 날짜 고르기" 탭을 "작물 정보" 탭으로 바꿈). API 는 지우지 않고 남겨 둠
 ```json
 // 요청 — region·market·임대료는 위와 같음 (생략 가능)
-{ "crop": "tomato", "area_pyeong": 600, "region": "충남", "market": null, "land_rent": 0, "machine_rent": 0 }
-// 응답 — points 는 오늘부터 53주, 심을 수 없는 주는 option: null
-{ "crop": { "code": "tomato", "name": "토마토", "land_type": "house", "perennial": false },
-  "best": { ...위 results 항목과 같은 모양 },
-  "top": [ 작형마다 가장 좋은 날, 마진률 높은 순, 최대 3개 ],
-  "points": [{ "plant_date": "2026-11-03", "option": { ... } }, { "plant_date": "2027-03-02", "option": null }],
-  "note": null }
+{ "crop": "tomato", "area_pyeong": 600, "region": "충남", "land_rent": 0, "machine_rent": 0 }
+// 응답 — points 는 오늘부터 53주, 심을 수 없는 주는 option: null. best·top 은 results 항목과 같은 모양
 ```
-- `best`: 마진률이 가장 높은 날. 0.5%p 안으로 비슷하면 더 가까운 날
-- 다년생(`apple` 등): `note` 에 안내 문구, `points`·`top` 은 빈 배열, `best` 는 null
-- 없는 작물 → `404`
-
-**`GET /recommend/crops/{code}/prices`** 오늘부터 57주 전국 평균 예상 도매가 `{ date, price, lower, upper }` (원/kg, 80% 범위). 고른 시장 그래프는 × `factor`
-
----
 
 ## 2. Backend (Spring Boot) — 프론트 기준 제안
 
@@ -684,3 +851,4 @@ AI 가격예측 화면에서 품종·지역·예측 시점을 고르면 호출�
 | 2026-10-21 | `GET /api/markets` 에 팀 데이터 시장코드·위치·물량 1위 품목·거래 품목 추가 (홈 지도 도매시장 표시) | |
 | 2026-11-03 | 작물 추천 API(`/recommend/*`) 추가 (작물 달력 샘플 값). 경매는 팀 결정으로 보류: 화면에서 숨김(경매 API 제안은 그대로 둠) | |
 | 2026-11-04 | 작물 추천: 농진청 2024 소득조사 값·실제 작형 수확 기간·보관 일수, 월별 출하량 × 월별 예상가, 임대료 입력, 토지 위치(`region`)·판 도매시장(`market`)·시장별 비교, 가격 하락·상승 시나리오, 출처 표시(`source`) | |
+| 2026-11-04 | **11/4 팀 회의 반영.** 품목 16 → **107개**(`code4` 공영 품목코드·공영 부류, 기존 16개 코드 유지, 목록은 `shared/items.json`). 가격 예측을 **도매시장 32곳별**로: `GET /markets` 새로 만듦(`/regions` 는 예전 방식으로 남김, 시장 목록은 `shared/markets.json`), `POST /predict` 에 `market`, `horizon` 상한 30 → **365**, `/horizons` 에 3개월·6개월·1년. 작물 추천: "가까운 시장" 거리 계산 없애고 **시·도 안 도매시장끼리 비교**(없으면 전국 평균, 다른 지역 섞지 않음), 토지별 기존 작물(`prev_crop`) → 흙 pH 어림, 0.5 이상 낮춰야 하면 맨 아래로(`ph`·`demoted`, pH 표는 `shared/soil_ph.json`), 빠진 작물과 이유 `excluded`(서버 계산), `GET /recommend/crops/{code}` 작물 정보 새로 만듦, `planting-dates` 는 화면에서 안 씀. 운송비·유통 마진은 계산하지 않음(수확한 지역 안 시장에서 판다고 가정) | |

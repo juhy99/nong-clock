@@ -1,22 +1,18 @@
 // 작물 추천 예비 데이터. ml-api 가 꺼져 있을 때 화면이 대신 쓴다.
 // 작물 달력·계산 방식은 ml-api/app/core/crop_calendar.py, app/core/markets.py, app/services/recommender.py 와 같다 (값을 바꾸면 둘 다 고칠 것).
 import { addDays, daysBetween, todayIso } from "../utils/format";
-import { MARKETS, marketFactor } from "./market";
+import { marketFactor } from "./market";
+import MARKET_DATA from "../../../shared/markets.json";
+import { phCheck, soilPhFromPrev } from "./soil_ph";
 
-// 시·도 대략 중심 (가까운 도매시장 고르기용)
-export const SIDO_CENTER = {
-  서울: [37.56, 126.98], 부산: [35.18, 129.08], 대구: [35.87, 128.6], 인천: [37.46, 126.7], 광주: [35.16, 126.85], 대전: [36.35, 127.38],
-  울산: [35.54, 129.31], 세종: [36.48, 127.29], 경기: [37.41, 127.25], 강원: [37.8, 128.2], 충북: [36.8, 127.7], 충남: [36.5, 126.8],
-  전북: [35.72, 127.15], 전남: [34.86, 126.99], 경북: [36.4, 128.9], 경남: [35.24, 128.25], 제주: [33.49, 126.53],
-};
-const km = ([a, b], [c, d]) => {
-  const r = Math.PI / 180, x = (d - b) * r * Math.cos(((a + c) / 2) * r), y = (c - a) * r;
-  return Math.round(Math.sqrt(x * x + y * y) * 6371);
-};
-/** 시·도에서 가까운 공영 도매시장 순서 (거리 km 포함) */
-export function marketsNear(sido) {
-  const c = SIDO_CENTER[sido] ?? SIDO_CENTER.서울;
-  return MARKETS.filter((m) => m.lat != null).map((m) => ({ code: m.code, name: m.name, sido: m.sido, km: km(c, [m.lat, m.lon]) })).sort((a, b) => a.km - b.km);
+// 토지 위치(시·도) → 그 시·도 안 공영 도매시장끼리 비교 (11/4 팀 결정: 수확한 지역 안의 도매시장에서 판다고 가정, 운송비·유통 마진은 계산하지 않음)
+// 시·도에 공영 도매시장이 없으면(세종·제주) 다른 지역 시장을 섞지 않고 전국 도매시장 평균으로 계산
+export const SIDO_LIST = MARKET_DATA.sido;
+const NATIONAL = { code: "national", name: "전국 평균", sido: null };
+/** { markets: [{code,name,sido}], none: 시·도 안에 시장이 없어 전국 평균을 쓴 경우 true } */
+export function marketsInSido(sido) {
+  const here = MARKET_DATA.markets.filter((m) => m.sido === sido).map(({ code, name, sido: s }) => ({ code, name, sido: s }));
+  return here.length ? { markets: here, none: false } : { markets: [NATIONAL], none: true };
 }
 // 시장별 가격 = 전국 도매시장 평균 예측 × 시장 계수 (시세 화면 가짜 데이터와 같은 계수 · 추정)
 const mktFactor = (crop, market) => (!market || market === "national" ? 1 : marketFactor(crop, market));
@@ -25,23 +21,22 @@ function atMarket(o, market) {
   const f = mktFactor(o.crop, market), revenue = Math.round(o.revenue * f), margin = revenue - o.cost;
   return { revenue, margin, margin_rate: Math.round((margin / revenue) * 1000) / 10, price_per_kg: Math.round(o.price_per_kg * f), factor: f };
 }
-function applyMarket(o, region, market) {
-  const near = marketsNear(region);
-  const pick = market ?? near[0].code;
-  const info = MARKETS.find((m) => m.code === pick);
-  const at = atMarket(o, pick), e = o.error_pct / 100, f = at.factor;
-  const compare = [...near.slice(0, 4), ...(near.slice(0, 4).some((m) => m.code === "110001") ? [] : [near.find((m) => m.code === "110001")])]
-    .map((m) => ({ ...m, ...atMarket(o, m.code) }))
-    .concat([{ code: "national", name: "전국 평균", km: null, ...atMarket(o, "national") }]);
+/** 시·도 안 시장마다 계산 → 순이익이 가장 높은 시장을 대표 결과로 (market 을 주면 그 시장) */
+function applyRegion(o, region, market) {
+  const { markets, none } = marketsInSido(region);
+  const compare = markets.map((m) => ({ ...m, ...atMarket(o, m.code) }));
+  const best = compare.reduce((a, b) => (b.margin > a.margin ? b : a));
+  const pick = compare.find((m) => m.code === market) ?? best;
+  const at = atMarket(o, pick.code), e = o.error_pct / 100, f = at.factor;
   return {
     ...o, ...at,
     national_price_per_kg: o.price_per_kg, national_margin: o.margin,
-    market: { code: pick, name: info?.name ?? pick, km: near.find((m) => m.code === pick)?.km ?? null }, region,
+    market: { code: pick.code, name: pick.name }, region, no_market: none,
     margin_per_pyeong: Math.round(at.margin / o.area_pyeong),
     margin_low: Math.round(at.revenue * (1 - e) - o.cost), margin_high: Math.round(at.revenue * (1 + e) - o.cost),
     shipments: o.shipments.map((m) => ({ ...m, price_per_kg: Math.round(m.price_per_kg * f), revenue: Math.round(m.revenue * f) })),
     per_10a: { ...o.per_10a, revenue: Math.round(o.per_10a.revenue * f), income: Math.round(o.per_10a.revenue * f - o.per_10a.cost) },
-    market_compare: compare,
+    market_compare: compare.map((m) => ({ ...m, best: m.code === best.code })),
   };
 }
 
@@ -139,11 +134,6 @@ function priceOn(c, iso, today) {
   const g = (k) => c.p[(((t.getMonth() + k) % 12) + 12) % 12]; // c.p 는 1~12월 순서
   return g(i) * (1 - f) + g(i + 1) * f;
 }
-function avgPrice(c, a, b, today) {
-  const v = [];
-  for (let d = a; d <= b; d = addDays(d, 7)) v.push(priceOn(c, d, today));
-  return v.reduce((s, x) => s + x, 0) / v.length;
-}
 function inWin(iso, w) {
   const d = new Date(`${iso}T00:00:00`);
   const k = (d.getMonth() + 1) * 100 + d.getDate(), s = w.from[0] * 100 + w.from[1], e = w.to[0] * 100 + w.to[1];
@@ -191,7 +181,55 @@ const better = (a, b) => (!a || b.margin_rate > a.margin_rate + 0.5 ? b : a);
 
 export const mockCropList = () => CROPS.map(cropOut);
 
+export const TOP_N = 3; // 작물 정보 탭 "추천 상위" 기준
+const tenDay = ([m, d]) => `${m}월 ${d <= 10 ? "상순" : d <= 20 ? "중순" : "하순"}`;
+/** 추천 상위(TOP_N)에 없는 작물마다 이유 (ml-api recommender.excluded 와 같은 문장) */
+function excludedReasons(results, lands, start) {
+  const owned = lands.filter((l) => l.area_pyeong > 0).map((l) => l.type);
+  const ownedTxt = Object.keys(LAND_TYPES).filter((k) => owned.includes(k)).map((k) => LAND_TYPES[k]).join("·") || "없음";
+  const month = new Date(`${start}T00:00:00`).getMonth() + 1;
+  const rank = Object.fromEntries(results.map((r, i) => [r.crop, [i, r]]));
+  const out = [];
+  CROPS.forEach((c) => {
+    const base = { crop: c.code, crop_name: c.name, emoji: c.emoji, land_type: c.land_type };
+    if (rank[c.code]) {
+      const [i, r] = rank[c.code];
+      if (r.demoted) out.push({ ...base, kind: "ph", reason: `심을 수는 있지만 ${LAND_TYPES[c.land_type]} 토지 흙(기존 작물 ${r.prev_crop} 기준 pH 약 ${r.soil_ph})이 알맞은 pH ${r.ph.min}~${r.ph.max}보다 ${r.ph.gap} 높아서 맨 아래(${i + 1}위)로 내렸어요.` });
+      else if (i >= TOP_N) out.push({ ...base, kind: "low", reason: `심을 수는 있지만 예상 마진률이 ${Math.round(r.margin_rate)}%로, 추천 상위(${TOP_N}위 안)에 들지 못했어요. (${results.length}개 중 ${i + 1}위)` });
+      return;
+    }
+    if (c.note) return out.push({ ...base, kind: "perennial", reason: `다년생 작물이라 날짜별 추천을 하지 않아요. ${c.note}` });
+    if (!owned.includes(c.land_type)) return out.push({ ...base, kind: "land", reason: `${LAND_TYPES[c.land_type]} 토지에서만 재배할 수 있어요. 고른 토지: ${ownedTxt}` });
+    const ws = c.cl.map((w) => `${w.name} ${tenDay(w.from)}~${tenDay(w.to)}`).join(", ");
+    let next = null;
+    for (let k = 1; k < 370 && !next; k++) {
+      const d = addDays(start, k), nw = croppingOn(c, d);
+      if (nw) next = [d, nw.name];
+    }
+    const tail = next ? ` 다음 심는 때: ${Number(next[0].slice(5, 7))}/${Number(next[0].slice(8))}부터(${next[1]})` : "";
+    out.push({ ...base, kind: "season", reason: `지금(${month}월)은 심는 시기가 아니에요. ${LAND_TYPES[c.land_type]} ${ws}이에요.${tail}` });
+  });
+  return out;
+}
+
+/** 작물 정보 탭: 작형별 심는 기간·일수·10a당 수량·경영비 (GET /recommend/crops/{code}) */
+export function mockCropInfo(code) {
+  const c = BY[code];
+  if (!c) throw Object.assign(new Error(`unknown crop: ${code}`), { status: 404 });
+  return {
+    crop: cropOut(c), note: c.note ?? null, marketable_rate: c.mk,
+    rda: c.rda && { ...c.rda, revenue: c.rda.revenue * 1000, cost: c.rda.cost * 1000, income: c.rda.income * 1000 },
+    croppings: c.cl.map((w) => ({
+      name: w.name, plant_from: w.from, plant_to: w.to, days_to_harvest: w.dth, harvest_days: w.hd, storage_days: w.store,
+      multi_harvest: w.hd > 30, yield_t_per_10a: w.yld, cost_per_10a: w.cost * 1e4, source: w.src,
+    })),
+    model_version: VERSION,
+  };
+}
+
 export function mockRecommendCrops({ lands, start_date, region = "서울", market = null }) {
+  // 토지마다 기존 작물 → 흙 pH 어림
+  const soil = Object.fromEntries(lands.map((l) => [l.type, l.prev_crop ? { prev: l.prev_crop, ph: soilPhFromPrev(l.prev_crop) } : null]));
   const today = todayIso();
   const area = {}, rent = {};
   lands.forEach((l) => {
@@ -206,7 +244,7 @@ export function mockRecommendCrops({ lands, start_date, region = "서울", marke
     const base = { crop: c.code, crop_name: c.name, emoji: c.emoji, land_type: c.land_type };
     if (c.note) return unavailable.push({ ...base, reason: c.note, next_plant_date: null, next_cropping: null });
     const w = croppingOn(c, start_date);
-    if (w) return results.push(applyMarket(evaluate(c, w, start_date, a, today, rent[c.land_type]), region, market));
+    if (w) return results.push(applyRegion(evaluate(c, w, start_date, a, today, rent[c.land_type]), region, market));
     let next = null;
     for (let k = 1; k < 370 && !next; k++) {
       const d = addDays(start_date, k), nw = croppingOn(c, d);
@@ -214,9 +252,15 @@ export function mockRecommendCrops({ lands, start_date, region = "서울", marke
     }
     unavailable.push({ ...base, reason: "심는 시기가 아니에요", next_plant_date: next?.[0] ?? null, next_cropping: next?.[1] ?? null });
   });
-  results.sort((x, y) => y.margin - x.margin);
-  const near = marketsNear(region);
-  return { start_date, region, market: results[0]?.market ?? { code: market ?? near[0].code, name: MARKETS.find((m) => m.code === (market ?? near[0].code))?.name }, results, unavailable, model_version: VERSION };
+  // 기존 작물로 어림한 흙 pH 보다 낮은 pH 가 맞는 작물은 (pH 낮추기는 달 단위) 순이익과 상관없이 맨 아래로
+  results.forEach((r) => {
+    const sl = soil[r.land_type];
+    r.prev_crop = sl?.prev ?? null; r.soil_ph = sl?.ph ?? null;
+    r.ph = phCheck(r.crop, r.soil_ph); r.demoted = r.ph?.kind === "lower";
+  });
+  results.sort((x, y) => x.demoted - y.demoted || y.margin - x.margin);
+  const { markets, none } = marketsInSido(region);
+  return { start_date, region, markets, no_market: none, excluded: excludedReasons(results, lands, start_date), results, unavailable, model_version: VERSION };
 }
 
 export function mockPlantingDates({ crop, area_pyeong, land_rent = 0, machine_rent = 0, region = "서울", market = null }) {
@@ -226,7 +270,7 @@ export function mockPlantingDates({ crop, area_pyeong, land_rent = 0, machine_re
   const today = todayIso();
   const points = Array.from({ length: 53 }, (_, k) => {
     const d = addDays(today, k * 7), w = croppingOn(c, d);
-    return { plant_date: d, option: w ? applyMarket(evaluate(c, w, d, area_pyeong, today, { land: land_rent, machine: machine_rent }), region, market) : null };
+    return { plant_date: d, option: w ? applyRegion(evaluate(c, w, d, area_pyeong, today, { land: land_rent, machine: machine_rent }), region, market) : null };
   });
   let best = null;
   const per = {};

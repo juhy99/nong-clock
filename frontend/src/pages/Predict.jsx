@@ -1,13 +1,50 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getHorizons, getItems, getRegions, predict } from "../api/ml";
+import { getHorizons, getItems, getMarkets, predict } from "../api/ml";
 import { Async, PctChange, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
 import ItemImage from "../components/ItemImage";
+import ItemPicker from "../components/ItemPicker";
+import { LONG_RANGE_DAYS } from "../mocks/prediction";
 import { addDays, daysBetween, md, shortDate, todayIso, wonPerKg } from "../utils/format";
+
+const MAX_DAYS = 365;
+const DEFAULT_MARKET = "110001"; // 서울가락
+
+/** 오늘~고른 날짜 사이 가장 비싼 날·싼 날 (같은 값이면 가까운 날) */
+function extremes(p) {
+  let hi = null, lo = null;
+  for (const f of p.forecast) {
+    if (!hi || f.price > hi.price) hi = f;
+    if (!lo || f.price < lo.price) lo = f;
+  }
+  const pct = (v) => Math.round(((v - p.base_price) / p.base_price) * 1000) / 10;
+  return { hi: { ...hi, pct: pct(hi.price) }, lo: { ...lo, pct: pct(lo.price) } };
+}
+const sign = (v) => `${v > 0 ? "+" : ""}${v}%`;
+
+function ExtremeCards({ p }) {
+  const { hi, lo } = extremes(p);
+  return (
+    <div className="ai-ext">
+      <div className="hi">
+        <span>이 기간 중 가장 비싸게 팔 수 있는 날</span>
+        <b>{shortDate(hi.date)}</b>
+        <em>{wonPerKg(hi.price)} <i className="up">({sign(hi.pct)})</i></em>
+      </div>
+      <div className="lo">
+        <span>이 기간 중 가장 싼 날</span>
+        <b>{shortDate(lo.date)}</b>
+        <em>{wonPerKg(lo.price)} <i className="down">({sign(lo.pct)})</i></em>
+      </div>
+    </div>
+  );
+}
 
 function Result({ p, horizonLabel }) {
   const alert = p.alerts[0];
+  const { hi, lo } = extremes(p);
+  const long = p.horizon > LONG_RANGE_DAYS;
   return (
     <section className="card">
       <div className="chips">
@@ -17,7 +54,13 @@ function Result({ p, horizonLabel }) {
         </span>
         {alert && <span className="chip warn">⚠️ 이상기후 경보 구간 {md(alert.start)} ~ {md(alert.end)}</span>}
       </div>
-      <ForecastChart p={p} height={340} />
+      <ExtremeCards p={p} />
+      <ForecastChart p={p} height={340}
+        marks={[{ date: hi.date, price: hi.price, label: "최고", color: "#d92d20" }, { date: lo.date, price: lo.price, label: "최저", color: "#1d63c9" }]}
+        longFrom={long ? addDays(p.base_date, LONG_RANGE_DAYS) : null} />
+      {long && (
+        <p className="ai-long">ℹ️ <b>장기 예측은 참고용이에요.</b> {LONG_RANGE_DAYS}일(3개월)이 넘는 구간은 오차가 커서 범위(띠)를 넓게 보여 줘요. 날짜가 가까워지면 다시 확인해 주세요.</p>
+      )}
       {alert ? (
         <div className="banner" style={{ marginTop: 14 }}>
           ⚠️
@@ -32,7 +75,7 @@ function Result({ p, horizonLabel }) {
       ) : (
         <p className="muted small" style={{ marginTop: 10 }}>{horizonLabel}까지 이상기후 경보 구간이 없습니다.</p>
       )}
-      <p className="muted small" style={{ margin: "10px 0 0" }}>모델 버전 {p.model_version} · 기준일 {shortDate(p.base_date)}</p>
+      <p className="muted small" style={{ margin: "10px 0 0" }}>{p.market_name} 도매시장 기준 · 모델 버전 {p.model_version} · 기준일 {shortDate(p.base_date)}</p>
     </section>
   );
 }
@@ -40,75 +83,59 @@ function Result({ p, horizonLabel }) {
 export default function Predict() {
   const [params, setParams] = useSearchParams();
   const options = useAsync(async () => {
-    const [items, horizons, regions] = await Promise.all([getItems(), getHorizons(), getRegions()]);
-    return { items, horizons, regions };
+    const [items, horizons, markets] = await Promise.all([getItems(), getHorizons(), getMarkets()]);
+    return { items, horizons, markets };
   });
   const opts = options.data;
   const item = params.get("item") || opts?.items[0]?.code;
-  const [region, setRegion] = useState(null);
+  const market = params.get("market") || DEFAULT_MARKET;
   const today = todayIso();
-  // 고를 수 있는 날짜: 내일 ~ 오늘 + 최대 예측 기간(30일). 빠른 선택 버튼은 GET /horizons
-  const maxDays = opts ? Math.max(...opts.horizons.map((h) => h.days)) : 30;
+  // 고를 수 있는 날짜: 내일 ~ 오늘 + 365일. 빠른 선택 버튼은 GET /horizons
   const [target, setTarget] = useState(() => {
     const d = params.get("date");
-    return d && daysBetween(today, d) >= 1 && daysBetween(today, d) <= 30 ? d : addDays(today, 7);
+    return d && daysBetween(today, d) >= 1 && daysBetween(today, d) <= MAX_DAYS ? d : addDays(today, 30);
   });
   const horizon = daysBetween(today, target);
-
-  useEffect(() => {
-    if (opts) setRegion((r) => r ?? opts.regions[0]?.code);
-  }, [opts]);
+  const go = (next) => setParams({ item, market, date: target, ...next }, { replace: true });
 
   const pickDate = (d) => {
     if (!d) return;
-    const n = Math.min(Math.max(daysBetween(today, d), 1), maxDays);
-    const next = addDays(today, n);
+    const next = addDays(today, Math.min(Math.max(daysBetween(today, d), 1), MAX_DAYS));
     setTarget(next);
-    setParams({ item, date: next }, { replace: true });
+    go({ date: next });
   };
 
-  const ready = opts && item && horizon >= 1 && region;
-  const result = useAsync(() => (ready ? predict({ item, horizon, region }) : Promise.resolve(null)), [ready, item, horizon, region]);
+  const ready = opts && item && horizon >= 1;
+  const result = useAsync(() => (ready ? predict({ item, horizon, market }) : Promise.resolve(null)), [ready, item, horizon, market]);
   const horizonLabel = `${shortDate(target)} (${horizon}일 후)`;
+  const bySido = (o) => o.markets.reduce((g, m) => ((g[m.sido] = g[m.sido] ?? []).push(m), g), {});
 
   return (
     <div className="page">
       <div className="page-head">
         <h1>AI 가격 예측</h1>
-        <p>과거 기상(기온·강수·일조) + 기후 변수 + 시세를 결합한 예측 모델 · 가격은 1kg 기준</p>
+        <p>과거 기상(기온·강수·일조) + 기후 변수 + 시세를 결합한 예측 모델 · 도매시장별 · 가격은 1kg 기준 · 최대 1년</p>
       </div>
       <Async state={options}>
         {(o) => (
           <div className="predict-layout">
             <section className="card" style={{ display: "grid", gap: 18 }}>
               <div className="field">
-                <label htmlFor="item">품종</label>
-                <select id="item" className="input" value={item} onChange={(e) => setParams({ item: e.target.value, date: target }, { replace: true })}>
-                  {o.items.map((i) => (
-                    <option key={i.code} value={i.code}>{i.emoji} {i.name}</option>
+                <label htmlFor="item">품목</label>
+                <ItemPicker items={o.items} value={item} onChange={(c) => go({ item: c })} />
+              </div>
+              <div className="field">
+                <label htmlFor="market">도매시장</label>
+                <select id="market" className="input" value={market} onChange={(e) => go({ market: e.target.value })}>
+                  {Object.entries(bySido(o)).map(([sido, ms]) => (
+                    <optgroup key={sido} label={sido}>{ms.map((m) => <option key={m.code} value={m.code}>{m.name}</option>)}</optgroup>
                   ))}
                 </select>
+                <span className="hint">공영 도매시장 {o.markets.length}곳 중 팔 곳을 골라요</span>
               </div>
-              {/* 지역이 1개(전국)뿐이면 선택 박스를 숨긴다 — 지역별 예측을 켜면 자동으로 나타남 */}
-              {o.regions.length > 1 && (
-                <div className="field">
-                  <label htmlFor="region">지역</label>
-                  <select id="region" className="input" value={region ?? ""} onChange={(e) => setRegion(e.target.value)}>
-                    {o.regions.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}
-                  </select>
-                </div>
-              )}
               <div className="field">
                 <label htmlFor="target">예측 날짜</label>
-                <input
-                  id="target"
-                  type="date"
-                  className="input"
-                  value={target}
-                  min={addDays(today, 1)}
-                  max={addDays(today, maxDays)}
-                  onChange={(e) => pickDate(e.target.value)}
-                />
+                <input id="target" type="date" className="input" value={target} min={addDays(today, 1)} max={addDays(today, MAX_DAYS)} onChange={(e) => pickDate(e.target.value)} />
                 <div className="pills">
                   {o.horizons.map((h) => (
                     <button key={h.days} className={`pill sm ${horizon === h.days ? "on" : ""}`} onClick={() => pickDate(addDays(today, h.days))}>
@@ -116,19 +143,17 @@ export default function Predict() {
                     </button>
                   ))}
                 </div>
-                <span className="hint">오늘부터 최대 {maxDays}일 뒤까지 고를 수 있어요</span>
+                <span className="hint">내일부터 1년 뒤({shortDate(addDays(today, MAX_DAYS))})까지 고를 수 있어요</span>
               </div>
               {result.data && (
                 <div className="summary-box">
                   <span className="summary-img"><ItemImage code={result.data.item} emoji={o.items.find((i) => i.code === result.data.item)?.emoji} alt="" /></span>
-                  {/* 날짜는 응답의 마지막 예측일을 그대로 쓴다 (서버 기준일과 하루 어긋나도 정확하게) */}
-                  <div className="muted small">{shortDate(result.data.forecast.at(-1).date)} ({horizon}일 후) 예상 도매가</div>
+                  <div className="muted small">{shortDate(result.data.forecast.at(-1).date)} ({horizon}일 후)<br />{result.data.market_name} 예상 도매가</div>
                   <div className="price num">{wonPerKg(result.data.predicted_price)}</div>
                   <PctChange value={result.data.change_pct} className="small" />
                   <span className="muted small"> vs 오늘 {wonPerKg(result.data.base_price)}</span>
                 </div>
               )}
-              {o.regions.length === 1 && <p className="muted small" style={{ margin: 0 }}>현재 {o.regions[0].name} 기준 예측만 제공합니다.</p>}
             </section>
             <Async state={result} minHeight={420}>
               {(p) => <Result p={p} horizonLabel={horizonLabel} />}

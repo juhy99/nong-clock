@@ -23,11 +23,12 @@ class Land(BaseModel):
     area_pyeong: float = Field(gt=0, le=1_000_000, examples=[600], description="평수")
     land_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 토지 임차료 (만원) — 경영비에 그대로 더함")
     machine_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 농기계·시설 임차료 (만원) — 경영비에 그대로 더함")
+    prev_crop: str | None = Field(None, examples=["상추"], description="이 토지에서 기존에 키우던 작물 (shared/soil_ph.json 의 작물 이름). 없으면 pH 비교 안 함")
 
 
 class WhereToSell(BaseModel):
-    region: Sido = Field("서울", examples=["충남"], description="토지 위치 (시·도)")
-    market: str | None = Field(None, examples=["340101"], description="팔 도매시장 코드. 없으면 토지 위치에서 가장 가까운 시장, national = 전국 평균")
+    region: Sido = Field("서울", examples=["경기"], description="토지 위치 (시·도). 그 시·도 안 도매시장끼리 비교 (없으면 전국 평균)")
+    market: str | None = Field(None, examples=["310101"], description="그 시·도 안에서 특정 시장으로 고정할 때만. 없으면 순이익이 가장 높은 시장")
 
 
 class RecommendCropsRequest(WhereToSell):
@@ -36,9 +37,8 @@ class RecommendCropsRequest(WhereToSell):
 
 
 class MarketRef(BaseModel):
-    code: str
+    code: str = Field(description="도매시장 코드, national = 전국 평균")
     name: str
-    km: int | None = Field(None, description="토지 위치(시·도 중심)에서 거리")
 
 
 class MarketResult(MarketRef):
@@ -47,6 +47,14 @@ class MarketResult(MarketRef):
     margin: int
     margin_rate: float
     factor: float = Field(description="시장 계수 (전국 평균 = 1)")
+    best: bool = Field(False, description="그 시·도 안에서 순이익이 가장 높은 시장")
+
+
+class PhInfo(BaseModel):
+    kind: Literal["lower", "near", "raise", "ok", "unknown"] = Field(description="lower: 0.5 이상 낮춰야 → 맨 아래로 · near: 덜 높음 · raise: 석회로 올리면 됨 · ok · unknown: pH 자료 없음")
+    min: float | None = Field(description="이 작물 알맞은 pH 최저")
+    max: float | None
+    gap: float = Field(description="낮추거나 올려야 하는 양")
 
 
 class Shipment(BaseModel):
@@ -87,7 +95,12 @@ class Option(BaseModel):
     storage_days: int = Field(description="수확 뒤 저온 저장으로 팔 수 있는 일수 (추정)")
     storage_end: date
     region: str
-    market: MarketRef = Field(description="판 도매시장")
+    market: MarketRef = Field(description="판 도매시장 (시·도 안에서 순이익이 가장 높은 곳)")
+    no_market: bool = Field(False, description="시·도 안에 공영 도매시장이 없어 전국 평균으로 계산함")
+    prev_crop: str | None = Field(None, description="그 토지의 기존 작물")
+    soil_ph: float | None = Field(None, description="기존 작물로 어림한 흙 pH (범위 가운데)")
+    ph: PhInfo | None = Field(None, description="흙 pH 비교 (기존 작물이 없으면 null)")
+    demoted: bool = Field(False, description="pH 를 낮춰야 해서 순이익과 상관없이 맨 아래로 내림")
     factor: float = Field(description="판 시장 계수 (전국 평균 = 1)")
     price_per_kg: int = Field(description="판 시장의 출하량 가중 평균 예상가 (원/kg)")
     national_price_per_kg: int = Field(description="전국 도매시장 평균 예상가 (원/kg)")
@@ -112,7 +125,7 @@ class Option(BaseModel):
     rda: RdaRef | None = Field(description="비교용 농진청 조사표 10a당 값 (없으면 null)")
     per_10a: Per10a = Field(description="이 계획을 10a로 환산 (비교용)")
     shipments: list[Shipment] = Field(description="달마다 판매량·예상가·매출")
-    market_compare: list[MarketResult] = Field(default_factory=list, description="가까운 시장 4곳 + 서울가락 + 전국 평균에 팔았을 때")
+    market_compare: list[MarketResult] = Field(default_factory=list, description="토지 위치(시·도) 안 도매시장마다 팔았을 때 (없으면 전국 평균 1개)")
 
 
 class Unavailable(BaseModel):
@@ -125,11 +138,22 @@ class Unavailable(BaseModel):
     next_cropping: str | None = None
 
 
+class Excluded(BaseModel):
+    crop: str
+    crop_name: str
+    emoji: str
+    land_type: LandType
+    kind: Literal["perennial", "land", "season", "ph", "low"] = Field(description="다년생 · 토지 없음 · 심는 시기 아님 · pH 때문에 내림 · 상위에 못 듦")
+    reason: str = Field(description="화면에 그대로 보여 줄 한 줄 이유")
+
+
 class RecommendCropsResponse(BaseModel):
     start_date: date
     region: str
-    market: MarketRef
-    results: list[Option] = Field(description="심을 수 있는 작물, 마진 높은 순")
+    markets: list[MarketRef] = Field(description="비교한 도매시장 (토지 위치 안, 없으면 전국 평균)")
+    no_market: bool = Field(False, description="시·도 안에 공영 도매시장이 없어 전국 평균으로 계산함")
+    results: list[Option] = Field(description="심을 수 있는 작물: 순이익 높은 순, pH 를 낮춰야 하는 작물은 맨 아래")
+    excluded: list[Excluded] = Field(default_factory=list, description="추천 상위(3위 안)에 없는 작물과 이유 — 작물 정보 탭")
     unavailable: list[Unavailable]
     model_version: str
 
@@ -165,4 +189,34 @@ class PricePathPoint(BaseModel):
 class PricePathResponse(BaseModel):
     crop: CropOut
     points: list[PricePathPoint] = Field(description="오늘부터 13개월, 주 단위 전국 평균 예상 도매가와 오차 범위 (원/kg). 시장별 값은 × 시장 계수")
+    model_version: str
+
+
+class CroppingInfo(BaseModel):
+    name: str
+    plant_from: tuple[int, int] = Field(description="심는 기간 시작 (월, 일)")
+    plant_to: tuple[int, int]
+    days_to_harvest: int
+    harvest_days: int
+    storage_days: int
+    multi_harvest: bool
+    yield_t_per_10a: float
+    cost_per_10a: int
+    source: Literal["rda", "est"]
+
+
+class SoilPhOut(BaseModel):
+    name: str
+    min: float | None
+    max: float | None
+    memo: str
+
+
+class CropInfoResponse(BaseModel):
+    crop: CropOut
+    note: str | None = Field(None, description="다년생 안내")
+    marketable_rate: float
+    rda: RdaRef | None
+    soil_ph: SoilPhOut | None = Field(None, description="알맞은 흙 pH (팀 자료)")
+    croppings: list[CroppingInfo]
     model_version: str

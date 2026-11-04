@@ -698,3 +698,110 @@ i.store { background: repeating-linear-gradient(135deg, #f2a33a 0 5px, #f8cd8c 5
 .rc-tag { font-style: normal; font-size: 11px; font-weight: 700; color: var(--green); background: var(--green-soft); border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
 .rc-tag.best { color: #9a5b00; background: #fff1d6; }
 .rc-layout .seg button { white-space: nowrap; }
+.rc-ph { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-top: 2px; white-space: normal; }
+.rc-ph.lower { color: #b42318; }
+.rc-ph.raise { color: #9a5b00; }
+.rc-ph.ok { color: var(--green); }
+.rc-demote-head td { background: #fff4e5; color: #8a4b00; font-size: 13px; font-weight: 600; white-space: normal; }
+tr.rc-demoted td { background: #fcfcfa; }
+tr.rc-demoted .rc-emo { filter: grayscale(0.6); }
+.rc-ph-box { background: #fff4e5; border: 1px solid #f5d3a3; color: #6b3d00; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; line-height: 1.6; margin-bottom: 12px; }
+
+/* 품목 선택 상자 (107개) */
+.ip { position: relative; }
+.ip-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; cursor: pointer; background: var(--card, #fff); }
+.ip-btn small { margin-left: 4px; font-size: 12px; }
+.ip-pop { position: absolute; z-index: 30; left: 0; top: calc(100% + 6px); width: min(440px, calc(100vw - 32px)); background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgba(20, 30, 20, 0.14); padding: 12px; display: grid; gap: 10px; }
+.ip-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.ip-cats small { opacity: 0.7; margin-left: 2px; }
+.ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; max-height: 300px; overflow-y: auto; }
+.ip-item { display: flex; gap: 6px; align-items: center; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 7px 8px; font-size: 13px; cursor: pointer; text-align: left; }
+.ip-item:hover { border-color: var(--green); }
+.ip-item.on { border-color: var(--green); background: var(--green-soft); font-weight: 700; }
+.ip-emo { font-size: 18px; }
+/* AI 예측: 가장 비싼 날·싼 날 */
+.ai-ext { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.ai-ext > div { border-radius: 14px; padding: 12px 14px; border: 1px solid var(--line); }
+.ai-ext .hi { background: #fff3f1; border-color: #f6c9c3; }
+.ai-ext .lo { background: #eff5ff; border-color: #c7dafa; }
+.ai-ext span { display: block; font-size: 12.5px; color: var(--muted); }
+.ai-ext b { font-size: 20px; }
+.ai-ext em { display: block; font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ai-ext i { font-style: normal; }
+.ai-long { background: #f7f5ee; border-radius: 12px; padding: 10px 12px; font-size: 13px; color: #5f5743; margin: 10px 0 0; }
+@media (max-width: 560px) { .ai-ext { grid-template-columns: 1fr; } }
+
+/* 작물 추천: 토지별 정보·만원 입력 */
+.rc-landinfo { border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
+.rc-landinfo .ttl { font-size: 14px; }
+.rc-prevsel, .rc-money { display: grid; gap: 4px; font-size: 12.5px; }
+.rc-prevsel .lb, .rc-money .lb { color: var(--muted); }
+.rc-money2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rc-money .box { position: relative; display: block; }
+.rc-money .box .input { width: 100%; padding: 6px 40px 6px 8px; text-align: right; font-weight: 700; }
+.rc-money .box i { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
+.rc-money small { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.rc-more { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+/* 작물 정보 탭 */
+.ci { display: grid; gap: 16px; }
+.ci-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.ci-why-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ci-why-head h2 { margin: 0; }
+.ci-why-txt { font-size: 16px; font-weight: 600; margin: 10px 0 8px; line-height: 1.55; }
+.ci-why.in { background: var(--green-soft); border-color: #cfe9da; }
+.ci-why.season, .ci-why.land, .ci-why.ph, .ci-why.low { background: #fff7ea; border-color: #f5d9ad; }
+.ci-why.perennial { background: #f4f6f2; }
+.ci-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.ci-facts > div { background: var(--soft); border-radius: 14px; padding: 12px 14px; display: grid; gap: 3px; }
+.ci-facts span { font-size: 12px; color: var(--muted); }
+.ci-facts b { font-size: 15px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.ci-facts small { font-size: 12px; color: var(--muted); }
+.ci-land { font-style: normal; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-weight: 600; }
+.ci-land.on { background: var(--green); border-color: var(--green); color: #fff; }
+.ci-note { background: #f4f6f2; border-radius: 12px; padding: 12px 14px; margin: 0; }
+.ci-cal { display: grid; gap: 10px; }
+.ci-head, .ci-row { display: grid; grid-template-columns: 170px 1fr; gap: 6px 12px; align-items: center; }
+.ci-row .ci-nums { grid-column: 2; font-size: 12.5px; color: var(--muted); margin-top: -4px; }
+.ci-row .ci-nums b { color: var(--text); }
+.ci-name b { font-size: 14px; }
+.ci-name small { display: block; font-size: 12px; color: var(--muted); }
+.ci-months { position: relative; height: 16px; }
+.ci-months span { position: absolute; transform: translateX(-50%); font-size: 11.5px; color: var(--muted); }
+.ci-bar { position: relative; height: 22px; background: #f3f5f1; border-radius: 6px; }
+.ci-bar i.tick { position: absolute; top: 0; bottom: 0; width: 1px; background: #dde3d8; }
+.ci-bar i.seg { position: absolute; top: 5px; bottom: 5px; }
+.ci-bar i.seg.plant { top: 0; bottom: 0; background: transparent; border: 2px solid #0b5e33; border-radius: 5px; }
+i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border-box; }
+@media (max-width: 640px) {
+  .ci-head, .ci-row { grid-template-columns: 1fr; }
+  .ci-head > span:first-child { display: none; }
+  .ci-row .ci-nums { grid-column: 1; margin-top: 0; }
+  .ci-months span { font-size: 11px; }
+  .ci-months span small { display: none; }
+  .rc-money2 { grid-template-columns: 1fr; }
+}
+.ci-months span small { font-size: inherit; }
+
+.banner-txt { min-width: 0; overflow-wrap: anywhere; }
+.banner-txt code { white-space: normal; }
+/* 작물 추천 표: 휴대폰 폭에서는 작물마다 카드 한 장 */
+@media (max-width: 700px) {
+  .rc-fit, .rc-fit tbody { display: block; width: 100%; }
+  .rc-fit colgroup, .rc-fit thead { display: none; }
+  .rc-fit tr.clickable { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px; }
+  .rc-fit tr.clickable.selected { border-color: var(--green); }
+  .rc-fit tr.clickable td { display: block; padding: 0; border: none; background: transparent; }
+  .rc-fit tr.clickable td:nth-child(1) { display: none; }
+  .rc-fit tr.clickable td:nth-child(2) { grid-column: 1; grid-row: 1; }
+  .rc-fit tr.clickable td.rc-m { grid-column: 2; grid-row: 1; }
+  .rc-fit tr.clickable td:nth-child(3) { grid-column: 1 / -1; }
+  .rc-fit tr.clickable td:nth-child(4), .rc-fit tr.clickable td:nth-child(5) { text-align: left; font-size: 13px; }
+  .rc-fit tr.clickable td[data-label]:not(.rc-m)::before { content: attr(data-label); display: block; font-size: 11.5px; color: var(--muted); font-weight: 500; }
+  .rc-fit .rc-gb-txt { white-space: normal; }
+  .rc-fit tr.rc-demote-head { display: block; margin: 4px 0 10px; }
+  .rc-fit tr.rc-demote-head td { display: block; border-radius: 12px; padding: 10px 12px; }
+}
+@media (max-width: 700px) {
+  .rc-col .card-head { flex-wrap: wrap; }
+  .rc-col .card-head > div:first-child { flex: 1 1 100%; min-width: 0; }
+}

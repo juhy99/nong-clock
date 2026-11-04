@@ -5,7 +5,7 @@
 // HUB 뉴스 검색 응답의 items(title·originallink·link·description·pubDate)는 예전 개발자센터 API 와 같은 모양이다.
 import RULES from "../../../../shared/news_rules.json";
 import { liveGet } from "../client";
-import { ITEMS } from "../../mocks/catalog";
+import { ITEMS, LEGACY_CODES } from "../../mocks/catalog";
 import { categorize, isAgriNews } from "../../mocks/news";
 import { findCrops, findItems } from "../../utils/itemMatch";
 
@@ -72,10 +72,10 @@ function toRows(raw) {
   return rows;
 }
 
-/** 검색어: 기본 + 품목 16개 + 품목 밖 작물 (수집기와 같음) */
+/** 검색어: 기본 + 품목 16개(예전부터 있던 품목, 품목이 107개로 늘어도 검색 횟수는 그대로) + 품목 밖 작물 (수집기와 같음) */
 const QUERIES = [
   ...RULES.queries.base,
-  ...(RULES.queries.add_items ? ITEMS.map((i) => i.name) : []),
+  ...(RULES.queries.add_items ? ITEMS.filter((i) => LEGACY_CODES.includes(i.code)).map((i) => i.name) : []),
   ...(RULES.queries.add_other_crops ? Object.values(RULES.other_crops).map((c) => c.name) : []),
 ];
 

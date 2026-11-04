@@ -23,10 +23,10 @@ function Ticker() {
       </span>
     </span>
   ));
-  // 끊김 없이 흐르도록 같은 목록을 두 번 붙인다
+  // 끊김 없이 흐르도록 같은 목록을 두 번 붙인다. 품목 수(107개)에 맞춰 흐르는 속도를 같게 (품목당 2.5초)
   return (
     <div className="ticker" aria-label="오늘의 시세">
-      <div className="ticker-track">
+      <div className="ticker-track" style={{ animationDuration: `${Math.max(60, data.items.length * 2.5)}s` }}>
         {row}
         {row}
       </div>
@@ -107,7 +107,7 @@ function HeaderSearch() {
             <button type="button" key={`crop-${c.code}`} className="o" onClick={() => go(recommendLink(c.code))}>
               <span className="e">{c.emoji}</span>
               <b><Highlight text={c.name} q={q} /></b>
-              <small>{c.perennial ? "작물 정보 ›" : "심는 날 추천 ›"}</small>
+              <small>작물 정보 ›</small>
             </button>
           ))}
           {hints.auctions.length > 0 && <div className="g">경매</div>}
@@ -208,8 +208,12 @@ function OfflineBanner() {
   return (
     <div className="container" style={{ paddingTop: 14 }}>
       <div className="banner info small">
-        ℹ️ ML API({ML_API_BASE})에 연결할 수 없어 AI 예측을 <b>데모 데이터</b>로 보여주고 있습니다. ml-api 폴더에서
-        <code> python -m uvicorn app.main:app --reload </code>로 서버를 켜면 실제 API 응답으로 바뀝니다.
+        <span>ℹ️</span>
+        {/* 글자를 한 덩어리로 묶어야 휴대폰에서 줄마다 세로로 쪼개지지 않음 */}
+        <div className="banner-txt">
+          ML API({ML_API_BASE})에 연결할 수 없어 AI 예측을 <b>데모 데이터</b>로 보여주고 있습니다. ml-api 폴더에서
+          <code> python -m uvicorn app.main:app --reload </code>로 서버를 켜면 실제 API 응답으로 바뀝니다.
+        </div>
       </div>
     </div>
   );

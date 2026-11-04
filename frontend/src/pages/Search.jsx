@@ -47,7 +47,7 @@ function ItemSummary({ item, p, crops }) {
         <div className="acts">
           <Link className="btn primary sm" to={`/market?item=${item.code}`}>📈 시세 자세히</Link>
           <Link className="btn sm" to={`/ai?item=${item.code}`}>🤖 AI 예측</Link>
-          {crops?.some((c) => c.code === item.code) && <Link className="btn primary sm" to={recommendLink(item.code)}>🌱 심는 날 추천</Link>}
+          {crops?.some((c) => c.code === item.code) && <Link className="btn primary sm" to={recommendLink(item.code)}>🌱 작물 정보</Link>}
           {user ? (
             <button className={`btn sm ${fav ? "fav-on" : ""}`} onClick={toggleFav}>{fav ? "♥ 관심 품목" : "♡ 관심 품목"}</button>
           ) : (
@@ -220,7 +220,7 @@ function Results({ d, tab, setTab }) {
               <div className="pills">
                 {d.crops.slice(0, 4).map((c) => (
                   <Link key={c.code} className="btn primary" to={recommendLink(c.code)}>
-                    {c.emoji} {c.name} {c.perennial ? "작물 정보" : "심는 날 추천"} ›
+                    {c.emoji} {c.name} 작물 정보 ›
                   </Link>
                 ))}
               </div>

@@ -62,10 +62,11 @@ def test_price_path():
     assert client.get("/recommend/crops/durian/prices").status_code == 404
 
 
-def test_recommend_market_rent_and_scenarios():
-    body = {"lands": [{"type": "house", "area_pyeong": 600, "land_rent": 80, "machine_rent": 30}], "start_date": TODAY.isoformat(), "region": "전남"}
+def test_recommend_sido_markets_rent_and_scenarios():
+    body = {"lands": [{"type": "house", "area_pyeong": 600, "land_rent": 80, "machine_rent": 30}], "start_date": TODAY.isoformat(), "region": "경기"}
     d = client.post("/recommend/crops", json=body).json()
-    assert d["region"] == "전남" and d["market"]["code"] == "240004"  # 전남 → 가장 가까운 광주서부
+    assert d["region"] == "경기" and not d["no_market"]
+    assert {m["name"] for m in d["markets"]} == {"수원", "안양", "안산", "구리"}  # 경기 안 시장끼리만
     for o in d["results"]:
         assert o["land_rent"] == 800_000 and o["machine_rent"] == 300_000
         assert abs(o["base_cost"] + o["land_rent"] + o["machine_rent"] - o["cost"]) <= 1
@@ -74,21 +75,68 @@ def test_recommend_market_rent_and_scenarios():
         assert o["harvest_start"] < o["harvest_end"] <= o["storage_end"]
         assert abs(sum(m["t"] for m in o["shipments"]) - o["sellable_t"]) < 0.05
         assert abs(sum(m["revenue"] for m in o["shipments"]) - o["revenue"]) <= len(o["shipments"])
-        codes = [m["code"] for m in o["market_compare"]]
-        assert codes[0] == "240004" and "110001" in codes and codes[-1] == "national"
-        here = next(m for m in o["market_compare"] if m["code"] == o["market"]["code"])
-        assert here["margin"] == o["margin"]
+        cmp = o["market_compare"]
+        assert {m["name"] for m in cmp} == {"수원", "안양", "안산", "구리"}
+        best = [m for m in cmp if m["best"]]
+        assert len(best) == 1 and best[0]["code"] == o["market"]["code"] and best[0]["margin"] == max(m["margin"] for m in cmp) == o["margin"]
 
 
-def test_recommend_market_choice_changes_revenue_only():
-    base = {"lands": [{"type": "house", "area_pyeong": 600}], "start_date": TODAY.isoformat(), "region": "충남"}
-    a = client.post("/recommend/crops", json={**base, "market": "national"}).json()["results"]
-    b = client.post("/recommend/crops", json={**base, "market": "110001"}).json()["results"]
-    by = {o["crop"]: o for o in b}
-    for o in a:
-        x = by[o["crop"]]
-        assert x["cost"] == o["cost"] and x["market"]["name"] == "서울가락"
-        assert abs(x["revenue"] - o["revenue"] * x["factor"]) <= o["revenue"] * 1e-4  # factor 는 소수 4자리로 반올림돼 나옴
+def test_recommend_one_market_and_no_market():
+    base = {"lands": [{"type": "house", "area_pyeong": 600}], "start_date": TODAY.isoformat()}
+    one = client.post("/recommend/crops", json={**base, "region": "충남"}).json()
+    assert [m["name"] for m in one["markets"]] == ["천안"]
+    assert all(len(o["market_compare"]) == 1 and o["market"]["name"] == "천안" for o in one["results"])
+    for sido in ("제주", "세종"):  # 공영 도매시장이 없음 → 다른 지역을 섞지 않고 전국 평균
+        d = client.post("/recommend/crops", json={**base, "region": sido}).json()
+        assert d["no_market"] and [m["code"] for m in d["markets"]] == ["national"]
+        assert all(o["market"]["code"] == "national" and o["factor"] == 1 and o["no_market"] for o in d["results"])
+
+
+def test_recommend_ph_demotes_to_bottom():
+    from datetime import date
+
+    from app.services import recommender
+
+    # 봄(3/10) 노지: 감자(pH 5.0~6.0)는 기존 작물 상추(6.6~7.2 → 흙 약 6.9)면 0.9 높아서 맨 아래
+    start = date(TODAY.year + 1, 3, 10)
+    ok, _ = recommender.recommend_crops({"open": 1200}, {}, start, TODAY, "경기", prevs={"open": "상추"})
+    codes = [o.crop.code for o in ok]
+    assert "potato" in codes and codes[-1] == "potato"
+    potato = ok[-1]
+    assert potato.demoted and potato.soil_ph == 6.9 and potato.ph[0] == "lower" and potato.ph[2] == 0.9
+    rest = [o for o in ok if not o.demoted]
+    assert [o.margin for o in rest] == sorted((o.margin for o in rest), reverse=True)
+    # 기존 작물이 없으면 pH 비교 안 함
+    ok2, _ = recommender.recommend_crops({"open": 1200}, {}, start, TODAY, "경기")
+    assert all(o.ph is None and not o.demoted for o in ok2)
+    # 0.5 보다 덜 높으면(오이 최고 6.8, 흙 6.9) 내리지 않음
+    from app.core.soil_ph import ph_check
+
+    assert ph_check("cucumber", 6.9)[0] == "near" and ph_check("onion", 5.5)[0] == "raise"
+
+
+def test_recommend_excluded_reasons():
+    body = {"lands": [{"type": "open", "area_pyeong": 1200}, {"type": "house", "area_pyeong": 600}], "start_date": TODAY.isoformat(), "region": "경기"}
+    d = client.post("/recommend/crops", json=body).json()
+    ex = {e["crop"]: e for e in d["excluded"]}
+    top = [o["crop"] for o in d["results"][:3]]
+    assert not set(top) & set(ex)  # 상위 3개는 excluded 에 없음
+    assert ex["apple"]["kind"] == "perennial" and "다년생" in ex["apple"]["reason"]
+    assert ex["rice"]["kind"] == "land" and "논 토지에서만" in ex["rice"]["reason"] and "노지·시설" in ex["rice"]["reason"]
+    assert ex["potato"]["kind"] == "season" and "심는 시기가 아니에요" in ex["potato"]["reason"]
+    for o in d["results"][3:]:
+        assert ex[o["crop"]]["kind"] in ("low", "ph")
+
+
+def test_crop_info():
+    d = client.get("/recommend/crops/cucumber").json()
+    assert d["crop"]["land_type"] == "house" and d["rda"]["row"] == "시설오이"
+    assert d["soil_ph"]["min"] == 5.5 and d["soil_ph"]["max"] == 6.8
+    assert [c["name"] for c in d["croppings"]] == ["촉성재배", "반촉성재배", "억제재배"]
+    assert d["croppings"][0]["source"] == "rda" and d["croppings"][1]["source"] == "est"
+    apple = client.get("/recommend/crops/apple").json()
+    assert apple["note"] and apple["croppings"] == []
+    assert client.get("/recommend/crops/durian").status_code == 404
 
 
 def test_crop_calendar_sources_and_realistic_harvest():

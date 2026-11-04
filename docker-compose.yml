@@ -29,7 +29,9 @@ services:
     restart: unless-stopped
 
   ml-api:
-    build: ./ml-api
+    build:  # 저장소 맨 위에서 빌드 (shared/ 의 품목·도매시장·흙 pH 목록이 필요)
+      context: .
+      dockerfile: ml-api/Dockerfile
     container_name: nong-clock-ml-api
     environment:
       MODEL_VERSION: ${MODEL_VERSION:-dummy-0.1}

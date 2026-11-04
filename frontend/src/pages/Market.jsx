@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ComposedChart, Area, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DEFAULT_GRADE, DEFAULT_MARKET, GRADES, getGradePrices, getMarkets, getOriginPrices, getPriceHistory, getTodayPrices, getVolumeTrend } from "../api/market";
+import { getItems } from "../api/ml";
 import { Async, PriceChange, useAsync } from "../components/common";
+import ItemPicker from "../components/ItemPicker";
 import { md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
 
 // 시세·수급: 날짜 · 시장 · 품목을 고르면 등급별 가격, 가격 추이, 출하지역, 반입 동향이 바뀐다.
@@ -310,8 +312,8 @@ function VolumeSection({ item, itemName, market, date }) {
 
 export default function Market() {
   const [params, setParams] = useSearchParams();
-  const [allItems, setAllItems] = useState(false);
   const today = useAsync(getTodayPrices);
+  const catalog = useAsync(getItems);
   const markets = useAsync(getMarkets);
   const items = today.data?.items ?? [];
   const item = params.get("item") || items[0]?.item;
@@ -331,8 +333,10 @@ export default function Market() {
     else next.set(key, value);
     setParams(next, { replace: true });
   };
-  const shown = allItems ? items : items.slice(0, ITEM_PILLS);
-  if (item && !shown.some((i) => i.item === item) && items.some((i) => i.item === item)) shown.push(items.find((i) => i.item === item));
+  // 품목 선택 상자 (107개: 부류 탭 + 이름 검색). 오늘 시세가 있는 품목만
+  const info = Object.fromEntries((catalog.data ?? []).map((c) => [c.code, c]));
+  const pickerItems = items.map((i) => ({ code: i.item, name: i.name, category: info[i.item]?.category ?? "기타", emoji: info[i.item]?.emoji ?? "🧺" }));
+  const shown = items.slice(0, ITEM_PILLS); // 빠른 선택: 거래 물량이 많은 품목
 
   return (
     <div className="page">
@@ -366,12 +370,9 @@ export default function Market() {
         </div>
         <div className="f">
           <label htmlFor="mk-item">품목</label>
-          <select id="mk-item" className="input" value={item ?? ""} onChange={(e) => set("item", e.target.value)}>
-            {items.map((i) => <option key={i.item} value={i.item}>{i.name}</option>)}
-          </select>
+          <ItemPicker id="mk-item" items={pickerItems} value={item} onChange={(c) => set("item", c)} />
           <div className="pills">
             {shown.map((i) => <button key={i.item} className={`pill sm ${i.item === item ? "on" : ""}`} onClick={() => set("item", i.item)}>{i.name}</button>)}
-            {items.length > ITEM_PILLS && <button className="pill sm more" onClick={() => setAllItems(!allItems)}>{allItems ? "접기" : `+${items.length - ITEM_PILLS}`}</button>}
           </div>
         </div>
       </section>

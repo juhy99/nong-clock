@@ -2,8 +2,9 @@
 // 서버가 꺼져 있으면 예비 데이터(mocks)로 대신 보여주고, 화면 상단에 "데모 데이터" 안내를 띄운다.
 import { ML_API_BASE, request } from "./client";
 import { HORIZONS, ITEMS, REGIONS } from "../mocks/catalog";
+import { MARKETS } from "../mocks/market";
 import { mockPredict, mockTopMovers } from "../mocks/prediction";
-import { mockCropList, mockPlantingDates, mockPricePath, mockRecommendCrops } from "../mocks/recommend";
+import { mockCropInfo, mockCropList, mockPlantingDates, mockPricePath, mockRecommendCrops } from "../mocks/recommend";
 
 const listeners = new Set();
 let offline = false;
@@ -36,8 +37,10 @@ async function withFallback(call, fallback) {
 export const getItems = () => withFallback(() => request(ML_API_BASE, "/items"), () => ITEMS);
 export const getRegions = () => withFallback(() => request(ML_API_BASE, "/regions"), () => REGIONS);
 export const getHorizons = () => withFallback(() => request(ML_API_BASE, "/horizons"), () => HORIZONS);
+/** 공영 도매시장 32곳 [{ code, name, sido, ... }] — 목록 기준은 ml-api/app/core/markets.py */
+export const getMarkets = () => withFallback(() => request(ML_API_BASE, "/markets"), () => MARKETS.filter((m) => m.code !== "national"));
 
-/** @param {{item: string, horizon: number, region?: string}} req */
+/** @param {{item: string, horizon: number, market?: string}} req  horizon 1~365, market = 도매시장 코드 */
 export const predict = (req) =>
   withFallback(() => request(ML_API_BASE, "/predict", { method: "POST", body: req }), () => mockPredict(req));
 
@@ -59,6 +62,9 @@ export const recommendPlantingDates = (req) =>
   withFallback(() => request(ML_API_BASE, "/recommend/planting-dates", { method: "POST", body: req }), () => mockPlantingDates(req));
 
 /** 작물의 앞으로 13개월 예상 도매가 (주 단위) */
+/** 작물 정보 탭: 작형·수량·경영비 */
+export const getCropInfo = (code) => withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}`), () => mockCropInfo(code));
+
 export const getCropPricePath = (code) =>
   withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}/prices`), () => mockPricePath(code));
 

@@ -15,9 +15,15 @@ def test_health():
 
 def test_items_and_regions():
     items = client.get("/items").json()
-    assert len(items) == 16
-    assert any(i["code"] == "napa_cabbage" for i in items)
-    assert all(i["unit"] == "kg" and i["emoji"] for i in items)
+    assert len(items) == 107
+    codes = {i["code"] for i in items}
+    # 기존 16개 영어 코드는 그대로
+    assert {"potato", "onion", "carrot", "apple", "watermelon", "napa_cabbage", "radish", "tomato", "cabbage", "sweet_potato",
+            "button_mushroom", "pear", "king_oyster_mushroom", "green_onion", "mandarin", "enoki_mushroom"} <= codes
+    assert all(i["unit"] == "kg" and i["emoji"] and len(i["code4"]) == 4 and i["category"] for i in items)
+    assert len({i["code4"] for i in items}) == 107 and len(codes) == 107
+    by = {i["code"]: i for i in items}
+    assert by["lettuce"]["code4"] == "1005" and by["iceberg_lettuce"]["code4"] == "1301"  # 잎상추 ≠ 결구상추
     # 기본은 전국만
     assert client.get("/regions").json() == [{"code": "national", "name": "전국"}]
 
@@ -27,7 +33,30 @@ def test_horizons():
         {"days": 7, "label": "1주"},
         {"days": 14, "label": "2주"},
         {"days": 30, "label": "1개월"},
+        {"days": 90, "label": "3개월"},
+        {"days": 180, "label": "6개월"},
+        {"days": 365, "label": "1년"},
     ]
+
+
+def test_markets():
+    ms = client.get("/markets").json()
+    assert len(ms) == 32 and ms[0]["code"] == "110001" and ms[0]["name"] == "서울가락"
+    assert {m["name"] for m in ms if m["sido"] == "경기"} == {"수원", "안양", "안산", "구리"}
+
+
+def test_predict_market_and_one_year():
+    res = client.post("/predict", json={"item": "tomato", "market": "110001", "horizon": 365})
+    assert res.status_code == 200
+    b = res.json()
+    assert b["market"] == "110001" and b["market_name"] == "서울가락" and b["code4"] == "0803"
+    assert len(b["forecast"]) == 365
+    # 장기일수록 범위가 넓다
+    w = lambda p: (p["upper"] - p["lower"]) / p["price"]  # noqa: E731
+    assert w(b["forecast"][364]) > w(b["forecast"][89]) > w(b["forecast"][6])
+    nat = client.post("/predict", json={"item": "tomato", "horizon": 30}).json()
+    assert nat["market"] == "national" and nat["base_price"] == 3810
+    assert client.post("/predict", json={"item": "tomato", "market": "999999", "horizon": 7}).status_code == 404
 
 
 def test_regional_forecast_when_enabled(monkeypatch):
@@ -44,7 +73,7 @@ def test_region_defaults_to_national():
     assert client.get("/predict/top-movers").status_code == 200
 
 
-@pytest.mark.parametrize("horizon", [1, 7, 10, 14, 23, 30])
+@pytest.mark.parametrize("horizon", [1, 7, 10, 14, 23, 30, 90, 365])
 def test_predict_shape(horizon):
     res = client.post("/predict", json={"item": "napa_cabbage", "horizon": horizon})
     assert res.status_code == 200
@@ -63,10 +92,10 @@ def test_predict_is_deterministic():
 @pytest.mark.parametrize(
     "req, status",
     [
-        ({"item": "banana", "horizon": 7}, 404),
+        ({"item": "durian", "horizon": 7}, 404),
         ({"item": "napa_cabbage", "region": "seoul", "horizon": 7}, 404),
         ({"item": "napa_cabbage", "horizon": 0}, 422),
-        ({"item": "napa_cabbage", "horizon": 31}, 422),
+        ({"item": "napa_cabbage", "horizon": 366}, 422),
         ({"item": "napa_cabbage", "region": "gyeonggi", "horizon": 7}, 404),  # 지역별 예측 꺼짐
     ],
 )
@@ -74,13 +103,13 @@ def test_predict_invalid(req, status):
     assert client.post("/predict", json=req).status_code == status
 
 
-@pytest.mark.parametrize("horizon", [1, 7, 10, 30])
+@pytest.mark.parametrize("horizon", [1, 7, 10, 30, 365])
 def test_top_movers_horizon_query(horizon):
     # 쿼리 파라미터는 문자열로 들어온다 ("7") — 회귀 테스트
     assert client.get(f"/predict/top-movers?horizon={horizon}&limit=2").status_code == 200
 
 
-@pytest.mark.parametrize("horizon", [0, 31])
+@pytest.mark.parametrize("horizon", [0, 366])
 def test_top_movers_invalid_horizon(horizon):
     assert client.get(f"/predict/top-movers?horizon={horizon}").status_code == 422
 

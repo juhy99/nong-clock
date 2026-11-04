@@ -1,0 +1,388 @@
+{
+ "_about": "작물별 알맞은 흙 pH. 출처: 팀 자료 「작물별 땅 조건」 v4 엑셀의 '작물별_조건' 시트 (농사로 재배력·작목별 기술서, 2026-11-03 정리). min/max 가 null 이면 자료에서 못 찾은 것 — 추정해서 채우지 않음. 작물 추천(기존 작물 → 흙 pH 어림, 후보 작물 순위 내림)에서 화면과 ml-api 가 같이 읽는다.",
+ "demote_gap": 0.5,
+ "crop_map": {
+  "tomato": "토마토·방울토마토",
+  "cucumber": "오이",
+  "lettuce": "상추",
+  "paprika": "파프리카·피망",
+  "strawberry": "딸기",
+  "green_onion": "대파",
+  "spinach": "시금치",
+  "onion": "양파",
+  "bomdong": "배추(봄동·얼갈이)",
+  "garlic": "마늘",
+  "napa_cabbage": "배추(봄동·얼갈이)",
+  "potato": "감자",
+  "carrot": "당근",
+  "soybean": "콩"
+ },
+ "crops": [
+  {
+   "name": "감자",
+   "min": 5.0,
+   "max": 6.0,
+   "memo": "알칼리성이면 더뎅이병 증가"
+  },
+  {
+   "name": "고구마(고구마순)",
+   "min": 4.2,
+   "max": 7.0,
+   "memo": "관리는 5.0~6.0 권장"
+  },
+  {
+   "name": "깻잎",
+   "min": null,
+   "max": null,
+   "memo": "척박지·산성토에도 적응(시들음병은 pH 6.5~7.0으로 줄임)"
+  },
+  {
+   "name": "콩",
+   "min": 6.0,
+   "max": 7.0,
+   "memo": "6.5 안팎 최적, 강산성 싫어함"
+  },
+  {
+   "name": "옥수수",
+   "min": 5.5,
+   "max": 8.0,
+   "memo": "최적 6.5"
+  },
+  {
+   "name": "양파",
+   "min": 6.3,
+   "max": 7.3,
+   "memo": ""
+  },
+  {
+   "name": "마늘",
+   "min": 5.5,
+   "max": 6.0,
+   "memo": ""
+  },
+  {
+   "name": "대파",
+   "min": 5.7,
+   "max": 7.4,
+   "memo": ""
+  },
+  {
+   "name": "쪽파(실파)",
+   "min": 5.7,
+   "max": 7.4,
+   "memo": "산성토 생육 불량"
+  },
+  {
+   "name": "부추",
+   "min": null,
+   "max": null,
+   "memo": "(원문 일부 잘림)"
+  },
+  {
+   "name": "배추(봄동·얼갈이)",
+   "min": 5.5,
+   "max": 6.8,
+   "memo": "산성토양에서 병 증가"
+  },
+  {
+   "name": "브로콜리",
+   "min": 5.5,
+   "max": 6.5,
+   "memo": "토양 적응 범위 넓음"
+  },
+  {
+   "name": "갓",
+   "min": 5.5,
+   "max": 6.8,
+   "memo": ""
+  },
+  {
+   "name": "무",
+   "min": 5.5,
+   "max": 6.8,
+   "memo": ""
+  },
+  {
+   "name": "당근",
+   "min": 6.0,
+   "max": 6.5,
+   "memo": ""
+  },
+  {
+   "name": "고추(풋·꽈리·홍고추)",
+   "min": 6.1,
+   "max": 7.6,
+   "memo": "6.5 정도 중성 적당"
+  },
+  {
+   "name": "가지",
+   "min": 6.0,
+   "max": 7.3,
+   "memo": "생육 6.0, 수량 6.8~7.3"
+  },
+  {
+   "name": "토마토·방울토마토",
+   "min": 5.5,
+   "max": 7.0,
+   "memo": ""
+  },
+  {
+   "name": "오이",
+   "min": 5.5,
+   "max": 6.8,
+   "memo": "pH 4.3 이하 말라 죽음"
+  },
+  {
+   "name": "호박",
+   "min": null,
+   "max": null,
+   "memo": "토질 적응성 넓음"
+  },
+  {
+   "name": "수박",
+   "min": 5.5,
+   "max": 6.8,
+   "memo": ""
+  },
+  {
+   "name": "참외",
+   "min": 6.0,
+   "max": 6.8,
+   "memo": ""
+  },
+  {
+   "name": "시금치",
+   "min": 6.0,
+   "max": 7.0,
+   "memo": "산성에 아주 약함, pH 6 이하 경제 재배 어려움"
+  },
+  {
+   "name": "상추",
+   "min": 6.6,
+   "max": 7.2,
+   "memo": "pH 5 이하 생육 저하(결구상추는 5.5~6.6)"
+  },
+  {
+   "name": "생강",
+   "min": 6.0,
+   "max": 6.5,
+   "memo": "4.3 이하 생육 불량"
+  },
+  {
+   "name": "강낭콩",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "완두",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "달래",
+   "min": 6.0,
+   "max": 6.8,
+   "memo": ""
+  },
+  {
+   "name": "양배추·적채",
+   "min": 5.5,
+   "max": 6.8,
+   "memo": "적채는 pH 6 정도, N37·P20·K30"
+  },
+  {
+   "name": "칼리플라워",
+   "min": 5.5,
+   "max": 6.5,
+   "memo": ""
+  },
+  {
+   "name": "케일",
+   "min": 6.0,
+   "max": 7.0,
+   "memo": "유기물 많이 필요"
+  },
+  {
+   "name": "청경채",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "냉이",
+   "min": null,
+   "max": null,
+   "memo": "토양 크게 안 가림"
+  },
+  {
+   "name": "콜라비",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "겨자채",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "비타민(다채)",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "열무·알타리무",
+   "min": null,
+   "max": null,
+   "memo": "(원문 잘림)"
+  },
+  {
+   "name": "비트",
+   "min": 5.6,
+   "max": 6.7,
+   "memo": "산성토에서 생육 억제"
+  },
+  {
+   "name": "도라지",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "마",
+   "min": null,
+   "max": null,
+   "memo": "강산성 나쁨 → 석회로 중화"
+  },
+  {
+   "name": "우엉",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "파프리카·피망",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "멜론",
+   "min": 6.0,
+   "max": 6.8,
+   "memo": "토양 산소 요구 높음"
+  },
+  {
+   "name": "로메인·양상추",
+   "min": 5.5,
+   "max": 6.6,
+   "memo": "결구상추 기준"
+  },
+  {
+   "name": "근대",
+   "min": 6.0,
+   "max": 7.0,
+   "memo": ""
+  },
+  {
+   "name": "아욱",
+   "min": 6.0,
+   "max": 7.0,
+   "memo": ""
+  },
+  {
+   "name": "쑥갓",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "치커리",
+   "min": 6.0,
+   "max": 6.5,
+   "memo": ""
+  },
+  {
+   "name": "셀러리",
+   "min": 5.6,
+   "max": 6.8,
+   "memo": "거름 아주 많이 필요"
+  },
+  {
+   "name": "비름",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "고수",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "미나리",
+   "min": 6.0,
+   "max": 7.0,
+   "memo": "유기물 1.5% 이상"
+  },
+  {
+   "name": "연근",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "취나물(참취)",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "참나물",
+   "min": 5.5,
+   "max": 6.5,
+   "memo": "해발 450m 이상 유리"
+  },
+  {
+   "name": "머위대",
+   "min": null,
+   "max": null,
+   "memo": "산성에 강함"
+  },
+  {
+   "name": "돗나물(돌나물)",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "고사리",
+   "min": 3.0,
+   "max": 7.0,
+   "memo": "pH 범위 아주 넓음"
+  },
+  {
+   "name": "두릅",
+   "min": 5.5,
+   "max": 6.5,
+   "memo": "나무라 2년차부터 수확"
+  },
+  {
+   "name": "방풍나물",
+   "min": null,
+   "max": null,
+   "memo": ""
+  },
+  {
+   "name": "딸기",
+   "min": 5.0,
+   "max": 7.0,
+   "memo": "pH 5 이상이면 재배 가능"
+  }
+ ]
+}

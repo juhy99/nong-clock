@@ -13,12 +13,12 @@ import { itemOfQuery, suggestItemName } from "../utils/itemMatch";
 
 const PUBLIC_STATUS = ["진행중", "낙찰", "유찰"];
 
-// 작물 추천에 있는 작물 (ml-api /recommend/crops 와 같은 목록). 검색어가 작물 이름이면 "심는 날 추천"으로 바로 갈 수 있게
+// 작물 추천에 있는 작물 (ml-api /recommend/crops 와 같은 목록). 검색어가 작물 이름이면 "작물 정보" 탭으로 바로 갈 수 있게
 const CROPS = mockCropList();
 export const RECOMMEND_AREA = 600; // 검색에서 작물 추천으로 갈 때 기본 평수
 
 /** 작물 추천 주소 (작물로 심을 날짜 고르기 탭) */
-export const recommendLink = (code, area = RECOMMEND_AREA) => `/recommend?tab=crop&crop=${code}&area=${area}`;
+export const recommendLink = (code) => `/recommend?tab=info&crop=${code}`;
 
 /** 검색어에 걸린 작물: 이름이 같으면 맨 앞, 그다음 이름이 검색어로 시작하거나 검색어를 포함하는 작물 */
 function findCrops(word, code) {

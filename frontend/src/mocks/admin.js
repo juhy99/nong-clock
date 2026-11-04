@@ -1,3 +1,4 @@
+import { ACCURACY } from "./accuracy";
 // 개발자(관리자) 페이지 가짜 데이터.
 const ago = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
 
@@ -61,15 +62,5 @@ export const DATA_SOURCES = [
 ];
 
 // 모델 성능: 팀원 모델 v1 결과(v1_화면용_예측.csv)의 과거적중% (7일·2주·1개월)
-export const MODEL_PERFORMANCE = {
-  model_version: "v1 (팀원 테스트)",
-  target: 85,
-  rows: [
-    ["potato", 85.9, 79.6, 87.0], ["onion", 86.9, 74.0, 71.0], ["carrot", 79.4, 61.2, 60.9],
-    ["apple", 72.1, 60.7, 59.4], ["watermelon", 74.4, 57.7, 47.8], ["napa_cabbage", 70.2, 54.5, 47.8],
-    ["radish", 69.9, 55.3, 52.2], ["tomato", 51.0, 45.4, 44.9], ["cabbage", 54.6, 41.3, 31.9],
-    ["sweet_potato", 94.9, 88.8, 84.1], ["button_mushroom", 71.5, 64.6, 72.5], ["pear", 82.6, 66.3, 62.3],
-    ["king_oyster_mushroom", 79.8, 67.4, 69.6], ["green_onion", 66.1, 50.8, 56.5], ["mandarin", 79.7, 75.9, 78.8],
-    ["enoki_mushroom", 64.5, 53.5, 53.6],
-  ].map(([item, h7, h14, h30]) => ({ item, accuracy: { 7: h7, 14: h14, 30: h30 } })),
-};
+// 모델 성능 = 107품목 가격 예측 모델(최종 앙상블) 검증 오차. 기준은 shared/model_accuracy.json (accuracy.js 가 읽음)
+export const MODEL_PERFORMANCE = ACCURACY;

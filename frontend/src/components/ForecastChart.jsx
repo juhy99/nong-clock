@@ -30,9 +30,9 @@ function ChartTooltip({ active, payload, label }) {
 /**
  * 실제 시세(검은 선) + 예측(초록 점선) + 오차범위 + 이상기후 구간. AI 예측 화면과 홈이 같이 쓴다.
  * marks: [{ date, price, label, color }] 그래프 위 점 (가장 비싼 날·싼 날)
- * longFrom: 이 날짜부터는 장기 예측 구간으로 옅게 표시
+ * longFrom: 이 날짜부터는 장기 예측 구간으로 옅게 표시 · zones: [{ x1, x2, label }] 참고용 구간
  */
-export default function ForecastChart({ p, height = 340, legend = true, marks = [], longFrom = null }) {
+export default function ForecastChart({ p, height = 340, legend = true, marks = [], longFrom = null, zones = [] }) {
   const alert = p.alerts[0];
   const last = p.forecast.at(-1)?.date;
   return (
@@ -45,6 +45,7 @@ export default function ForecastChart({ p, height = 340, legend = true, marks = 
         {legend && <Legend />}
         {alert && <ReferenceArea x1={alert.start} x2={alert.end} fill="#f9d9a6" fillOpacity={0.5} label={{ value: "이상기후", fontSize: 11, fill: "#9a6200" }} />}
         {longFrom && last > longFrom && <ReferenceArea x1={longFrom} x2={last} fill="#f3f1ea" fillOpacity={0.8} label={{ value: "장기 예측 · 참고용", fontSize: 11, fill: "#8a7f63", position: "insideTop" }} />}
+        {zones.map((z) => <ReferenceArea key={z.x1} x1={z.x1} x2={z.x2} fill="#f3f1ea" fillOpacity={0.85} label={{ value: z.label, fontSize: 11, fill: "#8a7f63", position: "insideTop" }} />)}
         <Area name="예측 오차범위" dataKey="range" stroke="none" fill="#cfe8d7" fillOpacity={0.7} />
         <Line name="실제" dataKey="actual" stroke="#1c1c1a" strokeWidth={2} dot={false} />
         <Line name="예측" dataKey="forecast" stroke="#1fa463" strokeWidth={2.5} strokeDasharray="6 4" dot={false} />

@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.core.config import MODEL_VERSION
 from app.core.crop_calendar import CROPS, LAND_TYPES, Crop
+from app.core import accuracy
 from app.core.markets import market_name
 from app.core.soil_ph import ph_of
 from app.schemas.recommend import (
@@ -66,7 +67,7 @@ def _option(o: recommender.Option, region: str) -> Option:
         region=region, market=_market_ref(o.market), factor=round(o.factor, 4), no_market=recommender.sido_markets(region)[1],
         prev_crop=o.prev_crop, soil_ph=o.soil_ph, demoted=o.demoted,
         ph=PhInfo(kind=o.ph[0], min=o.ph[1].min if o.ph[1] else None, max=o.ph[1].max if o.ph[1] else None, gap=o.ph[2]) if o.ph else None,
-        price_per_kg=round(o.price), national_price_per_kg=round(o.price / o.factor), error_pct=o.error_pct,
+        price_per_kg=round(o.price), national_price_per_kg=round(o.price / o.factor), error_pct=o.error_pct, reference=o.reference,
         yield_t=round(o.total_t, 2), sellable_t=round(o.sell_t, 2), marketable_rate=o.crop.marketable,
         revenue=round(o.revenue), base_cost=round(o.base_cost), land_rent=round(o.land_rent), machine_rent=round(o.machine_rent),
         cost=round(o.cost), margin=round(o.margin), margin_rate=round(o.margin_rate, 1), margin_per_pyeong=round(o.margin / o.area_pyeong),
@@ -165,6 +166,6 @@ def price_path(code: str) -> PricePathResponse:
     for k in range(57):
         d = today + timedelta(days=7 * k)
         v = recommender.price_on(crop, d, today)
-        e = recommender.error_pct((d - today).days / 30.44) / 100 * 0.7  # 80% 범위로 줄여 표시
+        e = accuracy.error_pct(code, max(1, (d - today).days)) / 100  # 모델 검증 오차(WAPE)
         pts.append(PricePathPoint(date=d, price=round(v), lower=round(v * (1 - e)), upper=round(v * (1 + e))))
     return PricePathResponse(crop=_crop_out(crop), points=pts, model_version=VERSION)

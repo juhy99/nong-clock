@@ -68,4 +68,4 @@ HORIZONS: dict[int, str] = {
     365: "1년",
 }
 MAX_HORIZON = 365
-LONG_RANGE_DAYS = 90  # 이보다 먼 예측은 오차 범위를 더 넓히고 화면에 "장기 예측은 참고용"
+LONG_RANGE_DAYS = 180  # 모델은 6개월까지만 검증 → 이보다 먼 예측은 오차 범위를 더 넓히고 화면에 "참고용" (accuracy.py)

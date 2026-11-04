@@ -1,6 +1,7 @@
 """가격 예측기.
 
-지금은 DummyPredictor 가 그럴듯한 가짜 값을 돌려준다 (최대 365일, 도매시장별). 같은 (품목, 시장, 기준일) 이면
+지금은 DummyPredictor 가 그럴듯한 가짜 값을 돌려준다 (최대 365일, 도매시장별). 가격 선은 가짜지만
+오차 범위(띠)·신뢰도·참고용 표시는 실제 모델 검증 오차(shared/model_accuracy.json)를 따른다. 같은 (품목, 시장, 기준일) 이면
 항상 같은 값이 나오므로 프론트·Spring 개발 중 화면이 새로고침마다 바뀌지 않는다.
 
 실제 모델이 준비되면 Predictor 프로토콜을 구현하는 클래스를 만들고
@@ -14,7 +15,8 @@ from datetime import date, timedelta
 from functools import lru_cache
 from typing import Protocol
 
-from app.core.catalog import ITEMS, LONG_RANGE_DAYS, NATIONAL
+from app.core import accuracy
+from app.core.catalog import ITEMS, NATIONAL
 from app.core.config import MODEL_VERSION
 from app.core.markets import market_factor, market_name
 from app.schemas.prediction import (
@@ -45,10 +47,9 @@ def _season(item: str, d: date) -> float:
     return 1 + amp * math.cos(2 * math.pi * (d.timetuple().tm_yday - peak) / 365)
 
 
-def band_ratio(t: int) -> float:
-    """오차 범위 비율: 2.5% × √일수, 90일 넘으면 더 빨리 커짐 (최대 ±40%)"""
-    long = 1 + (t - LONG_RANGE_DAYS) / 365 if t > LONG_RANGE_DAYS else 1
-    return min(0.4, 0.025 * math.sqrt(t) * long)
+def band_ratio(item: str, t: int) -> float:
+    """오차 범위 비율 = 모델 검증 오차(WAPE) — 품목·예측 기간별 (app/core/accuracy.py)"""
+    return accuracy.error_pct(item, t) / 100
 
 
 class DummyPredictor:
@@ -76,7 +77,7 @@ class DummyPredictor:
             d = base_date + timedelta(days=t)
             wob = wob * 0.9 + rng.gauss(0, 0.006)
             v = base * _season(item, d) / s0 * (1 + wob)
-            band = v * band_ratio(t)
+            band = v * band_ratio(item, t)
             forecast.append(ForecastPoint(date=d, price=round(v), lower=round(v - band), upper=round(v + band)))
 
         predicted = forecast[-1].price
@@ -107,7 +108,9 @@ class DummyPredictor:
             forecast=forecast,
             predicted_price=predicted,
             change_pct=round((predicted - base) / base * 100, 1),
-            confidence=max(5, 92 - int(math.sqrt(horizon) * 4) - rng.randint(0, 6)),
+            error_pct=round(accuracy.error_pct(item, horizon), 1),
+            reference=accuracy.reference_of(item, horizon),
+            confidence=accuracy.confidence(item, horizon),
             alerts=alerts,
             model_version=MODEL_VERSION,
         )

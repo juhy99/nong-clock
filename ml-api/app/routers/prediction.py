@@ -50,6 +50,8 @@ def top_movers(
                 predicted_price=p.predicted_price,
                 change_pct=p.change_pct,
                 confidence=p.confidence,
+                error_pct=p.error_pct,
+                reference=p.reference,
             )
         )
     movers.sort(key=lambda m: abs(m.change_pct), reverse=True)

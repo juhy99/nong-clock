@@ -805,3 +805,9 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
   .rc-col .card-head { flex-wrap: wrap; }
   .rc-col .card-head > div:first-child { flex: 1 1 100%; min-width: 0; }
 }
+.chip.ref { background: #f3f1ea; color: #6b5f3f; border-color: #e2dcc8; }
+/* 관리자 › 모델 성능 */
+.mp-ctrl { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.mp-table td.r small { display: block; font-size: 11px; }
+.mp-table th .link.small { font-weight: 700; color: inherit; }
+.mp-ref { font-style: normal; font-size: 10.5px; font-weight: 700; color: #6b5f3f; background: #f3f1ea; border: 1px solid #e2dcc8; border-radius: 6px; padding: 0 5px; margin-left: 4px; }

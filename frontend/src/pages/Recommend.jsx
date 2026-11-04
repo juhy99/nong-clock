@@ -5,6 +5,7 @@ import { getCropInfo, getCropPricePath, getRecommendCrops, recommendCrops } from
 import { Async, useAsync } from "../components/common";
 import { LAND_TYPES, SIDO_LIST, marketsInSido } from "../mocks/recommend";
 import { PH_DEMOTE_GAP, SOIL_PH, phOf, soilPhFromPrev } from "../mocks/soil_ph";
+import { averageText } from "../mocks/accuracy";
 import { addDays, daysBetween, md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
 
 const START_DAYS = 30; // 농사 시작 날짜: 오늘부터 30일 안
@@ -190,7 +191,7 @@ function OptionStats({ o, extra }) {
   return (
     <>
       <div className="rc-kv">
-        <div><span>{o.market.name} 예상가 (출하량 가중)</span><b>{wonPerKg(o.price_per_kg)}</b><em>전국 평균 {won(o.national_price_per_kg)}원 · 오차 ±{o.error_pct}%</em></div>
+        <div><span>{o.market.name} 예상가 (출하량 가중)</span><b>{wonPerKg(o.price_per_kg)}</b><em>전국 평균 {won(o.national_price_per_kg)}원 · 오차 ±{o.error_pct}%{o.reference ? " · 참고용" : ""}</em></div>
         <div><span>판매량</span><b>{o.sellable_t.toFixed(1)}t</b><em>수확 {o.yield_t.toFixed(1)}t{o.marketable_rate < 1 ? ` × 상품화율 ${Math.round(o.marketable_rate * 100)}%(추정)` : " · 10a당 " + o.yield_t_per_10a + "t"}</em></div>
         <div><span>예상 매출</span><b>{man(o.revenue)}</b><em>월별 출하량 × 월별 예상가</em></div>
         <div><span>총경영비</span><b>{man(o.cost)}</b><em>전국 평균 {man(o.base_cost)}{rent ? ` + 임대료 ${man(rent)}` : ""}</em></div>
@@ -537,7 +538,7 @@ function CropInfo({ crop, setCrop, form, goLand }) {
           </section>
           {!c.perennial && (
             <section className="card">
-              <div className="card-head"><div><h2>앞으로 13개월 예상 도매가</h2><p>전국 도매시장 평균 · 원/kg · 붉은 띠 = 오차 범위</p></div></div>
+              <div className="card-head"><div><h2>앞으로 13개월 예상 도매가</h2><p>전국 공영도매시장 경매 단가 · 원/kg · 붉은 띠 = 모델 검증 오차 범위</p></div></div>
               <PriceChart crop={crop} />
             </section>
           )}
@@ -575,7 +576,7 @@ export default function Recommend() {
         ⚠️
         <div>
           <b>계산 기준</b> · 수확한 지역 안의 도매시장에서 판다고 가정하고, 운송비와 유통 마진은 계산하지 않아요.
-          수확이 멀수록 가격 예측 오차가 커져요(1~2개월 뒤 평균 약 17%, 6개월 이상 약 23%). 경영비는 전국 평균이라 내 농가와 다를 수 있어요. 마진은 참고용으로 보고 재배 경험·시설 조건·출하처를 함께 따져 보세요.
+          수확이 멀수록 가격 예측 오차가 커져요 (107품목 평균 검증 오차: {averageText()}). 6개월보다 먼 수확은 모델 검증 범위 밖이라 오차를 더 넓게 잡고 참고용으로 봐 주세요. 경영비는 전국 평균이라 내 농가와 다를 수 있어요. 마진은 참고용으로 보고 재배 경험·시설 조건·출하처를 함께 따져 보세요.
         </div>
       </div>
     </div>

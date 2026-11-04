@@ -5,6 +5,7 @@ import { Async, PctChange, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
 import ItemImage from "../components/ItemImage";
 import ItemPicker from "../components/ItemPicker";
+import { ACCURACY, bucketLabel, referenceOf } from "../mocks/accuracy";
 import { LONG_RANGE_DAYS } from "../mocks/prediction";
 import { addDays, daysBetween, md, shortDate, todayIso, wonPerKg } from "../utils/format";
 
@@ -41,10 +42,29 @@ function ExtremeCards({ p }) {
   );
 }
 
+// 예측 기간(일) → 그 기간이 덮는 날 범위 (참고용 칸 칠하기)
+const BUCKET_RANGE = { 7: [1, 10], 14: [11, 21], 30: [22, 60], 90: [61, 135], 180: [136, 180] };
+
+/** 이 품목에서 "참고용"인 구간들 [{ x1, x2, label }] — 기준선보다 나쁜 기간 + 6개월보다 먼 날 */
+function referenceZones(p) {
+  const zones = [];
+  (ACCURACY.items[p.item]?.reference_only ?? []).forEach((d) => {
+    const [a, b] = BUCKET_RANGE[d];
+    if (a > p.horizon) return;
+    const last = zones.at(-1);
+    if (last && last.b + 1 === a) last.b = Math.min(b, p.horizon);
+    else zones.push({ a, b: Math.min(b, p.horizon), label: "참고용 · 기준선보다 나쁨" });
+  });
+  if (p.horizon > LONG_RANGE_DAYS) zones.push({ a: LONG_RANGE_DAYS + 1, b: p.horizon, label: "참고용 · 6개월 넘는 장기" });
+  return zones.map((z) => ({ x1: addDays(p.base_date, z.a), x2: addDays(p.base_date, z.b), label: z.label }));
+}
+
 function Result({ p, horizonLabel }) {
   const alert = p.alerts[0];
   const { hi, lo } = extremes(p);
   const long = p.horizon > LONG_RANGE_DAYS;
+  const bad = (ACCURACY.items[p.item]?.reference_only ?? []).filter((d) => BUCKET_RANGE[d][0] <= p.horizon);
+  const ref = p.reference ?? referenceOf(p.item, p.horizon);
   return (
     <section className="card">
       <div className="chips">
@@ -52,15 +72,23 @@ function Result({ p, horizonLabel }) {
           🛡️ 신뢰도 지수 <b>{p.confidence}</b>/100
           <span className="meter"><i style={{ width: `${p.confidence}%` }} /></span>
         </span>
+        <span className="chip">📏 예측 오차 <b>±{Math.round(p.error_pct)}%</b></span>
+        {ref && <span className="chip ref">🔖 참고용</span>}
         {alert && <span className="chip warn">⚠️ 이상기후 경보 구간 {md(alert.start)} ~ {md(alert.end)}</span>}
       </div>
       <ExtremeCards p={p} />
       <ForecastChart p={p} height={340}
         marks={[{ date: hi.date, price: hi.price, label: "최고", color: "#d92d20" }, { date: lo.date, price: lo.price, label: "최저", color: "#1d63c9" }]}
-        longFrom={long ? addDays(p.base_date, LONG_RANGE_DAYS) : null} />
-      {long && (
-        <p className="ai-long">ℹ️ <b>장기 예측은 참고용이에요.</b> {LONG_RANGE_DAYS}일(3개월)이 넘는 구간은 오차가 커서 범위(띠)를 넓게 보여 줘요. 날짜가 가까워지면 다시 확인해 주세요.</p>
+        zones={referenceZones(p)} />
+      {bad.length > 0 && (
+        <p className="ai-long">🔖 <b>{p.item_name} {bad.map(bucketLabel).join("·")} 예측은 참고용이에요.</b> 모델 검증에서 이 품목·기간은 "오늘 가격이 그대로 간다"고 본 기준선보다 오차가 컸어요.</p>
       )}
+      {long && (
+        <p className="ai-long">ℹ️ <b>6개월이 넘는 장기 예측은 참고용이에요.</b> 모델은 6개월 뒤까지만 검증했어요. 그보다 먼 날은 6개월 오차보다 범위(띠)를 더 넓게 보여 줘요. 날짜가 가까워지면 다시 확인해 주세요.</p>
+      )}
+      <p className="muted small" style={{ margin: "10px 0 0" }}>
+        오차 범위(띠)·신뢰도 = 모델 검증 오차(WAPE, 2025-07~) · {p.item_name} 1주 ±{Math.round(ACCURACY.items[p.item]?.wape["7"] ?? 0)}% · 1개월 ±{Math.round(ACCURACY.items[p.item]?.wape["30"] ?? 0)}% · 6개월 ±{Math.round(ACCURACY.items[p.item]?.wape["180"] ?? ACCURACY.average_wape["180"])}% · 신뢰도 = 100 − 오차
+      </p>
       {alert ? (
         <div className="banner" style={{ marginTop: 14 }}>
           ⚠️
@@ -75,7 +103,7 @@ function Result({ p, horizonLabel }) {
       ) : (
         <p className="muted small" style={{ marginTop: 10 }}>{horizonLabel}까지 이상기후 경보 구간이 없습니다.</p>
       )}
-      <p className="muted small" style={{ margin: "10px 0 0" }}>{p.market_name} 도매시장 기준 · 모델 버전 {p.model_version} · 기준일 {shortDate(p.base_date)}</p>
+      <p className="muted small" style={{ margin: "10px 0 0" }}>{p.market_name} 도매시장 · 공영도매시장 경매 단가(원/kg) · 모델 버전 {p.model_version} · 기준일 {shortDate(p.base_date)}</p>
     </section>
   );
 }
@@ -148,7 +176,7 @@ export default function Predict() {
               {result.data && (
                 <div className="summary-box">
                   <span className="summary-img"><ItemImage code={result.data.item} emoji={o.items.find((i) => i.code === result.data.item)?.emoji} alt="" /></span>
-                  <div className="muted small">{shortDate(result.data.forecast.at(-1).date)} ({horizon}일 후)<br />{result.data.market_name} 예상 도매가</div>
+                  <div className="muted small">{shortDate(result.data.forecast.at(-1).date)} ({horizon}일 후)<br />{result.data.market_name} 예상 경매 단가</div>
                   <div className="price num">{wonPerKg(result.data.predicted_price)}</div>
                   <PctChange value={result.data.change_pct} className="small" />
                   <span className="muted small"> vs 오늘 {wonPerKg(result.data.base_price)}</span>

@@ -11,6 +11,26 @@ import { Highlight, useAsync } from "./common";
 import ItemImage from "./ItemImage";
 import NotificationBell from "./NotificationBell";
 
+// 가격 예측 · 작물 추천 (헤더 강조 버튼 · 휴대폰 아래 고정 바)
+export const CORE = [
+  ["/ai", "🤖", "가격 예측", "언제 팔까"],
+  ["/recommend", "🌱", "작물 추천", "무엇을 심을까"],
+];
+
+/** 휴대폰: 화면 아래 고정 바 — 가격 예측 · 작물 추천 */
+function CoreDock() {
+  return (
+    <nav className="core-dock" aria-label="가격 예측 · 작물 추천">
+      {CORE.map(([to, icon, label, q]) => (
+        <NavLink key={to} to={to} className={`core ${to.slice(1)}`}>
+          <span className="ic">{icon}</span>
+          <span><b>{label}</b><small>{q}</small></span>
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
 function Ticker() {
   const { data } = useAsync(getTodayPrices);
   if (!data) return <div className="ticker" style={{ height: 34 }} />;
@@ -143,11 +163,10 @@ function HeaderSearch() {
 function Header() {
   const { user, isAdmin, logout } = useAuth();
   const nav = useNavigate();
+  // 가격 예측 · 작물 추천은 홈 바로 뒤에 강조 버튼으로 (CORE)
   const links = [
     ["/", "홈"],
     ["/market", "시세·수급"],
-    ["/ai", "AI 가격예측"],
-    ["/recommend", "작물 추천"],
     ...(AUCTION_ENABLED ? [["/auctions", "경매 마켓"]] : []),
     ["/news", "농업 뉴스"],
     ["/board", "게시판"],
@@ -190,8 +209,16 @@ function Header() {
       </div>
       <div className="container">
         <nav className="nav">
-          {links.map(([to, label]) => (
-            <NavLink key={to} to={to} end={to === "/"}>
+          <NavLink to="/" end>홈</NavLink>
+          <span className="nav-core">
+            {CORE.map(([to, icon, label]) => (
+              <NavLink key={to} to={to} className={`core ${to.slice(1)}`}>
+                <span className="ic">{icon}</span>{label}
+              </NavLink>
+            ))}
+          </span>
+          {links.slice(1).map(([to, label]) => (
+            <NavLink key={to} to={to}>
               {label}
             </NavLink>
           ))}
@@ -241,6 +268,7 @@ export default function Layout() {
         FarmBid · 시세·{AUCTION_ENABLED && "경매·"}회원 데이터는 개발용 가상 데이터입니다 (실서비스 연동 시 KAMIS·aT 도매시장 API) ·{" "}
         <Link to="/about" className="link small">서비스 소개 · 문의</Link>
       </footer>
+      <CoreDock />
     </>
   );
 }

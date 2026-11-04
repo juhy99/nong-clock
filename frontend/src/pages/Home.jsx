@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getNotices } from "../api/admin";
 import { getAuctions } from "../api/auction";
-import { getHorizons, getItems, getTopMovers, predict } from "../api/ml";
+import { getHorizons, getItems, getTopMovers, predict, recommendCrops } from "../api/ml";
+import { DEFAULT_FORM, formRequest } from "./Recommend";
 import { getTodayPrices } from "../api/market";
 import { getNews, getNewsTrend } from "../api/news";
 import { useAuth } from "../components/AuthContext";
@@ -241,11 +242,55 @@ function ForecastHero() {
   );
 }
 
+/** 홈 맨 위: 가격 예측 · 작물 추천 — 지금 값으로 미리 보여 주고 바로 가기 */
+function CoreFeatures() {
+  const today = todayIso();
+  const mover = useAsync(() => getTopMovers({ horizon: 30, limit: 1 }));
+  const rec = useAsync(() => recommendCrops(formRequest(DEFAULT_FORM, today)));
+  const m = mover.data?.[0];
+  const top = rec.data?.results?.find((r) => !r.demoted);
+  return (
+    <section className="core-feat">
+      <Link to={m ? `/ai?item=${m.item}` : "/ai"} className="cf ai">
+        <span className="cf-tag">가격 예측</span>
+        <h2>🤖 수확한 작물, <em>언제 팔까?</em></h2>
+        <p>107개 품목 · 공영 도매시장 32곳 · 최대 1년 뒤까지 날마다 예측하고, 기간 중 가장 비싸게 팔 수 있는 날을 짚어 드려요.</p>
+        <div className="cf-live">
+          {m ? (
+            <>
+              <span className="muted small">지금 가장 크게 움직일 품목 · 1개월 뒤</span>
+              <b>{m.item_name} {wonPerKg(m.predicted_price)} <PctChange value={m.change_pct} /></b>
+              <span className="muted small">예측 오차 ±{Math.round(m.error_pct ?? 0)}% · 신뢰도 {m.confidence}{m.reference ? " · 참고용" : ""}</span>
+            </>
+          ) : <span className="muted small">예측 불러오는 중…</span>}
+        </div>
+        <span className="cf-go">가격 예측 보러 가기 →</span>
+      </Link>
+      <Link to="/recommend" className="cf rc">
+        <span className="cf-tag">작물 추천</span>
+        <h2>🌱 내 땅에는 <em>무엇을 심을까?</em></h2>
+        <p>토지 위치·평수·임대료·기존 작물을 넣으면, 그 지역 도매시장 가격으로 순이익이 가장 높은 작물과 재배 기간을 알려 드려요.</p>
+        <div className="cf-live">
+          {top ? (
+            <>
+              <span className="muted small">예: {DEFAULT_FORM.region} · 노지 {won(DEFAULT_FORM.lands.open)}평 + 시설 {won(DEFAULT_FORM.lands.house)}평 · 1주 뒤 시작</span>
+              <b>{top.emoji} {top.crop_name} · 순이익 {won(Math.round(top.margin / 1e4))}만원 <span className="rc-rate">마진률 {Math.round(top.margin_rate)}%</span></b>
+              <span className="muted small">{top.market.name} 도매시장에 팔 때 · {top.cropping}</span>
+            </>
+          ) : <span className="muted small">추천 불러오는 중…</span>}
+        </div>
+        <span className="cf-go">내 땅으로 추천받기 →</span>
+      </Link>
+    </section>
+  );
+}
+
 export default function Home() {
   return (
     <div className="page">
       <NoticeBanner />
-      {/* 예측을 가장 먼저, 오늘 시세는 그 아래에 */}
+      {/* 가격 예측·작물 추천을 가장 먼저, 예측 그래프·오늘 시세는 그 아래에 */}
+      <CoreFeatures />
       <ForecastHero />
       <TodayPrices />
       <NewsHeadlines />

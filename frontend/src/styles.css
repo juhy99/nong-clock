@@ -811,3 +811,45 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 .mp-table td.r small { display: block; font-size: 11px; }
 .mp-table th .link.small { font-weight: 700; color: inherit; }
 .mp-ref { font-style: normal; font-size: 10.5px; font-weight: 700; color: #6b5f3f; background: #f3f1ea; border: 1px solid #e2dcc8; border-radius: 6px; padding: 0 5px; margin-left: 4px; }
+
+/* 가격 예측 · 작물 추천 강조: 헤더 버튼 · 홈 카드 · 휴대폰 아래 고정 바 */
+.nav-core { display: flex; align-items: center; gap: 8px; padding: 0 6px; margin: 0 -4px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+.nav a.core { height: 36px; align-self: center; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--green); border-bottom-width: 1.5px; background: #fff; color: var(--green-dark, #0e7a45); font-weight: 800; gap: 6px; }
+.nav a.core .ic { font-size: 17px; }
+.nav a.core:hover { background: var(--green-soft); }
+.nav a.core.active { background: var(--green); color: #fff; border-color: var(--green); }
+.nav a.core.recommend { border-color: #d08a1e; color: #8a5300; }
+.nav a.core.recommend:hover { background: #fff4e0; }
+.nav a.core.recommend.active { background: #e39a2d; border-color: #e39a2d; color: #fff; }
+
+.core-feat { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.cf { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 26px 26px 22px; border-radius: 26px; color: inherit; text-decoration: none; overflow: hidden; transition: transform .15s ease, box-shadow .15s ease; }
+.cf:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(30, 80, 50, 0.14); }
+.cf.ai { background: linear-gradient(135deg, #e6f7ec 0%, #d6efff 100%); border: 1px solid #c4e6d1; }
+.cf.rc { background: linear-gradient(135deg, #fff6e3 0%, #ffe9cf 100%); border: 1px solid #f2d6a9; }
+.cf-tag { align-self: flex-start; font-size: 12px; font-weight: 800; letter-spacing: .02em; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.75); }
+.cf.ai .cf-tag { color: #0e7a45; } .cf.rc .cf-tag { color: #8a5300; }
+.cf h2 { margin: 0; font-size: 28px; letter-spacing: -0.5px; line-height: 1.25; }
+.cf h2 em { font-style: normal; }
+.cf.ai h2 em { color: #0e7a45; } .cf.rc h2 em { color: #b56a00; }
+.cf p { margin: 0; color: #4c554e; line-height: 1.6; }
+.cf-live { display: grid; gap: 2px; background: rgba(255,255,255,.85); border-radius: 16px; padding: 12px 14px; margin-top: 4px; }
+.cf-live b { font-size: 18px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.cf-go { align-self: flex-start; margin-top: 6px; font-weight: 800; padding: 10px 16px; border-radius: 12px; color: #fff; }
+.cf.ai .cf-go { background: var(--green); } .cf.rc .cf-go { background: #e39a2d; }
+
+.core-dock { display: none; }
+@media (max-width: 700px) {
+  .core-feat { grid-template-columns: 1fr; }
+  .cf h2 { font-size: 23px; }
+  .nav-core { border: none; padding: 0; margin: 0; }
+  .core-dock { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); background: rgba(255,255,255,.96); border-top: 1px solid var(--line); box-shadow: 0 -6px 18px rgba(0,0,0,.06); }
+  .core-dock a { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 14px; border: 1.5px solid var(--green); color: #0e7a45; text-decoration: none; }
+  .core-dock a.recommend { border-color: #d08a1e; color: #8a5300; }
+  .core-dock a.active { background: var(--green); color: #fff; }
+  .core-dock a.recommend.active { background: #e39a2d; border-color: #e39a2d; }
+  .core-dock .ic { font-size: 20px; }
+  .core-dock b { display: block; font-size: 14px; }
+  .core-dock small { display: block; font-size: 11.5px; opacity: .8; }
+  body { padding-bottom: 72px; }
+}

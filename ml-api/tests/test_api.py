@@ -119,3 +119,34 @@ def test_top_movers_sorted():
     assert len(movers) == 4
     changes = [abs(m["change_pct"]) for m in movers]
     assert changes == sorted(changes, reverse=True)
+
+
+def test_predict_band_and_confidence_follow_model_accuracy():
+    from app.core import accuracy
+
+    # 배추 1주: 검증 WAPE 13.1% → 띠 = 예측 ± 13.1%, 신뢰도 = 100 − 13.1
+    b = client.post("/predict", json={"item": "napa_cabbage", "horizon": 7}).json()
+    last = b["forecast"][-1]
+    assert abs((last["upper"] - last["price"]) / last["price"] - 0.131) < 0.002
+    assert b["error_pct"] == 13.1 and b["confidence"] == 87 and b["reference"] is None
+    # 6개월보다 먼 날은 6개월 오차보다 넓고 참고용
+    far = client.post("/predict", json={"item": "napa_cabbage", "horizon": 365}).json()
+    assert far["reference"] == "far" and far["error_pct"] > accuracy.ACC["items"]["napa_cabbage"]["wape"]["180"]
+    # 기준선보다 나쁜 품목·기간은 참고용
+    assert client.post("/predict", json={"item": "cabbage", "horizon": 30}).json()["reference"] == "baseline"
+    assert client.post("/predict", json={"item": "cabbage", "horizon": 14}).json()["reference"] is None
+    assert client.post("/predict", json={"item": "carrot", "horizon": 90}).json()["reference"] == "baseline"
+    assert client.post("/predict", json={"item": "radish", "horizon": 30}).json()["reference"] == "baseline"
+    assert client.post("/predict", json={"item": "pomegranate", "horizon": 180}).json()["reference"] == "baseline"
+
+
+def test_accuracy_table():
+    from app.core import accuracy
+
+    assert len(accuracy.ACC["items"]) == 107
+    assert accuracy.AVERAGE == {7: 17.69, 14: 20.45, 30: 22.93, 90: 24.66, 180: 26.83}
+    ref = {c: v["reference_only"] for c, v in accuracy.ACC["items"].items() if v["reference_only"]}
+    assert ref == {"cabbage": [30, 90, 180], "carrot": [90, 180], "radish": [30], "pomegranate": [180]}
+    # 기간 사이는 이어짐
+    w = accuracy.ACC["items"]["tomato"]["wape"]
+    assert abs(accuracy.error_pct("tomato", 22) - (w["14"] + (w["30"] - w["14"]) * 8 / 16)) < 1e-9

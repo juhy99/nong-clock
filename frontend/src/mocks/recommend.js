@@ -4,6 +4,7 @@ import { addDays, daysBetween, todayIso } from "../utils/format";
 import { marketFactor } from "./market";
 import MARKET_DATA from "../../../shared/markets.json";
 import { phCheck, soilPhFromPrev } from "./soil_ph";
+import { errorPct, referenceOf } from "./accuracy";
 
 // 토지 위치(시·도) → 그 시·도 안 공영 도매시장끼리 비교 (11/4 팀 결정: 수확한 지역 안의 도매시장에서 판다고 가정, 운송비·유통 마진은 계산하지 않음)
 // 시·도에 공영 도매시장이 없으면(세종·제주) 다른 지역 시장을 섞지 않고 전국 도매시장 평균으로 계산
@@ -124,7 +125,8 @@ const BY = Object.fromEntries(CROPS.map((c) => [c.code, c]));
 
 const PYEONG_PER_10A = 302.5;
 const VERSION = "demo+crop-calendar-sample";
-const errorPct = (m) => (m <= 2 ? 17 : m <= 6 ? 20 : 23);
+// 예측 오차(±%) = 모델 검증 오차(WAPE), 작물·수확까지 남은 날 기준 (accuracy.js, ml-api accuracy.py 와 같음)
+const errorPctFor = (crop, days) => Math.round(errorPct(crop, Math.max(1, days)));
 const cropOut = (c) => ({ code: c.code, name: c.name, emoji: c.emoji, land_type: c.land_type, land_type_name: LAND_TYPES[c.land_type], perennial: !!c.note });
 
 function priceOn(c, iso, today) {
@@ -160,13 +162,13 @@ function evaluate(c, w, plant, area, today, rent = {}) {
   });
   const base_cost = w.cost * 1e4 * a10, land_rent = (rent.land ?? 0) * 1e4, machine_rent = (rent.machine ?? 0) * 1e4;
   const cost = base_cost + land_rent + machine_rent, margin = revenue - cost;
-  const ep = errorPct(daysBetween(today, h0) / 30.44), e = ep / 100;
+  const ep = errorPctFor(c.code, daysBetween(today, h0)), e = ep / 100;
   const R = Math.round;
   return {
     crop: c.code, crop_name: c.name, emoji: c.emoji, land_type: c.land_type, area_pyeong: area, cropping: w.name,
     plant_date: plant, harvest_start: h0, harvest_end: h1, harvest_days: w.hd, days_to_harvest: w.dth, multi_harvest: multi,
     storage_days: w.store, storage_end: addDays(h1, w.store),
-    price_per_kg: R(revenue / (sell_t * 1000)), error_pct: ep,
+    price_per_kg: R(revenue / (sell_t * 1000)), error_pct: ep, reference: referenceOf(c.code, daysBetween(today, h0)),
     yield_t: R(total_t * 100) / 100, sellable_t: R(sell_t * 100) / 100, marketable_rate: c.mk,
     revenue: R(revenue), base_cost: R(base_cost), land_rent: R(land_rent), machine_rent: R(machine_rent), cost: R(cost), margin: R(margin),
     margin_rate: R((margin / revenue) * 1000) / 10, margin_per_pyeong: R(margin / area),
@@ -289,7 +291,7 @@ export function mockPricePath(code) {
   if (c.note) return { crop: cropOut(c), points: [], model_version: VERSION };
   const today = todayIso();
   const points = Array.from({ length: 57 }, (_, k) => {
-    const d = addDays(today, k * 7), v = priceOn(c, d, today), e = (errorPct(daysBetween(today, d) / 30.44) / 100) * 0.7;
+    const d = addDays(today, k * 7), v = priceOn(c, d, today), e = errorPct(c.code, Math.max(1, daysBetween(today, d))) / 100;
     return { date: d, price: Math.round(v), lower: Math.round(v * (1 - e)), upper: Math.round(v * (1 + e)) };
   });
   return { crop: cropOut(c), points, model_version: VERSION };

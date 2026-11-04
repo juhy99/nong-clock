@@ -11,10 +11,12 @@
 - 가격 하락·상승 시나리오 = 예상가 ∓ 예측 오차 범위(error_pct)
 """
 
+import math
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
-from app.core.crop_calendar import CROPS, LAND_TYPES, Crop, Cropping, error_pct, ship_weight
+from app.core import accuracy
+from app.core.crop_calendar import CROPS, LAND_TYPES, Crop, Cropping, ship_weight
 from app.core.markets import NATIONAL, market_factor, markets_in_sido
 from app.core.soil_ph import SoilPh, ph_check, soil_ph_from_prev
 
@@ -78,7 +80,12 @@ class Option:
 
     @property
     def error_pct(self) -> int:
-        return error_pct(self.months_ahead)
+        """수확 시작까지 남은 날의 예측 오차(±%) = 모델 검증 WAPE (작물·기간별)"""
+        return math.floor(accuracy.error_pct(self.crop.code, max(1, round(self.months_ahead * 30.44))) + 0.5)
+
+    @property
+    def reference(self) -> str | None:
+        return accuracy.reference_of(self.crop.code, max(1, round(self.months_ahead * 30.44)))
 
     def at(self, market: str) -> "Option":
         """같은 계획을 다른 도매시장에 팔았을 때 (매출만 시장 계수만큼 바뀐다)"""
@@ -260,4 +267,4 @@ def planting_dates(crop: Crop, area_pyeong: float, today: date, rent: Rent | Non
     return points, best, top
 
 
-__all__ = ["Option", "Rent", "TOP_N", "at_best_market", "compare_markets", "error_pct", "evaluate", "excluded", "planting_dates", "recommend_crops", "price_on", "sido_markets"]
+__all__ = ["Option", "Rent", "TOP_N", "at_best_market", "compare_markets", "evaluate", "excluded", "planting_dates", "recommend_crops", "price_on", "sido_markets"]

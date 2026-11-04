@@ -104,7 +104,8 @@ class Option(BaseModel):
     factor: float = Field(description="판 시장 계수 (전국 평균 = 1)")
     price_per_kg: int = Field(description="판 시장의 출하량 가중 평균 예상가 (원/kg)")
     national_price_per_kg: int = Field(description="전국 도매시장 평균 예상가 (원/kg)")
-    error_pct: int = Field(description="예상가 오차 범위 (±%)")
+    error_pct: int = Field(description="예상가 오차 범위 (±%) = 모델 검증 오차(WAPE), 작물·수확까지 남은 날 기준")
+    reference: Literal["far", "baseline"] | None = Field(None, description="참고용: far 6개월보다 먼 수확 · baseline 기준선보다 나쁜 품목·기간")
     yield_t: float = Field(description="예상 수확량 (톤)")
     sellable_t: float = Field(description="판매량 = 수확량 × 상품화율 (톤)")
     marketable_rate: float = Field(description="상품화율. 조사표 작물은 1 (조사표 가격에 이미 반영)")
@@ -188,7 +189,7 @@ class PricePathPoint(BaseModel):
 
 class PricePathResponse(BaseModel):
     crop: CropOut
-    points: list[PricePathPoint] = Field(description="오늘부터 13개월, 주 단위 전국 평균 예상 도매가와 오차 범위 (원/kg). 시장별 값은 × 시장 계수")
+    points: list[PricePathPoint] = Field(description="오늘부터 13개월, 주 단위 전국 공영도매 예상 경매 단가와 모델 검증 오차 범위 (원/kg). 시장별 값은 × 시장 계수")
     model_version: str
 
 

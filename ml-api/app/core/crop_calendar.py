@@ -157,6 +157,4 @@ CROPS: dict[str, Crop] = {
     ]
 }
 
-# 몇 개월 뒤 예측인지에 따른 가격 오차 범위(%) — 모델링 세션 검증 결과 기준
-def error_pct(months_ahead: float) -> int:
-    return 17 if months_ahead <= 2 else 20 if months_ahead <= 6 else 23
+# 가격 오차 범위(%)는 모델 검증 오차(품목·예측 기간별 WAPE) — app/core/accuracy.py

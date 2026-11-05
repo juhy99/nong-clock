@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getHorizons, getItems, getMarkets, predict } from "../api/ml";
-import { Async, PctChange, useAsync } from "../components/common";
+import { Async, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
 import ItemImage from "../components/ItemImage";
 import ItemPicker from "../components/ItemPicker";
 import { ACCURACY, LOW_ACCURACY, bucketLabel, referenceOf } from "../mocks/accuracy";
 import { LONG_RANGE_DAYS } from "../mocks/prediction";
-import { addDays, daysBetween, md, shortDate, todayIso, wonPerKg } from "../utils/format";
+import { addDays, daysBetween, md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
 
 const MAX_DAYS = 365;
 const DEFAULT_MARKET = "110001"; // 서울가락
@@ -24,19 +24,33 @@ function extremes(p) {
 }
 const sign = (v) => `${v > 0 ? "+" : ""}${v}%`;
 
-function ExtremeCards({ p }) {
+/** 결과 맨 위: 고른 날 예상 가격(가장 크게) + 이 기간 최고·최저 가격 */
+function PriceHero({ p, emoji, low }) {
   const { hi, lo } = extremes(p);
+  const end = p.forecast.at(-1);
+  const diff = p.predicted_price - p.base_price;
+  const dir = p.change_pct > 0 ? "up" : p.change_pct < 0 ? "down" : "flat";
   return (
-    <div className="ai-ext">
-      <div className="hi">
-        <span>이 기간 중 가장 비싸게 팔 수 있는 날</span>
-        <b>{shortDate(hi.date)}</b>
-        <em>{wonPerKg(hi.price)} <i className="up">({sign(hi.pct)})</i></em>
+    <div className="ph">
+      <div className={`ph-main ${dir}`}>
+        <span className="ph-emo"><ItemImage code={p.item} emoji={emoji} alt="" /></span>
+        <span className="ph-when">{shortDate(end.date)} · {p.horizon}일 후 · {p.market_name} 예상 경매 단가</span>
+        <b className="ph-price num">{won(p.predicted_price)}<small>원/kg</small></b>
+        <span className="ph-chg">
+          <b className={dir}>{dir === "up" ? "▲" : dir === "down" ? "▼" : "–"} {Math.abs(p.change_pct).toFixed(1)}% ({diff > 0 ? "+" : ""}{won(diff)}원)</b>
+          <span className="muted"> 오늘 {wonPerKg(p.base_price)}보다</span>
+        </span>
+        <span className="ph-range muted small">예상 범위 {won(end.lower)} ~ {won(end.upper)}원 · 오차 ±{Math.round(p.error_pct)}%{low ? " · ❗ 정확도 낮은 품목" : ""}</span>
       </div>
-      <div className="lo">
-        <span>이 기간 중 가장 싼 날</span>
-        <b>{shortDate(lo.date)}</b>
-        <em>{wonPerKg(lo.price)} <i className="down">({sign(lo.pct)})</i></em>
+      <div className="ph-ext hi">
+        <span>이 기간 최고 가격</span>
+        <b className="num">{wonPerKg(hi.price)}</b>
+        <em>{shortDate(hi.date)} · <i className="up">{sign(hi.pct)}</i></em>
+      </div>
+      <div className="ph-ext lo">
+        <span>이 기간 최저 가격</span>
+        <b className="num">{wonPerKg(lo.price)}</b>
+        <em>{shortDate(lo.date)} · <i className="down">{sign(lo.pct)}</i></em>
       </div>
     </div>
   );
@@ -59,7 +73,7 @@ function referenceZones(p) {
   return zones.map((z) => ({ x1: addDays(p.base_date, z.a), x2: addDays(p.base_date, z.b), label: z.label }));
 }
 
-function Result({ p, horizonLabel }) {
+function Result({ p, horizonLabel, emoji }) {
   const alert = p.alerts[0];
   const { hi, lo } = extremes(p);
   const long = p.horizon > LONG_RANGE_DAYS;
@@ -68,6 +82,7 @@ function Result({ p, horizonLabel }) {
   const low = LOW_ACCURACY.has(p.item);
   return (
     <section className="card">
+      <PriceHero p={p} emoji={emoji} low={low} />
       <div className="chips">
         <span className="chip">
           🛡️ 신뢰도 지수 <b>{p.confidence}</b>/100
@@ -87,10 +102,9 @@ function Result({ p, horizonLabel }) {
           </div>
         </div>
       )}
-      <ExtremeCards p={p} />
       <div className={low ? "chart-low" : undefined}>
         {low && <span className="chart-low-tag">⚠ 예측 정확도 낮음 · 참고만 하세요 (문구 추후 추가)</span>}
-        <ForecastChart p={p} height={340}
+        <ForecastChart p={p} height={270}
           marks={[{ date: hi.date, price: hi.price, label: "최고", color: "#d92d20" }, { date: lo.date, price: lo.price, label: "최저", color: "#1d63c9" }]}
           zones={referenceZones(p)} />
       </div>
@@ -160,8 +174,8 @@ export default function Predict() {
       </div>
       <Async state={options}>
         {(o) => (
-          <div className="predict-layout">
-            <section className="card" style={{ display: "grid", gap: 18 }}>
+          <div className="predict-layout stack">
+            <section className="card pred-bar">
               <div className="field">
                 <label htmlFor="item">품목</label>
                 <ItemPicker items={o.items} value={item} onChange={(c) => go({ item: c })} warn={LOW_ACCURACY} />
@@ -187,19 +201,9 @@ export default function Predict() {
                 </div>
                 <span className="hint">내일부터 1년 뒤({shortDate(addDays(today, MAX_DAYS))})까지 고를 수 있어요</span>
               </div>
-              {result.data && (
-                <div className="summary-box">
-                  <span className="summary-img"><ItemImage code={result.data.item} emoji={o.items.find((i) => i.code === result.data.item)?.emoji} alt="" /></span>
-                  <div className="muted small">{shortDate(result.data.forecast.at(-1).date)} ({horizon}일 후)<br />{result.data.market_name} 예상 경매 단가</div>
-                  <div className="price num">{wonPerKg(result.data.predicted_price)}</div>
-                  <PctChange value={result.data.change_pct} className="small" />
-                  <span className="muted small"> vs 오늘 {wonPerKg(result.data.base_price)}</span>
-                  {LOW_ACCURACY.has(result.data.item) && <div className="low-acc-mini"><span className="ip-warn">!</span> 정확도가 낮은 품목이에요 · 참고용</div>}
-                </div>
-              )}
             </section>
             <Async state={result} minHeight={420}>
-              {(p) => <Result p={p} horizonLabel={horizonLabel} />}
+              {(p) => <Result p={p} horizonLabel={horizonLabel} emoji={o.items.find((i) => i.code === p.item)?.emoji} />}
             </Async>
           </div>
         )}

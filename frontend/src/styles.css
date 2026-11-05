@@ -982,3 +982,56 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 .ix-spark polyline.up, .ix-spark polyline.down { stroke: #4e5968; }
 .ix-spark { height: 32px; }
 @media (max-width: 700px) { .core-feat .cf.ai { align-items: stretch; } .core-feat .cf-head { padding-right: 0; } .core-feat .cf-go { position: static; align-self: flex-start; } }
+
+/* 가격 예측: 결과 맨 위 예상 가격 (가장 크게) + 이 기간 최고·최저 */
+.ph { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 14px; }
+.ph-main { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; border-radius: 18px; background: var(--green-soft); border: 1.5px solid #bfe5cf; }
+.ph-main.up { background: #fff3f1; border-color: #f6c9c3; } .ph-main.down { background: #eff5ff; border-color: #c7dafa; }
+.ph-emo { position: absolute; right: 16px; top: 14px; width: 52px; height: 52px; font-size: 42px; display: grid; place-items: center; }
+.ph-emo .item-img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+.ph-when { font-size: 13px; color: #4e5968; padding-right: 60px; }
+.ph-price { font-size: 44px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+.ph-price small { font-size: 20px; font-weight: 700; margin-left: 4px; }
+.ph-chg { font-size: 16px; } .ph-chg b { font-size: 18px; } .ph-chg .muted { white-space: nowrap; }
+.ph-ext { display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); }
+.ph-ext.hi { background: #fffafa; } .ph-ext.lo { background: #fafcff; }
+.ph-ext span { font-size: 13px; color: var(--muted); font-weight: 700; }
+.ph-ext b { font-size: 24px; }
+.ph-ext em { font-style: normal; font-size: 14px; color: #4e5968; } .ph-ext i { font-style: normal; font-weight: 700; }
+@media (max-width: 700px) {
+  .ph { grid-template-columns: 1fr 1fr; }
+  .ph-main { grid-column: 1 / -1; }
+  .ph-price { font-size: 38px; }
+  .ph-ext b { font-size: 19px; }
+}
+
+/* 가격 예측 화면을 촘촘하게: 조건은 위 한 줄, 결과는 전체 폭 */
+.predict-layout.stack { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.pred-bar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1.7fr); gap: 16px; align-items: start; padding: 16px 20px; }
+.pred-bar .field { gap: 6px; }
+.pred-bar .pills { gap: 6px; margin-top: 6px; }
+.pred-bar .hint { font-size: 12px; }
+.pred-bar .field:last-child { grid-template-columns: 170px minmax(0, 1fr); align-items: center; column-gap: 10px; }
+.pred-bar .field:last-child > label, .pred-bar .field:last-child > .hint { grid-column: 1 / -1; }
+.pred-bar .field:last-child .pills { margin-top: 0; }
+.predict-layout.stack > .card:not(.pred-bar) { padding: 18px 20px; }
+.ph { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-bottom: 10px; }
+.ph-main { padding: 12px 16px; gap: 2px; border-radius: 14px; }
+.ph-emo { width: 40px; height: 40px; font-size: 32px; top: 10px; right: 12px; }
+.ph-when { font-size: 12.5px; }
+.ph-price { font-size: 34px; }
+.ph-price small { font-size: 16px; }
+.ph-chg { font-size: 14px; } .ph-chg b { font-size: 16px; } .ph-chg .muted { white-space: nowrap; }
+.ph-range { font-size: 12px; }
+.ph-ext { padding: 10px 14px; gap: 2px; border-radius: 14px; }
+.ph-ext span { font-size: 12.5px; } .ph-ext b { font-size: 21px; } .ph-ext em { font-size: 13px; }
+.predict-layout.stack .chips { gap: 8px; margin-bottom: 6px; }
+.predict-layout.stack .chip { padding: 5px 10px; font-size: 13px; }
+@media (max-width: 900px) { .pred-bar { grid-template-columns: 1fr 1fr; } .pred-bar .field:last-child { grid-column: 1 / -1; } }
+@media (max-width: 700px) {
+  .pred-bar, .pred-bar .field:last-child { grid-template-columns: 1fr; }
+  .ph { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ph-main { grid-column: 1 / -1; }
+  .ph-price { font-size: 32px; }
+  .ph-ext b { font-size: 18px; }
+}

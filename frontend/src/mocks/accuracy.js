@@ -35,3 +35,7 @@ export const confidenceOf = (item, t) => Math.max(0, Math.round(100 - errorPct(i
 
 /** 화면 안내용: 예측 기간별 107품목 평균 오차 "1주 약 18% · 2주 약 20% · …" */
 export const averageText = () => ACC.horizons.map((h) => `${h.label} 약 ${Math.round(ACC.average_wape[h.days])}%`).join(" · ");
+
+// [샘플] 예측 정확도가 낮은 품목: 1개월 오차 35% 이상 또는 참고용 기간이 있는 품목 (기준은 추후 확정)
+export const LOW_ACC_LIMIT = 35;
+export const LOW_ACCURACY = new Set(Object.entries(ACC.items).filter(([, r]) => (r.wape["30"] ?? 0) >= LOW_ACC_LIMIT || r.reference_only.length).map(([c]) => c));

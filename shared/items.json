@@ -29,6 +29,70 @@
   "산채류": "🌿",
   "버섯류": "🍄"
  },
+ "index_groups_about": "홈 지수 카드의 7묶음 (공영 부류를 합친 것, 2026-11-05). 전체 = 107품목 모두",
+ "index_groups": [
+  {
+   "code": "leafy",
+   "name": "잎채소",
+   "emoji": "🥬",
+   "categories": [
+    "엽경채류"
+   ]
+  },
+  {
+   "code": "western",
+   "name": "양채·나물",
+   "emoji": "🥦",
+   "categories": [
+    "양채류",
+    "산채류"
+   ]
+  },
+  {
+   "code": "fruit_veg",
+   "name": "열매채소",
+   "emoji": "🍅",
+   "categories": [
+    "과채류"
+   ]
+  },
+  {
+   "code": "seasoning",
+   "name": "양념채소",
+   "emoji": "🧅",
+   "categories": [
+    "조미채소류"
+   ]
+  },
+  {
+   "code": "root_grain",
+   "name": "뿌리·곡물",
+   "emoji": "🥔",
+   "categories": [
+    "근채류",
+    "서류",
+    "두류",
+    "잡곡"
+   ]
+  },
+  {
+   "code": "fruit",
+   "name": "과일",
+   "emoji": "🍎",
+   "categories": [
+    "과일류",
+    "견과류"
+   ]
+  },
+  {
+   "code": "mushroom",
+   "name": "버섯",
+   "emoji": "🍄",
+   "categories": [
+    "버섯류"
+   ]
+  }
+ ],
  "legacy_codes": [
   "potato",
   "onion",

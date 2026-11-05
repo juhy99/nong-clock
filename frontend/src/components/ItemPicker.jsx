@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * 품목 선택 상자 (107개): 누르면 부류 탭 + 이름 검색 + 품목 칸이 열린다.
  * items: [{ code, name, category, emoji }] — 순서는 받은 그대로(거래 물량 순)
  */
-export default function ItemPicker({ items, value, onChange, id = "item" }) {
+export default function ItemPicker({ items, value, onChange, id = "item", warn }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("전체");
@@ -41,7 +41,7 @@ export default function ItemPicker({ items, value, onChange, id = "item" }) {
   return (
     <div className="ip" ref={box}>
       <button id={id} type="button" className="input ip-btn" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span>{cur ? <>{cur.emoji} <b>{cur.name}</b> <small className="muted">{cur.category}</small></> : "품목 고르기"}</span>
+        <span>{cur ? <>{cur.emoji} <b>{cur.name}</b>{warn?.has(cur.code) && <span className="ip-warn" title="예측 정확도가 낮은 품목">!</span>} <small className="muted">{cur.category}</small></> : "품목 고르기"}</span>
         <span className="muted">▾</span>
       </button>
       {open && (
@@ -54,6 +54,7 @@ export default function ItemPicker({ items, value, onChange, id = "item" }) {
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && shown[0] && pick(shown[0].code)}
           />
+          {warn?.size > 0 && <div className="ip-legend"><span className="ip-warn">!</span> 예측 정확도가 낮은 품목 ({items.filter((i) => warn.has(i.code)).length}개)</div>}
           {!word && (
             <div className="ip-cats">
               {cats.map(([c, n]) => (
@@ -68,6 +69,7 @@ export default function ItemPicker({ items, value, onChange, id = "item" }) {
               <button key={i.code} type="button" role="option" aria-selected={i.code === value} className={`ip-item ${i.code === value ? "on" : ""}`} onClick={() => pick(i.code)}>
                 <span className="ip-emo">{i.emoji}</span>
                 <span>{i.name}</span>
+                {warn?.has(i.code) && <span className="ip-warn" title="예측 정확도가 낮은 품목">!</span>}
               </button>
             ))}
             {!shown.length && <div className="muted small" style={{ padding: 12 }}>"{word}" 품목이 없어요</div>}

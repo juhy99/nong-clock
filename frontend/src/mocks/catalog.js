@@ -8,7 +8,7 @@ export const CATEGORY_EMOJI = CATALOG.category_emoji;
 export const CATEGORIES = Object.keys(CATEGORY_EMOJI);
 
 // 순서 = 거래 물량이 많은 순
-export const ITEMS = CATALOG.items.map(({ code, name, code4, category, emoji }) => ({ code, name, code4, unit: "kg", category, emoji: emoji ?? CATEGORY_EMOJI[category] }));
+export const ITEMS = CATALOG.items.map(({ code, name, code4, category, emoji }) => ({ code, name, code4, unit: "kg", category, emoji: emoji || CATEGORY_EMOJI[category] }));
 // 예전부터 있던 16개 (뉴스 검색어 등 품목 수가 늘면 곤란한 곳에서 씀)
 export const LEGACY_CODES = CATALOG.legacy_codes;
 

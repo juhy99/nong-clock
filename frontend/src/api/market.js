@@ -7,6 +7,7 @@ import {
   MARKETS, mockGradePrices, mockMarketCompare, mockOriginPrices, mockPriceHistory, mockTodayPrices, mockVolumeTrend,
 } from "../mocks/market";
 import { mockRegionalWeather } from "../mocks/weather";
+import { mockMarketIndex } from "../mocks/marketIndex";
 
 /** 도매 등급 (DB price_daily.grade 와 같은 코드). 화면 기본값은 HIGH(상) */
 export const GRADES = [
@@ -21,6 +22,9 @@ export const DEFAULT_GRADE = "HIGH";
 
 /** 오늘의 시세 = 전국 도매시장 · 상 등급 + 전국 소매가 (홈 카드·상단 띠·검색·마이페이지) */
 export const getTodayPrices = () => fake(mockTodayPrices());
+
+/** 홈 지수 카드: 전체 + 7묶음 지수 (평소 가격 = 100), 최근 days 거래일 */
+export const getMarketIndex = ({ days } = {}) => fake(mockMarketIndex({ days }));
 
 /** 도매시장 목록 (전국 평균 + 32곳) */
 export const getMarkets = () => fake(MARKETS);

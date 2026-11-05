@@ -5,7 +5,7 @@ import { Async, PctChange, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
 import ItemImage from "../components/ItemImage";
 import ItemPicker from "../components/ItemPicker";
-import { ACCURACY, bucketLabel, referenceOf } from "../mocks/accuracy";
+import { ACCURACY, LOW_ACCURACY, bucketLabel, referenceOf } from "../mocks/accuracy";
 import { LONG_RANGE_DAYS } from "../mocks/prediction";
 import { addDays, daysBetween, md, shortDate, todayIso, wonPerKg } from "../utils/format";
 
@@ -65,6 +65,7 @@ function Result({ p, horizonLabel }) {
   const long = p.horizon > LONG_RANGE_DAYS;
   const bad = (ACCURACY.items[p.item]?.reference_only ?? []).filter((d) => BUCKET_RANGE[d][0] <= p.horizon);
   const ref = p.reference ?? referenceOf(p.item, p.horizon);
+  const low = LOW_ACCURACY.has(p.item);
   return (
     <section className="card">
       <div className="chips">
@@ -73,13 +74,26 @@ function Result({ p, horizonLabel }) {
           <span className="meter"><i style={{ width: `${p.confidence}%` }} /></span>
         </span>
         <span className="chip">📏 예측 오차 <b>±{Math.round(p.error_pct)}%</b></span>
+        {low && <span className="chip lowacc">❗ 예측 정확도 낮음</span>}
         {ref && <span className="chip ref">🔖 참고용</span>}
         {alert && <span className="chip warn">⚠️ 이상기후 경보 구간 {md(alert.start)} ~ {md(alert.end)}</span>}
       </div>
+      {low && (
+        <div className="low-acc">
+          <span className="ip-warn big">!</span>
+          <div>
+            <b>{p.item_name}은(는) 예측 정확도가 낮은 품목이에요</b>
+            <p>[경고 문구는 추후 추가될 내용입니다] 이 품목은 가격 변동이 커서 모델 검증 오차가 큰 편이에요 (1개월 뒤 ±{Math.round(ACCURACY.items[p.item]?.wape["30"] ?? 0)}%). 예측값은 방향만 참고해 주세요.</p>
+          </div>
+        </div>
+      )}
       <ExtremeCards p={p} />
-      <ForecastChart p={p} height={340}
-        marks={[{ date: hi.date, price: hi.price, label: "최고", color: "#d92d20" }, { date: lo.date, price: lo.price, label: "최저", color: "#1d63c9" }]}
-        zones={referenceZones(p)} />
+      <div className={low ? "chart-low" : undefined}>
+        {low && <span className="chart-low-tag">⚠ 예측 정확도 낮음 · 참고만 하세요 (문구 추후 추가)</span>}
+        <ForecastChart p={p} height={340}
+          marks={[{ date: hi.date, price: hi.price, label: "최고", color: "#d92d20" }, { date: lo.date, price: lo.price, label: "최저", color: "#1d63c9" }]}
+          zones={referenceZones(p)} />
+      </div>
       {bad.length > 0 && (
         <p className="ai-long">🔖 <b>{p.item_name} {bad.map(bucketLabel).join("·")} 예측은 참고용이에요.</b> 모델 검증에서 이 품목·기간은 "오늘 가격이 그대로 간다"고 본 기준선보다 오차가 컸어요.</p>
       )}
@@ -150,7 +164,7 @@ export default function Predict() {
             <section className="card" style={{ display: "grid", gap: 18 }}>
               <div className="field">
                 <label htmlFor="item">품목</label>
-                <ItemPicker items={o.items} value={item} onChange={(c) => go({ item: c })} />
+                <ItemPicker items={o.items} value={item} onChange={(c) => go({ item: c })} warn={LOW_ACCURACY} />
               </div>
               <div className="field">
                 <label htmlFor="market">도매시장</label>
@@ -180,6 +194,7 @@ export default function Predict() {
                   <div className="price num">{wonPerKg(result.data.predicted_price)}</div>
                   <PctChange value={result.data.change_pct} className="small" />
                   <span className="muted small"> vs 오늘 {wonPerKg(result.data.base_price)}</span>
+                  {LOW_ACCURACY.has(result.data.item) && <div className="low-acc-mini"><span className="ip-warn">!</span> 정확도가 낮은 품목이에요 · 참고용</div>}
                 </div>
               )}
             </section>

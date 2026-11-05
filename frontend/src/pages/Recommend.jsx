@@ -104,8 +104,8 @@ function PriceChart({ crop, harvest, plant, factor = 1 }) {
         <XAxis dataKey="date" ticks={monthTicks(rows.map((r) => r.date))} tickFormatter={monthLabel} fontSize={12} interval="preserveStartEnd" minTickGap={10} />
         <YAxis fontSize={12} tickFormatter={won} width={60} domain={["auto", "auto"]} />
         <Tooltip formatter={(v, n) => (n === "range" ? `${won(v[0])} ~ ${won(v[1])}원` : wonPerKg(v))} labelFormatter={shortDate} />
-        {harvest && <ReferenceArea x1={near(harvest[0])} x2={near(harvest[1])} fill="#e8f6ee" fillOpacity={1} label={{ value: "수확 기간", fontSize: 11, fill: "#0e7a45", position: "insideTop" }} />}
-        {plant && <ReferenceLine x={near(plant)} stroke="#0e7a45" strokeDasharray="3 3" label={{ value: `심기 ${md(plant)}`, fontSize: 11, fill: "#0e7a45", position: "insideTopLeft" }} />}
+        {harvest && <ReferenceArea x1={near(harvest[0])} x2={near(harvest[1])} fill="#e8f6ee" fillOpacity={1} label={{ value: "수확 기간", fontSize: 12, fill: "#0e7a45", position: "insideTop" }} />}
+        {plant && <ReferenceLine x={near(plant)} stroke="#0e7a45" strokeDasharray="3 3" label={{ value: `심기 ${md(plant)}`, fontSize: 12, fill: "#0e7a45", position: "insideTopLeft" }} />}
         <Area name="range" dataKey="range" stroke="none" fill="#f7c3bf" fillOpacity={0.45} />
         <Line name="예상 판매가" dataKey="price" stroke="#e5483e" strokeWidth={2.2} strokeDasharray="6 4" dot={false} />
       </ComposedChart>
@@ -308,10 +308,11 @@ function LandPicker({ form, setForm, goInfo }) {
               );
             })}
           </div>
-          <span className="hint">
+          <details className="more-info">
+            <summary>기존 작물·임대료는 이렇게 반영해요</summary>
             기존 작물을 고르면 그 작물 알맞은 pH 범위의 가운데로 흙 pH를 어림해요. 흙 pH가 후보 작물의 최고값보다 {PH_DEMOTE_GAP} 이상 높으면 pH를 내리는 데 몇 달이 걸려서 순이익과 상관없이 맨 아래로 내려요.
             임대료는 그 토지 작물의 경영비에 그대로 더해요.
-          </span>
+          </details>
         </div>
         <div className="field">
           <label htmlFor="rc-start">농사 시작 날짜</label>
@@ -321,7 +322,6 @@ function LandPicker({ form, setForm, goInfo }) {
               <button key={n} className={`pill sm ${daysBetween(today, start) === n ? "on" : ""}`} onClick={() => pickStart(addDays(today, n))}>{l}</button>
             ))}
           </div>
-          <span className="hint">오늘부터 {START_DAYS}일 안에서 고를 수 있어요</span>
         </div>
         {top && (
           <div className="summary-box">
@@ -391,7 +391,7 @@ function LandPicker({ form, setForm, goInfo }) {
             )}
           </Async>
           <div className="rc-more">
-            <p className="hint" style={{ margin: 0 }}>줄을 누르면 아래에 그 작물의 가격 흐름과 경영비가 나와요. 막대 위에 마우스를 올리면 날짜가 나와요.</p>
+            <p className="hint" style={{ margin: 0 }}>줄을 누르면 가격 흐름과 경영비가 나와요.</p>
             <button className="btn sm" onClick={() => goInfo(null)}>📖 추천에 없는 작물 보기 ›</button>
           </div>
         </section>
@@ -561,7 +561,11 @@ export default function Recommend() {
     <div className="page">
       <div className="page-head">
         <h1>작물 추천</h1>
-        <p>순이익(마진) = 월별 출하량 × 도매시장 월별 예상가 − 총경영비(전국 평균 경영비 + 임대료) · 수량·경영비·가격 수준은 농촌진흥청 2024년 농산물소득조사 10a당 전국 평균 · "추정" 표시는 공식 통계가 아닌 추정값</p>
+        <p>내 땅의 위치·평수로 순이익이 높은 작물을 골라 드려요</p>
+        <details className="more-info">
+          <summary>순이익은 어떻게 계산하나요?</summary>
+          순이익(마진) = 월별 출하량 × 도매시장 월별 예상가 − 총경영비(전국 평균 경영비 + 임대료) · 수량·경영비·가격 수준은 농촌진흥청 2024년 농산물소득조사 10a당 전국 평균 · "추정" 표시는 공식 통계가 아닌 추정값
+        </details>
       </div>
       <div className="tabs" role="tablist">
         <button role="tab" className={tab === "land" ? "on" : ""} onClick={() => set({ tab: "land" })}>🧑‍🌾 내 땅으로 작물 고르기</button>

@@ -78,7 +78,7 @@ export default function RecentWeather({ state, sido }) {
           <LineChart data={data} syncId="rw" margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="#eef0ec" />
             <XAxis dataKey="label" hide />
-            <YAxis tick={{ fontSize: 10, fill: "#7a817b" }} tickLine={false} axisLine={false} width={30} unit="°" domain={yDomain} tickCount={4} allowDecimals={false} />
+            <YAxis tick={{ fontSize: 12, fill: "#5d655f" }} tickLine={false} axisLine={false} width={30} unit="°" domain={yDomain} tickCount={4} allowDecimals={false} />
             <Tooltip content={<TempTip />} cursor={{ stroke: "#c9cec6" }} />
             <Line dataKey="temp_max" stroke={HI} strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive={false} connectNulls={false} />
             <Line dataKey="temp_min" stroke={LO} strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive={false} connectNulls={false} />
@@ -86,8 +86,8 @@ export default function RecentWeather({ state, sido }) {
         </ResponsiveContainer>
         <ResponsiveContainer width="100%" height={58}>
           <BarChart data={data} syncId="rw" margin={{ top: 2, right: 6, left: 0, bottom: 0 }}>
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#7a817b" }} tickLine={false} axisLine={{ stroke: "#dfe3dc" }} interval={6} />
-            <YAxis tick={{ fontSize: 10, fill: "#7a817b" }} tickLine={false} axisLine={false} width={30} tickCount={3} allowDecimals={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#5d655f" }} tickLine={false} axisLine={{ stroke: "#dfe3dc" }} interval={6} />
+            <YAxis tick={{ fontSize: 12, fill: "#5d655f" }} tickLine={false} axisLine={false} width={30} tickCount={3} allowDecimals={false} />
             <Tooltip content={<TempTip />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
             <Bar dataKey="rain_mm" fill={RAIN} radius={[3, 3, 0, 0]} isAnimationActive={false} />
           </BarChart>

@@ -73,7 +73,7 @@ function referenceZones(p) {
   return zones.map((z) => ({ x1: addDays(p.base_date, z.a), x2: addDays(p.base_date, z.b), label: z.label }));
 }
 
-function Result({ p, horizonLabel, emoji }) {
+function Result({ p, emoji }) {
   const alert = p.alerts[0];
   const { hi, lo } = extremes(p);
   const long = p.horizon > LONG_RANGE_DAYS;
@@ -112,11 +112,12 @@ function Result({ p, horizonLabel, emoji }) {
         <p className="ai-long">🔖 <b>{p.item_name} {bad.map(bucketLabel).join("·")} 예측은 참고용이에요.</b> 모델 검증에서 이 품목·기간은 "오늘 가격이 그대로 간다"고 본 기준선보다 오차가 컸어요.</p>
       )}
       {long && (
-        <p className="ai-long">ℹ️ <b>6개월이 넘는 장기 예측은 참고용이에요.</b> 모델은 6개월 뒤까지만 검증했어요. 그보다 먼 날은 6개월 오차보다 범위(띠)를 더 넓게 보여 줘요. 날짜가 가까워지면 다시 확인해 주세요.</p>
+        <p className="ai-long">ℹ️ <b>6개월이 넘는 장기 예측은 참고용이에요.</b> 검증하지 않은 기간이라 범위(띠)를 더 넓게 보여 줘요.</p>
       )}
-      <p className="muted small" style={{ margin: "10px 0 0" }}>
-        오차 범위(띠)·신뢰도 = 모델 검증 오차(WAPE, 2025-07~) · {p.item_name} 1주 ±{Math.round(ACCURACY.items[p.item]?.wape["7"] ?? 0)}% · 1개월 ±{Math.round(ACCURACY.items[p.item]?.wape["30"] ?? 0)}% · 6개월 ±{Math.round(ACCURACY.items[p.item]?.wape["180"] ?? ACCURACY.average_wape["180"])}% · 신뢰도 = 100 − 오차
-      </p>
+      <details className="more-info">
+        <summary>예측 오차·신뢰도는 어떻게 계산하나요?</summary>
+        오차 범위(띠)·신뢰도 = 모델 검증 오차(WAPE, 2025-07~) · {p.item_name} 1주 ±{Math.round(ACCURACY.items[p.item]?.wape["7"] ?? 0)}% · 1개월 ±{Math.round(ACCURACY.items[p.item]?.wape["30"] ?? 0)}% · 6개월 ±{Math.round(ACCURACY.items[p.item]?.wape["180"] ?? ACCURACY.average_wape["180"])}% · 신뢰도 = 100 − 오차 · 날씨·기후 변수와 과거 시세를 함께 학습한 모델
+      </details>
       {alert ? (
         <div className="banner" style={{ marginTop: 14 }}>
           ⚠️
@@ -128,10 +129,8 @@ function Result({ p, horizonLabel, emoji }) {
             </div>
           </div>
         </div>
-      ) : (
-        <p className="muted small" style={{ marginTop: 10 }}>{horizonLabel}까지 이상기후 경보 구간이 없습니다.</p>
-      )}
-      <p className="muted small" style={{ margin: "10px 0 0" }}>{p.market_name} 도매시장 · 공영도매시장 경매 단가(원/kg) · 모델 버전 {p.model_version} · 기준일 {shortDate(p.base_date)}</p>
+      ) : null}
+      <p className="muted small" style={{ margin: "10px 0 0" }}>{p.market_name} 경매 단가(원/kg) · 기준일 {shortDate(p.base_date)} · 모델 {p.model_version}</p>
     </section>
   );
 }
@@ -163,14 +162,13 @@ export default function Predict() {
 
   const ready = opts && item && horizon >= 1;
   const result = useAsync(() => (ready ? predict({ item, horizon, market }) : Promise.resolve(null)), [ready, item, horizon, market]);
-  const horizonLabel = `${shortDate(target)} (${horizon}일 후)`;
   const bySido = (o) => o.markets.reduce((g, m) => ((g[m.sido] = g[m.sido] ?? []).push(m), g), {});
 
   return (
     <div className="page">
       <div className="page-head">
         <h1>AI 가격 예측</h1>
-        <p>과거 기상(기온·강수·일조) + 기후 변수 + 시세를 결합한 예측 모델 · 도매시장별 · 가격은 1kg 기준 · 최대 1년</p>
+        <p>도매시장별 예상 경매 단가 · 1kg 기준 · 최대 1년 뒤까지</p>
       </div>
       <Async state={options}>
         {(o) => (
@@ -187,7 +185,6 @@ export default function Predict() {
                     <optgroup key={sido} label={sido}>{ms.map((m) => <option key={m.code} value={m.code}>{m.name}</option>)}</optgroup>
                   ))}
                 </select>
-                <span className="hint">공영 도매시장 {o.markets.length}곳 중 팔 곳을 골라요</span>
               </div>
               <div className="field">
                 <label htmlFor="target">예측 날짜</label>
@@ -199,11 +196,10 @@ export default function Predict() {
                     </button>
                   ))}
                 </div>
-                <span className="hint">내일부터 1년 뒤({shortDate(addDays(today, MAX_DAYS))})까지 고를 수 있어요</span>
               </div>
             </section>
             <Async state={result} minHeight={420}>
-              {(p) => <Result p={p} horizonLabel={horizonLabel} emoji={o.items.find((i) => i.code === p.item)?.emoji} />}
+              {(p) => <Result p={p} emoji={o.items.find((i) => i.code === p.item)?.emoji} />}
             </Async>
           </div>
         )}

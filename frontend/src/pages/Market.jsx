@@ -87,7 +87,7 @@ function GradeSection({ item, market, date, grade, setGrade }) {
               <GradeCard title="소매가" tag="등급 무관" card={d.retail} kind="retail" dates={dates} />
             </div>
             <p className="hint" style={{ margin: "10px 0 0" }}>
-              카드를 누르면 아래 가격 추이가 그 등급으로 바뀌어요. 거래가 없는 날은 비워 둬요. 소매가는 전국 소매가 하나라 등급과 상관없이 같아요.
+              카드를 누르면 아래 가격 추이가 그 등급으로 바뀌어요.
             </p>
           </>
         );
@@ -185,7 +185,7 @@ function OriginCard({ item, market, date }) {
                   <YAxis fontSize={12} tickFormatter={won} width={56} />
                   <Tooltip formatter={(v) => (view === "price" ? wonPerKg(v) : `${won(v)}톤`)} />
                   <Bar name={view === "price" ? "평균 가격" : "반입량"} dataKey={key} fill="#57c98a" radius={[8, 8, 0, 0]} maxBarSize={36}
-                    label={{ position: "top", fontSize: 11, fill: "#1b1f1c", formatter: won }} />
+                    label={{ position: "top", fontSize: 12, fill: "#1b1f1c", formatter: won }} />
                 </BarChart>
               </ResponsiveContainer>
               <div className="table-wrap">
@@ -301,7 +301,7 @@ function VolumeSection({ item, itemName, market, date }) {
                 총 반입량 <b className="num">{won(s.total_t)}톤</b> · 지난 순 같은 기간보다 {s.change_t >= 0 ? "+" : "-"}{won(Math.abs(s.change_t))}톤{" "}
                 <YearAgo value={s.change_pct} />
               </div>
-              <p className="hint" style={{ margin: "8px 0 0" }}>반입량은 순(10일)마다 더한 값이에요. 이번 순은 고른 날짜까지라서, 지난 순도 같은 거래일 수만큼만 더해 비교해요.</p>
+              <details className="more-info"><summary>반입량은 어떻게 셌나요?</summary>순(10일)마다 더한 값이에요. 이번 순은 고른 날짜까지라서, 지난 순도 같은 거래일 수만큼만 더해 비교해요.</details>
             </section>
           </div>
         );
@@ -343,7 +343,7 @@ export default function Market() {
       <div className="page-head mk-head">
         <div>
           <h1>시세 · 수급</h1>
-          <p>도매시장 경락가 · 모든 가격은 1kg 기준 · 조건을 바꾸면 바로 반영돼요</p>
+          <p>도매시장 경락가 · 1kg 기준</p>
         </div>
         {item && <Link className="btn sm mk-ai" to={`/ai?item=${item}`}>{itemName} AI 가격 예측 보기 →</Link>}
       </div>

@@ -149,7 +149,7 @@ export function IndexCards({ movers, items }) {
               })}
             </div>
             <p className="ix-note muted small">
-              큰 숫자 = 묶음 품목들의 가격이 어제보다 평균 몇 % 올랐는지 · 그래프 = 최근 30거래일 흐름 · 점선·아래 숫자 = AI가 본 30일 뒤 예상 등락률 · {shortDate(d.base_date)} 기준
+              어제 대비 평균 등락률 · 그래프 = 최근 30거래일 · 점선 = AI 30일 예상 · {shortDate(d.base_date)} 기준
             </p>
           </>
         )}
@@ -259,7 +259,6 @@ export function MarketBoard({ today, movers, items }) {
               on={r.item === item} onClick={() => setPicked(r.item)} />
           ))}
         </ol>
-        <p className="muted small">누르면 왼쪽 차트가 그 품목으로 바뀌어요</p>
       </section>
     </div>
   );

@@ -43,15 +43,15 @@ export default function ForecastChart({ p, height = 340, legend = true, marks = 
         <YAxis fontSize={12} tickFormatter={won} width={60} domain={["auto", "auto"]} />
         <Tooltip content={<ChartTooltip />} />
         {legend && <Legend />}
-        {alert && <ReferenceArea x1={alert.start} x2={alert.end} fill="#f9d9a6" fillOpacity={0.5} label={{ value: "이상기후", fontSize: 11, fill: "#9a6200" }} />}
-        {longFrom && last > longFrom && <ReferenceArea x1={longFrom} x2={last} fill="#f3f1ea" fillOpacity={0.8} label={{ value: "장기 예측 · 참고용", fontSize: 11, fill: "#8a7f63", position: "insideTop" }} />}
-        {zones.map((z) => <ReferenceArea key={z.x1} x1={z.x1} x2={z.x2} fill="#f3f1ea" fillOpacity={0.85} label={{ value: z.label, fontSize: 11, fill: "#8a7f63", position: "insideTop" }} />)}
+        {alert && <ReferenceArea x1={alert.start} x2={alert.end} fill="#f9d9a6" fillOpacity={0.5} label={{ value: "이상기후", fontSize: 12, fill: "#9a6200" }} />}
+        {longFrom && last > longFrom && <ReferenceArea x1={longFrom} x2={last} fill="#f3f1ea" fillOpacity={0.8} label={{ value: "장기 예측 · 참고용", fontSize: 12, fill: "#8a7f63", position: "insideTop" }} />}
+        {zones.map((z) => <ReferenceArea key={z.x1} x1={z.x1} x2={z.x2} fill="#f3f1ea" fillOpacity={0.85} label={{ value: z.label, fontSize: 12, fill: "#8a7f63", position: "insideTop" }} />)}
         <Area name="예측 오차범위" dataKey="range" stroke="none" fill="#cfe8d7" fillOpacity={0.7} />
         <Line name="실제" dataKey="actual" stroke="#1c1c1a" strokeWidth={2} dot={false} />
         <Line name="예측" dataKey="forecast" stroke="#1fa463" strokeWidth={2.5} strokeDasharray="6 4" dot={false} />
         {marks.map((m) => (
           <ReferenceDot key={m.label} x={m.date} y={m.price} r={6} fill={m.color} stroke="#fff" strokeWidth={2}
-            label={{ value: `${m.label} ${md(m.date)}`, position: "top", fontSize: 11, fontWeight: 700, fill: m.color }} />
+            label={{ value: `${m.label} ${md(m.date)}`, position: "top", fontSize: 12, fontWeight: 700, fill: m.color }} />
         ))}
       </ComposedChart>
     </ResponsiveContainer>

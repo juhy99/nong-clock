@@ -53,25 +53,21 @@ export function CoreFeatures({ movers, items }) {
     <section className="core-feat">
       <Link to={pick ? `/ai?item=${pick.item}` : "/ai"} className="cf ai">
         <div className="cf-main">
-          <span className="cf-tag">가격 예측</span>
+          <div className="cf-head"><span className="cf-tag">가격 예측</span><small>107개 품목 · 도매시장 32곳 · 최대 1년</small></div>
           <h2>🤖 수확한 작물, <em>언제 팔까?</em></h2>
-          <p>107개 품목 · 도매시장 32곳 · 최대 1년 뒤까지 날마다 예측해요.</p>
-          <div className="cf-live">
-            {pick ? (
-              <>
-                <span className="muted small">30일 뒤 가장 크게 오를 품목</span>
-                <b><ItemImage code={pick.item} emoji={items?.find((i) => i.code === pick.item)?.emoji} className="xs" /> {pick.item_name} {won(pick.predicted_price)}원 <PctChange value={pick.change_pct} /></b>
-                <span className="muted small">지금 {p ? wonPerKg(p.base_price) : "…"} · 예측 오차 ±{Math.round(pick.error_pct ?? 0)}% · 신뢰도 {pick.confidence}</span>
-              </>
-            ) : <span className="muted small">예측 불러오는 중…</span>}
-          </div>
-          <span className="cf-go">가격 예측 보러 가기 →</span>
+          {pick ? (
+            <div className="cf-live">
+              <span className="muted small">30일 뒤 가장 크게 오를 품목</span>
+              <b><ItemImage code={pick.item} emoji={items?.find((i) => i.code === pick.item)?.emoji} className="xs" /> {pick.item_name} {won(pick.predicted_price)}원 <PctChange value={pick.change_pct} /></b>
+              <span className="muted small">지금 {p ? wonPerKg(p.base_price) : "…"} · 오차 ±{Math.round(pick.error_pct ?? 0)}% · 신뢰도 {pick.confidence}</span>
+            </div>
+          ) : <span className="muted small">예측 불러오는 중…</span>}
         </div>
         {p && (
           <div className="cf-side">
             <div className="mini-fc-wrap">
               <span className="l">지난 2주</span><span className="r">AI 30일 예측</span>
-              <MiniForecast p={p} />
+              <MiniForecast p={p} height={56} />
             </div>
             <div className="cf-stats">
               {[["1주 뒤", at(7)], ["1개월 뒤", at(30)], ["3개월 뒤", at(90)]].map(([t, v]) => (
@@ -81,17 +77,17 @@ export function CoreFeatures({ movers, items }) {
             </div>
           </div>
         )}
+        <span className="cf-go">가격 예측 보러 가기 →</span>
       </Link>
       <Link to="/recommend" className="cf rc">
-        <span className="cf-tag">작물 추천</span>
+        <div className="cf-head"><span className="cf-tag">작물 추천</span><small>예: {DEFAULT_FORM.region} · 노지 {won(DEFAULT_FORM.lands.open)}평 + 시설 {won(DEFAULT_FORM.lands.house)}평 · 예상 순이익</small></div>
         <h2>🌱 내 땅에는 <em>무엇을 심을까?</em></h2>
-        <p>예: {DEFAULT_FORM.region} · 노지 {won(DEFAULT_FORM.lands.open)}평 + 시설 {won(DEFAULT_FORM.lands.house)}평 · 1주 뒤 시작 — 예상 순이익 순위</p>
         <ol className="cf-crops">
           {crops.length ? crops.map((c, i) => (
-            <li key={`${c.crop}-${c.land_type}`}>
+            <li key={`${c.crop}-${c.land_type}`} title={`${shortDate(c.plant_date)} 시작 → ${shortDate(c.harvest_start)}~${shortDate(c.harvest_end)} 수확`}>
               <span className="n">{i + 1}</span>
               <span className="e">{c.emoji}</span>
-              <span className="nm">{c.crop_name}<small>{c.cropping} · {shortDate(c.plant_date)} 시작 → {shortDate(c.harvest_start)}~{shortDate(c.harvest_end)} 수확</small></span>
+              <span className="nm">{c.crop_name}</span>
               <span className="bar"><i style={{ width: `${(c.margin / maxMargin) * 100}%` }} /></span>
               <span className="v"><b>{won(Math.round(c.margin / 1e4))}만원</b><small>마진률 {Math.round(c.margin_rate)}%</small></span>
             </li>
@@ -137,14 +133,13 @@ export function IndexCards({ movers, items }) {
             <div className="ix-row">
               {d.groups.map((g) => {
                 const f = forecastOf(g);
-                const flat = Math.abs(g.change) < 0.05;
+                const pct = g.change_pct;
+                const dir = Math.abs(pct) < 0.05 ? "flat" : pct > 0 ? "up" : "down";
                 return (
                   <Link key={g.code} to="/market" className="ix">
                     <div className="ix-h">{g.emoji} {g.name}<small>{g.item_count}품목</small></div>
-                    <b className="num">{g.value.toFixed(1)}</b>
-                    {flat ? <em className="flat">– 0.0 (보합)</em> : (
-                      <em className={g.change > 0 ? "up" : "down"}>{g.change > 0 ? "▲" : "▼"} {Math.abs(g.change).toFixed(1)} ({g.change > 0 ? "+" : ""}{g.change_pct.toFixed(1)}%)</em>
-                    )}
+                    <small className="ix-l">어제보다</small>
+                    <b className={`num ${dir}`}>{dir === "flat" ? "– 0.0%" : `${pct > 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(1)}%`}</b>
                     <IndexSpark points={g.points} forecastPct={f ?? 0} />
                     {f != null && (
                       <div className="ix-f">AI 30일 뒤 <b className={f > 0 ? "up" : f < 0 ? "down" : ""}>{f > 0 ? "▲" : f < 0 ? "▼" : "–"} {Math.abs(f).toFixed(1)}% {f > 0 ? "상승" : f < 0 ? "하락" : "보합"}</b></div>
@@ -154,7 +149,7 @@ export function IndexCards({ movers, items }) {
               })}
             </div>
             <p className="ix-note muted small">
-              지수 = 품목마다 평소 가격(최근 {d.base_days}거래일 평균)을 100으로 놓고 날마다 오르내린 비율을 평균 · {shortDate(d.base_date)} 기준 · 점선·아래 숫자 = AI가 본 30일 뒤 예상 등락률
+              큰 숫자 = 묶음 품목들의 가격이 어제보다 평균 몇 % 올랐는지 · 그래프 = 최근 30거래일 흐름 · 점선·아래 숫자 = AI가 본 30일 뒤 예상 등락률 · {shortDate(d.base_date)} 기준
             </p>
           </>
         )}

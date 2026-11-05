@@ -949,3 +949,36 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 .chart-low-tag { position: absolute; top: 6px; left: 10px; font-size: 12px; font-weight: 700; color: #8a5a00; background: #fff4dc; border-radius: 999px; padding: 3px 10px; z-index: 1; }
 .low-acc-mini { margin-top: 8px; font-size: 12px; color: #8a5a00; background: #fff4dc; border-radius: 8px; padding: 6px 8px; display: flex; align-items: center; gap: 2px; }
 .low-acc-mini .ip-warn { margin: 0 4px 0 0; }
+
+/* 홈 맨 위 두 카드를 낮게 (차트가 첫 화면에 보이게) */
+.core-feat .cf { padding: 16px 20px; gap: 8px; border-radius: 20px; }
+.core-feat .cf h2 { font-size: 21px; }
+.cf-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cf-head small { font-size: 12px; color: #6b7684; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.core-feat .cf-live { padding: 8px 12px; border-radius: 12px; }
+.core-feat .cf-live b { font-size: 16px; }
+.core-feat .cf-go { padding: 7px 13px; font-size: 13px; border-radius: 10px; margin-top: 2px; }
+.core-feat .cf.ai { gap: 18px; }
+.core-feat .cf-side { gap: 6px; }
+.core-feat .mini-fc { height: 64px; }
+.core-feat .cf-stats div { padding: 5px 8px; font-size: 13px; }
+.core-feat .cf-crops li { padding: 4px 0; gap: 8px; }
+.core-feat .cf-crops .e { font-size: 18px; }
+.core-feat .cf-crops .nm small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.core-feat .cf-crops .v { flex-direction: row; gap: 6px; align-items: baseline; }
+.ix-l { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.ix > b.num { font-size: 20px; margin: 0 0 4px; } .ix > b.flat { color: var(--muted); }
+.core-feat .cf { position: relative; padding-bottom: 14px; }
+.core-feat .cf h2 { font-size: 20px; }
+.core-feat .cf-go { position: absolute; top: 14px; right: 18px; margin: 0; padding: 5px 11px; font-size: 12px; }
+.core-feat .cf-head { padding-right: 150px; }
+.core-feat .cf.ai .cf-head { padding-right: 0; }
+.core-feat .cf.ai { align-items: center; }
+.cf-tag { white-space: nowrap; flex: none; }
+.core-feat .cf-main { gap: 6px; }
+.core-feat .mini-fc { height: 56px; }
+.core-feat .cf-crops .nm { flex: 0 0 auto; min-width: 64px; }
+.core-feat .cf-crops .bar { flex: 1; width: auto; }
+.ix-spark polyline.up, .ix-spark polyline.down { stroke: #4e5968; }
+.ix-spark { height: 32px; }
+@media (max-width: 700px) { .core-feat .cf.ai { align-items: stretch; } .core-feat .cf-head { padding-right: 0; } .core-feat .cf-go { position: static; align-self: flex-start; } }

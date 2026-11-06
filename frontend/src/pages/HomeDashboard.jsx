@@ -16,24 +16,32 @@ const pctOf = (v, base) => Math.round(((v - base) / base) * 1000) / 10;
 const Warn = ({ code }) => (LOW_ACCURACY.has(code) ? <span className="ip-warn" title="예측 정확도가 낮은 품목">!</span> : null);
 
 /** 지난 가격(실선) + AI 예측(점선·띠) 작은 그래프 */
-function MiniForecast({ p, days = 30, height = 96 }) {
+function MiniForecast({ p, days = 30, height = 96, best }) {
   const w = 300;
   const hist = p.history.map((h) => h.price);
   const fc = p.forecast.slice(0, days);
-  const all = [...hist, ...fc.flatMap((f) => [f.lower, f.upper])];
+  const all = [...hist, ...fc.flatMap((f) => [f.lower, f.upper]), best?.price ?? hist[0]];
   const lo = Math.min(...all), hi = Math.max(...all);
   const n = hist.length + fc.length - 1;
   const X = (i) => (i * w) / n;
   const Y = (v) => 6 + ((hi - v) / (hi - lo || 1)) * (height - 12);
   const k = hist.length - 1;
   const f = (sel) => fc.map((x, j) => `${X(k + j + 1)},${Y(sel(x))}`);
+  // 가장 비싼 날이 그래프 기간(30일) 안이면 그 자리, 밖이면 오른쪽 끝에 점
+  const bi = best ? fc.findIndex((x) => x.date === best.date) : -1;
+  const bx = bi >= 0 ? X(k + bi + 1) : w - 4, by = best ? Y(Math.min(best.price, hi)) : 0;
   return (
     <svg className="mini-fc" viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" role="img" aria-label="지난 가격과 AI 예측">
+      <defs><clipPath id="mf-wipe"><rect className="wipe" x={X(k)} y={0} width={w - X(k)} height={height} /></clipPath></defs>
       <rect x={X(k)} y={0} width={w - X(k)} height={height} className="bg" />
-      <polygon className="band" points={[`${X(k)},${Y(hist[k])}`, ...f((x) => x.upper), ...f((x) => x.lower).reverse()].join(" ")} />
       <polyline className="past" points={hist.map((v, i) => `${X(i)},${Y(v)}`).join(" ")} />
-      <polyline className="pred" points={[`${X(k)},${Y(hist[k])}`, ...f((x) => x.price)].join(" ")} />
+      <g clipPath="url(#mf-wipe)">
+        <polygon className="band" points={[`${X(k)},${Y(hist[k])}`, ...f((x) => x.upper), ...f((x) => x.lower).reverse()].join(" ")} />
+        <polyline className="pred" points={[`${X(k)},${Y(hist[k])}`, ...f((x) => x.price)].join(" ")} />
+      </g>
       <line x1={X(k)} x2={X(k)} y1={0} y2={height} className="div" />
+      <circle className="now" cx={X(k)} cy={Y(hist[k])} r="3.5" />
+      {best && <><circle className="best-ring" cx={bx} cy={by} r="5" /><circle className="best-dot" cx={bx} cy={by} r="4" /></>}
     </svg>
   );
 }
@@ -66,13 +74,17 @@ export function CoreFeatures({ movers, items }) {
         {p && (
           <div className="cf-side">
             <div className="mini-fc-wrap">
-              <MiniForecast p={p} height={56} />
+              <MiniForecast p={p} height={56} best={best} />
             </div>
-            <div className="cf-stats">
+            <div className="cf-best">
+              <span className="ic" aria-hidden>💰</span>
+              <div className="t"><small>가장 비싼 날</small><b>{shortDate(best.date)}</b></div>
+              <div className="v"><b className="num">{won(best.price)}원</b><span className="up">▲ {pctOf(best.price, p.base_price).toFixed(1)}%</span></div>
+            </div>
+            <div className="cf-stats three">
               {[["1주 뒤", at(7)], ["1개월 뒤", at(30)], ["3개월 뒤", at(90)]].map(([t, v]) => (
                 <div key={t}><small>{t}</small><PctChange value={v} /></div>
               ))}
-              <div><small>가장 비싼 날</small><b>{shortDate(best.date)}</b></div>
             </div>
           </div>
         )}
@@ -83,7 +95,7 @@ export function CoreFeatures({ movers, items }) {
         <h2>🌱 내 땅에는 <em>무엇을 심을까?</em></h2>
         <ol className="cf-crops">
           {crops.length ? crops.map((c, i) => (
-            <li key={`${c.crop}-${c.land_type}`} title={`${shortDate(c.plant_date)} 시작 → ${shortDate(c.harvest_start)}~${shortDate(c.harvest_end)} 수확`}>
+            <li key={`${c.crop}-${c.land_type}`} style={{ "--i": i }} title={`${shortDate(c.plant_date)} 시작 → ${shortDate(c.harvest_start)}~${shortDate(c.harvest_end)} 수확`}>
               <span className="n">{i + 1}</span>
               <span className="e">{c.emoji}</span>
               <span className="nm">{c.crop_name}</span>

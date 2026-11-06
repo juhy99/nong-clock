@@ -4,6 +4,7 @@ import { useAuth } from "../../components/AuthContext";
 import { Async, PctChange, PriceChange, SectionHead, useAsync } from "../../components/common";
 import { wonPerKg } from "../../utils/format";
 import ItemImage from "../../components/ItemImage";
+import { IN50 } from "../../mocks/items50";
 
 /** 관심 품목의 오늘 시세 변동 + AI 1주 예측 (마이페이지 상단) */
 export default function FavoriteAlerts({ onEdit }) {
@@ -58,7 +59,7 @@ export function FavoritePicker() {
       <Async state={items}>
         {(rows) => (
           <div className="pills">
-            {rows.map((i) => (
+            {rows.filter((i) => IN50.has(i.code)).map((i) => (
               <button key={i.code} className={`pill ${favorites.includes(i.code) ? "on" : ""}`} onClick={() => toggle(i.code)}>
                 <ItemImage code={i.code} emoji={i.emoji} alt="" className="xs" /> {i.name}
               </button>

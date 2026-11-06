@@ -2,7 +2,7 @@
 // 색: 오르면 빨강(.up), 내리면 파랑(.down). 가격 = 전국 도매시장 · 상 등급 · 원/kg
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { predict, recommendCrops } from "../api/ml";
+import { getTopMovers, predict, recommendCrops } from "../api/ml";
 import { getMarketIndex, getPriceHistory } from "../api/market";
 import { useAuth } from "../components/AuthContext";
 import CandleChart from "../components/CandleChart";
@@ -47,9 +47,10 @@ function MiniForecast({ p, days = 30, height = 96, best }) {
 }
 
 /** 맨 위: 가격 예측 · 작물 추천 */
-export function CoreFeatures({ movers, items }) {
-  // 30일 뒤 가장 크게 오를 품목 (정확도가 낮거나 참고용인 품목은 빼고)
-  const pick = movers?.filter((m) => !LOW_ACCURACY.has(m.item) && !m.reference).sort((a, b) => b.change_pct - a.change_pct)[0];
+export function CoreFeatures({ items }) {
+  // 3개월 뒤 가장 크게 오를 품목 (정확도가 낮거나 참고용인 품목은 빼고). 그래프·가장 비싼 날도 같은 3개월
+  const movers90 = useAsync(() => getTopMovers({ horizon: 90, limit: 50 }));
+  const pick = movers90.data?.filter((m) => !LOW_ACCURACY.has(m.item) && !m.reference).sort((a, b) => b.change_pct - a.change_pct)[0];
   const pred = useAsync(() => (pick ? predict({ item: pick.item, horizon: 90 }) : Promise.resolve(null)), [pick?.item]);
   const rec = useAsync(() => recommendCrops(formRequest(DEFAULT_FORM, todayIso())));
   const p = pred.data;
@@ -65,7 +66,7 @@ export function CoreFeatures({ movers, items }) {
           <h2>🤖 수확한 작물, <em>언제 팔까?</em></h2>
           {pick ? (
             <div className="cf-live">
-              <span className="muted small">30일 뒤 가장 크게 오를 품목</span>
+              <span className="muted small">3개월 뒤 가장 크게 오를 품목</span>
               <b><ItemImage code={pick.item} emoji={items?.find((i) => i.code === pick.item)?.emoji} className="xs" /> {pick.item_name} {won(pick.predicted_price)}원 <PctChange value={pick.change_pct} /></b>
               <span className="muted small">지금 {p ? wonPerKg(p.base_price) : "…"}</span>
             </div>
@@ -74,7 +75,7 @@ export function CoreFeatures({ movers, items }) {
         {p && (
           <div className="cf-side">
             <div className="mini-fc-wrap">
-              <MiniForecast p={p} height={56} best={best} />
+              <MiniForecast p={p} days={90} height={56} best={best} />
             </div>
             <div className="cf-best">
               <span className="ic" aria-hidden>💰</span>

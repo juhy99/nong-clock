@@ -7,7 +7,7 @@ import { getTodayPrices } from "../api/market";
 import { getNews, getNewsTrend } from "../api/news";
 import { useAuth } from "../components/AuthContext";
 import { Async, useAsync } from "../components/common";
-import { NewsRow, NewsTrend, NewsUpdated } from "../components/NewsParts";
+import { NewsRow, NewsTrend } from "../components/NewsParts";
 import WeatherMap from "../components/WeatherMap";
 import { AuctionCard } from "./Auctions";
 import { AUCTION_ENABLED } from "../features";
@@ -39,10 +39,6 @@ function NewsHeadlines() {
       <div className="sec-head">
         <div>
           <h2>오늘의 농업 뉴스</h2>
-          <p>
-            팜비드 품목 관련 기사 · 제목을 누르면 언론사 기사로 이동해요
-            {news.data && <> · <NewsUpdated at={news.data.updated_at} /></>}
-          </p>
         </div>
         <Link className="link" to="/news">뉴스 더 보기 →</Link>
       </div>
@@ -55,7 +51,6 @@ function NewsHeadlines() {
         <div className="home-news-side">
           <div className="news-box">
             <h3>이번 주 뉴스에 많이 나온 품목</h3>
-            <p className="muted small">누르면 그 품목 기사만 모아 봐요</p>
             {trend.data && <NewsTrend rows={trend.data} onPick={(c) => nav(`/news?item=${c}`)} />}
           </div>
           <div className="news-box line">
@@ -103,7 +98,7 @@ function PopularAuctions() {
 
 export default function Home() {
   // 30일 뒤 예측(107품목)·오늘 시세는 여러 칸이 같이 쓰므로 한 번만 불러온다
-  const movers = useAsync(() => getTopMovers({ horizon: 30, limit: 107 }));
+  const movers = useAsync(() => getTopMovers({ horizon: 30, limit: 50 }));
   const today = useAsync(getTodayPrices);
   const items = useAsync(getItems);
   const shared = { movers: movers.data, today: today.data, items: items.data };

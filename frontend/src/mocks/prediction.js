@@ -3,6 +3,7 @@
 // 최대 365일: 품목마다 고정된 계절 모양(1년 주기) + 작은 흔들림. 시장별 값 = 전국 예측 × 시장 계수 (ml-api markets.py 와 같은 규칙)
 import { addDays, seeded, todayIso } from "../utils/format";
 import { BASE_PRICE, ITEMS } from "./catalog";
+import { IN50 } from "./items50";
 import { MARKETS, marketFactor } from "./market";
 import { MODEL_MAX_DAYS, confidenceOf, errorPct, referenceOf } from "./accuracy";
 
@@ -79,7 +80,7 @@ export function mockPredict({ item, horizon, market = "national" }) {
 }
 
 export function mockTopMovers(horizon, limit) {
-  return ITEMS.map((i) => mockPredict({ item: i.code, horizon, market: "national" }))
+  return ITEMS.filter((i) => IN50.has(i.code)).map((i) => mockPredict({ item: i.code, horizon, market: "national" }))
     .map((p) => ({ item: p.item, item_name: p.item_name, unit: "kg", predicted_price: p.predicted_price, change_pct: p.change_pct, confidence: p.confidence, error_pct: p.error_pct, reference: p.reference }))
     .sort((a, b) => Math.abs(b.change_pct) - Math.abs(a.change_pct))
     .slice(0, limit);

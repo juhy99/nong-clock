@@ -53,20 +53,19 @@ export function CoreFeatures({ movers, items }) {
     <section className="core-feat">
       <Link to={pick ? `/ai?item=${pick.item}` : "/ai"} className="cf ai">
         <div className="cf-main">
-          <div className="cf-head"><span className="cf-tag">가격 예측</span><small>107개 품목 · 도매시장 32곳 · 최대 1년</small></div>
+          <div className="cf-head"><span className="cf-tag">가격 예측</span></div>
           <h2>🤖 수확한 작물, <em>언제 팔까?</em></h2>
           {pick ? (
             <div className="cf-live">
               <span className="muted small">30일 뒤 가장 크게 오를 품목</span>
               <b><ItemImage code={pick.item} emoji={items?.find((i) => i.code === pick.item)?.emoji} className="xs" /> {pick.item_name} {won(pick.predicted_price)}원 <PctChange value={pick.change_pct} /></b>
-              <span className="muted small">지금 {p ? wonPerKg(p.base_price) : "…"} · 오차 ±{Math.round(pick.error_pct ?? 0)}% · 신뢰도 {pick.confidence}</span>
+              <span className="muted small">지금 {p ? wonPerKg(p.base_price) : "…"}</span>
             </div>
           ) : <span className="muted small">예측 불러오는 중…</span>}
         </div>
         {p && (
           <div className="cf-side">
             <div className="mini-fc-wrap">
-              <span className="l">지난 2주</span><span className="r">AI 30일 예측</span>
               <MiniForecast p={p} height={56} />
             </div>
             <div className="cf-stats">
@@ -80,7 +79,7 @@ export function CoreFeatures({ movers, items }) {
         <span className="cf-go">가격 예측 보러 가기 →</span>
       </Link>
       <Link to="/recommend" className="cf rc">
-        <div className="cf-head"><span className="cf-tag">작물 추천</span><small>예: {DEFAULT_FORM.region} · 노지 {won(DEFAULT_FORM.lands.open)}평 + 시설 {won(DEFAULT_FORM.lands.house)}평 · 예상 순이익</small></div>
+        <div className="cf-head"><span className="cf-tag">작물 추천</span></div>
         <h2>🌱 내 땅에는 <em>무엇을 심을까?</em></h2>
         <ol className="cf-crops">
           {crops.length ? crops.map((c, i) => (
@@ -89,7 +88,7 @@ export function CoreFeatures({ movers, items }) {
               <span className="e">{c.emoji}</span>
               <span className="nm">{c.crop_name}</span>
               <span className="bar"><i style={{ width: `${(c.margin / maxMargin) * 100}%` }} /></span>
-              <span className="v"><b>{won(Math.round(c.margin / 1e4))}만원</b><small>마진률 {Math.round(c.margin_rate)}%</small></span>
+              <span className="v"><b>{won(Math.round(c.margin / 1e4))}만원</b></span>
             </li>
           )) : <li className="muted small">추천 불러오는 중…</li>}
         </ol>
@@ -137,7 +136,7 @@ export function IndexCards({ movers, items }) {
                 const dir = Math.abs(pct) < 0.05 ? "flat" : pct > 0 ? "up" : "down";
                 return (
                   <Link key={g.code} to="/market" className="ix">
-                    <div className="ix-h">{g.emoji} {g.name}<small>{g.item_count}품목</small></div>
+                    <div className="ix-h">{g.emoji} {g.name}</div>
                     <small className="ix-l">어제보다</small>
                     <b className={`num ${dir}`}>{dir === "flat" ? "– 0.0%" : `${pct > 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(1)}%`}</b>
                     <IndexSpark points={g.points} forecastPct={f ?? 0} />
@@ -148,9 +147,6 @@ export function IndexCards({ movers, items }) {
                 );
               })}
             </div>
-            <p className="ix-note muted small">
-              어제 대비 평균 등락률 · 그래프 = 최근 30거래일 · 점선 = AI 30일 예상 · {shortDate(d.base_date)} 기준
-            </p>
           </>
         )}
       </Async>
@@ -173,7 +169,7 @@ function Row({ n, code, emoji, name, sub, price, pct, on, onClick, to, star, onS
     <>
       <span className="n">{n}</span>
       <ItemImage code={code} emoji={emoji} className="xs" />
-      <span className="nm">{name}<Warn code={code} /><small>{sub}</small></span>
+      <span className="nm">{name}<Warn code={code} />{sub && <small>{sub}</small>}</span>
       <span className="pr"><b>{won(price)}원</b><PctChange value={pct} className="small" /></span>
       {star && <button type="button" className="star" title="관심 품목에 담기" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onStar(); }}>☆</button>}
     </>
@@ -213,7 +209,6 @@ export function MarketBoard({ today, movers, items }) {
     })
     .filter(Boolean);
   const p = pred.data;
-  const end = p?.forecast.at(-1);
   const low = LOW_ACCURACY.has(item);
 
   return (
@@ -222,7 +217,7 @@ export function MarketBoard({ today, movers, items }) {
         <div className="db-chart-head">
           <span className="db-emo"><ItemImage code={item} emoji={info[item]?.emoji} alt="" /></span>
           <div>
-            <h2>{info[item]?.name ?? row?.name}<Warn code={item} /> <small className="muted">전국 도매시장 평균 · 상 · 1kg</small></h2>
+            <h2>{info[item]?.name ?? row?.name}<Warn code={item} /></h2>
             {row && (
               <div className="db-px">
                 <b className="num">{won(row.price)}원</b>
@@ -240,8 +235,6 @@ export function MarketBoard({ today, movers, items }) {
         {p && (
           <div className={`db-ai ${low ? "low" : ""}`}>
             <div><small>🤖 AI가 본 30일 뒤</small><b className={p.change_pct > 0 ? "up" : p.change_pct < 0 ? "down" : ""}>{won(p.predicted_price)}원</b><PctChange value={p.change_pct} className="small" /></div>
-            <div><small>예상 범위</small><b>{won(end.lower)} ~ {won(end.upper)}원</b></div>
-            <div><small>신뢰도</small><b>{p.confidence}</b></div>
             {low && <span className="chip lowacc">❗ 예측 정확도 낮음 · 참고용</span>}
             <Link className="btn primary" to={`/ai?item=${item}`}>언제 팔지 보기</Link>
           </div>
@@ -254,7 +247,7 @@ export function MarketBoard({ today, movers, items }) {
         </div>
         <ol className="db-list">
           {list.map((r, i) => (
-            <Row key={r.item} n={i + 1} code={r.item} emoji={r.emoji} name={r.name} sub={isAi ? "AI 30일 뒤" : r.category}
+            <Row key={r.item} n={i + 1} code={r.item} emoji={r.emoji} name={r.name} sub={isAi ? "AI 30일 뒤" : ""}
               price={isAi ? ai[r.item].predicted_price : r.price} pct={isAi ? ai[r.item].change_pct : r.change_pct}
               on={r.item === item} onClick={() => setPicked(r.item)} />
           ))}
@@ -275,11 +268,11 @@ export function BottomLists({ today, movers }) {
   const mine = favorites.map((c) => prices[c]).filter(Boolean);
   const popular = (today?.items ?? []).slice(0, 5);
   const aiRows = (L) => L.map((m, i) => (
-    <Row key={m.item} n={i + 1} code={m.item} emoji={prices[m.item].emoji} name={m.item_name} sub={`지금 ${won(prices[m.item].price)}원 → 30일 뒤`}
+    <Row key={m.item} n={i + 1} code={m.item} emoji={prices[m.item].emoji} name={m.item_name} sub=""
       price={m.predicted_price} pct={m.change_pct} to={`/ai?item=${m.item}`} />
   ));
   const priceRows = (L, star) => L.map((p, i) => (
-    <Row key={p.item} n={i + 1} code={p.item} emoji={p.emoji} name={p.name} sub={p.category} price={p.price} pct={p.change_pct}
+    <Row key={p.item} n={i + 1} code={p.item} emoji={p.emoji} name={p.name} sub="" price={p.price} pct={p.change_pct}
       to={`/market?item=${p.item}`} star={star} onStar={() => updateProfile({ favorites: [...favorites, p.item] })} />
   ));
   return (
@@ -296,9 +289,9 @@ export function BottomLists({ today, movers }) {
           <h3>🔥 많이 찾는 품목</h3>
           <ol className="db-list">{priceRows(popular, !!user)}</ol>
           {user ? (
-            <div className="db-hint">☆를 누르면 관심 품목에 담겨요. 관심 품목을 고르면 여기에 모여요</div>
+            <div className="db-hint">☆를 눌러 관심 품목에 담아 보세요</div>
           ) : (
-            <div className="db-hint">로그인하면 내 품목만 모아 볼 수 있어요 <Link className="btn primary sm" to="/login">로그인</Link></div>
+            <div className="db-hint">로그인하면 내 품목만 볼 수 있어요 <Link className="btn primary sm" to="/login">로그인</Link></div>
           )}
         </section>
       )}

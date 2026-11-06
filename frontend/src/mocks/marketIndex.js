@@ -3,6 +3,7 @@
 // 오른 비율을 평균내 이어 붙인 값 (품목 수가 바뀌는 날에도 튀지 않게). 가격 = 전국 도매시장 · 상 등급
 import CATALOG from "../../../shared/items.json";
 import { ITEMS } from "./catalog";
+import { IN50 } from "./items50";
 import { mockPriceHistory } from "./market";
 
 export const INDEX_GROUPS = [
@@ -14,7 +15,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
 
 /** 묶음별 지수 최근 days 거래일 */
 export function mockMarketIndex({ days = 30 } = {}) {
-  const series = ITEMS.map((i) => ({ ...i, points: mockPriceHistory(i.code, { days: BASE_DAYS }).points }));
+  const series = ITEMS.filter((i) => IN50.has(i.code)).map((i) => ({ ...i, points: mockPriceHistory(i.code, { days: BASE_DAYS }).points }));
   const dates = series[0].points.slice(-days).map((p) => p.date);
   const groups = INDEX_GROUPS.map((g) => {
     const members = series.filter((s) => !g.categories || g.categories.includes(s.category));

@@ -1048,3 +1048,51 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 .more-info summary::-webkit-details-marker { display: none; }
 .more-info summary::before { content: "ⓘ "; }
 .more-info[open] summary { margin-bottom: 4px; }
+
+/* [샘플] 가격 예측 검색 조건 (부류 → 품목 → 품종) */
+.ps { padding: 8px 22px 16px; }
+.ps-row { display: grid; grid-template-columns: 130px 1fr; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px dashed #cfd5cc; }
+.ps-lb { font-weight: 700; font-size: 16px; white-space: nowrap; }
+.ps-fields { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ps-sel { width: 160px; height: 44px; border-radius: 12px; }
+.ps-sel.wide { width: 240px; }
+.ps-date { width: 200px; height: 44px; border-radius: 12px; }
+.ps-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.ps-chip { border: none; background: #f0f2ef; border-radius: 10px; padding: 8px 14px; font-size: 15px; font-weight: 600; cursor: pointer; color: var(--text); }
+.ps-chip.on { background: var(--green); color: #fff; }
+.ps-foot { display: flex; align-items: center; gap: 14px; padding-top: 16px; flex-wrap: wrap; }
+.ps-recent { display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap; min-width: 0; }
+.ps-tag { display: inline-flex; align-items: center; gap: 6px; background: #eef0ee; border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 14px; }
+.ps-tag button { border: none; background: none; cursor: pointer; color: var(--text); font-size: 14px; padding: 0; }
+.ps-tag .x { width: 22px; height: 22px; border-radius: 6px; background: #fff; font-weight: 700; }
+.ps-reset { border: none; background: none; font-size: 15px; font-weight: 700; cursor: pointer; color: var(--text); }
+.ps-go { border: none; background: var(--green); color: #fff; font-size: 17px; font-weight: 800; border-radius: 12px; padding: 13px 44px; cursor: pointer; }
+.ps-go:hover { background: var(--green-dark); }
+@media (max-width: 760px) {
+  .ps { padding: 4px 16px 14px; }
+  .ps-row { grid-template-columns: 1fr; gap: 8px; }
+  .ps-sel, .ps-sel.wide, .ps-date, .ps-go { width: 100%; }
+}
+/* [샘플] 작물 추천: 같은 작물의 다른 품종 */
+.rc-var { display: inline-block; margin-left: 6px; font-size: 13px; font-weight: 700; color: #0e7a45; background: var(--green-soft); border-radius: 6px; padding: 1px 6px; }
+.rc-more-v { display: block; margin-top: 4px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 700; color: var(--green); cursor: pointer; }
+.rc-table tr.rc-vsub td { background: #fafbf9; padding-top: 6px; padding-bottom: 6px; }
+.rc-table tr.rc-vsub td:nth-child(2) b { font-weight: 600; padding-left: 10px; border-left: 3px solid #cfe7d8; }
+.rc-table tr.rc-vsub.selected td { background: var(--green-soft); }
+.ps .ps-sel { flex: none; width: 160px; }
+.ps .ps-sel.wide { width: 240px; }
+.ps .ps-date { flex: none; }
+.ps-fields { flex-wrap: wrap; row-gap: 10px; }
+@media (max-width: 760px) { .ps .ps-sel, .ps .ps-sel.wide { width: 100%; } }
+/* 부류 → 품목 → 품종 */
+.cs { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.cs-f { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 15px; color: var(--muted); }
+.cs-f .input { width: 160px; height: 44px; border-radius: 12px; }
+.ps-rl { font-size: 14px; font-weight: 700; color: var(--muted); }
+.mk-filter .mk-crop { flex: 2; }
+.mk-crop .cs-f .input { width: 150px; height: 42px; }
+@media (max-width: 760px) { .cs { display: grid; grid-template-columns: 1fr; } .cs-f .input, .mk-crop .cs-f .input { width: auto; flex: 1; } }
+.mk-filter .cs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.mk-filter .cs-f { display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin: 0; font-size: 13px; font-weight: 600; }
+.mk-filter .cs-f .input { width: 100%; }
+@media (max-width: 760px) { .mk-filter .cs { grid-template-columns: 1fr; } }

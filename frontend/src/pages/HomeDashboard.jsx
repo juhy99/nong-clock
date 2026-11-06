@@ -2,7 +2,7 @@
 // 색: 오르면 빨강(.up), 내리면 파랑(.down). 가격 = 전국 도매시장 · 상 등급 · 원/kg
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getTopMovers, predict, recommendCrops } from "../api/ml";
+import { getTopMovers, predict, recommendCrops, recommendPlantingDates } from "../api/ml";
 import { getMarketIndex, getPriceHistory } from "../api/market";
 import { useAuth } from "../components/AuthContext";
 import CandleChart from "../components/CandleChart";
@@ -121,15 +121,18 @@ export function CoreFeatures({ items }) {
       // 작물마다 자기 다음 심는 날로 계산 (쌀 5월 · 콩 6월 …)
       const wait = now.unavailable.filter((u) => u.land_type === t && u.next_plant_date);
       if (!wait.length) continue;
-      const later = await Promise.all(wait.map((u) => recommendCrops({ ...formRequest(form, today), start_date: u.next_plant_date })));
-      const rowsLater = wait.map((u, k) => later[k].results.find((r) => r.crop === u.crop && !r.demoted)).filter(Boolean);
-      out[t] = { rows: rowsLater, from: true };
+      // 작물 추천 API 는 시작일을 30일 안만 받으므로, 작물별 "가장 좋은 심는 날" API 로 1년 안 최적 날짜 결과를 받는다
+      const area = form.lands[t];
+      const later = await Promise.all(wait.map((u) => recommendPlantingDates({ crop: u.crop, area_pyeong: area, region: form.region }).catch(() => null)));
+      const rowsLater = later.map((x) => x?.best).filter((r) => r && !r.demoted);
+      if (rowsLater.length) out[t] = { rows: rowsLater, from: true };
     }
     // 과수원: 여러 해 기르는 나무라 마진 대신 수확철(가을) 예상 도매가
-    const fr = await Promise.all(ORCHARD.map(([c]) => predict({ item: c, horizon: 365 })));
+    const fr = await Promise.all(ORCHARD.map(([c]) => predict({ item: c, horizon: 365 }).catch(() => null)));
     out.orchard = {
       orchard: true,
-      rows: ORCHARD.map(([c, name, emoji], k) => {
+      rows: ORCHARD.filter((_, k) => fr[k]).map(([c, name, emoji]) => {
+        const k = ORCHARD.findIndex((o) => o[0] === c);
         const fall = fr[k].forecast.filter((f) => [9, 10, 11].includes(Number(f.date.slice(5, 7))));
         return { crop: c, crop_name: name, emoji, price: Math.round(fall.reduce((a, f) => a + f.price, 0) / (fall.length || 1)) };
       }).sort((a, b) => b.price - a.price),

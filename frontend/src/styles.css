@@ -18,7 +18,7 @@
   --danger: #d63a2f;
   --radius: 20px;
   --shadow: 0 1px 2px rgba(20, 60, 40, 0.04);
-  --max: 1240px;
+  --max: 1600px;
 }
 
 * { box-sizing: border-box; }
@@ -1096,3 +1096,83 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 .mk-filter .cs-f { display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin: 0; font-size: 13px; font-weight: 600; }
 .mk-filter .cs-f .input { width: 100%; }
 @media (max-width: 760px) { .mk-filter .cs { grid-template-columns: 1fr; } }
+
+/* ── 11-06 피드백: 위 여백 줄이기 · 가격 예측 한 화면에 · 홈 두 카드 강조 ── */
+.page { padding-top: 14px; gap: 18px; }
+.page-head { display: flex; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; }
+.page-head h1 { font-size: 24px; }
+.page-head p { margin: 0; }
+.page-head .more-info { margin: 0; }
+.page-head.mk-head > div { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.page-head.mk-head .mk-ai { margin-left: auto; }
+
+/* 가격 예측 검색: 두 줄 */
+.ps { padding: 4px 20px; }
+.ps-row { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px dashed #cfd5cc; }
+.ps-row:last-child { border-bottom: none; }
+.ps-lb { width: 72px; flex: none; }
+.ps .ps-date { width: 170px; height: 40px; }
+.ps-chip { padding: 7px 12px; }
+.ps .cs { gap: 10px; }
+.ps .cs-f .input { width: 140px; height: 40px; }
+.ps-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.ps-go { padding: 10px 30px; font-size: 16px; }
+.predict-layout.stack { gap: 12px; }
+.predict-layout.stack > .card:not(.ps) { padding: 14px 18px; }
+
+/* 홈: 가격 예측·작물 추천 두 카드만 눈에 띄게, 나머지는 차분하게 */
+.page > .banner { padding: 8px 14px; font-size: 14px; }
+.core-feat .cf { border-width: 2px; box-shadow: 0 12px 32px rgba(20, 70, 40, 0.16); }
+.core-feat .cf.ai { border-color: #1fa463; }
+.core-feat .cf.rc { border-color: #e39a2d; }
+.core-feat .cf h2 { font-size: 24px; }
+.ix { background: var(--soft); border-color: transparent; box-shadow: none; }
+.ix-h { color: var(--muted); font-weight: 600; }
+.ix > b.num { font-size: 18px; }
+.db-chart, .db-rank, .db-bottom .card { box-shadow: none; }
+@media (max-width: 760px) {
+  .ps-lb { width: 100%; }
+  .ps .cs-f .input, .ps .ps-date { width: 100%; }
+  .ps-actions { margin-left: 0; width: 100%; } .ps-go { flex: 1; }
+}
+.container { padding: 0 32px; }
+@media (max-width: 760px) { .container { padding: 0 16px; } }
+
+/* 홈 두 카드: 움직임 (시세 띠보다 먼저 눈에 들어오게) */
+.ticker-track { animation-duration: 90s; }
+.core-feat .cf { overflow: hidden; isolation: isolate; }
+.core-feat .cf::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.75) 50%, transparent 65%); transform: translateX(-120%); animation: cf-sheen 7s ease-in-out infinite; }
+.core-feat .cf.rc::after { animation-delay: 3.5s; }
+@keyframes cf-sheen { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+.core-feat .cf-tag::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; animation: cf-blink 1.6s ease-in-out infinite; }
+@keyframes cf-blink { 50% { opacity: .25; } }
+/* 작은 예측 그래프: 예측 부분이 왼쪽에서 오른쪽으로 그려지고, 가장 비싼 날 점이 깜빡임 */
+.mini-fc .wipe { animation: mf-wipe 6s ease-out infinite; transform-box: fill-box; transform-origin: left; }
+@keyframes mf-wipe { 0% { transform: scaleX(0); } 45%, 100% { transform: scaleX(1); } }
+.mini-fc .now { fill: #4e5968; }
+.mini-fc .best-dot { fill: #e5483e; stroke: #fff; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.mini-fc .best-ring { fill: none; stroke: #e5483e; stroke-width: 2; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; animation: mf-ring 1.8s ease-out infinite; }
+@keyframes mf-ring { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(3.2); opacity: 0; } }
+/* 가장 비싼 날 강조 */
+.cf-best { display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #fff1ee, #ffe2dc); border: 1.5px solid #f3a99f; border-radius: 12px; padding: 8px 12px; animation: cf-glow 2.4s ease-in-out infinite; }
+@keyframes cf-glow { 50% { box-shadow: 0 0 0 4px rgba(229, 72, 62, .14); } }
+.cf-best .ic { font-size: 22px; animation: cf-bob 2.4s ease-in-out infinite; }
+@keyframes cf-bob { 50% { transform: translateY(-3px) rotate(-8deg); } }
+.cf-best .t { display: flex; flex-direction: column; } .cf-best .t small { font-size: 12px; color: #9a3b33; font-weight: 700; }
+.cf-best .t b { font-size: 22px; color: #c2271d; letter-spacing: -.5px; line-height: 1.15; }
+.cf-best .v { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; } .cf-best .v b { font-size: 17px; } .cf-best .v span { font-size: 14px; font-weight: 800; }
+.cf-stats.three { grid-template-columns: repeat(3, 1fr); }
+/* 작물 추천: 막대가 차례로 자라고, 1위 줄이 살짝 빛남 */
+.cf-crops .bar i { transform-origin: left; animation: cf-grow 1.1s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * .18s + .2s); }
+@keyframes cf-grow { from { transform: scaleX(0); } }
+.cf-crops li:first-child { border-radius: 10px; animation: cf-first 3s ease-in-out infinite; }
+@keyframes cf-first { 50% { background: rgba(255, 255, 255, .7); } }
+.cf-crops li:first-child .n::after { content: "👑"; font-size: 12px; margin-left: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .core-feat .cf::after, .core-feat .cf-tag::before, .mini-fc .wipe, .mini-fc .best-ring, .cf-best, .cf-best .ic, .cf-crops .bar i, .cf-crops li:first-child { animation: none; }
+}
+.cf-crops .n { width: auto; min-width: 14px; white-space: nowrap; }
+.core-feat .cf.ai .cf-side { padding-top: 34px; }
+.mini-fc { overflow: visible; }
+@media (max-width: 760px) { .core-feat .cf.ai .cf-side { padding-top: 0; } }

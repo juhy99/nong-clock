@@ -6,7 +6,6 @@ import { getWeatherHistory } from "../api/weather";
 import RecentWeather from "./RecentWeather";
 import { useAuth } from "./AuthContext";
 import { Async, useAsync } from "./common";
-import { dateTime } from "../utils/format";
 
 // 지도 위에 이름·기온을 항상 표시할 지역 (광역시처럼 작은 곳은 겹쳐서 고를 때만 표시)
 const LABELED = new Set(["gyeonggi", "gangwon", "north-chungcheong", "south-chungcheong", "north-jeolla", "south-jeolla", "north-gyeongsang", "south-gyeongsang", "jeju"]);
@@ -184,10 +183,7 @@ export default function WeatherMap() {
               </div>
               <div className="weather-detail">
                 <div className="card-head" style={{ marginBottom: 8 }}>
-                  <div>
-                    <h2>우리 지역 농업 날씨</h2>
-                    <p>지도에서 지역을 눌러 보세요 · 초록 점은 도매시장 · {dateTime(w.base_time)} 발표</p>
-                  </div>
+                  <div><h2>우리 지역 농업 날씨</h2></div>
                 </div>
                 <select className="input" aria-label="지역 선택" value={sel.id} onChange={(e) => pick(e.target.value)} style={{ maxWidth: 200 }}>
                   {w.regions.map((r) => <option key={r.id} value={r.id}>{r.name}{r.warning ? " ⚠️" : ""}</option>)}

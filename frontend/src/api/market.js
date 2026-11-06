@@ -8,6 +8,29 @@ import {
 } from "../mocks/market";
 import { mockRegionalWeather } from "../mocks/weather";
 import { mockMarketIndex } from "../mocks/marketIndex";
+import { varietyFactor, varietyOf } from "../mocks/items50";
+
+// [샘플] 품종: 화면은 item 자리에 "품목코드~품종id" 를 넘긴다. 품종 가격 = 품목 가격 × 품종 계수, 반입량 = 품목 반입량 × 품종 물량 비중
+const PRICE_KEYS = new Set(["price", "prev_price", "change", "high", "low"]);
+const VOLUME_KEY = /(^volume_t$|_t$)/;
+function split(key) {
+  const [item, variety] = String(key ?? "").split("~");
+  return { item, variety };
+}
+function forVariety(data, item, variety) {
+  if (!variety) return data;
+  const f = varietyFactor(variety), share = (varietyOf(item, variety)?.share ?? 100) / 100;
+  const walk = (v, k) => {
+    if (Array.isArray(v)) return v.map((x) => walk(x));
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([kk, x]) => [kk, k === "retail" ? x : walk(x, kk)]));
+    if (typeof v !== "number") return v;
+    if (PRICE_KEYS.has(k)) return Math.round(v * f);
+    if (VOLUME_KEY.test(k ?? "")) return Math.max(1, Math.round(v * share));
+    return v;
+  };
+  return walk(data);
+}
+const byVariety = (fn) => (key, opts) => { const { item, variety } = split(key); return fn(item, opts).then((d) => forVariety(d, item, variety)); };
 
 /** 도매 등급 (DB price_daily.grade 와 같은 코드). 화면 기본값은 HIGH(상) */
 export const GRADES = [
@@ -30,16 +53,16 @@ export const getMarketIndex = ({ days } = {}) => fake(mockMarketIndex({ days }))
 export const getMarkets = () => fake(MARKETS);
 
 /** 등급별(특·상·중·하·평균) 가격 + 전국 소매가, 최근 5거래일 */
-export const getGradePrices = (item, { market, date } = {}) => fake(mockGradePrices(item, { market, date }));
+export const getGradePrices = byVariety((item, { market, date } = {}) => fake(mockGradePrices(item, { market, date })));
 
 /** 한 등급의 날짜별 가격·최고·최저·반입량 + 전국 소매가 */
-export const getPriceHistory = (item, { market, grade, date, days } = {}) => fake(mockPriceHistory(item, { market, grade, date, days }));
+export const getPriceHistory = byVariety((item, { market, grade, date, days } = {}) => fake(mockPriceHistory(item, { market, grade, date, days })));
 
 /** 출하지역(시·도)별 가격·반입량 */
-export const getOriginPrices = (item, { market, date } = {}) => fake(mockOriginPrices(item, { market, date }));
+export const getOriginPrices = byVariety((item, { market, date } = {}) => fake(mockOriginPrices(item, { market, date })));
 
 /** 순(10일) 단위 출하지역별 반입량 + 이번 순 요약 */
-export const getVolumeTrend = (item, { market, date } = {}) => fake(mockVolumeTrend(item, { market, date }));
+export const getVolumeTrend = byVariety((item, { market, date } = {}) => fake(mockVolumeTrend(item, { market, date })));
 
 /** 시장별 오늘 가격 (통합 검색) */
 export const getMarketCompare = (item) => fake(mockMarketCompare(item));

@@ -2,15 +2,14 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ComposedChart, Area, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DEFAULT_GRADE, DEFAULT_MARKET, GRADES, getGradePrices, getMarkets, getOriginPrices, getPriceHistory, getTodayPrices, getVolumeTrend } from "../api/market";
-import { getItems } from "../api/ml";
 import { Async, PriceChange, useAsync } from "../components/common";
-import ItemPicker from "../components/ItemPicker";
+import CropSelect from "../components/CropSelect";
+import { varietyOf } from "../mocks/items50";
 import { md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
 
 // 시세·수급: 날짜 · 시장 · 품목을 고르면 등급별 가격, 가격 추이, 출하지역, 반입 동향이 바뀐다.
 // 처음 열면 전국 도매시장 · 상 등급. 소매가는 전국 소매가 하나뿐이라 등급을 바꿔도 같다.
 const QUICK_MARKETS = ["national", "110001", "210001", "220001"]; // 전국 · 서울가락 · 부산엄궁 · 대구북부
-const ITEM_PILLS = 7;
 const gradeName = (code) => GRADES.find((g) => g.code === code)?.name ?? code;
 const tipWon = (v) => (v == null ? "거래 없음" : wonPerKg(v));
 
@@ -313,11 +312,13 @@ function VolumeSection({ item, itemName, market, date }) {
 export default function Market() {
   const [params, setParams] = useSearchParams();
   const today = useAsync(getTodayPrices);
-  const catalog = useAsync(getItems);
   const markets = useAsync(getMarkets);
   const items = today.data?.items ?? [];
   const item = params.get("item") || items[0]?.item;
-  const itemName = items.find((i) => i.item === item)?.name ?? "";
+  const variety = params.get("variety") ?? "";
+  const vInfo = varietyOf(item, variety);
+  const itemName = (items.find((i) => i.item === item)?.name ?? "") + (vInfo ? ` ${vInfo.label}` : "");
+  const key = variety ? `${item}~${variety}` : item; // [샘플] 품종은 "품목~품종" 으로 넘긴다 (api/market.js)
   const market = params.get("market") || DEFAULT_MARKET;
   const date = params.get("date") || "";
   const grade = params.get("grade") || DEFAULT_GRADE;
@@ -333,10 +334,6 @@ export default function Market() {
     else next.set(key, value);
     setParams(next, { replace: true });
   };
-  // 품목 선택 상자 (107개: 부류 탭 + 이름 검색). 오늘 시세가 있는 품목만
-  const info = Object.fromEntries((catalog.data ?? []).map((c) => [c.code, c]));
-  const pickerItems = items.map((i) => ({ code: i.item, name: i.name, category: info[i.item]?.category ?? "기타", emoji: info[i.item]?.emoji ?? "🧺" }));
-  const shown = items.slice(0, ITEM_PILLS); // 빠른 선택: 거래 물량이 많은 품목
 
   return (
     <div className="page">
@@ -345,7 +342,7 @@ export default function Market() {
           <h1>시세 · 수급</h1>
           <p>도매시장 경락가 · 1kg 기준</p>
         </div>
-        {item && <Link className="btn sm mk-ai" to={`/ai?item=${item}`}>{itemName} AI 가격 예측 보기 →</Link>}
+        {item && <Link className="btn sm mk-ai" to={`/ai?item=${item}${variety ? `&variety=${variety}` : ""}`}>{itemName} AI 가격 예측 보기 →</Link>}
       </div>
 
       <section className="mk-filter">
@@ -368,12 +365,14 @@ export default function Market() {
             })}
           </div>
         </div>
-        <div className="f">
-          <label htmlFor="mk-item">품목</label>
-          <ItemPicker id="mk-item" items={pickerItems} value={item} onChange={(c) => set("item", c)} />
-          <div className="pills">
-            {shown.map((i) => <button key={i.item} className={`pill sm ${i.item === item ? "on" : ""}`} onClick={() => set("item", i.item)}>{i.name}</button>)}
-          </div>
+        <div className="f mk-crop">
+          <label>품목 · 품종</label>
+          <CropSelect item={item} variety={variety} only={new Set(items.map((i) => i.item))} onChange={(v) => {
+            const next = new URLSearchParams(params);
+            next.set("item", v.item);
+            if (v.variety) next.set("variety", v.variety); else next.delete("variety");
+            setParams(next, { replace: true });
+          }} />
         </div>
       </section>
 
@@ -391,18 +390,18 @@ export default function Market() {
         <>
           <div>
             <div className="mk-sec"><h2>등급별 가격 한눈에 보기</h2><span>{marketName} · {itemName}</span></div>
-            <GradeSection item={item} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, DEFAULT_GRADE)} />
+            <GradeSection item={key} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, DEFAULT_GRADE)} />
           </div>
           <div>
             <div className="mk-sec"><h2>자세한 가격 정보</h2><span>{marketName} · {itemName}</span></div>
             <div className="two-col">
-              <TrendCard item={item} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, DEFAULT_GRADE)} />
-              <OriginCard key={`${item}|${market}|${date}`} item={item} market={market} date={date} />
+              <TrendCard item={key} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, DEFAULT_GRADE)} />
+              <OriginCard key={`${key}|${market}|${date}`} item={key} market={market} date={date} />
             </div>
           </div>
           <div>
             <div className="mk-sec"><h2>반입 동향</h2><span>{marketName} · {itemName}</span><small>순(10일) 단위</small></div>
-            <VolumeSection item={item} itemName={itemName} market={market} date={date} />
+            <VolumeSection item={key} itemName={itemName} market={market} date={date} />
           </div>
         </>
       )}

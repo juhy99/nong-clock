@@ -4,6 +4,7 @@
 // 기본 기준(전국 도매시장 · 상 등급)의 최근 거래일 가격 = catalog 의 BASE_PRICE (= AI 예측의 "오늘" 가격).
 import { addDays, daysBetween, seeded, todayIso } from "../utils/format";
 import { BASE_PRICE, ITEMS } from "./catalog";
+import { IN50 } from "./items50";
 import MARKET_DATA from "../../../shared/markets.json";
 
 // 시장별 물량 1위 품목 (홈 지도 "시세 보기"에서 관심 품목이 없을 때 여는 품목).
@@ -116,7 +117,7 @@ const pctOf = (now, prev) => (now == null || !prev ? null : Math.round(((now - p
 /** 오늘의 시세 = 전국 도매시장 · 상 등급 (홈·시세 띠·검색·마이페이지) + 전국 소매가 */
 export function mockTodayPrices() {
   const [compared_date, base_date] = tradingDays(todayIso(), 2);
-  const items = ITEMS.map((info) => {
+  const items = ITEMS.filter((i) => IN50.has(i.code)).map((info) => { // [샘플] 50품목만
     const price = wholesale(info.code, "national", "HIGH", base_date);
     const prev = wholesale(info.code, "national", "HIGH", compared_date);
     const retail_price = retail(info.code, base_date);

@@ -3,24 +3,18 @@ import { useSearchParams } from "react-router-dom";
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getCropInfo, getCropPricePath, getRecommendCrops, recommendCrops } from "../api/ml";
 import { Async, useAsync } from "../components/common";
-import { LAND_TYPES, SIDO_LIST, marketsInSido } from "../mocks/recommend";
-import { PH_DEMOTE_GAP, SOIL_PH, phOf, soilPhFromPrev } from "../mocks/soil_ph";
+import { LAND_TYPES, SIDO_LIST } from "../mocks/recommend";
+import { PH_DEMOTE_GAP, SOIL_PH, phOf } from "../mocks/soil_ph";
+import { namedVarieties, varietyFactor } from "../mocks/items50";
 import { averageText } from "../mocks/accuracy";
 import { addDays, daysBetween, md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
 
 const START_DAYS = 30; // 농사 시작 날짜: 오늘부터 30일 안
-const SAMPLE_CROPS = { open: "대파·시금치·양파·봄동", house: "토마토·오이·상추·딸기", paddy: "쌀·콩", orchard: "사과·배·복숭아" };
 
 /** 1234만 → "1,234만원", 1.2억 이상 → "1.2억원" (원 단위 입력) */
 const man = (v) => {
   const m = v / 1e4;
   return Math.abs(m) >= 1e4 ? `${(m / 1e4).toFixed(1).replace(/\.0$/, "")}억원` : `${won(m)}만원`;
-};
-/** "2026-02-14" → "2월 중순" */
-const third = (iso) => {
-  const d = new Date(`${iso}T00:00:00`);
-  const x = d.getDate();
-  return `${d.getMonth() + 1}월 ${x <= 10 ? "상순" : x <= 20 ? "중순" : "하순"}`;
 };
 /** 일수 → "20일" / "2.5개월" / "1년" */
 const dur = (days) => (days < 60 ? `${days}일` : days >= 330 ? `${Math.round(days / 365) || 1}년` : `${(days / 30.44).toFixed(1).replace(/\.0$/, "")}개월`);
@@ -75,8 +69,6 @@ function GrowBar({ r, start, span, ticks }) {
   );
 }
 
-const toPyeongText = (py) => `${((py * 3.3058) / 100).toFixed(1)}a`;
-
 /** 주 단위 날짜 중 달이 바뀌는 첫 날만 눈금으로 (같은 달 이름이 두 번 나오지 않게) */
 const monthTicks = (dates) => dates.filter((d, i) => i === 0 || d.slice(0, 7) !== dates[i - 1].slice(0, 7));
 const monthLabel = (d) => `${new Date(`${d}T00:00:00`).getMonth() + 1}월`;
@@ -113,24 +105,37 @@ function PriceChart({ crop, harvest, plant, factor = 1 }) {
   );
 }
 
+/** [샘플] 추천 작물을 품종으로 나눈다 — 품종 계수만큼 매출·판매가가 바뀌고 경영비는 같다 (품종별 모델이 붙으면 API 가 바로 준다) */
+function withVariety(r, v) {
+  if (!v) return { ...r, key: r.crop, variety: null };
+  const f = varietyFactor(v.id), R = Math.round;
+  const revenue = R(r.revenue * f), margin = revenue - r.cost, e = r.error_pct / 100;
+  return {
+    ...r, key: `${r.crop}|${v.id}`, variety: v.label,
+    revenue, margin, margin_rate: R((margin / revenue) * 1000) / 10, margin_per_pyeong: R(margin / r.area_pyeong),
+    price_per_kg: R(r.price_per_kg * f), margin_low: R(revenue * (1 - e) - r.cost), margin_high: R(revenue * (1 + e) - r.cost),
+    shipments: r.shipments.map((m) => ({ ...m, price_per_kg: R(m.price_per_kg * f), revenue: R(m.revenue * f) })),
+  };
+}
+/** 작물마다 품종 줄들을 묶고, 가장 좋은 품종을 대표로 [{ head, rest }] */
+function groupVarieties(rows, sort) {
+  return rows.map((r) => {
+    const vs = namedVarieties(r.crop);
+    const all = (vs.length ? vs.map((v) => withVariety(r, v)) : [withVariety(r, null)]).sort((a, b) => b[sort] - a[sort]);
+    return { head: all[0], rest: all.slice(1) };
+  });
+}
+
 const ym = (k) => `${Number(k.slice(5))}월`;
 
 /** 토지 위치(시·도) → 그 시·도 안 도매시장끼리 비교 */
 function RegionPicker({ region, setRegion }) {
-  const { markets, none } = useMemo(() => marketsInSido(region), [region]);
   return (
     <div className="field">
       <label htmlFor="rc-region">토지 위치</label>
       <select id="rc-region" className="input" value={region} onChange={(e) => setRegion(e.target.value)}>
         {SIDO_LIST.map((k) => <option key={k} value={k}>{k}</option>)}
       </select>
-      <span className="hint">
-        {none
-          ? <>{region}에는 공영 도매시장이 없어 <b>전국 도매시장 평균 가격</b>으로 계산해요</>
-          : markets.length > 1
-            ? <>{region} 도매시장 {markets.length}곳(<b>{markets.map((m) => m.name).join("·")}</b>)의 순이익을 비교해요</>
-            : <>{region} 도매시장 <b>{markets[0].name}</b> 기준으로 계산해요</>}
-      </span>
     </div>
   );
 }
@@ -191,11 +196,11 @@ function OptionStats({ o, extra }) {
   return (
     <>
       <div className="rc-kv">
-        <div><span>{o.market.name} 예상가 (출하량 가중)</span><b>{wonPerKg(o.price_per_kg)}</b><em>전국 평균 {won(o.national_price_per_kg)}원 · 오차 ±{o.error_pct}%{o.reference ? " · 참고용" : ""}</em></div>
-        <div><span>판매량</span><b>{o.sellable_t.toFixed(1)}t</b><em>수확 {o.yield_t.toFixed(1)}t{o.marketable_rate < 1 ? ` × 상품화율 ${Math.round(o.marketable_rate * 100)}%(추정)` : " · 10a당 " + o.yield_t_per_10a + "t"}</em></div>
-        <div><span>예상 매출</span><b>{man(o.revenue)}</b><em>월별 출하량 × 월별 예상가</em></div>
-        <div><span>총경영비</span><b>{man(o.cost)}</b><em>전국 평균 {man(o.base_cost)}{rent ? ` + 임대료 ${man(rent)}` : ""}</em></div>
-        <div className="hl"><span>예상 순이익 (마진)</span><b>{man(o.margin)}</b><em>마진률 {Math.round(o.margin_rate)}% · 평당 {won(o.margin_per_pyeong)}원{extra}</em></div>
+        <div><span>{o.market.name} 예상가</span><b>{wonPerKg(o.price_per_kg)}</b>{o.reference && <em>참고용</em>}</div>
+        <div><span>판매량</span><b>{o.sellable_t.toFixed(1)}t</b></div>
+        <div><span>예상 매출</span><b>{man(o.revenue)}</b></div>
+        <div><span>총경영비</span><b>{man(o.cost)}</b>{rent > 0 && <em>임대료 {man(rent)} 포함</em>}</div>
+        <div className="hl"><span>예상 순이익 (마진)</span><b>{man(o.margin)}</b><em>마진률 {Math.round(o.margin_rate)}%{extra}</em></div>
       </div>
       <div className="rc-scn">
         <div><span>가격 하락 (−{o.error_pct}%)</span><b className={o.margin_low < 0 ? "down" : ""}>{man(o.margin_low)}</b></div>
@@ -214,12 +219,13 @@ function OptionStats({ o, extra }) {
       </div>
       <h3 className="rc-sub">{o.no_market ? "전국 도매시장 평균으로 팔면" : `${o.region} 도매시장별로 팔면`}</h3>
       <MarketCompare o={o} />
-      <p className="hint rc-src">
+      <details className="more-info rc-src">
+        <summary>계산 근거 보기</summary>
         {o.rda
           ? <>농진청 2024 조사표 「{o.rda.row}」 10a당: 총수입 {man(o.rda.revenue)} · 경영비 {man(o.rda.cost)} · 소득 {man(o.rda.income)} → 이 계획 10a당: 매출 {man(o.per_10a.revenue)} · 경영비 {man(o.per_10a.cost)} · 순이익 {man(o.per_10a.income)} (임대료 빼고){o.source === "est" ? " · 이 작형 수량·경영비는 조사표 값을 작형에 맞춘 추정" : ""}</>
           : <>조사표에 없는 작물이라 수량·경영비·상품화율·가격 수준이 모두 <b>추정값</b>이에요.</>}
         {" "}출하 비중·계절 가격 모양은 추정이에요. 경영비(전국 평균)에는 고용 인건비는 들어 있지만 자가노동비는 빠져 있어요.
-      </p>
+      </details>
     </>
   );
 }
@@ -259,9 +265,13 @@ function LandPicker({ form, setForm, goInfo }) {
 
   const d = state.data;
   const types = d ? [...new Set(d.results.map((r) => r.land_type))] : [];
-  const shown = (d?.results ?? []).filter((r) => type === "all" || r.land_type === type).sort((a, b) => a.demoted - b.demoted || b[sort] - a[sort]);
+  const groups = groupVarieties((d?.results ?? []).filter((r) => type === "all" || r.land_type === type), sort)
+    .sort((a, b) => a.head.demoted - b.head.demoted || b.head[sort] - a.head[sort]);
+  const shown = groups.map((g) => g.head);
+  const flat = groups.flatMap((g) => [g.head, ...g.rest]);
+  const [open, setOpen] = useState({});
   const top = shown.find((r) => !r.demoted) ?? shown[0];
-  const sel = shown.find((r) => r.crop === pick) ?? top;
+  const sel = flat.find((r) => r.key === pick) ?? top;
   const span = Math.min(MAX_SPAN, Math.max(240, ...shown.map((r) => daysBetween(start, r.storage_end))));
   const ticks = spanTicks(start, span);
 
@@ -275,20 +285,19 @@ function LandPicker({ form, setForm, goInfo }) {
             {Object.entries(LAND_TYPES).map(([k, label]) => (
               <label key={k} className={`rc-land ${lands[k] > 0 ? "on" : ""}`}>
                 <input type="checkbox" checked={lands[k] > 0} onChange={(e) => setLands({ ...lands, [k]: e.target.checked ? lands[k] || 300 : 0 })} />
-                <span><b>{label}</b><small>{SAMPLE_CROPS[k]} 등</small></span>
+                <span><b>{label}</b></span>
                 <span className="rc-py">
                   <input className="input" type="number" min="0" step="50" value={lands[k]} aria-label={`${label} 평수`} onChange={(e) => setLands({ ...lands, [k]: Math.max(0, Number(e.target.value) || 0) })} /> 평
                 </span>
               </label>
             ))}
           </div>
-          <span className="hint">{total ? `합계 ${won(total)}평 (${toPyeongText(total)})` : "토지를 하나 이상 골라 주세요"}</span>
+          {!total && <span className="hint error">토지를 하나 이상 골라 주세요</span>}
         </div>
         <div className="field">
-          <label>토지별 정보 <small className="muted">기존 작물은 선택 · 임대료는 이번 작기</small></label>
+          <label>토지별 정보</label>
           <div style={{ display: "grid", gap: 10 }}>
             {Object.entries(LAND_TYPES).filter(([k]) => lands[k] > 0).map(([k, label]) => {
-              const ph = prevs[k] ? soilPhFromPrev(prevs[k]) : null;
               return (
                 <div key={k} className="rc-landinfo">
                   <b className="ttl">{label} <small className="muted">{won(lands[k])}평</small></b>
@@ -298,7 +307,6 @@ function LandPicker({ form, setForm, goInfo }) {
                       <option value="">없음</option>
                       {SOIL_PH.map((p) => <option key={p.name} value={p.name}>{p.name}{p.min != null ? ` · pH ${p.min}~${p.max}` : " · pH 자료 없음"}</option>)}
                     </select>
-                    {prevs[k] && <small className="muted">{ph != null ? `흙 pH 약 ${ph}로 어림 (범위 가운데)` : "pH 자료가 없어 비교하지 않아요"}</small>}
                   </label>
                   <div className="rc-money2">
                     <ManwonInput label="토지 임차료" aria={`${label} 토지 임차료`} value={rents[k]?.land ?? 0} onChange={(v) => setRent(k, "land", v)} />
@@ -327,9 +335,8 @@ function LandPicker({ form, setForm, goInfo }) {
           <div className="summary-box">
             <span className="summary-img">{top.emoji}</span>
             <div className="muted small">마진 1위 · {LAND_TYPES[top.land_type]} {won(top.area_pyeong)}평</div>
-            <div className="price">{top.crop_name}</div>
+            <div className="price">{top.crop_name}{top.variety && <small> {top.variety}</small>}</div>
             <div className="small">예상 마진 <b>{man(top.margin)}</b> · 마진률 <b className="rc-rate">{Math.round(top.margin_rate)}%</b></div>
-            <div className="muted small">재배 {third(top.plant_date)} ~ {third(top.harvest_end)} · 보관 {dur(top.storage_days)}</div>
           </div>
         )}
       </section>
@@ -337,7 +344,7 @@ function LandPicker({ form, setForm, goInfo }) {
       <div className="rc-col">
         <section className="card">
           <div className="card-head">
-            <div><h2>심을 수 있는 작물</h2><p>{shortDate(start)} 시작 · {d?.no_market ? <>{region}에 공영 도매시장이 없어 <b>전국 도매시장 평균 가격</b>으로 팔 때</> : <>{region} 도매시장 {d?.markets?.length ?? ""}곳 중 <b>순이익이 가장 높은 곳</b>에 팔 때</>} · {shown.length}개</p></div>
+            <div><h2>심을 수 있는 작물</h2><p>{shortDate(start)} 시작 · {shown.length}개</p></div>
             <div className="seg">
               {[["margin", "순이익"], ["margin_rate", "마진률"], ["margin_per_pyeong", "평당 순이익"]].map(([k, l]) => (
                 <button key={k} className={sort === k ? "on" : ""} onClick={() => setSort(k)}>{l}</button>
@@ -371,27 +378,40 @@ function LandPicker({ form, setForm, goInfo }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r, i) => (
-                    <Fragment key={r.crop}>
-                    {r.demoted && !rows[i - 1]?.demoted && (
-                      <tr className="rc-demote-head"><td colSpan={6}>⚠️ 흙 pH를 낮춰야 해서 아래로 내린 작물 — 기존 작물로 어림한 흙 pH가 이 작물들에 알맞은 pH보다 {PH_DEMOTE_GAP} 이상 높고, pH를 내리는 데는 몇 달이 걸려요</td></tr>
-                    )}
-                    <tr className={`clickable ${sel?.crop === r.crop ? "selected" : ""} ${r.demoted ? "rc-demoted" : ""}`} onClick={() => setPick(r.crop)}>
-                      <td className="num">{i + 1}</td>
-                      <td><span className="rc-crop"><span className="rc-emo">{r.emoji}</span><span><b>{r.crop_name}</b>{r.source === "est" && <em className="rc-est" title="수량·경영비가 공식 통계가 아닌 추정값">추정</em>}<small>{LAND_TYPES[r.land_type]} · {r.cropping}</small>{r.ph && <PhNote ph={r.ph} soil={r.soil_ph} />}</span></span></td>
-                      <td><GrowBar r={r} start={start} span={span} ticks={ticks} /></td>
-                      <td className="r num" data-label="예상 판매가">{won(r.price_per_kg)}원<small className="muted">/kg · {r.market.name}</small></td>
-                      <td className="r num" data-label="매출 · 총경영비">{man(r.revenue)}<small className="muted">{man(r.cost)}</small></td>
-                      <td className="r num rc-m" data-label="순이익"><b className={r.margin < 0 ? "down" : ""}>{man(r.margin)}</b><small className={r.margin_rate >= 0 ? "rc-rate" : "down"}>{Math.round(r.margin_rate)}%</small></td>
-                    </tr>
-                    </Fragment>
-                  ))}
+                  {rows.map((r, i) => {
+                    const g = groups[i];
+                    const isOpen = open[r.crop];
+                    const line = (x, sub) => (
+                      <tr key={x.key} className={`clickable ${sel?.key === x.key ? "selected" : ""} ${x.demoted ? "rc-demoted" : ""} ${sub ? "rc-vsub" : ""}`}
+                        onClick={() => { setPick(x.key); if (!sub && g.rest.length) setOpen({ ...open, [r.crop]: !isOpen }); }}>
+                        <td className="num">{sub ? "" : i + 1}</td>
+                        <td><span className="rc-crop"><span className="rc-emo">{sub ? "" : x.emoji}</span><span>
+                          <b>{sub ? x.variety : x.crop_name}</b>{!sub && x.variety && <span className="rc-var">{x.variety}</span>}
+                          {!sub && x.source === "est" && <em className="rc-est" title="수량·경영비가 공식 통계가 아닌 추정값">추정</em>}
+                          <small>{LAND_TYPES[x.land_type]} · {x.cropping}</small>{!sub && x.ph && <PhNote ph={x.ph} soil={x.soil_ph} />}
+                          {!sub && g.rest.length > 0 && <button type="button" className="rc-more-v">{isOpen ? "품종 접기 ▴" : `다른 품종 ${g.rest.length}개 ▾`}</button>}
+                        </span></span></td>
+                        <td>{sub ? null : <GrowBar r={x} start={start} span={span} ticks={ticks} />}</td>
+                        <td className="r num" data-label="예상 판매가">{won(x.price_per_kg)}원<small className="muted">/kg · {x.market.name}</small></td>
+                        <td className="r num" data-label="매출 · 총경영비">{man(x.revenue)}<small className="muted">{man(x.cost)}</small></td>
+                        <td className="r num rc-m" data-label="순이익"><b className={x.margin < 0 ? "down" : ""}>{man(x.margin)}</b><small className={x.margin_rate >= 0 ? "rc-rate" : "down"}>{Math.round(x.margin_rate)}%</small></td>
+                      </tr>
+                    );
+                    return (
+                      <Fragment key={r.key}>
+                        {r.demoted && !rows[i - 1]?.demoted && (
+                          <tr className="rc-demote-head"><td colSpan={6}>⚠️ 흙 pH를 낮춰야 해서 아래로 내린 작물 — 기존 작물로 어림한 흙 pH가 이 작물들에 알맞은 pH보다 {PH_DEMOTE_GAP} 이상 높고, pH를 내리는 데는 몇 달이 걸려요</td></tr>
+                        )}
+                        {line(r, false)}
+                        {isOpen && g.rest.map((x) => line(x, true))}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
           </Async>
           <div className="rc-more">
-            <p className="hint" style={{ margin: 0 }}>줄을 누르면 가격 흐름과 경영비가 나와요.</p>
             <button className="btn sm" onClick={() => goInfo(null)}>📖 추천에 없는 작물 보기 ›</button>
           </div>
         </section>
@@ -399,7 +419,7 @@ function LandPicker({ form, setForm, goInfo }) {
         {sel && (
           <section className="card">
             <div className="card-head">
-              <div><h2>{sel.emoji} {sel.crop_name} · {sel.cropping}</h2><p>{shortDate(sel.plant_date)} 심기 → {shortDate(sel.harvest_start)} 첫 수확 → {shortDate(sel.harvest_end)} 수확 끝 · 보관 {dur(sel.storage_days)} · {LAND_TYPES[sel.land_type]} {won(sel.area_pyeong)}평</p></div>
+              <div><h2>{sel.emoji} {sel.crop_name}{sel.variety ? ` ${sel.variety}` : ""} · {sel.cropping}</h2><p>{shortDate(sel.plant_date)} 심기 → {shortDate(sel.harvest_start)} 첫 수확 → {shortDate(sel.harvest_end)} 수확 끝 · 보관 {dur(sel.storage_days)} · {LAND_TYPES[sel.land_type]} {won(sel.area_pyeong)}평</p></div>
               <button className="btn sm" onClick={() => goInfo(sel.crop)}>작물 정보 ›</button>
             </div>
             {sel.demoted && (
@@ -410,13 +430,12 @@ function LandPicker({ form, setForm, goInfo }) {
             )}
             <OptionStats o={sel} />
             <PriceChart crop={sel.crop} harvest={[sel.harvest_start, sel.harvest_end]} plant={sel.plant_date} factor={sel.factor} />
-            <p className="hint" style={{ margin: "6px 0 0" }}>점선 = 주 단위 예상 판매가, 붉은 띠 = 오차 범위, 초록 칸 = 수확 기간</p>
           </section>
         )}
 
         {d?.unavailable?.length > 0 && (
           <section className="card">
-            <div className="card-head"><div><h2>지금은 심기 어려운 작물</h2><p>고른 날짜가 심는 시기가 아니거나 여러 해 기르는 작물이에요</p></div></div>
+            <div className="card-head"><div><h2>지금은 심기 어려운 작물</h2></div></div>
             <div className="pills">
               {d.unavailable.map((u) => (
                 <span key={u.crop} className="pill sm rc-off">
@@ -491,7 +510,6 @@ function CropInfo({ crop, setCrop, form, goLand }) {
   const d = info.data;
   const why = c && rec.data ? whyNot(c, rec.data) : null;
   const ph = phOf(crop);
-  const owned = Object.entries(form.lands).filter(([, v]) => v > 0);
 
   return (
     <div className="ci">
@@ -510,12 +528,9 @@ function CropInfo({ crop, setCrop, form, goLand }) {
               <button className="link small" onClick={goLand}>입력 바꾸기 ›</button>
             </div>
             <p className="ci-why-txt">{why ? why.text : "불러오는 중…"}</p>
-            <p className="hint" style={{ margin: 0 }}>
-              ① 탭 입력 기준: {shortDate(addDays(today, form.startOffset))} 시작 · {form.region} · {owned.map(([k, v]) => `${LAND_TYPES[k]} ${won(v)}평`).join(" · ") || "토지 없음"}
-            </p>
-          </section>
+                      </section>
           <section className="card">
-            <div className="card-head"><div><h2>재배 조건</h2><p>작물 달력·수량·경영비는 농진청 2024 농산물소득조사와 농사로 재배력 기준 · "추정"은 공식 통계가 아닌 값</p></div></div>
+            <div className="card-head"><div><h2>재배 조건</h2></div></div>
             <div className="ci-facts">
               <div><span>재배할 수 있는 토지</span><b>{Object.entries(LAND_TYPES).map(([k, l]) => <em key={k} className={`ci-land ${k === c.land_type ? "on" : ""}`}>{l}</em>)}</b></div>
               <div><span>알맞은 흙 pH</span><b>{ph?.min != null ? `${ph.min} ~ ${ph.max}` : "자료 없음"}</b>{ph?.memo && <small>{ph.memo}</small>}</div>
@@ -531,14 +546,13 @@ function CropInfo({ crop, setCrop, form, goLand }) {
                 {(d?.croppings ?? []).map((w) => <CalendarRow key={w.name} w={w} />)}
                 <div className="rc-gb-leg" style={{ marginTop: 8 }}>
                   <span><i className="plant" />심는 기간</span><span><i className="grow" />자람</span><span><i className="harv" />수확</span><span><i className="store" />보관</span>
-                  <span className="muted">· 막대는 심는 기간 첫날에 심었을 때</span>
                 </div>
               </div>
             )}
           </section>
           {!c.perennial && (
             <section className="card">
-              <div className="card-head"><div><h2>앞으로 13개월 예상 도매가</h2><p>전국 공영도매시장 경매 단가 · 원/kg · 붉은 띠 = 모델 검증 오차 범위</p></div></div>
+              <div className="card-head"><div><h2>앞으로 13개월 예상 도매가</h2><p>원/kg</p></div></div>
               <PriceChart crop={crop} />
             </section>
           )}
@@ -565,6 +579,7 @@ export default function Recommend() {
         <details className="more-info">
           <summary>순이익은 어떻게 계산하나요?</summary>
           순이익(마진) = 월별 출하량 × 도매시장 월별 예상가 − 총경영비(전국 평균 경영비 + 임대료) · 수량·경영비·가격 수준은 농촌진흥청 2024년 농산물소득조사 10a당 전국 평균 · "추정" 표시는 공식 통계가 아닌 추정값
+          <br />수확한 지역 안의 도매시장에서 판다고 가정하고 운송비·유통 마진은 빼요. 수확이 멀수록 예측 오차가 커져요 (107품목 평균 검증 오차: {averageText()}). 경영비는 전국 평균이라 내 농가와 다를 수 있어요.
         </details>
       </div>
       <div className="tabs" role="tablist">
@@ -576,13 +591,6 @@ export default function Recommend() {
       ) : (
         <CropInfo crop={crop} setCrop={(c) => set({ crop: c })} form={form} goLand={() => { set({ tab: "land" }); top(); }} />
       )}
-      <div className="banner small">
-        ⚠️
-        <div>
-          <b>계산 기준</b> · 수확한 지역 안의 도매시장에서 판다고 가정하고, 운송비와 유통 마진은 계산하지 않아요.
-          수확이 멀수록 가격 예측 오차가 커져요 (107품목 평균 검증 오차: {averageText()}). 6개월보다 먼 수확은 모델 검증 범위 밖이라 오차를 더 넓게 잡고 참고용으로 봐 주세요. 경영비는 전국 평균이라 내 농가와 다를 수 있어요. 마진은 참고용으로 보고 재배 경험·시설 조건·출하처를 함께 따져 보세요.
-        </div>
-      </div>
     </div>
   );
 }

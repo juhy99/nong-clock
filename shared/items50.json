@@ -1,0 +1,2737 @@
+{
+ "_about": "품목 50개 × 세부 품종(예측 단위 326개). 팀 자료 '50품목_예측단위_v3' 기준 (2026-11-06). kind: named=이름 있는 품종 · type=유형 묶음 · other=품종 이름 없는 물량을 철·산지로 나눈 것. share=품목 안 물량 비중(%). code=기존 107품목 코드. [샘플] 화면 확인용",
+ "items": [
+  {
+   "rank": 1,
+   "name": "양파",
+   "code": "onion",
+   "category": "조미채소류",
+   "emoji": "🧅",
+   "varieties": [
+    {
+     "id": "onion-1",
+     "unit": "양파 저장",
+     "label": "저장",
+     "kind": "named",
+     "share": 20.2
+    },
+    {
+     "id": "onion-2",
+     "unit": "양파(기타·봄 전남)",
+     "label": "기타 (봄 · 전남)",
+     "kind": "other",
+     "share": 17.6
+    },
+    {
+     "id": "onion-3",
+     "unit": "양파(기타·여름 전남)",
+     "label": "기타 (여름 · 전남)",
+     "kind": "other",
+     "share": 14.8
+    },
+    {
+     "id": "onion-4",
+     "unit": "양파 만생",
+     "label": "만생",
+     "kind": "named",
+     "share": 13.5
+    },
+    {
+     "id": "onion-5",
+     "unit": "양파(기타·가을 경남)",
+     "label": "기타 (가을 · 경남)",
+     "kind": "other",
+     "share": 10.5
+    },
+    {
+     "id": "onion-6",
+     "unit": "양파 조생",
+     "label": "조생",
+     "kind": "named",
+     "share": 10.0
+    },
+    {
+     "id": "onion-7",
+     "unit": "양파(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 9.1
+    },
+    {
+     "id": "onion-8",
+     "unit": "양파 중생",
+     "label": "중생",
+     "kind": "named",
+     "share": 2.9
+    },
+    {
+     "id": "onion-9",
+     "unit": "양파 자주",
+     "label": "자주",
+     "kind": "named",
+     "share": 1.1
+    },
+    {
+     "id": "onion-10",
+     "unit": "양파 중만생",
+     "label": "중만생",
+     "kind": "named",
+     "share": 0.3
+    }
+   ]
+  },
+  {
+   "rank": 2,
+   "name": "무",
+   "code": "radish",
+   "category": "근채류",
+   "emoji": "🌱",
+   "varieties": [
+    {
+     "id": "radish-1",
+     "unit": "무 월동",
+     "label": "월동",
+     "kind": "named",
+     "share": 13.3
+    },
+    {
+     "id": "radish-2",
+     "unit": "무 고냉지",
+     "label": "고냉지",
+     "kind": "named",
+     "share": 11.8
+    },
+    {
+     "id": "radish-3",
+     "unit": "무(기타·겨울 제주)",
+     "label": "기타 (겨울 · 제주)",
+     "kind": "other",
+     "share": 11.4
+    },
+    {
+     "id": "radish-4",
+     "unit": "무(기타·봄 제주)",
+     "label": "기타 (봄 · 제주)",
+     "kind": "other",
+     "share": 11.3
+    },
+    {
+     "id": "radish-5",
+     "unit": "무(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 10.6
+    },
+    {
+     "id": "radish-6",
+     "unit": "무 가을",
+     "label": "가을",
+     "kind": "named",
+     "share": 9.3
+    },
+    {
+     "id": "radish-7",
+     "unit": "무 봄",
+     "label": "봄",
+     "kind": "named",
+     "share": 9.3
+    },
+    {
+     "id": "radish-8",
+     "unit": "무 저장",
+     "label": "저장",
+     "kind": "named",
+     "share": 8.2
+    },
+    {
+     "id": "radish-9",
+     "unit": "무(기타·여름 강원)",
+     "label": "기타 (여름 · 강원)",
+     "kind": "other",
+     "share": 8.0
+    },
+    {
+     "id": "radish-10",
+     "unit": "무 여름",
+     "label": "여름",
+     "kind": "named",
+     "share": 6.8
+    },
+    {
+     "id": "radish-11",
+     "unit": "무 말랭이",
+     "label": "말랭이",
+     "kind": "named",
+     "share": 0.0
+    },
+    {
+     "id": "radish-12",
+     "unit": "무 단지",
+     "label": "단지",
+     "kind": "named",
+     "share": 0.0
+    },
+    {
+     "id": "radish-13",
+     "unit": "무 자색",
+     "label": "자색",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 3,
+   "name": "배추",
+   "code": "napa_cabbage",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "napa_cabbage-1",
+     "unit": "배추 김장(가을",
+     "label": "김장(가을)",
+     "kind": "named",
+     "share": 20.0
+    },
+    {
+     "id": "napa_cabbage-2",
+     "unit": "배추 월동",
+     "label": "월동",
+     "kind": "named",
+     "share": 12.6
+    },
+    {
+     "id": "napa_cabbage-3",
+     "unit": "배추 봄",
+     "label": "봄",
+     "kind": "named",
+     "share": 10.7
+    },
+    {
+     "id": "napa_cabbage-4",
+     "unit": "배추 고냉지",
+     "label": "고냉지",
+     "kind": "named",
+     "share": 10.0
+    },
+    {
+     "id": "napa_cabbage-5",
+     "unit": "배추 쌈",
+     "label": "쌈",
+     "kind": "named",
+     "share": 9.5
+    },
+    {
+     "id": "napa_cabbage-6",
+     "unit": "배추(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 8.5
+    },
+    {
+     "id": "napa_cabbage-7",
+     "unit": "배추 저장",
+     "label": "저장",
+     "kind": "named",
+     "share": 7.5
+    },
+    {
+     "id": "napa_cabbage-8",
+     "unit": "배추 여름",
+     "label": "여름",
+     "kind": "named",
+     "share": 5.4
+    },
+    {
+     "id": "napa_cabbage-9",
+     "unit": "배추(기타·겨울 전남)",
+     "label": "기타 (겨울 · 전남)",
+     "kind": "other",
+     "share": 4.7
+    },
+    {
+     "id": "napa_cabbage-10",
+     "unit": "배추(기타·여름 강원)",
+     "label": "기타 (여름 · 강원)",
+     "kind": "other",
+     "share": 4.4
+    },
+    {
+     "id": "napa_cabbage-11",
+     "unit": "배추(기타·봄 전남)",
+     "label": "기타 (봄 · 전남)",
+     "kind": "other",
+     "share": 3.5
+    },
+    {
+     "id": "napa_cabbage-12",
+     "unit": "배추 절임",
+     "label": "절임",
+     "kind": "named",
+     "share": 3.1
+    },
+    {
+     "id": "napa_cabbage-13",
+     "unit": "배추 우거지",
+     "label": "우거지",
+     "kind": "named",
+     "share": 0.1
+    },
+    {
+     "id": "napa_cabbage-14",
+     "unit": "배추 뿌리",
+     "label": "뿌리",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 4,
+   "name": "사과",
+   "code": "apple",
+   "category": "과일류",
+   "emoji": "🍎",
+   "varieties": [
+    {
+     "id": "apple-1",
+     "unit": "사과(부사(후지계))",
+     "label": "부사(후지계)",
+     "kind": "type",
+     "share": 65.7
+    },
+    {
+     "id": "apple-2",
+     "unit": "사과 홍로",
+     "label": "홍로",
+     "kind": "named",
+     "share": 16.3
+    },
+    {
+     "id": "apple-3",
+     "unit": "사과(기타·가을 경북)",
+     "label": "기타 (가을 · 경북)",
+     "kind": "other",
+     "share": 4.1
+    },
+    {
+     "id": "apple-4",
+     "unit": "사과 아오리",
+     "label": "아오리",
+     "kind": "named",
+     "share": 3.0
+    },
+    {
+     "id": "apple-5",
+     "unit": "사과 시나노골드",
+     "label": "시나노골드",
+     "kind": "named",
+     "share": 1.9
+    },
+    {
+     "id": "apple-6",
+     "unit": "사과(기타·여름 경북)",
+     "label": "기타 (여름 · 경북)",
+     "kind": "other",
+     "share": 1.9
+    },
+    {
+     "id": "apple-7",
+     "unit": "사과(기타·겨울 경북)",
+     "label": "기타 (겨울 · 경북)",
+     "kind": "other",
+     "share": 1.7
+    },
+    {
+     "id": "apple-8",
+     "unit": "사과 감홍",
+     "label": "감홍",
+     "kind": "named",
+     "share": 1.7
+    },
+    {
+     "id": "apple-9",
+     "unit": "사과 아리수",
+     "label": "아리수",
+     "kind": "named",
+     "share": 1.1
+    },
+    {
+     "id": "apple-10",
+     "unit": "사과(기타·봄 경북)",
+     "label": "기타 (봄 · 경북)",
+     "kind": "other",
+     "share": 1.0
+    },
+    {
+     "id": "apple-11",
+     "unit": "사과 양광",
+     "label": "양광",
+     "kind": "named",
+     "share": 1.0
+    },
+    {
+     "id": "apple-12",
+     "unit": "사과 시나노스위트",
+     "label": "시나노스위트",
+     "kind": "named",
+     "share": 0.7
+    }
+   ]
+  },
+  {
+   "rank": 5,
+   "name": "오이",
+   "code": "cucumber",
+   "category": "과채류",
+   "emoji": "🥒",
+   "varieties": [
+    {
+     "id": "cucumber-1",
+     "unit": "오이 백다다기",
+     "label": "백다다기",
+     "kind": "named",
+     "share": 71.0
+    },
+    {
+     "id": "cucumber-2",
+     "unit": "오이 가시",
+     "label": "가시",
+     "kind": "named",
+     "share": 16.4
+    },
+    {
+     "id": "cucumber-3",
+     "unit": "오이 취청",
+     "label": "취청",
+     "kind": "named",
+     "share": 10.7
+    },
+    {
+     "id": "cucumber-4",
+     "unit": "오이 노각",
+     "label": "노각",
+     "kind": "named",
+     "share": 1.8
+    },
+    {
+     "id": "cucumber-5",
+     "unit": "오이 청노각(가격대 따로)",
+     "label": "청노각",
+     "kind": "named",
+     "share": 0.1
+    },
+    {
+     "id": "cucumber-6",
+     "unit": "오이 피클",
+     "label": "피클",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 6,
+   "name": "양배추",
+   "code": "cabbage",
+   "category": "엽경채류",
+   "emoji": "🥗",
+   "varieties": [
+    {
+     "id": "cabbage-1",
+     "unit": "양배추(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 25.8
+    },
+    {
+     "id": "cabbage-2",
+     "unit": "양배추(기타·여름 강원)",
+     "label": "기타 (여름 · 강원)",
+     "kind": "other",
+     "share": 25.0
+    },
+    {
+     "id": "cabbage-3",
+     "unit": "양배추(기타·봄 제주)",
+     "label": "기타 (봄 · 제주)",
+     "kind": "other",
+     "share": 24.6
+    },
+    {
+     "id": "cabbage-4",
+     "unit": "양배추(기타·겨울 제주)",
+     "label": "기타 (겨울 · 제주)",
+     "kind": "other",
+     "share": 24.6
+    }
+   ]
+  },
+  {
+   "rank": 7,
+   "name": "대파",
+   "code": "green_onion",
+   "category": "조미채소류",
+   "emoji": "🌿",
+   "varieties": [
+    {
+     "id": "green_onion-1",
+     "unit": "대파(기타·봄 전남)",
+     "label": "기타 (봄 · 전남)",
+     "kind": "other",
+     "share": 26.4
+    },
+    {
+     "id": "green_onion-2",
+     "unit": "대파(기타·겨울 전남)",
+     "label": "기타 (겨울 · 전남)",
+     "kind": "other",
+     "share": 25.7
+    },
+    {
+     "id": "green_onion-3",
+     "unit": "대파(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 25.5
+    },
+    {
+     "id": "green_onion-4",
+     "unit": "대파(기타·여름 경기)",
+     "label": "기타 (여름 · 경기)",
+     "kind": "other",
+     "share": 22.4
+    }
+   ]
+  },
+  {
+   "rank": 8,
+   "name": "감자",
+   "code": "potato",
+   "category": "서류",
+   "emoji": "🥔",
+   "varieties": [
+    {
+     "id": "potato-1",
+     "unit": "감자 수미",
+     "label": "수미",
+     "kind": "named",
+     "share": 30.0
+    },
+    {
+     "id": "potato-2",
+     "unit": "감자(기타·여름 강원)",
+     "label": "기타 (여름 · 강원)",
+     "kind": "other",
+     "share": 17.8
+    },
+    {
+     "id": "potato-3",
+     "unit": "감자(기타·봄 전북)",
+     "label": "기타 (봄 · 전북)",
+     "kind": "other",
+     "share": 14.8
+    },
+    {
+     "id": "potato-4",
+     "unit": "감자 두백",
+     "label": "두백",
+     "kind": "named",
+     "share": 12.2
+    },
+    {
+     "id": "potato-5",
+     "unit": "감자(기타·겨울 강원)",
+     "label": "기타 (겨울 · 강원)",
+     "kind": "other",
+     "share": 10.8
+    },
+    {
+     "id": "potato-6",
+     "unit": "감자(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 10.5
+    },
+    {
+     "id": "potato-7",
+     "unit": "감자 대지",
+     "label": "대지",
+     "kind": "named",
+     "share": 2.5
+    },
+    {
+     "id": "potato-8",
+     "unit": "감자 자주",
+     "label": "자주",
+     "kind": "named",
+     "share": 1.0
+    },
+    {
+     "id": "potato-9",
+     "unit": "감자 홍",
+     "label": "홍",
+     "kind": "named",
+     "share": 0.3
+    },
+    {
+     "id": "potato-10",
+     "unit": "감자 돼지",
+     "label": "돼지",
+     "kind": "named",
+     "share": 0.1
+    },
+    {
+     "id": "potato-11",
+     "unit": "감자 홍깨니백",
+     "label": "홍깨니백",
+     "kind": "named",
+     "share": 0.0
+    },
+    {
+     "id": "potato-12",
+     "unit": "감자 남작",
+     "label": "남작",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 9,
+   "name": "수박",
+   "code": "watermelon",
+   "category": "과채류",
+   "emoji": "🍉",
+   "varieties": [
+    {
+     "id": "watermelon-1",
+     "unit": "수박(기타·여름 충북)",
+     "label": "기타 (여름 · 충북)",
+     "kind": "other",
+     "share": 68.5
+    },
+    {
+     "id": "watermelon-2",
+     "unit": "수박(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 20.3
+    },
+    {
+     "id": "watermelon-3",
+     "unit": "수박(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 6.1
+    },
+    {
+     "id": "watermelon-4",
+     "unit": "수박 꿀",
+     "label": "꿀",
+     "kind": "named",
+     "share": 2.9
+    },
+    {
+     "id": "watermelon-5",
+     "unit": "수박 흑",
+     "label": "흑",
+     "kind": "named",
+     "share": 1.8
+    },
+    {
+     "id": "watermelon-6",
+     "unit": "수박 애플",
+     "label": "애플",
+     "kind": "named",
+     "share": 0.3
+    }
+   ]
+  },
+  {
+   "rank": 10,
+   "name": "감귤",
+   "code": "mandarin",
+   "category": "과일류",
+   "emoji": "🍊",
+   "varieties": [
+    {
+     "id": "mandarin-1",
+     "unit": "감귤 조생귤",
+     "label": "조생귤",
+     "kind": "named",
+     "share": 49.6
+    },
+    {
+     "id": "mandarin-2",
+     "unit": "감귤(기타·겨울 제주)",
+     "label": "기타 (겨울 · 제주)",
+     "kind": "other",
+     "share": 10.9
+    },
+    {
+     "id": "mandarin-3",
+     "unit": "감귤 극조생",
+     "label": "극조생",
+     "kind": "named",
+     "share": 9.0
+    },
+    {
+     "id": "mandarin-4",
+     "unit": "감귤 하우스",
+     "label": "하우스",
+     "kind": "named",
+     "share": 8.5
+    },
+    {
+     "id": "mandarin-5",
+     "unit": "감귤(기타·가을 제주)",
+     "label": "기타 (가을 · 제주)",
+     "kind": "other",
+     "share": 7.7
+    },
+    {
+     "id": "mandarin-6",
+     "unit": "감귤 천혜향",
+     "label": "천혜향",
+     "kind": "named",
+     "share": 6.2
+    },
+    {
+     "id": "mandarin-7",
+     "unit": "감귤 비가림",
+     "label": "비가림",
+     "kind": "named",
+     "share": 3.3
+    },
+    {
+     "id": "mandarin-8",
+     "unit": "감귤 레드향",
+     "label": "레드향",
+     "kind": "named",
+     "share": 2.4
+    },
+    {
+     "id": "mandarin-9",
+     "unit": "감귤 황금향",
+     "label": "황금향",
+     "kind": "named",
+     "share": 1.3
+    },
+    {
+     "id": "mandarin-10",
+     "unit": "감귤(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 0.5
+    },
+    {
+     "id": "mandarin-11",
+     "unit": "감귤 카라향",
+     "label": "카라향",
+     "kind": "named",
+     "share": 0.4
+    },
+    {
+     "id": "mandarin-12",
+     "unit": "감귤 중생귤",
+     "label": "중생귤",
+     "kind": "named",
+     "share": 0.3
+    }
+   ]
+  },
+  {
+   "rank": 11,
+   "name": "호박",
+   "code": "squash",
+   "category": "과채류",
+   "emoji": "🎃",
+   "varieties": [
+    {
+     "id": "squash-1",
+     "unit": "호박 애",
+     "label": "애",
+     "kind": "named",
+     "share": 66.5
+    },
+    {
+     "id": "squash-2",
+     "unit": "호박 쥬키니",
+     "label": "쥬키니",
+     "kind": "named",
+     "share": 17.2
+    },
+    {
+     "id": "squash-3",
+     "unit": "호박 단",
+     "label": "단",
+     "kind": "named",
+     "share": 11.1
+    },
+    {
+     "id": "squash-4",
+     "unit": "호박 풋",
+     "label": "풋",
+     "kind": "named",
+     "share": 3.2
+    },
+    {
+     "id": "squash-5",
+     "unit": "호박 늙은",
+     "label": "늙은",
+     "kind": "named",
+     "share": 1.3
+    },
+    {
+     "id": "squash-6",
+     "unit": "호박 미니밤",
+     "label": "미니밤",
+     "kind": "named",
+     "share": 0.7
+    },
+    {
+     "id": "squash-7",
+     "unit": "호박 고지",
+     "label": "고지",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 12,
+   "name": "고구마",
+   "code": "sweet_potato",
+   "category": "서류",
+   "emoji": "🍠",
+   "varieties": [
+    {
+     "id": "sweet_potato-1",
+     "unit": "고구마 밤",
+     "label": "밤",
+     "kind": "named",
+     "share": 31.3
+    },
+    {
+     "id": "sweet_potato-2",
+     "unit": "고구마 호박",
+     "label": "호박",
+     "kind": "named",
+     "share": 29.7
+    },
+    {
+     "id": "sweet_potato-3",
+     "unit": "고구마(기타·가을 전북)",
+     "label": "기타 (가을 · 전북)",
+     "kind": "other",
+     "share": 11.8
+    },
+    {
+     "id": "sweet_potato-4",
+     "unit": "고구마(기타·겨울 전남)",
+     "label": "기타 (겨울 · 전남)",
+     "kind": "other",
+     "share": 11.6
+    },
+    {
+     "id": "sweet_potato-5",
+     "unit": "고구마(기타·봄 전남)",
+     "label": "기타 (봄 · 전남)",
+     "kind": "other",
+     "share": 9.1
+    },
+    {
+     "id": "sweet_potato-6",
+     "unit": "고구마(기타·여름 전남)",
+     "label": "기타 (여름 · 전남)",
+     "kind": "other",
+     "share": 5.7
+    },
+    {
+     "id": "sweet_potato-7",
+     "unit": "고구마 붉은",
+     "label": "붉은",
+     "kind": "named",
+     "share": 0.9
+    }
+   ]
+  },
+  {
+   "rank": 13,
+   "name": "토마토",
+   "code": "tomato",
+   "category": "과채류",
+   "emoji": "🍅",
+   "varieties": [
+    {
+     "id": "tomato-1",
+     "unit": "토마토 완숙",
+     "label": "완숙",
+     "kind": "named",
+     "share": 32.5
+    },
+    {
+     "id": "tomato-2",
+     "unit": "토마토(기타·봄 부산)",
+     "label": "기타 (봄 · 부산)",
+     "kind": "other",
+     "share": 22.4
+    },
+    {
+     "id": "tomato-3",
+     "unit": "토마토(기타·여름 강원)",
+     "label": "기타 (여름 · 강원)",
+     "kind": "other",
+     "share": 19.7
+    },
+    {
+     "id": "tomato-4",
+     "unit": "토마토(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 11.6
+    },
+    {
+     "id": "tomato-5",
+     "unit": "토마토(기타·겨울 전남)",
+     "label": "기타 (겨울 · 전남)",
+     "kind": "other",
+     "share": 9.8
+    },
+    {
+     "id": "tomato-6",
+     "unit": "토마토 찰",
+     "label": "찰",
+     "kind": "named",
+     "share": 2.3
+    },
+    {
+     "id": "tomato-7",
+     "unit": "토마토 대저",
+     "label": "대저",
+     "kind": "named",
+     "share": 1.8
+    }
+   ]
+  },
+  {
+   "rank": 14,
+   "name": "포도",
+   "code": "grape",
+   "category": "과일류",
+   "emoji": "🍇",
+   "varieties": [
+    {
+     "id": "grape-1",
+     "unit": "포도 샤인마스캇",
+     "label": "샤인마스캇",
+     "kind": "named",
+     "share": 68.2
+    },
+    {
+     "id": "grape-2",
+     "unit": "포도 캠벨얼리",
+     "label": "캠벨얼리",
+     "kind": "named",
+     "share": 18.4
+    },
+    {
+     "id": "grape-3",
+     "unit": "포도 거봉",
+     "label": "거봉",
+     "kind": "named",
+     "share": 7.0
+    },
+    {
+     "id": "grape-4",
+     "unit": "포도 마스캇베리에이",
+     "label": "마스캇베리에이",
+     "kind": "named",
+     "share": 6.2
+    },
+    {
+     "id": "grape-5",
+     "unit": "포도 델라웨어",
+     "label": "델라웨어",
+     "kind": "named",
+     "share": 0.2
+    }
+   ]
+  },
+  {
+   "rank": 15,
+   "name": "얼갈이배추",
+   "code": "young_napa_cabbage",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "young_napa_cabbage-1",
+     "unit": "얼갈이배추 얼갈이배추",
+     "label": "일반",
+     "kind": "named",
+     "share": 56.2
+    },
+    {
+     "id": "young_napa_cabbage-2",
+     "unit": "얼갈이배추 알배기",
+     "label": "알배기",
+     "kind": "named",
+     "share": 43.8
+    }
+   ]
+  },
+  {
+   "rank": 16,
+   "name": "배",
+   "code": "pear",
+   "category": "과일류",
+   "emoji": "🍐",
+   "varieties": [
+    {
+     "id": "pear-1",
+     "unit": "배 신고",
+     "label": "신고",
+     "kind": "named",
+     "share": 92.0
+    },
+    {
+     "id": "pear-2",
+     "unit": "배 원황",
+     "label": "원황",
+     "kind": "named",
+     "share": 5.2
+    },
+    {
+     "id": "pear-3",
+     "unit": "배 화산",
+     "label": "화산",
+     "kind": "named",
+     "share": 2.0
+    },
+    {
+     "id": "pear-4",
+     "unit": "배 추황",
+     "label": "추황",
+     "kind": "named",
+     "share": 0.6
+    },
+    {
+     "id": "pear-5",
+     "unit": "배 창조",
+     "label": "창조",
+     "kind": "named",
+     "share": 0.2
+    },
+    {
+     "id": "pear-6",
+     "unit": "배 수황",
+     "label": "수황",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 17,
+   "name": "풋고추",
+   "code": "green_chili",
+   "category": "조미채소류",
+   "emoji": "🌶️",
+   "varieties": [
+    {
+     "id": "green_chili-1",
+     "unit": "풋고추 청양",
+     "label": "청양",
+     "kind": "named",
+     "share": 71.7
+    },
+    {
+     "id": "green_chili-2",
+     "unit": "풋고추 오이고추",
+     "label": "오이고추",
+     "kind": "named",
+     "share": 23.0
+    },
+    {
+     "id": "green_chili-3",
+     "unit": "풋고추 롱그린",
+     "label": "롱그린",
+     "kind": "named",
+     "share": 3.6
+    },
+    {
+     "id": "green_chili-4",
+     "unit": "풋고추 아삭이",
+     "label": "아삭이",
+     "kind": "named",
+     "share": 1.2
+    },
+    {
+     "id": "green_chili-5",
+     "unit": "풋고추 청홍",
+     "label": "청홍",
+     "kind": "named",
+     "share": 0.5
+    },
+    {
+     "id": "green_chili-6",
+     "unit": "풋고추 가지고추",
+     "label": "가지고추",
+     "kind": "named",
+     "share": 0.0
+    },
+    {
+     "id": "green_chili-7",
+     "unit": "풋고추 절임용고추",
+     "label": "절임용고추",
+     "kind": "named",
+     "share": 0.0
+    },
+    {
+     "id": "green_chili-8",
+     "unit": "풋고추 광복",
+     "label": "광복",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 18,
+   "name": "참외",
+   "code": "korean_melon",
+   "category": "과채류",
+   "emoji": "🍈",
+   "varieties": [
+    {
+     "id": "korean_melon-1",
+     "unit": "참외 금싸라기",
+     "label": "금싸라기",
+     "kind": "named",
+     "share": 41.1
+    },
+    {
+     "id": "korean_melon-2",
+     "unit": "참외(기타·봄 경북)",
+     "label": "기타 (봄 · 경북)",
+     "kind": "other",
+     "share": 23.4
+    },
+    {
+     "id": "korean_melon-3",
+     "unit": "참외(기타·여름 경북)",
+     "label": "기타 (여름 · 경북)",
+     "kind": "other",
+     "share": 18.3
+    },
+    {
+     "id": "korean_melon-4",
+     "unit": "참외 오복",
+     "label": "오복",
+     "kind": "named",
+     "share": 10.8
+    },
+    {
+     "id": "korean_melon-5",
+     "unit": "참외 노랑",
+     "label": "노랑",
+     "kind": "named",
+     "share": 5.0
+    },
+    {
+     "id": "korean_melon-6",
+     "unit": "참외(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 1.4
+    }
+   ]
+  },
+  {
+   "rank": 19,
+   "name": "복숭아",
+   "code": "peach",
+   "category": "과일류",
+   "emoji": "🍑",
+   "varieties": [
+    {
+     "id": "peach-1",
+     "unit": "복숭아(백도)",
+     "label": "백도",
+     "kind": "type",
+     "share": 25.9
+    },
+    {
+     "id": "peach-2",
+     "unit": "복숭아(기타·여름 경북)",
+     "label": "기타 (여름 · 경북)",
+     "kind": "other",
+     "share": 25.0
+    },
+    {
+     "id": "peach-3",
+     "unit": "복숭아(황도)",
+     "label": "황도",
+     "kind": "type",
+     "share": 21.1
+    },
+    {
+     "id": "peach-4",
+     "unit": "복숭아(천도)",
+     "label": "천도",
+     "kind": "type",
+     "share": 19.5
+    },
+    {
+     "id": "peach-5",
+     "unit": "복숭아 털",
+     "label": "털",
+     "kind": "named",
+     "share": 4.2
+    },
+    {
+     "id": "peach-6",
+     "unit": "복숭아(기타·가을 충북)",
+     "label": "기타 (가을 · 충북)",
+     "kind": "other",
+     "share": 3.7
+    },
+    {
+     "id": "peach-7",
+     "unit": "복숭아 천봉(가격대 따로)",
+     "label": "천봉",
+     "kind": "named",
+     "share": 0.2
+    },
+    {
+     "id": "peach-8",
+     "unit": "복숭아 가납암",
+     "label": "가납암",
+     "kind": "named",
+     "share": 0.1
+    },
+    {
+     "id": "peach-9",
+     "unit": "복숭아(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 0.1
+    },
+    {
+     "id": "peach-10",
+     "unit": "복숭아 개",
+     "label": "개",
+     "kind": "named",
+     "share": 0.1
+    }
+   ]
+  },
+  {
+   "rank": 20,
+   "name": "당근",
+   "code": "carrot",
+   "category": "근채류",
+   "emoji": "🥕",
+   "varieties": [
+    {
+     "id": "carrot-1",
+     "unit": "당근(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 29.2
+    },
+    {
+     "id": "carrot-2",
+     "unit": "당근(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 24.5
+    },
+    {
+     "id": "carrot-3",
+     "unit": "당근(기타·겨울 제주)",
+     "label": "기타 (겨울 · 제주)",
+     "kind": "other",
+     "share": 24.3
+    },
+    {
+     "id": "carrot-4",
+     "unit": "당근(기타·여름 경남)",
+     "label": "기타 (여름 · 경남)",
+     "kind": "other",
+     "share": 22.0
+    }
+   ]
+  },
+  {
+   "rank": 21,
+   "name": "상추",
+   "code": "lettuce",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "lettuce-1",
+     "unit": "상추(청상추)",
+     "label": "청상추",
+     "kind": "type",
+     "share": 62.8
+    },
+    {
+     "id": "lettuce-2",
+     "unit": "상추(적상추)",
+     "label": "적상추",
+     "kind": "type",
+     "share": 37.2
+    }
+   ]
+  },
+  {
+   "rank": 22,
+   "name": "딸기",
+   "code": "strawberry",
+   "category": "과채류",
+   "emoji": "🍓",
+   "varieties": [
+    {
+     "id": "strawberry-1",
+     "unit": "딸기 설향",
+     "label": "설향",
+     "kind": "named",
+     "share": 83.8
+    },
+    {
+     "id": "strawberry-2",
+     "unit": "딸기 장희",
+     "label": "장희",
+     "kind": "named",
+     "share": 4.9
+    },
+    {
+     "id": "strawberry-3",
+     "unit": "딸기(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 3.8
+    },
+    {
+     "id": "strawberry-4",
+     "unit": "딸기(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 3.3
+    },
+    {
+     "id": "strawberry-5",
+     "unit": "딸기 금실",
+     "label": "금실",
+     "kind": "named",
+     "share": 2.9
+    },
+    {
+     "id": "strawberry-6",
+     "unit": "딸기 죽향",
+     "label": "죽향",
+     "kind": "named",
+     "share": 0.8
+    },
+    {
+     "id": "strawberry-7",
+     "unit": "딸기(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 0.2
+    },
+    {
+     "id": "strawberry-8",
+     "unit": "딸기 킹스베리",
+     "label": "킹스베리",
+     "kind": "named",
+     "share": 0.2
+    },
+    {
+     "id": "strawberry-9",
+     "unit": "딸기 매향",
+     "label": "매향",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 23,
+   "name": "방울토마토",
+   "code": "cherry_tomato",
+   "category": "과채류",
+   "emoji": "🍅",
+   "varieties": [
+    {
+     "id": "cherry_tomato-1",
+     "unit": "방울토마토 대추방울",
+     "label": "대추방울",
+     "kind": "named",
+     "share": 82.1
+    },
+    {
+     "id": "cherry_tomato-2",
+     "unit": "방울토마토 방울토마토",
+     "label": "일반",
+     "kind": "named",
+     "share": 17.9
+    }
+   ]
+  },
+  {
+   "rank": 24,
+   "name": "새송이버섯",
+   "code": "king_oyster_mushroom",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "varieties": [
+    {
+     "id": "king_oyster_mushroom-1",
+     "unit": "새송이(기타·겨울 경북)",
+     "label": "기타 (겨울 · 경북)",
+     "kind": "other",
+     "share": 28.5
+    },
+    {
+     "id": "king_oyster_mushroom-2",
+     "unit": "새송이(기타·봄 경북)",
+     "label": "기타 (봄 · 경북)",
+     "kind": "other",
+     "share": 25.2
+    },
+    {
+     "id": "king_oyster_mushroom-3",
+     "unit": "새송이(기타·가을 경북)",
+     "label": "기타 (가을 · 경북)",
+     "kind": "other",
+     "share": 23.5
+    },
+    {
+     "id": "king_oyster_mushroom-4",
+     "unit": "새송이(기타·여름 경북)",
+     "label": "기타 (여름 · 경북)",
+     "kind": "other",
+     "share": 22.8
+    }
+   ]
+  },
+  {
+   "rank": 25,
+   "name": "열무",
+   "code": "young_radish",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "young_radish-1",
+     "unit": "열무(기타·여름 경기)",
+     "label": "기타 (여름 · 경기)",
+     "kind": "other",
+     "share": 36.0
+    },
+    {
+     "id": "young_radish-2",
+     "unit": "열무(기타·봄 경기)",
+     "label": "기타 (봄 · 경기)",
+     "kind": "other",
+     "share": 35.6
+    },
+    {
+     "id": "young_radish-3",
+     "unit": "열무(기타·가을 경기)",
+     "label": "기타 (가을 · 경기)",
+     "kind": "other",
+     "share": 21.6
+    },
+    {
+     "id": "young_radish-4",
+     "unit": "열무(기타·겨울 경기)",
+     "label": "기타 (겨울 · 경기)",
+     "kind": "other",
+     "share": 6.9
+    }
+   ]
+  },
+  {
+   "rank": 26,
+   "name": "단감",
+   "code": "sweet_persimmon",
+   "category": "과일류",
+   "emoji": "🍏",
+   "varieties": [
+    {
+     "id": "sweet_persimmon-1",
+     "unit": "단감 부유",
+     "label": "부유",
+     "kind": "named",
+     "share": 62.6
+    },
+    {
+     "id": "sweet_persimmon-2",
+     "unit": "단감(기타·가을 경남)",
+     "label": "기타 (가을 · 경남)",
+     "kind": "other",
+     "share": 20.8
+    },
+    {
+     "id": "sweet_persimmon-3",
+     "unit": "단감 차랑",
+     "label": "차랑",
+     "kind": "named",
+     "share": 7.1
+    },
+    {
+     "id": "sweet_persimmon-4",
+     "unit": "단감(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 4.6
+    },
+    {
+     "id": "sweet_persimmon-5",
+     "unit": "단감 상서",
+     "label": "상서",
+     "kind": "named",
+     "share": 3.1
+    },
+    {
+     "id": "sweet_persimmon-6",
+     "unit": "단감 서촌",
+     "label": "서촌",
+     "kind": "named",
+     "share": 0.9
+    },
+    {
+     "id": "sweet_persimmon-7",
+     "unit": "단감 태추",
+     "label": "태추",
+     "kind": "named",
+     "share": 0.7
+    },
+    {
+     "id": "sweet_persimmon-8",
+     "unit": "단감(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 0.2
+    }
+   ]
+  },
+  {
+   "rank": 27,
+   "name": "부추",
+   "code": "chive",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "chive-1",
+     "unit": "부추(기타·봄 경기)",
+     "label": "기타 (봄 · 경기)",
+     "kind": "other",
+     "share": 28.6
+    },
+    {
+     "id": "chive-2",
+     "unit": "부추(기타·여름 경기)",
+     "label": "기타 (여름 · 경기)",
+     "kind": "other",
+     "share": 27.1
+    },
+    {
+     "id": "chive-3",
+     "unit": "부추(기타·가을 경기)",
+     "label": "기타 (가을 · 경기)",
+     "kind": "other",
+     "share": 22.9
+    },
+    {
+     "id": "chive-4",
+     "unit": "부추(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 21.5
+    },
+    {
+     "id": "chive-5",
+     "unit": "부추 호",
+     "label": "호",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 28,
+   "name": "가지",
+   "code": "eggplant",
+   "category": "과채류",
+   "emoji": "🍆",
+   "varieties": [
+    {
+     "id": "eggplant-1",
+     "unit": "가지(기타·여름 경기)",
+     "label": "기타 (여름 · 경기)",
+     "kind": "other",
+     "share": 40.8
+    },
+    {
+     "id": "eggplant-2",
+     "unit": "가지(기타·가을 경기)",
+     "label": "기타 (가을 · 경기)",
+     "kind": "other",
+     "share": 27.0
+    },
+    {
+     "id": "eggplant-3",
+     "unit": "가지(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 21.8
+    },
+    {
+     "id": "eggplant-4",
+     "unit": "가지(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 10.2
+    },
+    {
+     "id": "eggplant-5",
+     "unit": "가지 축양",
+     "label": "축양",
+     "kind": "named",
+     "share": 0.3
+    }
+   ]
+  },
+  {
+   "rank": 29,
+   "name": "마늘",
+   "code": "garlic",
+   "category": "조미채소류",
+   "emoji": "🧄",
+   "varieties": [
+    {
+     "id": "garlic-1",
+     "unit": "마늘(대서)",
+     "label": "대서",
+     "kind": "type",
+     "share": 41.4
+    },
+    {
+     "id": "garlic-2",
+     "unit": "마늘(남도)",
+     "label": "남도",
+     "kind": "type",
+     "share": 26.7
+    },
+    {
+     "id": "garlic-3",
+     "unit": "마늘 햇 대서(가격대 따로)",
+     "label": "햇 대서",
+     "kind": "named",
+     "share": 8.9
+    },
+    {
+     "id": "garlic-4",
+     "unit": "마늘 쫑",
+     "label": "쫑",
+     "kind": "named",
+     "share": 4.6
+    },
+    {
+     "id": "garlic-5",
+     "unit": "마늘(한지)",
+     "label": "한지",
+     "kind": "type",
+     "share": 4.5
+    },
+    {
+     "id": "garlic-6",
+     "unit": "마늘 풋",
+     "label": "풋",
+     "kind": "named",
+     "share": 3.2
+    },
+    {
+     "id": "garlic-7",
+     "unit": "마늘(기타·여름 충남)",
+     "label": "기타 (여름 · 충남)",
+     "kind": "other",
+     "share": 2.5
+    },
+    {
+     "id": "garlic-8",
+     "unit": "마늘 저장형 한지(가격대 따로)",
+     "label": "저장형 한지",
+     "kind": "named",
+     "share": 2.4
+    },
+    {
+     "id": "garlic-9",
+     "unit": "마늘 햇 한지",
+     "label": "햇 한지",
+     "kind": "named",
+     "share": 2.4
+    },
+    {
+     "id": "garlic-10",
+     "unit": "마늘(기타·봄 전남)",
+     "label": "기타 (봄 · 전남)",
+     "kind": "other",
+     "share": 1.8
+    },
+    {
+     "id": "garlic-11",
+     "unit": "마늘(기타·가을 전남)",
+     "label": "기타 (가을 · 전남)",
+     "kind": "other",
+     "share": 0.6
+    },
+    {
+     "id": "garlic-12",
+     "unit": "마늘(기타·겨울 전남)",
+     "label": "기타 (겨울 · 전남)",
+     "kind": "other",
+     "share": 0.4
+    },
+    {
+     "id": "garlic-13",
+     "unit": "마늘 저장형 대서",
+     "label": "저장형 대서",
+     "kind": "named",
+     "share": 0.3
+    },
+    {
+     "id": "garlic-14",
+     "unit": "마늘 저장형 남도",
+     "label": "저장형 남도",
+     "kind": "named",
+     "share": 0.1
+    },
+    {
+     "id": "garlic-15",
+     "unit": "마늘 쪽",
+     "label": "쪽",
+     "kind": "named",
+     "share": 0.1
+    },
+    {
+     "id": "garlic-16",
+     "unit": "마늘 간(갈은",
+     "label": "간(갈은)",
+     "kind": "named",
+     "share": 0.0
+    }
+   ]
+  },
+  {
+   "rank": 30,
+   "name": "시금치",
+   "code": "spinach",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "spinach-1",
+     "unit": "시금치(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 36.2
+    },
+    {
+     "id": "spinach-2",
+     "unit": "시금치(기타·봄 경기)",
+     "label": "기타 (봄 · 경기)",
+     "kind": "other",
+     "share": 26.9
+    },
+    {
+     "id": "spinach-3",
+     "unit": "시금치(기타·가을 경기)",
+     "label": "기타 (가을 · 경기)",
+     "kind": "other",
+     "share": 17.8
+    },
+    {
+     "id": "spinach-4",
+     "unit": "시금치(기타·여름 경기)",
+     "label": "기타 (여름 · 경기)",
+     "kind": "other",
+     "share": 7.8
+    },
+    {
+     "id": "spinach-5",
+     "unit": "시금치 포항초",
+     "label": "포항초",
+     "kind": "named",
+     "share": 6.0
+    },
+    {
+     "id": "spinach-6",
+     "unit": "시금치 섬초",
+     "label": "섬초",
+     "kind": "named",
+     "share": 5.4
+    }
+   ]
+  },
+  {
+   "rank": 31,
+   "name": "알타리무",
+   "code": "ponytail_radish",
+   "category": "근채류",
+   "emoji": "🥕",
+   "varieties": [
+    {
+     "id": "ponytail_radish-1",
+     "unit": "알타리무(기타·가을 충남)",
+     "label": "기타 (가을 · 충남)",
+     "kind": "other",
+     "share": 39.5
+    },
+    {
+     "id": "ponytail_radish-2",
+     "unit": "알타리무(기타·봄 전남)",
+     "label": "기타 (봄 · 전남)",
+     "kind": "other",
+     "share": 24.2
+    },
+    {
+     "id": "ponytail_radish-3",
+     "unit": "알타리무(기타·여름 충남)",
+     "label": "기타 (여름 · 충남)",
+     "kind": "other",
+     "share": 13.7
+    },
+    {
+     "id": "ponytail_radish-4",
+     "unit": "알타리무(기타·겨울 전남)",
+     "label": "기타 (겨울 · 전남)",
+     "kind": "other",
+     "share": 12.3
+    },
+    {
+     "id": "ponytail_radish-5",
+     "unit": "알타리무 초롱무",
+     "label": "초롱무",
+     "kind": "named",
+     "share": 10.3
+    }
+   ]
+  },
+  {
+   "rank": 32,
+   "name": "팽이버섯",
+   "code": "enoki_mushroom",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "varieties": [
+    {
+     "id": "enoki_mushroom-1",
+     "unit": "팽이버섯 팽이1호",
+     "label": "팽이1호",
+     "kind": "named",
+     "share": 85.9
+    },
+    {
+     "id": "enoki_mushroom-2",
+     "unit": "팽이버섯(기타·봄 경북)",
+     "label": "기타 (봄 · 경북)",
+     "kind": "other",
+     "share": 3.6
+    },
+    {
+     "id": "enoki_mushroom-3",
+     "unit": "팽이버섯(기타·겨울 경북)",
+     "label": "기타 (겨울 · 경북)",
+     "kind": "other",
+     "share": 3.6
+    },
+    {
+     "id": "enoki_mushroom-4",
+     "unit": "팽이버섯(기타·가을 경북)",
+     "label": "기타 (가을 · 경북)",
+     "kind": "other",
+     "share": 3.5
+    },
+    {
+     "id": "enoki_mushroom-5",
+     "unit": "팽이버섯(기타·여름 경북)",
+     "label": "기타 (여름 · 경북)",
+     "kind": "other",
+     "share": 3.5
+    },
+    {
+     "id": "enoki_mushroom-6",
+     "unit": "팽이버섯 황금송이",
+     "label": "황금송이",
+     "kind": "named",
+     "share": 0.1
+    }
+   ]
+  },
+  {
+   "rank": 33,
+   "name": "파프리카",
+   "code": "paprika",
+   "category": "양채류",
+   "emoji": "🫑",
+   "varieties": [
+    {
+     "id": "paprika-1",
+     "unit": "파프리카 빨강",
+     "label": "빨강",
+     "kind": "named",
+     "share": 52.2
+    },
+    {
+     "id": "paprika-2",
+     "unit": "파프리카 노랑",
+     "label": "노랑",
+     "kind": "named",
+     "share": 38.1
+    },
+    {
+     "id": "paprika-3",
+     "unit": "파프리카 오렌지",
+     "label": "오렌지",
+     "kind": "named",
+     "share": 2.5
+    },
+    {
+     "id": "paprika-4",
+     "unit": "파프리카(기타·겨울 강원)",
+     "label": "기타 (겨울 · 강원)",
+     "kind": "other",
+     "share": 1.9
+    },
+    {
+     "id": "paprika-5",
+     "unit": "파프리카(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 1.7
+    },
+    {
+     "id": "paprika-6",
+     "unit": "파프리카(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 1.4
+    },
+    {
+     "id": "paprika-7",
+     "unit": "파프리카(기타·여름 경남)",
+     "label": "기타 (여름 · 경남)",
+     "kind": "other",
+     "share": 1.2
+    },
+    {
+     "id": "paprika-8",
+     "unit": "파프리카 미니",
+     "label": "미니",
+     "kind": "named",
+     "share": 1.0
+    }
+   ]
+  },
+  {
+   "rank": 34,
+   "name": "쪽파",
+   "code": "scallion",
+   "category": "조미채소류",
+   "emoji": "🧄",
+   "varieties": [
+    {
+     "id": "scallion-1",
+     "unit": "쪽파(기타·가을 전남)",
+     "label": "기타 (가을 · 전남)",
+     "kind": "other",
+     "share": 41.3
+    },
+    {
+     "id": "scallion-2",
+     "unit": "쪽파(기타·봄 충남)",
+     "label": "기타 (봄 · 충남)",
+     "kind": "other",
+     "share": 27.1
+    },
+    {
+     "id": "scallion-3",
+     "unit": "쪽파(기타·겨울 전남)",
+     "label": "기타 (겨울 · 전남)",
+     "kind": "other",
+     "share": 19.3
+    },
+    {
+     "id": "scallion-4",
+     "unit": "쪽파(기타·여름 충남)",
+     "label": "기타 (여름 · 충남)",
+     "kind": "other",
+     "share": 12.3
+    }
+   ]
+  },
+  {
+   "rank": 35,
+   "name": "청경채",
+   "code": "bok_choy",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "bok_choy-1",
+     "unit": "청경채(기타·봄 경기)",
+     "label": "기타 (봄 · 경기)",
+     "kind": "other",
+     "share": 28.1
+    },
+    {
+     "id": "bok_choy-2",
+     "unit": "청경채(기타·가을 경기)",
+     "label": "기타 (가을 · 경기)",
+     "kind": "other",
+     "share": 24.5
+    },
+    {
+     "id": "bok_choy-3",
+     "unit": "청경채(기타·겨울 경기)",
+     "label": "기타 (겨울 · 경기)",
+     "kind": "other",
+     "share": 23.9
+    },
+    {
+     "id": "bok_choy-4",
+     "unit": "청경채(기타·여름 경기)",
+     "label": "기타 (여름 · 경기)",
+     "kind": "other",
+     "share": 23.5
+    }
+   ]
+  },
+  {
+   "rank": 36,
+   "name": "느타리버섯",
+   "code": "oyster_mushroom",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "varieties": [
+    {
+     "id": "oyster_mushroom-1",
+     "unit": "느타리버섯(기타·봄 경기)",
+     "label": "기타 (봄 · 경기)",
+     "kind": "other",
+     "share": 23.3
+    },
+    {
+     "id": "oyster_mushroom-2",
+     "unit": "느타리버섯(기타·겨울 경기)",
+     "label": "기타 (겨울 · 경기)",
+     "kind": "other",
+     "share": 22.3
+    },
+    {
+     "id": "oyster_mushroom-3",
+     "unit": "느타리버섯(기타·가을 경기)",
+     "label": "기타 (가을 · 경기)",
+     "kind": "other",
+     "share": 21.1
+    },
+    {
+     "id": "oyster_mushroom-4",
+     "unit": "느타리버섯(기타·여름 경기)",
+     "label": "기타 (여름 · 경기)",
+     "kind": "other",
+     "share": 20.0
+    },
+    {
+     "id": "oyster_mushroom-5",
+     "unit": "느타리버섯 애느타리",
+     "label": "애느타리",
+     "kind": "named",
+     "share": 13.4
+    }
+   ]
+  },
+  {
+   "rank": 37,
+   "name": "떫은감",
+   "code": "astringent_persimmon",
+   "category": "과일류",
+   "emoji": "🍏",
+   "varieties": [
+    {
+     "id": "astringent_persimmon-1",
+     "unit": "떫은감(대봉)",
+     "label": "대봉",
+     "kind": "type",
+     "share": 63.8
+    },
+    {
+     "id": "astringent_persimmon-2",
+     "unit": "떫은감(약시)",
+     "label": "약시",
+     "kind": "type",
+     "share": 25.1
+    },
+    {
+     "id": "astringent_persimmon-3",
+     "unit": "떫은감(반시)",
+     "label": "반시",
+     "kind": "type",
+     "share": 11.1
+    }
+   ]
+  },
+  {
+   "rank": 38,
+   "name": "양상추",
+   "code": "iceberg_lettuce",
+   "category": "양채류",
+   "emoji": "🥦",
+   "varieties": [
+    {
+     "id": "iceberg_lettuce-1",
+     "unit": "양상추(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 30.9
+    },
+    {
+     "id": "iceberg_lettuce-2",
+     "unit": "양상추(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 25.4
+    },
+    {
+     "id": "iceberg_lettuce-3",
+     "unit": "양상추(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 20.2
+    },
+    {
+     "id": "iceberg_lettuce-4",
+     "unit": "양상추(기타·여름 강원)",
+     "label": "기타 (여름 · 강원)",
+     "kind": "other",
+     "share": 18.0
+    },
+    {
+     "id": "iceberg_lettuce-5",
+     "unit": "양상추 샤니레타스",
+     "label": "샤니레타스",
+     "kind": "named",
+     "share": 5.3
+    },
+    {
+     "id": "iceberg_lettuce-6",
+     "unit": "양상추 생채",
+     "label": "생채",
+     "kind": "named",
+     "share": 0.1
+    }
+   ]
+  },
+  {
+   "rank": 39,
+   "name": "멜론",
+   "code": "melon",
+   "category": "과채류",
+   "emoji": "🍈",
+   "varieties": [
+    {
+     "id": "melon-1",
+     "unit": "메론 네트계",
+     "label": "네트계",
+     "kind": "named",
+     "share": 81.1
+    },
+    {
+     "id": "melon-2",
+     "unit": "메론(기타·여름 경남)",
+     "label": "기타 (여름 · 경남)",
+     "kind": "other",
+     "share": 5.8
+    },
+    {
+     "id": "melon-3",
+     "unit": "메론(기타·가을 충남)",
+     "label": "기타 (가을 · 충남)",
+     "kind": "other",
+     "share": 5.7
+    },
+    {
+     "id": "melon-4",
+     "unit": "메론 얼스계",
+     "label": "얼스계",
+     "kind": "named",
+     "share": 3.4
+    },
+    {
+     "id": "melon-5",
+     "unit": "메론(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 2.2
+    },
+    {
+     "id": "melon-6",
+     "unit": "메론(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 0.6
+    },
+    {
+     "id": "melon-7",
+     "unit": "메론 가야백자",
+     "label": "가야백자",
+     "kind": "named",
+     "share": 0.6
+    },
+    {
+     "id": "melon-8",
+     "unit": "메론 백피계",
+     "label": "백피계",
+     "kind": "named",
+     "share": 0.5
+    },
+    {
+     "id": "melon-9",
+     "unit": "메론 적육",
+     "label": "적육",
+     "kind": "named",
+     "share": 0.1
+    }
+   ]
+  },
+  {
+   "rank": 40,
+   "name": "깻잎",
+   "code": "perilla_leaf",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "perilla_leaf-1",
+     "unit": "깻잎(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 27.2
+    },
+    {
+     "id": "perilla_leaf-2",
+     "unit": "깻잎(기타·여름 충남)",
+     "label": "기타 (여름 · 충남)",
+     "kind": "other",
+     "share": 26.9
+    },
+    {
+     "id": "perilla_leaf-3",
+     "unit": "깻잎(기타·가을 경남)",
+     "label": "기타 (가을 · 경남)",
+     "kind": "other",
+     "share": 25.1
+    },
+    {
+     "id": "perilla_leaf-4",
+     "unit": "깻잎(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 20.8
+    }
+   ]
+  },
+  {
+   "rank": 41,
+   "name": "미나리",
+   "code": "water_parsley",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "water_parsley-1",
+     "unit": "미나리 돌",
+     "label": "돌",
+     "kind": "named",
+     "share": 49.1
+    },
+    {
+     "id": "water_parsley-2",
+     "unit": "미나리(기타·봄 전북)",
+     "label": "기타 (봄 · 전북)",
+     "kind": "other",
+     "share": 20.6
+    },
+    {
+     "id": "water_parsley-3",
+     "unit": "미나리(기타·겨울 전북)",
+     "label": "기타 (겨울 · 전북)",
+     "kind": "other",
+     "share": 12.5
+    },
+    {
+     "id": "water_parsley-4",
+     "unit": "미나리(기타·가을 전북)",
+     "label": "기타 (가을 · 전북)",
+     "kind": "other",
+     "share": 9.3
+    },
+    {
+     "id": "water_parsley-5",
+     "unit": "미나리(기타·여름 경기)",
+     "label": "기타 (여름 · 경기)",
+     "kind": "other",
+     "share": 7.3
+    },
+    {
+     "id": "water_parsley-6",
+     "unit": "미나리 수경",
+     "label": "수경",
+     "kind": "named",
+     "share": 1.2
+    }
+   ]
+  },
+  {
+   "rank": 42,
+   "name": "자두",
+   "code": "plum",
+   "category": "과일류",
+   "emoji": "🍏",
+   "varieties": [
+    {
+     "id": "plum-1",
+     "unit": "자두 추희",
+     "label": "추희",
+     "kind": "named",
+     "share": 30.9
+    },
+    {
+     "id": "plum-2",
+     "unit": "자두(기타·여름 경북)",
+     "label": "기타 (여름 · 경북)",
+     "kind": "other",
+     "share": 22.3
+    },
+    {
+     "id": "plum-3",
+     "unit": "자두 대석",
+     "label": "대석",
+     "kind": "named",
+     "share": 14.7
+    },
+    {
+     "id": "plum-4",
+     "unit": "자두 후무사",
+     "label": "후무사",
+     "kind": "named",
+     "share": 14.1
+    },
+    {
+     "id": "plum-5",
+     "unit": "자두 도담",
+     "label": "도담",
+     "kind": "named",
+     "share": 12.5
+    },
+    {
+     "id": "plum-6",
+     "unit": "자두 홍",
+     "label": "홍",
+     "kind": "named",
+     "share": 4.7
+    },
+    {
+     "id": "plum-7",
+     "unit": "자두(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 0.9
+    }
+   ]
+  },
+  {
+   "rank": 43,
+   "name": "브로콜리",
+   "code": "broccoli",
+   "category": "양채류",
+   "emoji": "🥦",
+   "varieties": [
+    {
+     "id": "broccoli-1",
+     "unit": "브로코리(녹색꽃양배추)(기타·봄 제주)",
+     "label": "기타 (봄 · 제주)",
+     "kind": "other",
+     "share": 53.3
+    },
+    {
+     "id": "broccoli-2",
+     "unit": "브로코리(녹색꽃양배추)(기타·겨울 제주)",
+     "label": "기타 (겨울 · 제주)",
+     "kind": "other",
+     "share": 26.5
+    },
+    {
+     "id": "broccoli-3",
+     "unit": "브로코리(녹색꽃양배추)(기타·가을 제주)",
+     "label": "기타 (가을 · 제주)",
+     "kind": "other",
+     "share": 10.2
+    },
+    {
+     "id": "broccoli-4",
+     "unit": "브로코리(녹색꽃양배추)(기타·여름 강원)",
+     "label": "기타 (여름 · 강원)",
+     "kind": "other",
+     "share": 10.0
+    }
+   ]
+  },
+  {
+   "rank": 44,
+   "name": "옥수수",
+   "code": "corn",
+   "category": "잡곡",
+   "emoji": "🌽",
+   "varieties": [
+    {
+     "id": "corn-1",
+     "unit": "옥수수 찰",
+     "label": "찰",
+     "kind": "named",
+     "share": 65.2
+    },
+    {
+     "id": "corn-2",
+     "unit": "옥수수(기타·여름 충북)",
+     "label": "기타 (여름 · 충북)",
+     "kind": "other",
+     "share": 15.7
+    },
+    {
+     "id": "corn-3",
+     "unit": "옥수수 미백",
+     "label": "미백",
+     "kind": "named",
+     "share": 8.8
+    },
+    {
+     "id": "corn-4",
+     "unit": "옥수수 풋",
+     "label": "풋",
+     "kind": "named",
+     "share": 5.8
+    },
+    {
+     "id": "corn-5",
+     "unit": "옥수수 곡실",
+     "label": "곡실",
+     "kind": "named",
+     "share": 3.4
+    },
+    {
+     "id": "corn-6",
+     "unit": "옥수수(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 1.1
+    }
+   ]
+  },
+  {
+   "rank": 45,
+   "name": "만감",
+   "code": "hybrid_citrus",
+   "category": "과일류",
+   "emoji": "🍊",
+   "varieties": [
+    {
+     "id": "hybrid_citrus-1",
+     "unit": "만감 한라봉",
+     "label": "한라봉",
+     "kind": "named",
+     "share": 52.2
+    },
+    {
+     "id": "hybrid_citrus-2",
+     "unit": "만감(기타·겨울 제주)",
+     "label": "기타 (겨울 · 제주)",
+     "kind": "other",
+     "share": 26.6
+    },
+    {
+     "id": "hybrid_citrus-3",
+     "unit": "만감 천혜향",
+     "label": "천혜향",
+     "kind": "named",
+     "share": 8.0
+    },
+    {
+     "id": "hybrid_citrus-4",
+     "unit": "만감(기타·봄 제주)",
+     "label": "기타 (봄 · 제주)",
+     "kind": "other",
+     "share": 5.9
+    },
+    {
+     "id": "hybrid_citrus-5",
+     "unit": "만감 진지향",
+     "label": "진지향",
+     "kind": "named",
+     "share": 3.1
+    },
+    {
+     "id": "hybrid_citrus-6",
+     "unit": "만감 황금향",
+     "label": "황금향",
+     "kind": "named",
+     "share": 1.8
+    },
+    {
+     "id": "hybrid_citrus-7",
+     "unit": "만감 레드향",
+     "label": "레드향",
+     "kind": "named",
+     "share": 0.9
+    },
+    {
+     "id": "hybrid_citrus-8",
+     "unit": "만감 카라향",
+     "label": "카라향",
+     "kind": "named",
+     "share": 0.8
+    },
+    {
+     "id": "hybrid_citrus-9",
+     "unit": "만감(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 0.7
+    }
+   ]
+  },
+  {
+   "rank": 46,
+   "name": "꽈리고추",
+   "code": "shishito_pepper",
+   "category": "조미채소류",
+   "emoji": "🌶️",
+   "varieties": [
+    {
+     "id": "shishito_pepper-1",
+     "unit": "꽈리고추(기타·여름 경남)",
+     "label": "기타 (여름 · 경남)",
+     "kind": "other",
+     "share": 30.8
+    },
+    {
+     "id": "shishito_pepper-2",
+     "unit": "꽈리고추(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 27.6
+    },
+    {
+     "id": "shishito_pepper-3",
+     "unit": "꽈리고추(기타·가을 경남)",
+     "label": "기타 (가을 · 경남)",
+     "kind": "other",
+     "share": 23.5
+    },
+    {
+     "id": "shishito_pepper-4",
+     "unit": "꽈리고추(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 18.0
+    }
+   ]
+  },
+  {
+   "rank": 47,
+   "name": "표고버섯",
+   "code": "shiitake",
+   "category": "버섯류",
+   "emoji": "🍄",
+   "varieties": [
+    {
+     "id": "shiitake-1",
+     "unit": "표고버섯(기타·봄 충남)",
+     "label": "기타 (봄 · 충남)",
+     "kind": "other",
+     "share": 25.0
+    },
+    {
+     "id": "shiitake-2",
+     "unit": "표고버섯(기타·가을 충남)",
+     "label": "기타 (가을 · 충남)",
+     "kind": "other",
+     "share": 24.3
+    },
+    {
+     "id": "shiitake-3",
+     "unit": "표고버섯(기타·겨울 충남)",
+     "label": "기타 (겨울 · 충남)",
+     "kind": "other",
+     "share": 21.0
+    },
+    {
+     "id": "shiitake-4",
+     "unit": "표고버섯(기타·여름 충남)",
+     "label": "기타 (여름 · 충남)",
+     "kind": "other",
+     "share": 18.0
+    },
+    {
+     "id": "shiitake-5",
+     "unit": "표고버섯 생표고",
+     "label": "생표고",
+     "kind": "named",
+     "share": 11.6
+    }
+   ]
+  },
+  {
+   "rank": 48,
+   "name": "봄동배추",
+   "code": "bomdong",
+   "category": "엽경채류",
+   "emoji": "🥬",
+   "varieties": [
+    {
+     "id": "bomdong-1",
+     "unit": "봄동배추(기타·겨울 전남)",
+     "label": "기타 (겨울 · 전남)",
+     "kind": "other",
+     "share": 67.6
+    },
+    {
+     "id": "bomdong-2",
+     "unit": "봄동배추(기타·봄 전남)",
+     "label": "기타 (봄 · 전남)",
+     "kind": "other",
+     "share": 19.3
+    },
+    {
+     "id": "bomdong-3",
+     "unit": "봄동배추(기타·가을 전남)",
+     "label": "기타 (가을 · 전남)",
+     "kind": "other",
+     "share": 13.1
+    },
+    {
+     "id": "bomdong-4",
+     "unit": "봄동배추(기타·그 외 철)",
+     "label": "기타 (그 · 외 · 철)",
+     "kind": "other",
+     "share": 0.1
+    }
+   ]
+  },
+  {
+   "rank": 49,
+   "name": "피망",
+   "code": "bell_pepper",
+   "category": "양채류",
+   "emoji": "🫑",
+   "varieties": [
+    {
+     "id": "bell_pepper-1",
+     "unit": "피망(단고추)(청피망)",
+     "label": "청피망",
+     "kind": "type",
+     "share": 46.2
+    },
+    {
+     "id": "bell_pepper-2",
+     "unit": "피망(단고추)(기타·여름 강원)",
+     "label": "기타 (여름 · 강원)",
+     "kind": "other",
+     "share": 12.8
+    },
+    {
+     "id": "bell_pepper-3",
+     "unit": "피망(단고추)(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 11.3
+    },
+    {
+     "id": "bell_pepper-4",
+     "unit": "피망(단고추)(홍피망)",
+     "label": "홍피망",
+     "kind": "type",
+     "share": 11.2
+    },
+    {
+     "id": "bell_pepper-5",
+     "unit": "피망(단고추)(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 10.6
+    },
+    {
+     "id": "bell_pepper-6",
+     "unit": "피망(단고추)(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 7.9
+    }
+   ]
+  },
+  {
+   "rank": 50,
+   "name": "홍고추",
+   "code": "red_chili",
+   "category": "조미채소류",
+   "emoji": "🌶️",
+   "varieties": [
+    {
+     "id": "red_chili-1",
+     "unit": "홍고추(기타·여름 충북)",
+     "label": "기타 (여름 · 충북)",
+     "kind": "other",
+     "share": 50.8
+    },
+    {
+     "id": "red_chili-2",
+     "unit": "홍고추(기타·가을 강원)",
+     "label": "기타 (가을 · 강원)",
+     "kind": "other",
+     "share": 17.5
+    },
+    {
+     "id": "red_chili-3",
+     "unit": "홍고추(기타·봄 경남)",
+     "label": "기타 (봄 · 경남)",
+     "kind": "other",
+     "share": 12.5
+    },
+    {
+     "id": "red_chili-4",
+     "unit": "홍고추 홍청양",
+     "label": "홍청양",
+     "kind": "named",
+     "share": 11.3
+    },
+    {
+     "id": "red_chili-5",
+     "unit": "홍고추(기타·겨울 경남)",
+     "label": "기타 (겨울 · 경남)",
+     "kind": "other",
+     "share": 7.8
+    }
+   ]
+  }
+ ]
+}

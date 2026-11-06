@@ -1176,3 +1176,40 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 .core-feat .cf.ai .cf-side { padding-top: 34px; }
 .mini-fc { overflow: visible; }
 @media (max-width: 760px) { .core-feat .cf.ai .cf-side { padding-top: 0; } }
+
+/* 홈 두 카드: 5초마다 바뀜 */
+.cf-swap { animation: cf-in .55s ease both; }
+@keyframes cf-in { from { opacity: 0; transform: translateY(8px); } }
+.cf-when { font-weight: 800; } .cf-when.up { color: var(--up); } .cf-when.down { color: var(--down); }
+.cf-dots { display: flex; gap: 6px; margin-top: 4px; }
+.cf-dots button { width: 8px; height: 8px; border-radius: 999px; border: none; padding: 0; background: rgba(0,0,0,.15); cursor: pointer; transition: width .3s, background .3s; }
+.cf-dots button.on { width: 22px; background: var(--green); }
+.cf.rc .cf-dots button.on { background: #e39a2d; }
+.cf.rc .cf-dots { margin-top: 2px; }
+.cf-best.down { background: linear-gradient(135deg, #eef4ff, #dde9ff); border-color: #9fbcf3; animation-name: cf-glow-b; }
+@keyframes cf-glow-b { 50% { box-shadow: 0 0 0 4px rgba(47, 111, 228, .14); } }
+.cf-best.down .t small { color: #2b4f99; } .cf-best.down .t b { color: #1f55c4; }
+.mini-fc.down .pred { stroke: var(--down); }
+.mini-fc.down .best-dot { fill: var(--down); } .mini-fc.down .best-ring { stroke: var(--down); }
+.cf-stats.three div.on { outline: 2px solid var(--green); }
+.cf-land { display: flex; align-items: center; gap: 6px; }
+.cf-land span { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.7); color: #8a5300; transition: background .3s, color .3s; }
+.cf-land span.on { background: #e39a2d; color: #fff; }
+.cf-land small { font-size: 13px; color: #6b5a33; margin-left: 4px; }
+.cf-crops .bar i { transition: width .9s cubic-bezier(.2,.8,.2,1); }
+.cf-crops .v { flex-direction: row; gap: 6px; align-items: baseline; min-width: 96px; justify-content: flex-end; }
+.cf-crops .v b { font-size: 17px; color: #b56a00; } .cf-crops .v small { font-size: 13px; color: #6b5a33; }
+.cf-crops li.empty { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .cf-swap { animation: none; } .cf-crops .bar i { transition: none; } }
+.cf-live .cf-when { display: inline; font-size: inherit; }
+/* 부드럽게 바뀌기: 빠질 때 0.4초 흐려지며 위로, 들어올 때 0.8초 아래에서 떠오름 */
+.cf-swap { animation: cf-in .8s cubic-bezier(.22,.8,.3,1) both; transition: opacity .4s ease, transform .4s ease, filter .4s ease; }
+@keyframes cf-in { from { opacity: 0; transform: translateY(10px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+.cf.leaving .cf-swap { opacity: 0; transform: translateY(-8px); filter: blur(3px); }
+.cf-crops .bar i { transition: width 1.2s cubic-bezier(.22,.8,.3,1); }
+.cf-land span { transition: background .5s ease, color .5s ease; }
+.cf-dots button { transition: width .5s ease, background .5s ease; }
+.mini-fc .wipe { animation: mf-wipe 4.6s cubic-bezier(.3,.7,.3,1) both; }
+@keyframes mf-wipe { 0% { transform: scaleX(0); } 40%, 100% { transform: scaleX(1); } }
+.cf.leaving .cf-swap { animation: none; }
+.cf-crops .nm small { display: block; font-size: 12px; color: #6b5a33; font-weight: 400; }

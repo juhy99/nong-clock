@@ -36,6 +36,14 @@ export function isEmailTaken(email) {
   return usersDb.all().some((x) => x.email === email.trim().toLowerCase());
 }
 
+/** [중복 확인] 버튼: 이메일·닉네임이 이미 쓰이는지. spring 은 확인 API(GET /api/auth/check?email=|nickname=)가 생기면 연결 */
+export function checkDuplicate(kind, value) {
+  const v = value.trim().toLowerCase();
+  if (SPRING) return api.get("/api/auth/check", { params: { [kind]: value.trim() } }).then((r) => !!r.data?.taken, () => Promise.reject(new Error("중복 확인 서버가 아직 준비 중이에요")));
+  const taken = usersDb.all().some((x) => (kind === "email" ? x.email : (x.name ?? "").toLowerCase()) === v);
+  return fake(taken, 200);
+}
+
 /** 회원 유형 선택 없음: 모든 회원이 입찰·판매 가능 (farm_name 은 선택, 경매 판매자 이름으로 표시)
  * @param {{email, password, name, phone, region, farm_name?, marketing?: boolean}} form */
 export function signup(form) {

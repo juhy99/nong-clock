@@ -565,6 +565,7 @@ AI 가격예측 화면에서 품목·도매시장·예측 날짜(내일 ~ 1년 �
 | POST | `/api/auctions/{id}/bids` `{ "amount": 240000 }` | 입찰 (로그인 필요) | 경매 상세 | `placeBid` |
 | GET | `/api/me/bids` | 내 입찰 현황 | 마이페이지 | `getMyBids` |
 | POST | `/api/auth/signup` · `/api/auth/login` | 회원가입·로그인 | 회원가입·로그인 | `signup` · `login` |
+| GET | `/api/auth/check?email=` · `?nickname=` | 이메일·닉네임 중복 확인 `{ "taken": true }` | 회원가입 [중복 확인] | `checkDuplicate` |
 | GET | `/api/search?q=` | 통합 검색: 품목(별칭 포함)·경매·게시글·공지·뉴스 한 번에 | 헤더 검색 › 검색 결과 (`/search`) | `searchAll` |
 | GET | `/api/search/suggest?q=` | 자동완성 (종류마다 2~3개) | 헤더 검색창 | `suggest` |
 | GET | `/api/news?category=&item=&items=&q=&page=&size=` | 농업 뉴스 (최신순, 저장된 기사만) | 홈 헤드라인, 농업 뉴스 (`/news`), 검색 › 뉴스 | `getNews` |
@@ -618,9 +619,11 @@ AI 가격예측 화면에서 품목·도매시장·예측 날짜(내일 ~ 1년 �
 ### 2-3. 회원가입 요청 예시 (`POST /api/auth/signup`)
 
 ```json
-{ "email": "farmer@farmbid.kr", "password": "abcd1234", "name": "박농부",
-  "phone": "010-3333-4444", "region": "충남", "farm_name": "논산 햇살농장", "marketing": false }
+{ "email": "farmer@farmbid.kr", "password": "abcd1234", "nickname": "새싹농부",
+  "phone": "010-3333-4444", "region": "충남", "farm_name": "논산 햇살농장" }
 ```
+- **11-07 변경:** 약관 동의 단계 삭제(`marketing` 없음), 이름 대신 **`nickname`**(2~20자, 중복 불가). 화면은 지금 `name` 에도 같은 값을 넣어 보낸다 (Spring 이 nickname 을 받으면 빼도 됨)
+- 가입 전에 `GET /api/auth/check?email=a@b.kr` 또는 `?nickname=새싹농부` → `{ "taken": false }`. 화면의 [중복 확인] 이 부름. 가입 요청에서도 서버가 다시 확인해 중복이면 409
 - **회원 유형을 고르지 않음:** 모든 회원이 입찰도 판매(경매 등록)도 할 수 있음. 서버가 `type: "member"` 로 저장하고, 관리자(`admin`)는 DB에서 지정
 - `farm_name`(농장·상호명)은 선택. 있으면 경매 판매자 이름으로 함께 표시
 - 비밀번호: 영문+숫자 8자 이상, **서버에서 암호화 저장**
@@ -906,3 +909,4 @@ AI 가격예측 화면에서 품목·도매시장·예측 날짜(내일 ~ 1년 �
 | 2026-11-05 | **107품목 모델 결과 반영.** 예측 오차·신뢰도를 모델 검증 결과(품목·기간별 WAPE, `shared/model_accuracy.json`)로: `/predict`·`/predict/top-movers` 에 `error_pct`·`reference` 추가, `confidence` = 100 − 오차, 띠 = 예측 ± 오차, 6개월보다 먼 날은 넓게·참고용(`far`), 기준선보다 나쁜 품목·기간 참고용(`baseline`: 양배추 1·3·6개월, 당근 3·6개월, 무 1개월, 석류 6개월). 작물 추천 `error_pct` 도 같은 값, `reference` 추가. 예측 가격 기준 = 공영도매시장 경매 단가(원/kg). 1-6 의 `/recommend/crops/{code}/prices` 설명을 되살림 | |
 | 2026-11-05 | **홈 대시보드(주식 앱 형태)·예측 정확도 경고.** Spring 제안 추가: `GET /api/prices/index`(2-16, 전체 + 7묶음 지수, 묶음은 `shared/items.json` 의 `index_groups` 에 추가). 홈은 오늘 시세·AI 30일 예측(`/predict/top-movers?horizon=30&limit=107`)·가격 추이(`/api/prices/{item}/history`, 캔들 = 전 거래일 가격·당일 가격·최고·최저)를 같이 씀. 가격 예측 화면: 1개월 오차 35% 이상이거나 참고용 기간이 있는 품목(14개)을 "예측 정확도 낮음"으로 표시 — 기준·문구는 샘플(추후 확정). 프론트 가짜 데이터: `mocks/marketIndex.js` 추가, 이모지가 빈 문자열인 품목도 부류 기본 이모지로 (ml-api 와 같게) | |
 | 2026-11-06 | **품목 50개 · 세부 품종(제안, 1-2-1).** `shared/items50.json` 추가(50품목 × 예측 단위 326개). 화면 가짜 데이터: 오늘 시세·급등락·지수를 50품목으로, 가격 예측·시세는 부류 → 품목 → 품종으로 고름, 작물 추천은 작물마다 대표 품종 + 다른 품종 펼치기. 품종 가격은 아직 가짜(품목 값 × 품종 계수). 가격 예측 최근 검색은 로그인한 사람만(지금은 브라우저 저장). 대시보드·가격 예측·작물 추천의 설명 글씨 정리 | |
+| 2026-11-07 | 회원가입: 약관 동의(`marketing`) 삭제, `name` → `nickname`, 중복 확인 `GET /api/auth/check` 제안 추가(2-3). 가격 예측 도매시장 고르기는 `GET /api/markets`(전국 평균 + 32곳, 시장별 `items` = 최근 1년 거래 품목)를 씀 | |

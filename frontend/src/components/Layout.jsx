@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { getTodayPrices } from "../api/market";
 import { DATA_SOURCE, ML_API_BASE, NEWS_URL } from "../api/client";
 import { onMlOffline } from "../api/ml";
 import { AUCTION_ENABLED } from "../features";
 import { recommendLink, suggest } from "../api/search";
-import { pct, won } from "../utils/format";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
-import { Highlight, useAsync } from "./common";
+import { Highlight } from "./common";
 import ItemImage from "./ItemImage";
 import NotificationBell from "./NotificationBell";
 
@@ -31,28 +29,6 @@ function CoreDock() {
   );
 }
 
-function Ticker() {
-  const { data } = useAsync(getTodayPrices);
-  if (!data) return <div className="ticker" style={{ height: 34 }} />;
-  const row = data.items.map((p) => (
-    <span key={p.item}>
-      <b>{p.name}</b>
-      {won(p.price)}원/kg{" "}
-      <span style={{ color: p.change > 0 ? "#ff6b6b" : p.change < 0 ? "#6ea8ff" : "#aaa" }}>
-        {p.change > 0 ? "▲" : p.change < 0 ? "▼" : "-"} {pct(p.change_pct)}
-      </span>
-    </span>
-  ));
-  // 끊김 없이 흐르도록 같은 목록을 두 번 붙인다. 품목 수(107개)에 맞춰 흐르는 속도를 같게 (품목당 2.5초)
-  return (
-    <div className="ticker" aria-label="오늘의 시세">
-      <div className="ticker-track" style={{ animationDuration: `${Math.max(60, data.items.length * 2.5)}s` }}>
-        {row}
-        {row}
-      </div>
-    </div>
-  );
-}
 
 /**
  * 헤더 검색: 입력하는 동안 품목·경매·게시글·뉴스를 미리 보여주고, Enter 를 누르면 통합 검색 결과(/search?q=)로 간다.
@@ -257,7 +233,6 @@ const DEV_BADGE = import.meta.env.DEV && (() => {
 export default function Layout() {
   return (
     <>
-      <Ticker />
       <Header />
       <OfflineBanner />
       <main className="container">

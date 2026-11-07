@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import * as auth from "../api/auth";
 
 const AuthCtx = createContext(null);
@@ -27,6 +27,27 @@ export function AuthProvider({ children }) {
 export const useAuth = () => useContext(AuthCtx);
 
 /** 로그인이 필요한 페이지 감싸개 (관리자 화면은 별도 사이트 src/admin 에서 따로 확인) */
+/** 로그인한 회원만: 로그인 전이면 화면 대신 안내 카드 (로그인·회원가입 버튼) */
+export function MembersOnly({ title, children }) {
+  const { user } = useAuth();
+  const loc = useLocation();
+  if (user) return children;
+  const next = encodeURIComponent(loc.pathname + loc.search);
+  return (
+    <div className="page">
+      <div className="card members-only">
+        <div className="mo-ic" aria-hidden>🔒</div>
+        <h1>{title}은(는) 회원 전용이에요</h1>
+        <p className="muted">로그인하면 바로 이용할 수 있어요. 가입은 1분이면 끝나요.</p>
+        <div className="mo-acts">
+          <Link className="btn primary" to={`/login?next=${next}`}>로그인</Link>
+          <Link className="btn" to="/signup">회원가입</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function RequireAuth({ children }) {
   const { user } = useAuth();
   const loc = useLocation();

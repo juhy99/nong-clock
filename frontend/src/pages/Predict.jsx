@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router-dom";
-import { getHorizons, getItems, getMarkets, predict } from "../api/ml";
+import { getHorizons, getItems, predict } from "../api/ml";
+import { getMarkets } from "../api/market";
 import { Async, useAsync } from "../components/common";
 import ForecastChart from "../components/ForecastChart";
 import ItemImage from "../components/ItemImage";
@@ -134,6 +135,7 @@ function Result({ p, emoji }) {
 export default function Predict() {
   const [params, setParams] = useSearchParams();
   const options = useAsync(async () => {
+    // 도매시장 목록은 시세 쪽(전국 평균 + 32곳, 시장마다 거래하는 품목 items)을 쓴다
     const [items, horizons, markets] = await Promise.all([getItems(), getHorizons(), getMarkets()]);
     return { items, horizons, markets };
   });

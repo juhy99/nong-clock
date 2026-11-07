@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getMarketCompare, getTodayPrices } from "../api/market";
-import { getItems, predict } from "../api/ml";
+import { getMarketCompare, getPriceHistory, getTodayPrices } from "../api/market";
+import { getItems } from "../api/ml";
 import { NEWS_PAGE_SIZE, getNews } from "../api/news";
 import { recentSearches, recommendLink, removeRecentSearch, saveRecentSearch, searchAll } from "../api/search";
 import { useAuth } from "../components/AuthContext";
 import { Async, Highlight, PctChange, PriceChange, useAsync } from "../components/common";
-import ForecastChart from "../components/ForecastChart";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ItemImage from "../components/ItemImage";
 import { NewsArticle, NewsRow, NewsSource, NewsUpdated } from "../components/NewsParts";
 import { AuctionCard } from "./Auctions";
@@ -14,10 +14,32 @@ import { AUCTION_ENABLED } from "../features";
 import { boardDate, md, won, wonPerKg } from "../utils/format";
 
 const PREVIEW = { auctions: 3, news: 4, posts: 4 }; // "전체" 탭에서 미리 보여주는 개수
-const FORECAST_DAYS = 14;
 
-/** 검색한 품목 요약: 오늘 시세 + 2주 AI 예측 */
-function ItemSummary({ item, p, crops }) {
+/** 최근 8거래일 도매 시세 (전국 · 상 등급) */
+function RecentPrices({ code }) {
+  const state = useAsync(() => getPriceHistory(code, { days: 8 }), [code]);
+  const pts = (state.data?.points ?? []).filter((x) => x.price != null);
+  if (!pts.length) return <div className="state">시세 불러오는 중…</div>;
+  const first = pts[0].price, last = pts.at(-1).price;
+  return (
+    <>
+      <div className="small muted">최근 {pts.length}거래일 도매 시세 (원/kg)</div>
+      <ResponsiveContainer width="100%" height={150}>
+        <LineChart data={pts} margin={{ top: 16, right: 12, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+          <XAxis dataKey="date" tickFormatter={md} fontSize={12} />
+          <YAxis fontSize={12} tickFormatter={won} width={52} domain={["auto", "auto"]} />
+          <Tooltip formatter={(v) => wonPerKg(v)} labelFormatter={md} />
+          <Line dataKey="price" stroke={last >= first ? "#e5483e" : "#2f6fe4"} strokeWidth={2.2} dot={{ r: 3 }} isAnimationActive={false} />
+        </LineChart>
+      </ResponsiveContainer>
+      <div className="ai-line small">8거래일 동안 <PctChange value={Math.round(((last - first) / first) * 1000) / 10} /> ({won(first)} → {won(last)}원)</div>
+    </>
+  );
+}
+
+/** 검색한 품목 요약: 오늘 시세 + 최근 8거래일 시세 */
+function ItemSummary({ item, crops }) {
   const { user, updateProfile } = useAuth();
   const today = useAsync(getTodayPrices);
   const row = today.data?.items.find((x) => x.item === item.code);
@@ -56,34 +78,17 @@ function ItemSummary({ item, p, crops }) {
         </div>
       </div>
       <div className="search-item-chart">
-        {p ? (
-          <>
-            <div className="small muted">최근 시세 + AI 예측 {FORECAST_DAYS}일</div>
-            <ForecastChart p={p} height={150} legend={false} />
-            <div className="ai-line small">
-              🤖 {FORECAST_DAYS}일 뒤 <b>{wonPerKg(p.predicted_price)}</b> 예상 (<PctChange value={p.change_pct} />)
-            </div>
-          </>
-        ) : (
-          <div className="state">예측 불러오는 중…</div>
-        )}
+        <RecentPrices code={item.code} />
       </div>
     </section>
   );
 }
 
 /** 오른쪽 칸: 이상기후·시장별 시세·관심 품목 */
-function ItemSide({ item, p }) {
+function ItemSide({ item }) {
   const mkt = useAsync(() => getMarketCompare(item.code), [item.code]);
-  const alert = p?.alerts[0];
   return (
     <aside className="search-side">
-      {alert && (
-        <div className="search-box warn">
-          <h3>⚠️ 이상기후 주의</h3>
-          <p className="small" style={{ margin: 0 }}>{md(alert.start)}~{md(alert.end)} — {alert.reason}. 이 기간 {item.name} 예측은 오차가 커질 수 있어요.</p>
-        </div>
-      )}
       {mkt.data && (
         <div className="search-box">
           <h3>시장별 오늘 시세</h3>
@@ -186,12 +191,10 @@ function Empty({ q, suggestion }) {
 
 function Results({ d, tab, setTab }) {
   const { q, item } = d;
-  const forecast = useAsync(() => (item ? predict({ item: item.code, horizon: FORECAST_DAYS }) : Promise.resolve(null)), [item?.code]);
-  const p = forecast.data;
   const all = tab === "all";
   const tabs = [
     ["all", "전체", null],
-    ["item", "시세·예측", item ? 1 : 0],
+    ["item", "시세", item ? 1 : 0],
     ...(AUCTION_ENABLED ? [["auctions", "경매", d.auctions.length]] : []),
     ["news", "뉴스", d.news.total],
     ["posts", "게시판", d.posts.total],
@@ -210,7 +213,7 @@ function Results({ d, tab, setTab }) {
 
       <div className={item && (all || tab === "item") ? "search-layout" : ""}>
         <div className="search-main">
-          {item && (all || tab === "item") && <ItemSummary item={item} p={p} crops={d.crops} />}
+          {item && (all || tab === "item") && <ItemSummary item={item} crops={d.crops} />}
           {(all || tab === "item") && d.crops.length > 0 && (
             <section className="card rc-search">
               <div>
@@ -226,7 +229,7 @@ function Results({ d, tab, setTab }) {
               </div>
             </section>
           )}
-          {tab === "item" && !item && !d.crops.length && <div className="state">'{q}'은(는) 팜비드 품목이 아니에요. 품목 이름(예: 사과, 배추)으로 검색하면 시세와 예측을 보여드려요.</div>}
+          {tab === "item" && !item && !d.crops.length && <div className="state">'{q}'은(는) 팜비드 품목이 아니에요. 품목 이름(예: 사과, 배추)으로 검색하면 시세를 보여드려요.</div>}
 
           {(all ? d.auctions.length > 0 : tab === "auctions") && (
             <section>
@@ -272,7 +275,7 @@ function Results({ d, tab, setTab }) {
             </section>
           )}
         </div>
-        {item && (all || tab === "item") && <ItemSide item={item} p={p} />}
+        {item && (all || tab === "item") && <ItemSide item={item} />}
       </div>
     </>
   );

@@ -1213,3 +1213,11 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 @keyframes mf-wipe { 0% { transform: scaleX(0); } 40%, 100% { transform: scaleX(1); } }
 .cf.leaving .cf-swap { animation: none; }
 .cf-crops .nm small { display: block; font-size: 12px; color: #6b5a33; font-weight: 400; }
+
+/* 회원가입 중복 확인 · 회원 전용 안내 */
+.dup-row { display: flex; gap: 8px; } .dup-row .input { flex: 1; } .dup-row .btn { white-space: nowrap; }
+.dup-row .btn.ok { border-color: var(--green); color: var(--green-dark, #0e7a45); }
+.members-only { max-width: 520px; margin: 40px auto; text-align: center; padding: 36px 28px; display: grid; gap: 10px; justify-items: center; }
+.members-only .mo-ic { font-size: 42px; } .members-only h1 { font-size: 22px; } .members-only p { margin: 0; }
+.mo-acts { display: flex; gap: 10px; margin-top: 8px; } .mo-acts .btn { min-width: 110px; }
+.ps-note { font-size: 13px; color: var(--muted); }

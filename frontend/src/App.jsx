@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
-import { RequireAuth } from "./components/AuthContext";
+import { MembersOnly, RequireAuth } from "./components/AuthContext";
 import Home from "./pages/Home";
 import Market from "./pages/Market";
 import Predict from "./pages/Predict";
@@ -25,8 +25,8 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="market" element={<Market />} />
-        <Route path="ai" element={<Predict />} />
-        <Route path="recommend" element={<Recommend />} />
+        <Route path="ai" element={<MembersOnly title="AI 가격 예측"><Predict /></MembersOnly>} />
+        <Route path="recommend" element={<MembersOnly title="작물 추천"><Recommend /></MembersOnly>} />
         {AUCTION_ENABLED ? (
           <>
             <Route path="auctions" element={<Auctions />} />

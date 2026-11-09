@@ -29,8 +29,10 @@ public class User {
     @Column(nullable = false, length = 20)
     private String phone; // 연락처
 
-    @Column(length = 50)
-    private String region; // 💡 지역 추가 (프론트의 region)
+    // DB 는 users.region_id (시·도 번호 1~17, 수집기 ref/region.csv 와 같은 번호). 예전 'region' 글자 열은 표에 없어
+    // ddl-auto: validate 에서 서버가 켜지지 않았다 (2026-11-09 고침). 화면은 지역 이름을 주고받고, 번호 변환은 UserService
+    @Column(name = "region_id")
+    private Integer regionId;
 
     @Column(name = "farm_name", length = 100)
     private String farmName; // 💡 농장·상호명 추가 (프론트의 farm_name)

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ComposedChart, Area, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DEFAULT_GRADE, DEFAULT_MARKET, GRADES, getGradePrices, getMarkets, getOriginPrices, getPriceHistory, getTodayPrices, getVolumeTrend } from "../api/market";
@@ -70,23 +70,32 @@ function GradeCard({ title, tag, card, kind, onClick, dates }) {
   );
 }
 
-function GradeSection({ item, market, date, grade, setGrade }) {
+/** 최근 30일 거래일의 절반 미만인 등급은 숨김 (시장마다 등급을 붙이는 방식이 달라, 예: 부산엄궁 양배추는 특·보통만). 평균과 지금 고른 등급은 늘 보임 */
+export const shownGrades = (d, grade) =>
+  d.grades.filter((g) => g.grade === "ALL" || g.grade === grade || g.days_30 == null || d.days_30 == null || g.days_30 * 2 >= d.days_30);
+
+function GradeSection({ item, market, date, grade, setGrade, defGrade, onAvail }) {
   const state = useAsync(() => getGradePrices(item, { market, date }), [item, market, date]);
+  const avail = state.data ? shownGrades(state.data, grade).map((g) => g.grade).join(",") : "";
+  useEffect(() => { onAvail?.(avail); }, [avail, onAvail]);
   return (
     <Async state={state} minHeight={220}>
       {(d) => {
         const dates = d.retail.points.map((p) => p.date);
+        const shown = shownGrades(d, grade);
+        const hidden = d.grades.filter((g) => !shown.includes(g)).map((g) => gradeName(g.grade));
         return (
           <>
             <div className="grade-grid">
-              {d.grades.map((g) => (
-                <GradeCard key={g.grade} title={gradeName(g.grade)} tag={g.grade === DEFAULT_GRADE ? "기본" : g.grade === "ALL" ? "거래량 반영" : null}
+              {shown.map((g) => (
+                <GradeCard key={g.grade} title={gradeName(g.grade)} tag={g.grade === defGrade ? "기본" : g.grade === "ALL" ? "거래량 반영" : null}
                   card={g} kind={g.grade === grade ? "on" : ""} onClick={() => setGrade(g.grade)} dates={dates} />
               ))}
               <GradeCard title="소매가" tag="등급 무관" card={d.retail} kind="retail" dates={dates} />
             </div>
             <p className="hint" style={{ margin: "10px 0 0" }}>
               카드를 누르면 아래 가격 추이가 그 등급으로 바뀌어요.
+              {hidden.length > 0 && ` 이 시장은 최근 30일 ${hidden.join("·")} 등급 거래가 거의 없어 숨겼어요.`}
             </p>
           </>
         );
@@ -95,7 +104,7 @@ function GradeSection({ item, market, date, grade, setGrade }) {
   );
 }
 
-function TrendCard({ item, market, date, grade, setGrade }) {
+function TrendCard({ item, market, date, grade, setGrade, avail }) {
   const [days, setDays] = useState(8);
   const [more, setMore] = useState(false);
   const state = useAsync(() => getPriceHistory(item, { market, grade, date, days }), [item, market, grade, date, days]);
@@ -104,7 +113,7 @@ function TrendCard({ item, market, date, grade, setGrade }) {
       <div className="mk-card-head">
         <h3>가격 추이</h3>
         <div className="seg">
-          {GRADES.map((g) => <button key={g.code} className={grade === g.code ? "on" : ""} onClick={() => setGrade(g.code)}>{g.name}</button>)}
+          {GRADES.filter((g) => !avail || avail.split(",").includes(g.code)).map((g) => <button key={g.code} className={grade === g.code ? "on" : ""} onClick={() => setGrade(g.code)}>{g.name}</button>)}
         </div>
         <select className="input mk-days" value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="기간">
           <option value={8}>최근 8일</option>
@@ -321,7 +330,9 @@ export default function Market() {
   const key = variety ? `${item}~${variety}` : item; // [샘플] 품종은 "품목~품종" 으로 넘긴다 (api/market.js)
   const market = params.get("market") || DEFAULT_MARKET;
   const date = params.get("date") || "";
-  const grade = params.get("grade") || DEFAULT_GRADE;
+  const defGrade = market === "national" ? DEFAULT_GRADE : "ALL"; // 시장을 고르면 기본은 평균 (시장마다 쓰는 등급이 달라 상 등급이 빈 곳이 많음)
+  const grade = params.get("grade") || defGrade;
+  const [avail, setAvail] = useState("");
   const marketInfo = markets.data?.find((m) => m.code === market);
   const marketName = marketInfo?.name ?? "";
   // 그 시장에서 거래하지 않는 품목이면 아래 정보 대신 안내 (예: 안동은 버섯류·무·대파 거래 기록 없음)
@@ -332,6 +343,14 @@ export default function Market() {
     const next = new URLSearchParams(params);
     if (!value || value === fallback) next.delete(key);
     else next.set(key, value);
+    setParams(next, { replace: true });
+  };
+  // 시장을 바꾸면 등급은 그 시장 기본(전국=상, 시장=평균)으로 되돌림 (시장마다 쓰는 등급이 달라서)
+  const pickMarket = (code) => {
+    const next = new URLSearchParams(params);
+    if (!code || code === DEFAULT_MARKET) next.delete("market");
+    else next.set("market", code);
+    next.delete("grade");
     setParams(next, { replace: true });
   };
 
@@ -355,13 +374,13 @@ export default function Market() {
         </div>
         <div className="f">
           <label htmlFor="mk-market">시장</label>
-          <select id="mk-market" className="input" value={market} onChange={(e) => set("market", e.target.value, DEFAULT_MARKET)}>
+          <select id="mk-market" className="input" value={market} onChange={(e) => pickMarket(e.target.value)}>
             {(markets.data ?? []).map((m) => <option key={m.code} value={m.code}>{m.name}</option>)}
           </select>
           <div className="pills">
             {QUICK_MARKETS.map((code) => {
               const m = markets.data?.find((x) => x.code === code);
-              return m && <button key={code} className={`pill sm ${market === code ? "on" : ""}`} onClick={() => set("market", code, DEFAULT_MARKET)}>{code === "national" ? "전국 평균" : m.name}</button>;
+              return m && <button key={code} className={`pill sm ${market === code ? "on" : ""}`} onClick={() => pickMarket(code)}>{code === "national" ? "전국 평균" : m.name}</button>;
             })}
           </div>
         </div>
@@ -390,12 +409,15 @@ export default function Market() {
         <>
           <div>
             <div className="mk-sec"><h2>등급별 가격 한눈에 보기</h2><span>{marketName} · {itemName}</span></div>
-            <GradeSection item={key} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, DEFAULT_GRADE)} />
+            {variety && market !== "national" && (
+              <p className="hint" style={{ margin: "0 0 10px" }}>품종별 시세는 전국 평균만 있어요. {marketName} 시세는 {items.find((i) => i.item === item)?.name ?? ""} 전체 값이에요.</p>
+            )}
+            <GradeSection item={key} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, defGrade)} defGrade={defGrade} onAvail={setAvail} />
           </div>
           <div>
             <div className="mk-sec"><h2>자세한 가격 정보</h2><span>{marketName} · {itemName}</span></div>
             <div className="two-col">
-              <TrendCard item={key} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, DEFAULT_GRADE)} />
+              <TrendCard item={key} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, defGrade)} avail={avail} />
               <OriginCard key={`${key}|${market}|${date}`} item={key} market={market} date={date} />
             </div>
           </div>

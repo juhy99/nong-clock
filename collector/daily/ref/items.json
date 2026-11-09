@@ -1,0 +1,65 @@
+{
+ "index_groups": [
+  {
+   "code": "leafy",
+   "name": "잎채소",
+   "emoji": "🥬",
+   "categories": [
+    "엽경채류"
+   ]
+  },
+  {
+   "code": "western",
+   "name": "양채·나물",
+   "emoji": "🥦",
+   "categories": [
+    "양채류",
+    "산채류"
+   ]
+  },
+  {
+   "code": "fruit_veg",
+   "name": "열매채소",
+   "emoji": "🍅",
+   "categories": [
+    "과채류"
+   ]
+  },
+  {
+   "code": "seasoning",
+   "name": "양념채소",
+   "emoji": "🧅",
+   "categories": [
+    "조미채소류"
+   ]
+  },
+  {
+   "code": "root_grain",
+   "name": "뿌리·곡물",
+   "emoji": "🥔",
+   "categories": [
+    "근채류",
+    "서류",
+    "두류",
+    "잡곡"
+   ]
+  },
+  {
+   "code": "fruit",
+   "name": "과일",
+   "emoji": "🍎",
+   "categories": [
+    "과일류",
+    "견과류"
+   ]
+  },
+  {
+   "code": "mushroom",
+   "name": "버섯",
+   "emoji": "🍄",
+   "categories": [
+    "버섯류"
+   ]
+  }
+ ]
+}

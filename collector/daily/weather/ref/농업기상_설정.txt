@@ -1,0 +1,3 @@
+# 공공데이터포털 API 페이지의 "서비스URL"과 상세기능(오퍼레이션) 이름을 적으세요.
+서비스URL=http://apis.data.go.kr/1390802/AgriWeather/WeatherObsrInfo/V3/GnrlWeather
+오퍼레이션=getWeatherMonDayList3

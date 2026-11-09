@@ -1,0 +1,6 @@
+# 내 PC 시험용 추가 설정 (서버는 안 씀): Spring 을 localhost:8080 으로 열어 npm run dev 가 /api 를 넘길 수 있게 한다.
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d --build db backend
+services:
+  backend:
+    ports:
+      - "8080:8080"

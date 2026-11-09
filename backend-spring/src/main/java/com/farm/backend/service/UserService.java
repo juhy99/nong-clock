@@ -13,6 +13,16 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    /** 시·도 이름 → region_id (수집기 ref/region.csv · DB region 표와 같은 번호). 모르는 이름·빈칸은 null */
+    private static final java.util.List<String> REGIONS = java.util.List.of(
+            "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주");
+
+    static Integer regionId(String name) {
+        if (name == null || name.isBlank()) return null;
+        int i = REGIONS.indexOf(name.trim());
+        return i < 0 ? null : i + 1;
+    }
+
     /**
      * 회원가입 로직
      */
@@ -29,7 +39,7 @@ public class UserService {
         user.setPasswordHash(rawPassword); // 또는 user.setPassword(rawPassword) (엔티티 필드명에 맞추세요)
         user.setName(name);
         user.setPhone(phone);
-        user.setRegion(region);       // 💡 지역 추가
+        user.setRegionId(regionId(region)); // 지역 이름(서울·경기 …) → region_id
         user.setFarmName(farmName);   // 💡 농장명 추가
 
         userRepository.save(user);

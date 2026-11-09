@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/farmdb
     username: postgres
-    password: 1234
+    password: ${DB_PASSWORD:1234}  # 환경변수 DB_PASSWORD 가 있으면 그 값 (저장소 .env 와 맞추기)
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -14,6 +14,10 @@ spring:
         format_sql: true
 
 
+
+# 시세 API 의 품종 목록(items50.json)이 있는 폴더. backend-spring 폴더에서 실행하면 ../shared, 도커는 SHARED_DIR=/app/shared
+shared:
+  dir: ${SHARED_DIR:../shared}
 
 ml:
   api:

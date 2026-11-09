@@ -1,0 +1,14 @@
+﻿source,raw_grade,grade
+ledger,특,SPECIAL
+ledger,상,HIGH
+ledger,중,MID
+ledger,보통,MID
+ledger,하,LOW
+ledger,등외,LOW
+ledger,5등,LOW
+ledger,6등,LOW
+ledger,7등,LOW
+ledger,8등,LOW
+kamis,상품,HIGH
+kamis,중품,MID
+kamis,하품,LOW

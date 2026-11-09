@@ -1,0 +1,5 @@
+pandas>=1.5
+numpy
+pypdf>=4.0          # weather/ 장기전망 PDF, policy/ 첨부
+lxml>=4.9           # policy/
+psycopg2-binary     # load_db.py 만

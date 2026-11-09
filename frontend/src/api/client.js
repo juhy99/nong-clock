@@ -10,6 +10,11 @@ export const DATA_SOURCE = import.meta.env.DEV && import.meta.env.VITE_DATA_SOUR
 // 서버 화면(web 컨테이너)은 /data/news-recent.json, 내 PC 의 npm run dev 는 http://서버주소/data/news-recent.json
 export const NEWS_URL = import.meta.env.VITE_NEWS_URL || "";
 
+// 시세 데이터 출처. mock: 가짜(기본) · db: Spring 의 /api/prices… (DB price_daily 등, docs/db_load_test.md)
+// 주소는 같은 사이트의 /api (서버는 nginx, 내 PC 의 npm run dev 는 vite 가 Spring 으로 넘김). 다른 서버를 쓰려면 VITE_PRICE_API_BASE
+export const PRICE_SOURCE = import.meta.env.VITE_PRICE_SOURCE === "db" ? "db" : "mock";
+export const PRICE_API_BASE = (import.meta.env.VITE_PRICE_API_BASE || "").replace(/\/$/, "");
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message);

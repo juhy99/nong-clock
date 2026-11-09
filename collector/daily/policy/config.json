@@ -1,0 +1,48 @@
+﻿{
+  "output_dir": "수집결과",
+  "delay_seconds": 1.2,
+  "timeout_seconds": 30,
+  "retries": 3,
+  "max_pages": 0,
+  "sources": [
+    {
+      "id": "aT_정부수매국영무역",
+      "kind": "at",
+      "board": "apko363300",
+      "list_url": "https://www.at.or.kr/article/apko363300/list.action",
+      "page_param": "at.condition.currentPage"
+    },
+    {
+      "id": "aT_FTA공고",
+      "kind": "at",
+      "board": "apko363600",
+      "list_url": "https://www.at.or.kr/article/apko363600/list.action",
+      "page_param": "at.condition.currentPage"
+    },
+    {
+      "id": "aT_보도자료",
+      "kind": "at",
+      "board": "apko362000",
+      "list_url": "https://www.at.or.kr/article/apko362000/list.action",
+      "page_param": "at.condition.currentPage"
+    },
+    {
+      "id": "농식품부_보도자료",
+      "kind": "mafra",
+      "board": "792",
+      "list_url": "https://www.mafra.go.kr/bbs/home/792/artclList.do",
+      "page_param": "page"
+    },
+    {
+      "id": "농식품부_설명자료",
+      "kind": "mafra",
+      "board": "793",
+      "list_url": "https://www.mafra.go.kr/bbs/home/793/artclList.do",
+      "page_param": "page"
+    }
+  ],
+  "seed_urls": [
+    "https://www.at.or.kr/article/apko363300/view.action?articleId=39338",
+    "https://www.mafra.go.kr/bbs/home/792/573768/artclView.do"
+  ]
+}

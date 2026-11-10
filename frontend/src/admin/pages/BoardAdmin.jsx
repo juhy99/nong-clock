@@ -12,7 +12,7 @@ function BannedUsers({ version, onChange }) {
   const state = useAsync(getBannedUsers, [version]);
   return (
     <section className="card">
-      <SectionHead title="게시판 이용 제한 중인 회원" desc="제한 중에는 글·댓글을 쓸 수 없어요 (로그인은 가능). 회원 전체 이용 정지는 '회원 관리'에서" />
+      <SectionHead title="게시판 이용 제한 중인 회원" desc="제한 중에는 글·댓글을 쓸 수 없어요 (로그인은 가능)" />
       <Async state={state} empty="제한 중인 회원이 없습니다">
         {(rows) => (
           <table className="table">

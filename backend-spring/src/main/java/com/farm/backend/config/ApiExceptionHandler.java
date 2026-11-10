@@ -13,6 +13,7 @@ import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,12 +51,18 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", "요청 형식이 올바르지 않습니다"));
     }
 
+    /** 주소의 숫자 칸에 글자가 오면 (예: /api/posts/abc, ?page=x) → 400 (예전에는 500 + 오류 로그) */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> typeMismatch(MethodArgumentTypeMismatchException e) {
+        return ResponseEntity.badRequest().body(Map.of("message", "요청 값을 확인하세요 (" + e.getName() + ")"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> unknown(Exception e) {
         // 스프링이 상태 코드를 정해 둔 오류(잘못된 메서드 405, 형식 415 등)는 그 코드 그대로
         if (e instanceof ErrorResponse er)
             return ResponseEntity.status(er.getStatusCode()).body(Map.of("message", "요청을 처리할 수 없습니다 (" + er.getStatusCode().value() + ")"));
-        log.error("회원 API 오류", e);
+        log.error("회원·게시판 API 오류", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "서버 오류가 발생했습니다. 잠시 뒤 다시 시도하세요"));
     }
 }

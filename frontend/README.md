@@ -45,7 +45,7 @@ Spring·DB 가 생기기 전에 **내 PC에서만** 기상청·네이버 실제 
 | `VITE_AUTH=spring` | 회원가입·로그인을 `backend-spring` 의 `/api/auth/signup` · `/api/auth/login` 으로. Vite 가 `/api` 를 `SPRING_URL`(기본 `http://localhost:8080`)로 넘김 |
 
 - `spring` 에서 백엔드에 아직 없는 내 정보 수정·비밀번호 변경·탈퇴는 "아직 준비 중" 오류가 납니다 (성공한 척하지 않음). 관심 품목만 그동안 이 브라우저에 저장됩니다. 가입하면 바로 로그인까지 합니다
-- 백엔드 응답(`farmName`, `type: MEMBER/ADMIN`, `status: ACTIVE/SUSPENDED/WITHDRAWN`)을 화면 값(`farm_name`, `member/admin`, `정상/정지/탈퇴`)으로 바꾸는 곳은 `api/auth.js` 아래쪽 한 곳
+- 백엔드 응답(`farmName`, `type: MEMBER/ADMIN`)을 화면 값(`farm_name`, `member/admin`)으로 바꾸는 곳은 `api/auth.js` 아래쪽 한 곳 (11-10: 정지 기능 없음, 탈퇴는 DB 에서 삭제)
 - 서버 사이트를 바꾸는 방법은 `deploy/README.md` "회원 백엔드 켜기"
 
 ## 데모 계정 (로그인 화면에서 클릭하면 입력됨)

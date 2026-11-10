@@ -24,6 +24,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}   # https 서버면 .env 에 COOKIE_SECURE=true (로그인 쿠키를 https 에서만)
+      TZ: Asia/Seoul   # 글·댓글 쓴 시간을 한국 시간으로 (없으면 컨테이너 기본 UTC 라 9시간 이르게 저장됨)
       ML_API_URL: http://ml-api:8000
       SHARED_DIR: /app/shared  # 시세 API 의 품종 목록 shared/items50.json
     volumes:

@@ -46,7 +46,7 @@ def upsert_hist(df, name, keys):
     HIST.mkdir(parents=True, exist_ok=True)
     f = HIST / f'{name}.csv'
     if f.exists():
-        old = pd.read_csv(f, dtype={'market_code': str})
+        old = pd.read_csv(f, dtype={'market_code': str, 'code4': str, 'ym': str})  # code4 '0601' 의 앞 0 이 지워지지 않게
         old = old[~old.set_index(keys).index.isin(df.set_index(keys).index)]
         df = pd.concat([old, df])
     df.sort_values(keys).to_csv(f, index=False, encoding='utf-8')
@@ -295,6 +295,97 @@ def per_kg(unit):
     return v if m.group(2) == 'kg' else v / 1000
 
 
+# ───────────── 1개(포기)당 무게 (11-10): KAMIS 소매가가 '1포기·10개' 단위인 품목을 원/kg 으로 바꾸는 데 씀 ─────────────
+PIECE_MIN = 30   # 품목·달 줄이 이보다 적으면 그 품목 1년 전체 값, 그것도 적으면 환산 안 함
+# 11-10 사후 추가: 크기명 2·11·12·21·22개는 품목과 상관없이 몰려 나오고(크기 코드로 보임) 무게가 안 맞음
+#   예) 오이 10kg '11개' = 1개 0.9kg, 감귤 5kg '21개', 사과 10kg '11개' → 빼고 계산
+PIECE_CODE_LIKE = {2, 11, 12, 21, 22}
+# 11-10 사후 추가 2: 그래도 사과 여름 2kg·가지 3.3kg·수박 1~2kg 처럼 안 맞는 품목이 남음 → 12달 값의 최대 ÷ 최소가
+#   이 값 이하인 품목만 환산에 씀 (배추·무·양배추·호박·배·메론·참외). 틀린 소매가보다 빈칸이 나음
+PIECE_STABLE = 1.5
+
+
+def piece_rows(m, nxt):
+    """한 달 원장에서 크기명이 정확히 'N개' 인 국산 줄 → (code4, 달, 1개당 kg, 물량). 통째 중복은 먼저 뺌"""
+    lo, hi = m.strftime('%Y%m%d'), nxt.strftime('%Y%m%d')
+    files = sorted(f for f in glob.glob(str(RAW / 'auction' / '*.csv.gz')) if lo <= Path(f).name[:8] < hi)
+    it = set(ref('item').code4); parts = []
+    for f in files:
+        try:
+            day, _ = drop_double_feeds(pd.read_csv(f, dtype=str, compression='gzip'))
+        except (ValueError, EOFError, KeyError) as e:
+            print('  읽기 실패', f, e); continue
+        day['code4'] = day.대분류코드.str.strip().str.zfill(2) + day.중분류코드.str.strip().str.zfill(2)
+        n = pd.to_numeric(day.크기명.str.strip().str.extract(r'^(\d+)개$')[0], errors='coerce')
+        w = pd.to_numeric(day.단위중량, errors='coerce'); v = pd.to_numeric(day.총물량, errors='coerce')
+        ok = day.code4.isin(it) & n.between(1, 500) & (w > 0) & (v > 0)
+        ok &= ~day.산지명.map(lambda x: origin_region(x)[1])
+        d = pd.DataFrame({'code4': day.code4[ok], 'n': n[ok].astype(int), 'kg': (w[ok] / n[ok]).round(3), 'vol': v[ok]})
+        if not d.empty:
+            parts.append(d)
+    if not parts:
+        return None
+    d = pd.concat(parts)
+    g = d.groupby(['code4', 'n', 'kg'], as_index=False).agg(vol=('vol', 'sum'), rows=('vol', 'size'))
+    return g.assign(ym=m.strftime('%Y-%m'))
+
+
+def _wmed_kg(g):
+    g = g.groupby('kg', as_index=False).vol.sum().sort_values('kg')
+    c = g.vol.cumsum()
+    return float(g.kg[c >= g.vol.sum() / 2].iloc[0])
+
+
+def piece_weight_table():
+    """hist/piece_rows.csv(달마다 쌓인 줄) → hist/piece_weight.csv: 품목 × 달(1~12)의 물량 가중 중앙값.
+    달 줄 < PIECE_MIN 이면 그 품목 1년 전체 값(basis=year), 그것도 < PIECE_MIN 이면 뺌"""
+    f = HIST / 'piece_rows.csv'
+    if not f.exists():
+        return None
+    r = pd.read_csv(f, dtype={'code4': str, 'ym': str})
+    r['month'] = r.ym.str[5:7].astype(int)
+    r = r[~r.n.isin(PIECE_CODE_LIKE)]
+    out = []
+    for c4, g in r.groupby('code4'):
+        if g.rows.sum() < PIECE_MIN:
+            continue
+        year = _wmed_kg(g)
+        for mo in range(1, 13):
+            gm = g[g.month == mo]
+            if gm.rows.sum() >= PIECE_MIN:
+                out.append((c4, mo, _wmed_kg(gm), 'month', int(gm.rows.sum())))
+            else:
+                out.append((c4, mo, year, 'year', int(g.rows.sum())))
+    pw = pd.DataFrame(out, columns=['code4', 'month', 'kg_per_piece', 'basis', 'rows'])
+    spread = pw.groupby('code4').kg_per_piece.agg(lambda x: x.max() / x.min())
+    pw['use'] = pw.code4.map(spread <= PIECE_STABLE)
+    pw.to_csv(HIST / 'piece_weight.csv', index=False, encoding='utf-8')
+    return pw
+
+
+def t_piece_weight(since, until=None):
+    """since 가 든 달부터 (until 앞 달까지) 원장을 다시 읽어 hist/piece_rows.csv 를 그 달만 덮어씀 → piece_weight.csv 다시 계산.
+    매일 실행(최근 14일)이면 이번 달·지난 달만 다시 읽음"""
+    m = since.replace(day=1); end = until or C.today()
+    rows = []
+    while m <= end:
+        nxt = (m.replace(day=28) + dt.timedelta(4)).replace(day=1)
+        g = piece_rows(m, nxt)
+        if g is not None:
+            rows.append(g)
+        m = nxt
+    if rows:
+        upsert_hist(pd.concat(rows), 'piece_rows', ['code4', 'ym', 'n', 'kg'])
+    pw = piece_weight_table()
+    print(f'  1개당 무게: {0 if pw is None else pw.code4.nunique()}품목', flush=True)
+
+
+def per_piece(unit):
+    """KAMIS 단위 '10개' · '1포기' → 개수. 아니면 None"""
+    m = re.fullmatch(r'(\d+)(개|포기)', str(unit).replace(' ', ''))
+    return int(m.group(1)) if m else None
+
+
 def t_retail(since):
     files = sorted(f for f in glob.glob(str(RAW / 'kamis' / '*.csv')) if Path(f).stem >= since.strftime('%Y%m%d'))
     if not files:
@@ -306,6 +397,19 @@ def t_retail(since):
     k['item_code'] = k.code4.map(dict(zip(it.code4, it.item_code)))
     k = k[k.item_code.notna()].copy()
     k['kg'] = k.단위.map(per_kg)
+    # '1포기·10개' 단위 (11-10): 개수 × 원장에서 구한 그 품목·달의 1개당 kg (piece_weight) 으로 바꿈. 환산값이라 source_spec 에 적음
+    k['note'] = ''
+    pf = HIST / 'piece_weight.csv'
+    if pf.exists():
+        pw = pd.read_csv(pf, dtype={'code4': str})
+        pw = pw[pw.use]
+        pw = dict(zip(zip(pw.code4, pw.month), pw.kg_per_piece))
+        pcs = k.단위.map(per_piece)
+        mo = pd.to_numeric(k.조회일자.str[5:7], errors='coerce')
+        kp = pd.Series([pw.get((c, m)) for c, m in zip(k.code4, mo)], index=k.index, dtype=float)
+        use = k.kg.isna() & pcs.notna() & kp.notna()
+        k.loc[use, 'kg'] = pcs[use] * kp[use]
+        k.loc[use, 'note'] = ' · 1개≈' + kp[use].map(lambda x: f'{x:g}') + 'kg 환산'
     k = k[k.kg.notna() & (k.kg > 0)]
     k['price'] = (pd.to_numeric(k.가격, errors='coerce') / k.kg).round()
     k['rank_order'] = k.등급.map({'상품': 0, '중품': 1}).fillna(2)
@@ -316,7 +420,7 @@ def t_retail(since):
     k = k.merge(spec[['item_code', '품종코드', '단위']], on=['item_code', '품종코드', '단위'])
     k = k.sort_values(['조회일자', 'item_code', 'rank_order'])
     r = k.drop_duplicates(['조회일자', 'item_code'])
-    r = r.assign(date=r.조회일자, source_spec=r.품종명 + ' · ' + r.등급 + ' · ' + r.단위, price=r.price.astype('Int64'))
+    r = r.assign(date=r.조회일자, source_spec=r.품종명 + ' · ' + r.등급 + ' · ' + r.단위 + r.note, price=r.price.astype('Int64'))
     save(r[['date', 'item_code', 'price', 'source_spec']], 'retail_price_daily')
 
 
@@ -650,7 +754,7 @@ def t_log():
         save(pd.read_csv(f), 'collect_log')
 
 
-STEPS = ['refs', 'price_daily', 'price_index_daily', 'market_factor', 'retail_price_daily', 'weather_daily', 'weather_normal',
+STEPS = ['refs', 'price_daily', 'price_index_daily', 'market_factor', 'piece_weight', 'retail_price_daily', 'weather_daily', 'weather_normal',
          'weather_warning_daily', 'weather_region_now', 'holiday', 'producer_price_daily', 'garak_inout_daily',
          'shipment_reservation_daily', 'fx_daily', 'policy_doc', 'collect_log']
 
@@ -665,7 +769,7 @@ def main():
     print(f'표 만들기: {since} 부터 → {OUT}', flush=True)
     for s in todo:
         {'refs': t_refs, 'price_daily': lambda: t_prices(since), 'price_index_daily': lambda: t_index(since),
-         'market_factor': t_market_factor, 'retail_price_daily': lambda: t_retail(since), 'weather_daily': lambda: t_weather(since),
+         'market_factor': t_market_factor, 'piece_weight': lambda: t_piece_weight(since), 'retail_price_daily': lambda: t_retail(since), 'weather_daily': lambda: t_weather(since),
          'weather_normal': t_weather_normal, 'weather_warning_daily': lambda: t_warning(since), 'weather_region_now': t_now,
          'holiday': t_holiday, 'producer_price_daily': lambda: t_producer(since), 'garak_inout_daily': lambda: t_garak_inout(since),
          'shipment_reservation_daily': lambda: t_at_resv(since), 'fx_daily': lambda: t_fx(since), 'policy_doc': lambda: t_policy(since),

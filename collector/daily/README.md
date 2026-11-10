@@ -37,7 +37,7 @@ API_목록.md     받아야 하는 API · 신청 방법 · 어떤 표를 채우�
 
 ```
 python collect.py daily      # 11가지: 공영도매·KAMIS·특보·날씨·예보·특일·산지공판장·가락 반입·aT 출하예약·환율·정책. PC를 며칠 껐으면 마지막 받은 날부터 이어받음
-python build_tables.py       # 최근 14일만 다시 만듦
+python build_tables.py       # 최근 14일만 다시 만듦  (소매가 개·포기 환산용 1개당 무게도 이번 달·지난 달만 다시 계산 — 처음 한 번은 tools/build_piece_weight_chunk.py 로 2020년부터)
 python load_db.py            # upsert
 python collect.py fcst       # 예보만 — 3시간마다 따로 (02·05·…·23시 20분)
 ```

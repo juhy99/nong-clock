@@ -39,7 +39,9 @@ const call = (req, fallback) =>
   req.then(
     (r) => r.data,
     (e) => {
-      throw new Error(e.response?.data?.message || (e.response ? fallback : "게시판 서버에 연결할 수 없습니다. 잠시 뒤 다시 시도하세요"));
+      const err = new Error(e.response?.data?.message || (e.response ? fallback : "게시판 서버에 연결할 수 없습니다"));
+      err.status = e.response?.status ?? 0; // 오류 팝업이 이 코드로 설명을 고름 (0 = 서버에 못 닿음)
+      throw err;
     },
   );
 const noPhotos = (form) => (form.images?.length ? Promise.reject(new Error("사진 첨부는 아직 준비 중이에요 (사진을 빼고 올려 주세요)")) : null);

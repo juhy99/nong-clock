@@ -2,23 +2,23 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { activeBan, banText, createComment, deleteComment, getComments } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
+import { useErrorPopup, usePopupOnError } from "../../components/ErrorPopup";
 import { useAsync } from "../../components/common";
 import ReportModal from "../../components/ReportModal";
 import { boardDate } from "../../utils/format";
 
 function CommentForm({ onSubmit, placeholder, autoFocus, onCancel }) {
   const [body, setBody] = useState("");
-  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const showError = useErrorPopup();
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
-    setError("");
     try {
       await onSubmit(body);
       setBody("");
     } catch (err) {
-      setError(err.message);
+      showError(err, { title: "댓글을 올리지 못했어요" }); // 쓴 내용은 그대로 남겨 둠
     } finally {
       setBusy(false);
     }
@@ -27,7 +27,7 @@ function CommentForm({ onSubmit, placeholder, autoFocus, onCancel }) {
     <form className="comment-form" onSubmit={submit}>
       <textarea className="input" rows={2} maxLength={500} placeholder={placeholder} value={body} onChange={(e) => setBody(e.target.value)} autoFocus={autoFocus} aria-label={placeholder} />
       <div className="comment-form-foot">
-        <span className={`hint ${error ? "error" : ""}`}>{error || `${body.length}/500`}</span>
+        <span className="hint">{`${body.length}/500`}</span>
         <span style={{ display: "flex", gap: 6 }}>
           {onCancel && <button type="button" className="btn sm" onClick={onCancel}>취소</button>}
           <button className="btn sm primary" disabled={busy || !body.trim()}>등록</button>
@@ -65,6 +65,8 @@ export default function Comments({ post }) {
   const { user } = useAuth();
   const loc = useLocation();
   const state = useAsync(() => getComments(post.id), [post.id]);
+  const showError = useErrorPopup();
+  usePopupOnError(state.error, "댓글을 불러오지 못했어요");
   const [replyTo, setReplyTo] = useState(null);
   const [reporting, setReporting] = useState(null);
   const ban = user ? activeBan(user.id) : null;
@@ -81,8 +83,12 @@ export default function Comments({ post }) {
   };
   const remove = async (c) => {
     if (!confirm("댓글을 지울까요?")) return;
-    await deleteComment(user, c.id);
-    state.reload();
+    try {
+      await deleteComment(user, c.id);
+    } catch (err) {
+      showError(err, { title: "댓글을 지우지 못했어요" });
+    }
+    state.reload(); // 실패해도 지금 서버 상태로 다시 보여줌
   };
   const actions = (c) =>
     user && (

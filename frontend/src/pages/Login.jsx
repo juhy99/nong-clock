@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../components/AuthContext";
 import { AUTH_MODE } from "../api/auth";
+import { useErrorPopup } from "../components/ErrorPopup";
 
 const DEMO = [
   ["김구매", "user@farmbid.kr", "user1234"],
@@ -15,18 +16,17 @@ export default function Login() {
   const [params] = useSearchParams();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
-  const [error, setError] = useState("");
+  const showError = useErrorPopup();
   const [busy, setBusy] = useState(false);
 
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
-    setError("");
     try {
       await login(email, pw);
       nav(params.get("next") || "/", { replace: true });
     } catch (err) {
-      setError(err.message);
+      showError(err, { title: "로그인하지 못했어요", login: false, hints: { 401: "이메일과 비밀번호를 다시 확인해 주세요. 영문 대소문자도 구분해요." } });
     } finally {
       setBusy(false);
     }
@@ -44,7 +44,6 @@ export default function Login() {
           <label htmlFor="pw">비밀번호</label>
           <input id="pw" className="input" type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} required />
         </div>
-        {error && <span className="hint error">{error}</span>}
         <button className="btn primary block" disabled={busy}>로그인</button>
         <p className="muted small" style={{ margin: 0, textAlign: "center" }}>
           아직 회원이 아니신가요? <Link to="/signup" className="link">회원가입</Link>

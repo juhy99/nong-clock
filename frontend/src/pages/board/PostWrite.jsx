@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { BOARD_CATEGORIES, createPost, getPost, updatePost } from "../../api/board";
 import { MAX_IMAGES, uploadImages } from "../../api/upload";
 import { useAuth } from "../../components/AuthContext";
+import { useErrorPopup } from "../../components/ErrorPopup";
 import ImagePicker from "../../components/ImagePicker";
 import Photo from "../../components/Photo";
 
@@ -14,32 +15,31 @@ export default function PostWrite() {
   const [f, setF] = useState({ category: "", title: "", body: "" });
   const [kept, setKept] = useState([]); // 수정할 때 남겨 둘 기존 사진 주소
   const [files, setFiles] = useState([]); // 새로 고른 사진
-  const [error, setError] = useState("");
+  const showError = useErrorPopup();
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     getPost(id)
       .then((p) => {
-        if (p.author !== user.id) throw new Error("본인 글만 고칠 수 있습니다");
+        if (p.author !== user.id) throw Object.assign(new Error("본인 글만 고칠 수 있습니다"), { status: 403 });
         setF({ category: p.category, title: p.title, body: p.body });
         setKept(p.images);
       })
-      .catch((e) => setError(e.message));
-  }, [id, user.id]);
+      .catch((e) => showError(e, { title: "고칠 글을 불러오지 못했어요" }));
+  }, [id, user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
-    setError("");
     try {
       const images = [...kept, ...(await uploadImages(files))];
       const p = id ? await updatePost(user, id, { ...f, images }) : await createPost(user, { ...f, images });
       nav(`/board/${p.id}`, { replace: true });
     } catch (err) {
-      setError(err.message);
+      showError(err, { title: id ? "글을 고치지 못했어요" : "글을 올리지 못했어요" });
       setBusy(false);
     }
   }
@@ -71,7 +71,6 @@ export default function PostWrite() {
           )}
           <ImagePicker files={files} onChange={setFiles} max={MAX_IMAGES - kept.length} />
         </div>
-        {error && <span className="hint error">{error}</span>}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <Link className="btn" to={id ? `/board/${id}` : "/board"}>취소</Link>
           <button className="btn primary" disabled={busy}>{id ? "수정하기" : "등록하기"}</button>

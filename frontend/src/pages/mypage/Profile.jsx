@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { changePassword, withdrawBlockers } from "../../api/auth";
 import { useAuth } from "../../components/AuthContext";
+import { useErrorPopup } from "../../components/ErrorPopup";
 import { SectionHead } from "../../components/common";
 import { DEFAULT_NOTIFY, NOTIFY_TYPES } from "../../mocks/notifications";
 import { AUCTION_ENABLED } from "../../features";
@@ -112,7 +113,7 @@ function Withdraw() {
   const { user, withdraw } = useAuth();
   const nav = useNavigate();
   const [pw, setPw] = useState("");
-  const [error, setError] = useState("");
+  const showError = useErrorPopup();
   const blockers = withdrawBlockers(user.id);
 
   async function submit(e) {
@@ -122,7 +123,7 @@ function Withdraw() {
       await withdraw(pw);
       nav("/login", { replace: true }); // 탈퇴하면 로그아웃 상태 → 로그인 화면으로
     } catch (err) {
-      setError(err.message);
+      showError(err, { title: "탈퇴하지 못했어요", hints: { 403: "비밀번호가 맞지 않아요. 지금 쓰는 비밀번호를 다시 입력해 주세요." } });
     }
   }
 
@@ -149,7 +150,6 @@ function Withdraw() {
         <input className="input" type="password" placeholder="비밀번호 확인" value={pw} onChange={(e) => setPw(e.target.value)} style={{ maxWidth: 260 }} required />
         <button className="btn danger" disabled={blockers.length > 0}>탈퇴하기</button>
       </div>
-      {error && <span className="hint error">{error}</span>}
     </form>
   );
 }

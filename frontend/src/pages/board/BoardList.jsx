@@ -4,6 +4,7 @@ import { getNotices } from "../../api/admin";
 import { BOARD_CATEGORIES, getPosts } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
 import { useAsync } from "../../components/common";
+import { usePopupOnError } from "../../components/ErrorPopup";
 import { boardDate } from "../../utils/format";
 
 export default function BoardList() {
@@ -22,6 +23,7 @@ export default function BoardList() {
   };
   const notices = useAsync(getNotices);
   const state = useAsync(() => getPosts({ category, q, page }), [category, q, page]);
+  usePopupOnError(state.error, "글 목록을 불러오지 못했어요");
 
   return (
     <div className="page">

@@ -251,6 +251,12 @@ button.link { background: none; border: none; padding: 0; cursor: pointer; }
 /* ── 모달 (신고하기) ── */
 .modal-back { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: grid; place-items: center; z-index: 50; padding: 16px; }
 .modal { width: min(480px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 16px; padding: 24px; display: grid; gap: 12px; }
+/* 오류 팝업 (components/ErrorPopup.jsx, 11-10) */
+.err-pop { width: min(420px, 100%); z-index: 60; }
+.err-pop h2 { margin: 0; font-size: 19px; display: flex; gap: 8px; align-items: center; }
+.err-pop-msg { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.5; word-break: keep-all; }
+.err-pop-hint { margin: 0; line-height: 1.6; background: var(--green-soft, #f2f7f2); border-radius: 10px; padding: 10px 12px; word-break: keep-all; }
+.err-pop-acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 .radio { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 15px; cursor: pointer; }
 .radio.on { border-color: var(--green); background: var(--green-soft); }
 .radio input { margin-top: 3px; }

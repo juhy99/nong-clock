@@ -4,6 +4,7 @@ import { getNotices } from "../../api/admin";
 import { deletePost, getPost } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
 import { Async, useAsync } from "../../components/common";
+import { useErrorPopup, usePopupOnError } from "../../components/ErrorPopup";
 import Photo from "../../components/Photo";
 import ReportModal from "../../components/ReportModal";
 import Comments from "./Comments";
@@ -36,11 +37,17 @@ export function PostView() {
   const nav = useNavigate();
   const state = useAsync(() => getPost(id, { countView: true }), [id]);
   const [reporting, setReporting] = useState(false);
+  const showError = useErrorPopup();
+  usePopupOnError(state.error, "글을 불러오지 못했어요");
 
   async function remove(p) {
     if (!confirm("이 글을 지울까요?")) return;
-    await deletePost(user, p.id);
-    nav("/board", { replace: true });
+    try {
+      await deletePost(user, p.id);
+      nav("/board", { replace: true });
+    } catch (err) {
+      showError(err, { title: "글을 지우지 못했어요" });
+    }
   }
 
   return (

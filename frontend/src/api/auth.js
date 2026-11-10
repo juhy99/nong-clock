@@ -60,7 +60,7 @@ export function isEmailTaken(email) {
 /** [중복 확인] 버튼: 이메일·닉네임이 이미 쓰이는지. spring 은 확인 API(GET /api/auth/check?email=|nickname=)가 생기면 연결 */
 export function checkDuplicate(kind, value) {
   const v = value.trim().toLowerCase();
-  if (SPRING) return api.get("/api/auth/check", { params: { [kind]: value.trim() } }).then((r) => !!r.data?.taken, () => Promise.reject(new Error("중복 확인 서버가 아직 준비 중이에요")));
+  if (SPRING) return api.get("/api/auth/check", { params: { [kind]: value.trim() } }).then((r) => !!r.data?.taken, (e) => Promise.reject(springError(e, "중복 확인을 하지 못했습니다")));
   const taken = usersDb.all().some((x) => (kind === "email" ? x.email : (x.name ?? "").toLowerCase()) === v);
   return fake(taken, 200);
 }
@@ -183,13 +183,13 @@ function fromSpring(u) {
   };
 }
 
-/** 백엔드 오류 → 화면에 보여줄 문장 (Spring 은 오류 문장을 글자 그대로 돌려준다) */
+/** 백엔드 오류 → 화면에 보여줄 문장 + 응답 코드(status, 서버에 못 닿으면 0). 오류 팝업(ErrorPopup)이 status 로 설명을 고른다 */
 function springError(e, fallback) {
   const data = e.response?.data;
-  if (typeof data === "string" && data.trim()) return new Error(data.trim());
-  if (data?.message) return new Error(data.message);
-  if (!e.response) return new Error("회원 서버에 연결할 수 없습니다. 잠시 뒤 다시 시도하세요");
-  return new Error(fallback);
+  const text = typeof data === "string" && data.trim() ? data.trim() : data?.message;
+  const err = new Error(text || (e.response ? fallback : "회원 서버에 연결할 수 없습니다"));
+  err.status = e.response?.status ?? 0;
+  return err;
 }
 
 async function springLogin(email, password) {

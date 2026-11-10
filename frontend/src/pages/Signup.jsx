@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { checkDuplicate } from "../api/auth";
 import { useAuth } from "../components/AuthContext";
+import { useErrorPopup } from "../components/ErrorPopup";
 import { SIDO, formatPhone } from "../utils/format";
 import { AUCTION_ENABLED } from "../features";
 
@@ -26,7 +27,7 @@ export default function Signup() {
   const [touched, setTouched] = useState({});
   const [checked, setChecked] = useState({}); // { email: "통과한 값", nickname: "통과한 값" }
   const [dup, setDup] = useState({}); // { email: { ok, msg } }
-  const [error, setError] = useState("");
+  const showError = useErrorPopup();
   const [busy, setBusy] = useState(false);
 
   const errors = validate(f, checked);
@@ -47,7 +48,8 @@ export default function Signup() {
       setDup({ ...dup, [k]: taken ? { ok: false, msg: `이미 사용 중인 ${label}이에요` } : { ok: true, msg: `사용할 수 있는 ${label}이에요` } });
       setChecked({ ...checked, [k]: taken ? null : v.toLowerCase() });
     } catch (err) {
-      setDup({ ...dup, [k]: { ok: false, msg: err.message } });
+      setDup({ ...dup, [k]: null });
+      showError(err, { title: "중복 확인을 하지 못했어요" });
     }
   }
 
@@ -60,7 +62,7 @@ export default function Signup() {
       await signup({ ...f, name: f.nickname.trim() });
       nav("/", { replace: true });
     } catch (err) {
-      setError(err.message);
+      showError(err, { title: "회원가입하지 못했어요", hints: { 409: "그사이 다른 사람이 같은 이메일이나 닉네임으로 가입했어요. 중복 확인을 다시 눌러 주세요." } });
     } finally {
       setBusy(false);
     }
@@ -98,7 +100,6 @@ export default function Signup() {
             {fieldErr("region") && <span className="hint error">{errors.region}</span>}
           </div>
           {input("farm_name", "농장·상호명 (선택)", { placeholder: "예: 이천 햇살농장", hint: AUCTION_ENABLED ? "경매에 판매자 이름으로 함께 표시돼요" : undefined })}
-          {error && <span className="hint error">{error}</span>}
           <button className="btn primary block" disabled={busy}>가입하기</button>
           <p className="muted small" style={{ margin: 0, textAlign: "center" }}>
             이미 회원이신가요? <Link to="/login" className="link">로그인</Link>

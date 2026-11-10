@@ -20,11 +20,11 @@ public class Post {
     @Column(name = "author_id", nullable = false)
     private Long authorId; // 작성자 회원 번호 (User의 id)
 
-    @Column(nullable = false, length = 50)
-    private String category; // 카테고리 (예: 자유게시판, 묻고답하기 등)
+    @Column(nullable = false, length = 20)
+    private String category; // 말머리: FREE · QUESTION · INFO · REVIEW (DB CHECK 제약과 같음)
 
-    @Column(nullable = false, length = 200)
-    private String title; // 글 제목
+    @Column(nullable = false, length = 80)
+    private String title; // 글 제목 (DB VARCHAR(80))
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String body; // 글 내용

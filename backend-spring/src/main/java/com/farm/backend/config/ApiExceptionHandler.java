@@ -1,5 +1,6 @@
 package com.farm.backend.config;
 
+import com.farm.backend.controller.PostController;
 import com.farm.backend.controller.UserController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +18,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 회원 API 오류를 {"message": "..."} 로 통일 (화면 auth.js 의 springError 가 message 를 보여줌).
+ * 회원·게시판 API 오류를 {"message": "..."} 로 통일 (화면 auth.js 의 springError 가 message 를 보여줌).
  * 서버 내부 오류(DB 등)는 문장을 숨기고 로그에만 남긴다 — 예전에는 e.getMessage() 를 그대로 보내 내부 정보가 보였음.
- * 다른 컨트롤러(시세·게시판)의 오류 처리는 바꾸지 않도록 UserController 에만 적용.
+ * 다른 컨트롤러(시세 등)의 오류 처리는 바꾸지 않도록 회원·게시판 컨트롤러에만 적용.
  */
-@RestControllerAdvice(assignableTypes = UserController.class)
+@RestControllerAdvice(assignableTypes = {UserController.class, PostController.class})
 public class ApiExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 

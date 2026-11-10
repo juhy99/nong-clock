@@ -1,7 +1,8 @@
 // 회원가입·로그인 (Spring 담당). 두 가지 방식 중 하나로 동작한다 (VITE_AUTH):
-//   mock (기본)  브라우저에 저장되는 가짜 계정. 서버 사이트도 백엔드가 준비될 때까지 이 방식
+//   mock (기본)  브라우저에 저장되는 가짜 계정 (화면 시연용, 비밀번호도 브라우저에 그대로 저장되므로 실제 서비스에 쓰면 안 됨)
 //   spring       백엔드(backend-spring)의 /api/auth/... 에 연결. 백엔드에 아직 없는 기능(내 정보 수정·비밀번호 변경·탈퇴)은 "준비 중" 오류
-// ⚠️ 실제 서비스에서는 비밀번호를 프론트에 저장하지 않는다. Spring 이 암호화 저장 + 토큰(JWT 등) 발급을 맡는다.
+// spring 방식 (11-10): 비밀번호는 서버가 BCrypt 로 암호화 저장. 로그인 상태는 서버 세션 + 브라우저의 세션 쿠키(HttpOnly, JS 로 못 읽음).
+//   아래 "session"(localStorage)은 화면 표시용 복사본일 뿐이고, 새로고침 때 GET /api/me 로 서버에 다시 확인한다 (refreshSession).
 import axios from "axios";
 import { fake } from "./client";
 import { auctionsDb, usersDb } from "../mocks/auctions";
@@ -27,7 +28,28 @@ export function login(email, password) {
 }
 
 export function logout() {
+  if (SPRING) api.post("/api/auth/logout").catch(() => {}); // 서버 세션 끊기 (실패해도 화면은 로그아웃)
   save("session", null);
+}
+
+/** 새로고침·첫 화면에서 "지금 로그인돼 있나?"를 서버에 확인 (spring). 세션이 끝났으면 화면의 로그인 정보도 지움 */
+export async function refreshSession() {
+  if (!SPRING) return getSession();
+  try {
+    const res = await api.get("/api/me");
+    const prev = getSession();
+    const user = fromSpring(res.data);
+    // 관심 품목은 아직 서버에 저장하지 않아(PATCH /api/me 준비 중) 이 브라우저에 둔 값을 이어서 씀
+    const session = prev?.id === user.id && prev.favorites ? { ...user, favorites: prev.favorites } : user;
+    save("session", session);
+    return session;
+  } catch (e) {
+    if (e.response?.status === 401) {
+      save("session", null);
+      return null;
+    }
+    return getSession(); // 서버에 연결이 안 되면 일단 지금 화면 상태 유지
+  }
 }
 
 /** 가입 화면에서 입력하는 동안 확인. spring 은 확인 API 가 없어 가입 버튼을 누른 뒤 백엔드 오류로 알린다 */
@@ -182,6 +204,7 @@ async function springSignup(form) {
     const res = await api.post("/api/auth/signup", {
       email,
       password: form.password,
+      nickname: (form.nickname ?? form.name).trim(),
       name: form.name.trim(),
       phone: form.phone,
       region: form.region,

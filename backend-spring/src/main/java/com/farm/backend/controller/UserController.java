@@ -1,69 +1,107 @@
 package com.farm.backend.controller;
 
+import com.farm.backend.config.ApiException;
+import com.farm.backend.config.LoginUser;
 import com.farm.backend.domain.User;
+import com.farm.backend.dto.LoginRequest;
+import com.farm.backend.dto.SignupRequest;
+import com.farm.backend.dto.UserResponse;
 import com.farm.backend.service.UserService;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 회원 API — docs/06_api_spec.md 2장 (11-10 보안 고침: 주소를 명세서대로 /api/auth/... 로, 세션 로그인)
+ *   POST /api/auth/signup   가입 (성공하면 바로 로그인 상태)      201 · 409 중복 · 422 입력 오류
+ *   POST /api/auth/login    로그인                               200 · 401 틀림 · 403 정지·탈퇴 · 429 잠금
+ *   POST /api/auth/logout   로그아웃                             204
+ *   GET  /api/auth/check?email= | ?nickname=   중복 확인 {"taken": true}
+ *   GET  /api/me            지금 로그인한 회원 (새로고침 때 화면이 확인)  200 · 401
+ * 응답의 회원 정보에는 비밀번호가 없다 (UserResponse).
+ */
 @RestController
-// 만약 다른 API처럼 기본 주소를 맞추고 싶다면 아래처럼 유지하되,
-// 프론트엔드 요청 주소를 일치시켜야 합니다. 여기서는 /register 단독 사용을 위해 클래스 레벨 RequestMapping을 수정합니다.
-@RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/api")
 public class UserController {
 
     private final UserService userService;
+    private final SecurityContextRepository contextRepository;
 
-    // 💡 프론트엔드에서 보내는 데이터 필드명과 일치시키기
-    @Getter @Setter
-    public static class RegisterRequest {
-        private String email;
-        private String password;
-        private String name;
-        private String phone;
-        private String region;
-        private String farmName; // 프론트의 farm_name이 자바 관례상 보통 camelCase인 farmName으로 매핑됨
-        private boolean marketing;
+    public UserController(UserService userService, SecurityContextRepository contextRepository) {
+        this.userService = userService;
+        this.contextRepository = contextRepository;
     }
 
-    @Getter @Setter
-    public static class LoginRequest {
-        private String email;
-        private String password;
+    @PostMapping("/auth/signup")
+    public ResponseEntity<UserResponse> signup(@Valid @RequestBody SignupRequest body, HttpServletRequest request, HttpServletResponse response) {
+        User user = userService.signup(body);
+        startSession(user, request, response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserService.toResponse(user));
+    }
+
+    @PostMapping("/auth/login")
+    public UserResponse login(@Valid @RequestBody LoginRequest body, HttpServletRequest request, HttpServletResponse response) {
+        User user = userService.login(body.email(), body.password());
+        startSession(user, request, response);
+        return UserService.toResponse(user);
+    }
+
+    @PostMapping("/auth/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        endSession(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/auth/check")
+    public Map<String, Boolean> check(@RequestParam(required = false) String email, @RequestParam(required = false) String nickname) {
+        if (email != null && !email.isBlank()) return Map.of("taken", userService.isEmailTaken(email));
+        if (nickname != null && !nickname.isBlank()) return Map.of("taken", userService.isNicknameTaken(nickname));
+        throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "email 또는 nickname 을 주세요");
+    }
+
+    /** 로그인 필수 (SecurityConfig). 정지·탈퇴된 회원의 남은 세션은 여기서 끊음 */
+    @GetMapping("/me")
+    public UserResponse me(@AuthenticationPrincipal LoginUser me, HttpServletRequest request) {
+        User user = userService.activeUser(me == null ? null : me.id());
+        if (user == null) {
+            endSession(request);
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다");
+        }
+        return UserService.toResponse(user);
     }
 
     /**
-     * 💡 회원가입 API 주소를 프론트엔드와 맞춤 (POST /register)
+     * 로그인 상태 만들기: 예전 세션을 버리고 새 세션 번호를 받은 뒤(세션 고정 공격 막기) 로그인 정보를 세션에 저장.
+     * 권한은 지금 모두 ROLE_MEMBER (관리자 열이 DB 에 생기면 ROLE_ADMIN 추가)
      */
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        try {
-            // 💡 6개의 데이터를 모두 서비스로 넘기도록 수정
-            userService.register(
-                    request.getEmail(),
-                    request.getPassword(),
-                    request.getName(),
-                    request.getPhone(),
-                    request.getRegion(),
-                    request.getFarmName()
-            );
-            return ResponseEntity.ok("회원가입이 완료되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    private void startSession(User user, HttpServletRequest request, HttpServletResponse response) {
+        HttpSession old = request.getSession(false);
+        if (old != null) old.invalidate();
+        request.getSession(true);
+        UsernamePasswordAuthenticationToken auth = UsernamePasswordAuthenticationToken.authenticated(
+                new LoginUser(user.getId(), user.getEmail()), null, List.of(new SimpleGrantedAuthority("ROLE_MEMBER")));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+        contextRepository.saveContext(context, request, response);
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        try {
-            User user = userService.login(request.getEmail(), request.getPassword());
-            // 프론트엔드 세션 저장을 위해 user 객체(또는 필요한 정보)를 그대로 리턴해주는 것이 좋습니다.
-            return ResponseEntity.ok(user);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    private void endSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) session.invalidate();
+        SecurityContextHolder.clearContext();
     }
 }

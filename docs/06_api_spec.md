@@ -628,6 +628,21 @@ AI 가격예측 화면에서 품목·도매시장·예측 날짜(내일 ~ 1년 �
 - `farm_name`(농장·상호명)은 선택. 있으면 경매 판매자 이름으로 함께 표시
 - 비밀번호: 영문+숫자 8자 이상, **서버에서 암호화 저장**
 
+#### 2-3-1. 로그인·세션 (11-10 Spring 구현)
+| 주소 | 성공 | 실패 |
+|---|---|---|
+| `POST /api/auth/signup` | `201` 회원 정보 + 바로 로그인 | `409` 이메일·닉네임 중복, `422` 입력 오류 |
+| `POST /api/auth/login` `{ "email", "password" }` | `200` 회원 정보 | `401` "이메일 또는 비밀번호가 맞지 않습니다"(가입 여부를 알려 주지 않음), `403` 정지·탈퇴, `429` 10분 안 5번 틀림 → 5분 잠금 |
+| `POST /api/auth/logout` | `204` | — |
+| `GET /api/auth/check?email=` · `?nickname=` | `{ "taken": false }` | `422` 둘 다 없음 |
+| `GET /api/me` | `200` 지금 로그인한 회원 | `401` 로그인 안 함·세션 끝남·정지/탈퇴 |
+
+- **로그인 방식: 서버 세션.** 응답에 `JSESSIONID` 쿠키(HttpOnly, SameSite=Lax, 12시간)가 오고, 브라우저가 같은 주소의 다음 요청에 자동으로 붙인다. 화면은 토큰을 따로 저장하지 않는다.
+- **회원 정보 응답:** `{ "id", "email", "name", "nickname", "phone", "region", "farmName", "type": "MEMBER", "status": "ACTIVE" }`. 비밀번호(해시)는 절대 없음.
+- **오류 응답:** 회원 API 는 `{ "message": "화면에 보여줄 문장" }` (422 는 `detail` 에 칸별 오류도). 서버 내부 오류는 문장을 숨김.
+- **비밀번호:** BCrypt 저장. 규칙은 영문+숫자 8~64자(키보드 문자만, 한글·띄어쓰기 안 됨).
+- **로그인이 필요한 API 만들 때 (Spring):** `SecurityConfig` 의 `authorizeHttpRequests` 에 주소를 추가하고, 컨트롤러에서 `@AuthenticationPrincipal LoginUser me` 로 회원 번호(`me.id()`)를 꺼낸다. **요청 본문의 작성자 번호(authorId 등)를 믿지 말 것.**
+
 ### 2-4. 알림 항목 예시 (`GET /api/me/notifications`)
 
 ```json

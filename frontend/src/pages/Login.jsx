@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../components/AuthContext";
+import { AUTH_MODE } from "../api/auth";
 
 const DEMO = [
   ["김구매", "user@farmbid.kr", "user1234"],
@@ -49,6 +50,7 @@ export default function Login() {
           아직 회원이 아니신가요? <Link to="/signup" className="link">회원가입</Link>
         </p>
       </form>
+      {AUTH_MODE === "mock" && ( // 가짜 계정 모드에서만 (실제 회원 서버에 연결하면 숨김)
       <div className="banner info small" style={{ marginTop: 14, display: "block" }}>
         <b>개발용 데모 계정</b> (클릭하면 입력됩니다)
         <div className="pills" style={{ marginTop: 8 }}>
@@ -57,6 +59,7 @@ export default function Login() {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }

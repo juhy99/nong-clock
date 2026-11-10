@@ -1,3 +1,13 @@
+# 로그인 세션 (11-10): 브라우저에는 세션 번호 쿠키만. 자바스크립트로 못 읽게(http-only), 다른 사이트에서 온 요청엔 안 붙게(same-site lax)
+server:
+  servlet:
+    session:
+      timeout: 12h          # 12시간 동안 아무 요청이 없으면 로그아웃
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${COOKIE_SECURE:false}  # https 로 서비스하면 서버 .env 에 COOKIE_SECURE=true (http 에서 true 면 로그인이 안 됨)
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/farmdb
@@ -8,7 +18,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate  # 이미 도커에서 테이블을 만들었으므로 validate나 none을 쓰는 것이 안전합니다.
-    show-sql: true
+    show-sql: false  # true 면 SQL 이 로그에 찍힘 (회원 이메일 등이 로그에 남지 않게 기본은 끔)
     properties:
       hibernate:
         format_sql: true

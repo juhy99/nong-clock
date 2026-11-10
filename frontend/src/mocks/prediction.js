@@ -25,18 +25,19 @@ function season(item, iso) {
 /** 오차 범위 비율 = 모델 검증 오차(WAPE) — 품목·예측 기간별 (accuracy.js) */
 export const bandRatio = (item, t) => errorPct(item, t) / 100;
 
-export function mockPredict({ item, horizon, market = "national" }) {
+/** base_date(기준일, 생략하면 오늘) · history_days(기본 14) · last_year(작년 같은 시기) — ml-api 와 같은 모양 (11-11) */
+export function mockPredict({ item, horizon, market = "national", base_date: baseDate, history_days: historyDays = 14, last_year: lastYear = false }) {
   const info = ITEMS.find((i) => i.code === item) ?? ITEMS[0];
   const h = Math.min(Math.max(1, horizon), MAX_HORIZON);
   const f = market === "national" ? 1 : marketFactor(info.code, market);
   const base = Math.round((BASE_PRICE[info.code] ?? 1000) * f);
-  const rand = seeded(`${info.code}|${market}|${todayIso()}`);
-  const today = todayIso();
+  const today = baseDate || todayIso(); // 아래 today = 기준일
+  const rand = seeded(`${info.code}|${market}|${today}`);
   const s0 = season(info.code, today);
 
   const history = [];
   let p = base * (0.9 + rand() * 0.08);
-  for (let i = 14; i > 0; i--) {
+  for (let i = historyDays; i > 0; i--) {
     p *= 1 + (rand() - 0.5) * 0.03;
     history.push({ date: addDays(today, -i), price: Math.round(p) });
   }
@@ -50,6 +51,17 @@ export function mockPredict({ item, horizon, market = "national" }) {
     const v = base * (season(info.code, d) / s0) * (1 + wob);
     const band = v * bandRatio(info.code, t);
     forecast.push({ date: d, price: Math.round(v), lower: Math.round(v - band), upper: Math.round(v + band) });
+  }
+  // 작년 같은 시기 (52주 = 364일 전 같은 요일): history 첫날 ~ forecast 마지막 날
+  const last_year = [];
+  if (lastYear) {
+    const ly = seeded(`ly|${info.code}|${market}|${today}`), level = 1 + (seeded(`lylv|${info.code}|${today.slice(0, 4)}`)() - 0.5) * 0.24;
+    let n = 0;
+    for (let t = -historyDays; t <= h; t++) {
+      const d = addDays(today, t - 364);
+      n = n * 0.85 + (ly() - 0.5) * 0.02;
+      last_year.push({ date: d, price: Math.round(base * level * (season(info.code, d) / s0) * (1 + n)) });
+    }
   }
   const predicted = forecast.at(-1).price;
   const m = MARKETS.find((x) => x.code === market);
@@ -75,6 +87,7 @@ export function mockPredict({ item, horizon, market = "national" }) {
       h >= 14
         ? [{ start: addDays(today, 7), end: addDays(today, 9), reason: "[데모] 기온 편차 +2.4σ, 강수량 평년 대비 180% 예상", mape_normal: 6.2, mape_anomaly: 19.8 }]
         : [],
+    last_year,
     model_version: "mock",
   };
 }

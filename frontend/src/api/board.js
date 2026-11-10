@@ -92,6 +92,22 @@ export function getPosts({ category = "", q = "", page = 1 } = {}) {
   });
 }
 
+/**
+ * 마이페이지 "내가 쓴 글 · 내가 쓴 댓글" (11-11).
+ * Spring 에는 아직 API 가 없어(명세서 2-9 제안: GET /api/posts?mine=true, GET /api/me/comments) spring 모드면 null 을 돌려주고 화면은 "준비 중"으로 보여 준다.
+ * @returns {Promise<{posts: object[] | null, comments: object[] | null}>}
+ */
+export function getMyActivity(user) {
+  if (SPRING) return Promise.resolve({ posts: null, comments: null });
+  const counts = commentCounts();
+  const posts = postsDb.all().filter((p) => p.author === user.id && !p.hidden).sort(newestFirst)
+    .map(({ body, ...p }) => ({ ...p, comment_count: counts[p.id] ?? 0 }));
+  const titles = Object.fromEntries(postsDb.all().map((p) => [p.id, p.title]));
+  const comments = commentsDb.all().filter((c) => c.author === user.id && !c.deleted).sort(newestFirst)
+    .map((c) => ({ ...c, post_title: titles[c.post_id] ?? "지운 글" }));
+  return fake({ posts, comments });
+}
+
 /** 글 보기. countView 면 조회수 +1 (같은 브라우저 탭에서는 한 번만) */
 export function getPost(id, { countView = false } = {}) {
   if (SPRING) return call(api.get(`/api/posts/${id}`, { params: countView ? { view: true } : {} }), "글을 불러오지 못했습니다"); // 조회수 중복은 서버가 막음

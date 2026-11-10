@@ -66,7 +66,7 @@ export function checkDuplicate(kind, value) {
 }
 
 /** 회원 유형 선택 없음: 모든 회원이 입찰·판매 가능 (farm_name 은 선택, 경매 판매자 이름으로 표시)
- * @param {{email, password, name, phone, region, farm_name?, marketing?: boolean}} form */
+ * @param {{email, password, name, phone, region, farm_name?}} form  (마케팅 동의는 받지 않음, 11-11) */
 export function signup(form) {
   if (SPRING) return springSignup(form);
   const rows = usersDb.all();
@@ -81,7 +81,6 @@ export function signup(form) {
     type: "member",
     region: form.region,
     farm_name: form.farm_name || "",
-    marketing: !!form.marketing,
     status: "정상",
     joined: new Date().toISOString().slice(0, 10),
   };
@@ -216,8 +215,7 @@ async function springSignup(form) {
       phone: form.phone,
       region: form.region,
       farmName: form.farm_name || "",
-      marketing: !!form.marketing,
-    });
+      });
     data = res.data;
   } catch (e) {
     throw springError(e, "회원가입에 실패했습니다");

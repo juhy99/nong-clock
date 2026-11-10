@@ -1,134 +1,176 @@
 import { useSearchParams } from "react-router-dom";
-import { getHorizons, getItems, predict } from "../api/ml";
+import { getItems, predict } from "../api/ml";
 import { getMarkets } from "../api/market";
 import { Async, useAsync } from "../components/common";
-import ForecastChart from "../components/ForecastChart";
-import ItemImage from "../components/ItemImage";
 import PredictSearch from "../components/PredictSearch";
 import { ITEMS50, itemOf, varietyFactor, varietyOf } from "../mocks/items50";
-import { ACCURACY, LOW_ACCURACY, bucketLabel, referenceOf } from "../mocks/accuracy";
-import { LONG_RANGE_DAYS } from "../mocks/prediction";
-import { addDays, daysBetween, md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
+import { LOW_ACCURACY } from "../mocks/accuracy";
+import { addDays, daysBetween, md, todayIso, won } from "../utils/format";
+import "./predict.css";
 
-const MAX_DAYS = 365;
+/* ─────────────────────────────────────────────
+   AI 가격 예측 (v17, 11-11)
+   조건: 도매시장 → 부류 → 품목 → 품종 → 기준 날짜. 기준일부터 4주(horizon 28)를 예측하고,
+   그래프는 기준일 앞 8주 실제(history_days 56) + 앞으로 4주 예측 + 작년 같은 시기(last_year) 를 주 단위로 그림
+   ───────────────────────────────────────────── */
 const DEFAULT_MARKET = "110001"; // 서울가락
+const WEEKS_BACK = 8;
+const LY_DAYS = 364; // 작년 같은 시기 = 52주 전 같은 요일 (ml-api 와 같음)
 
-/** 오늘~고른 날짜 사이 가장 비싼 날·싼 날 (같은 값이면 가까운 날) */
-function extremes(p) {
-  let hi = null, lo = null;
-  for (const f of p.forecast) {
-    if (!hi || f.price > hi.price) hi = f;
-    if (!lo || f.price < lo.price) lo = f;
-  }
-  const pct = (v) => Math.round(((v - p.base_price) / p.base_price) * 1000) / 10;
-  return { hi: { ...hi, pct: pct(hi.price) }, lo: { ...lo, pct: pct(lo.price) } };
+const pct = (v, base) => ((v - base) / base) * 100;
+const signPct = (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}%`;
+/** 날짜 → "11월 4주차" (그 달의 몇째 주) */
+const weekOfMonth = (iso) => `${Number(iso.slice(5, 7))}월 ${Math.ceil(Number(iso.slice(8, 10)) / 7)}주차`;
+
+/** 응답을 주 단위로: 과거 8점(기준일 포함) · 앞으로 4점 · 작년 같은 자리 12점 */
+function weekly(p) {
+  const byDate = new Map(p.history.map((h) => [h.date, h.price]));
+  const past = Array.from({ length: WEEKS_BACK }, (_, i) => {
+    const d = addDays(p.base_date, -7 * (WEEKS_BACK - 1 - i));
+    return { date: d, price: byDate.get(d) ?? null };
+  }).filter((x) => x.price != null);
+  const fut = [7, 14, 21, 28].map((t) => p.forecast[t - 1]).filter(Boolean);
+  const lyBy = new Map((p.last_year ?? []).map((h) => [addDays(h.date, LY_DAYS), h.price]));
+  const ly = [...past, ...fut].map((x) => lyBy.get(x.date) ?? null);
+  return { past, fut, ly };
 }
-const sign = (v) => `${v > 0 ? "+" : ""}${v}%`;
 
-/** 결과 맨 위: 고른 날 예상 가격(가장 크게) + 이 기간 최고·최저 가격 */
-function PriceHero({ p, emoji, low }) {
-  const { hi, lo } = extremes(p);
-  const end = p.forecast.at(-1);
-  const diff = p.predicted_price - p.base_price;
-  const dir = p.change_pct > 0 ? "up" : p.change_pct < 0 ? "down" : "flat";
+/** 그래프: 올해 실제(진한 초록) · AI 예측(주황) + 범위 · 작년 같은 시기(파랑) */
+function Chart({ past, fut, ly }) {
+  const W = 900, H = 340, L = 64, R = 24, T = 40, B = 40;
+  const all = [...past, ...fut];
+  const vals = [...all.map((x) => x.price), ...fut.flatMap((f) => [f.lower, f.upper]), ...ly.filter((v) => v != null)];
+  const step = (() => { const r = Math.max(...vals) - Math.min(...vals) || 100; return [10, 20, 50, 100, 200, 500, 1000, 2000, 5000].find((s) => r / s <= 6) ?? 10000; })();
+  const lo = Math.floor(Math.min(...vals) / step) * step, hi = Math.ceil(Math.max(...vals) / step) * step;
+  const X = (i) => L + (i * (W - L - R)) / Math.max(1, all.length - 1);
+  const Y = (v) => T + ((hi - v) / (hi - lo || 1)) * (H - T - B);
+  const k = past.length - 1;
+  const fu = [past[k], ...fut];
+  const top = Math.max(...fut.map((f) => f.price));
+  const bi = past.length + fut.findIndex((f) => f.price === top);
+  const lyPts = ly.map((v, i) => (v == null ? null : [X(i), Y(v)])).filter(Boolean);
+  const lyTopV = Math.max(...ly.filter((v) => v != null));
+  const lyTopI = ly.indexOf(lyTopV);
+  const band = [...fu.map((f, i) => `${X(k + i)},${Y(i ? f.upper : f.price)}`), ...fu.map((f, i) => `${X(k + i)},${Y(i ? f.lower : f.price)}`).reverse()].join(" ");
+  const labels = all.map((x, i) => (i < k ? md(x.date) : i === k ? "기준일" : `${i - k}주 뒤`));
+  // 이름표가 그래프 밖으로 잘리지 않게 x 를 안쪽으로
+  const inX = (x, w) => Math.min(Math.max(x, L + w / 2), W - R - w / 2);
+  const ticks = [];
+  for (let v = lo; v <= hi; v += step) ticks.push(v);
   return (
-    <div className="ph">
-      <div className={`ph-main ${dir}`}>
-        <span className="ph-emo"><ItemImage code={p.item} emoji={emoji} alt="" /></span>
-        <span className="ph-when">{shortDate(end.date)} · {p.horizon}일 후 · {p.market_name} 예상 경매 단가</span>
-        <b className="ph-price num">{won(p.predicted_price)}<small>원/kg</small></b>
-        <span className="ph-chg">
-          <b className={dir}>{dir === "up" ? "▲" : dir === "down" ? "▼" : "–"} {Math.abs(p.change_pct).toFixed(1)}% ({diff > 0 ? "+" : ""}{won(diff)}원)</b>
-          <span className="muted"> 오늘 {wonPerKg(p.base_price)}보다</span>
-        </span>
-        {low && <span className="ph-range">❗ 정확도 낮은 품목</span>}
-      </div>
-      <div className="ph-ext hi">
-        <span>이 기간 최고 가격</span>
-        <b className="num">{wonPerKg(hi.price)}</b>
-        <em>{shortDate(hi.date)} · <i className="up">{sign(hi.pct)}</i></em>
-      </div>
-      <div className="ph-ext lo">
-        <span>이 기간 최저 가격</span>
-        <b className="num">{wonPerKg(lo.price)}</b>
-        <em>{shortDate(lo.date)} · <i className="down">{sign(lo.pct)}</i></em>
-      </div>
-    </div>
+    <svg className="pv-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="지난 8주 실제 가격, 앞으로 4주 예측, 작년 같은 시기 가격">
+      {ticks.map((v) => (
+        <g key={v}>
+          <line x1={L} x2={W - R} y1={Y(v)} y2={Y(v)} stroke="rgba(19,38,26,.08)" />
+          <text x={L - 10} y={Y(v) + 5} textAnchor="end" fontSize="15" fill="rgba(19,38,26,.8)">{won(v)}</text>
+        </g>
+      ))}
+      {labels.map((t, i) => (
+        <text key={i} x={X(i)} y={H - 10} textAnchor="middle" fontSize="15" fill={i === k ? "#13261a" : "rgba(19,38,26,.8)"} fontWeight={i === k ? 700 : 400}>{t}</text>
+      ))}
+      <rect x={X(k)} y={T - 16} width={W - R - X(k)} height={H - T - B + 16} fill="rgba(217,138,0,.06)" rx="8" />
+      <line x1={X(k)} x2={X(k)} y1={T - 16} y2={H - B} stroke="rgba(19,38,26,.35)" strokeDasharray="4 4" />
+      <polygon points={band} fill="rgba(20,96,59,.12)" />
+      {lyPts.length > 1 && (
+        <>
+          <polyline points={lyPts.map((p) => p.join(",")).join(" ")} fill="none" stroke="#4a6fb5" strokeWidth="2.5" strokeLinejoin="round" />
+          {lyPts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="3" fill="#fff" stroke="#4a6fb5" strokeWidth="2" />)}
+          <text x={lyPts[0][0] + 6} y={lyPts[0][1] - 10} fontSize="15" fontWeight="700" fill="#4a6fb5">작년</text>
+          <g>
+            <rect x={inX(X(lyTopI), 210) - 105} y={Y(lyTopV) - 46} width="210" height="30" rx="15" fill="#4a6fb5" />
+            <text x={inX(X(lyTopI), 210)} y={Y(lyTopV) - 25} textAnchor="middle" fontSize="15" fontWeight="700" fill="#fff">작년 최고 {won(lyTopV)}원 ({md(addDays(all[lyTopI].date, -LY_DAYS))})</text>
+          </g>
+        </>
+      )}
+      <polyline className="pv-path" points={past.map((x, i) => `${X(i)},${Y(x.price)}`).join(" ")} fill="none" stroke="rgba(19,38,26,.8)" strokeWidth="3" strokeLinejoin="round" />
+      <text x={X(0) + 6} y={Y(past[0].price) + 24} fontSize="15" fontWeight="700" fill="#13261a">올해</text>
+      <polyline className="pv-path" points={fu.map((x, i) => `${X(k + i)},${Y(x.price)}`).join(" ")} fill="none" stroke="#e08a00" strokeWidth="4" strokeLinejoin="round" />
+      {fut.map((f, i) => (
+        <circle key={f.date} cx={X(k + 1 + i)} cy={Y(f.price)} r={k + 1 + i === bi ? 8 : 4.5} fill={k + 1 + i === bi ? "#d92d20" : "#e08a00"} stroke="#fff" strokeWidth={k + 1 + i === bi ? 2.5 : 0} />
+      ))}
+      <circle cx={X(k)} cy={Y(past[k].price)} r="5" fill="#13261a" />
+      <g>
+        <rect x={inX(X(bi), 170) - 85} y={Y(top) + 16} width="170" height="30" rx="15" fill="#d92d20" />
+        <text x={inX(X(bi), 170)} y={Y(top) + 37} textAnchor="middle" fontSize="15" fontWeight="800" fill="#fff">올해 예측 {won(top)}원</text>
+      </g>
+    </svg>
   );
 }
 
-// 예측 기간(일) → 그 기간이 덮는 날 범위 (참고용 칸 칠하기)
-const BUCKET_RANGE = { 7: [1, 10], 14: [11, 21], 30: [22, 60], 90: [61, 135], 180: [136, 180] };
-
-/** 이 품목에서 "참고용"인 구간들 [{ x1, x2, label }] — 기준선보다 나쁜 기간 + 6개월보다 먼 날 */
-function referenceZones(p) {
-  const zones = [];
-  (ACCURACY.items[p.item]?.reference_only ?? []).forEach((d) => {
-    const [a, b] = BUCKET_RANGE[d];
-    if (a > p.horizon) return;
-    const last = zones.at(-1);
-    if (last && last.b + 1 === a) last.b = Math.min(b, p.horizon);
-    else zones.push({ a, b: Math.min(b, p.horizon), label: "참고용 · 기준선보다 나쁨" });
-  });
-  if (p.horizon > LONG_RANGE_DAYS) zones.push({ a: LONG_RANGE_DAYS + 1, b: p.horizon, label: "참고용 · 6개월 넘는 장기" });
-  return zones.map((z) => ({ x1: addDays(p.base_date, z.a), x2: addDays(p.base_date, z.b), label: z.label }));
-}
-
-function Result({ p, emoji }) {
-  const alert = p.alerts[0];
-  const { hi, lo } = extremes(p);
-  const long = p.horizon > LONG_RANGE_DAYS;
-  const bad = (ACCURACY.items[p.item]?.reference_only ?? []).filter((d) => BUCKET_RANGE[d][0] <= p.horizon);
-  const ref = p.reference ?? referenceOf(p.item, p.horizon);
+function Result({ p }) {
+  const { past, fut, ly } = weekly(p);
+  if (!past.length || fut.length < 4) return <div className="card state">예측 값을 불러오지 못했어요.</div>;
+  const base = p.base_price;
+  const top = Math.max(...fut.map((f) => f.price));
+  const wi = fut.findIndex((f) => f.price === top);
+  const best = fut[wi];
+  const gain = top - base;
+  const lyNow = ly[past.length - 1];
+  const lyTop = Math.max(...ly.filter((v) => v != null));
+  const lyTopI = ly.indexOf(lyTop) - (past.length - 1);
   const low = LOW_ACCURACY.has(p.item);
+  const marketName = p.market_name === "전국 평균" ? "전국 도매시장" : p.market_name;
   return (
-    <section className="card">
-      <PriceHero p={p} emoji={emoji} low={low} />
-      <div className="chips">
-        <span className="chip">
-          🛡️ 신뢰도 지수 <b>{p.confidence}</b>/100
-          <span className="meter"><i style={{ width: `${p.confidence}%` }} /></span>
-        </span>
-        <span className="chip">📏 예측 오차 <b>±{Math.round(p.error_pct)}%</b></span>
-        {low && <span className="chip lowacc">❗ 예측 정확도 낮음</span>}
-        {ref && <span className="chip ref">🔖 참고용</span>}
-        {alert && <span className="chip warn">⚠️ 이상기후 경보 구간 {md(alert.start)} ~ {md(alert.end)}</span>}
-      </div>
-      {low && (
-        <div className="low-acc">
-          <span className="ip-warn big">!</span>
+    <div className="pv-grid">
+      <section className="card pv-main">
+        <div className="pv-head"><h2>{p.item_name} · {marketName}</h2><small>원/kg · {p.base_date.replaceAll("-", ". ")}. 기준</small></div>
+        <div className="pv-big">
+          <b>{won(top)}원</b>
+          <span className={gain >= 0 ? "up" : "down"}>{signPct(pct(top, base))}</span>
+          <span className="muted">4주 안 최고 예상가 · 기준일 {won(base)}원</span>
+          {low && <span className="pv-low">❗ 예측 정확도가 낮은 품목이에요</span>}
+        </div>
+        <Chart past={past} fut={fut} ly={ly} />
+        <div className="pv-legend">
+          <span><i style={{ background: "rgba(19,38,26,.75)" }} />지난 8주 실제 가격</span>
+          <span><i style={{ background: "#e08a00" }} />AI 예측</span>
+          <span><i style={{ background: "rgba(20,96,59,.25)", height: 10 }} />예측 범위</span>
+          {lyNow != null && <span><i style={{ background: "#4a6fb5" }} />작년 같은 시기 (실제)</span>}
+        </div>
+        {lyNow != null && (
+          <div className="pv-ly">
+            <span>📅 작년 같은 주 <b>{won(lyNow)}원</b> → 올해 {won(base)}원 (<b>{signPct(pct(base, lyNow))}</b>)</span>
+            <span>작년엔 <b>{lyTopI > 0 ? `${lyTopI}주 뒤` : lyTopI === 0 ? "기준일" : `${-lyTopI}주 전`} {won(lyTop)}원</b>이 가장 높았어요 · 올해 예측 최고는 {wi + 1}주 뒤</span>
+          </div>
+        )}
+        <div className="pv-verdict">
+          <span className="ic" aria-hidden>📅</span>
           <div>
-            <b>{p.item_name}은(는) 예측 정확도가 낮은 품목이에요</b>
-            <p>[경고 문구는 추후 추가될 내용입니다] 이 품목은 가격 변동이 커서 모델 검증 오차가 큰 편이에요 (1개월 뒤 ±{Math.round(ACCURACY.items[p.item]?.wape["30"] ?? 0)}%). 예측값은 방향만 참고해 주세요.</p>
+            <b>출하 추천 시기: <em>{weekOfMonth(best.date)}</em> ({md(addDays(best.date, -6))} ~ {md(best.date)})</b>
+            <p>{gain > 0 ? <>기준일에 파는 것보다 kg당 약 <b>{won(gain)}원</b> 더 받을 수 있어요.</> : <>앞으로 4주는 기준일보다 낮을 것으로 보여요. 기준일 무렵에 파는 편이 나아요.</>}</p>
           </div>
         </div>
-      )}
-      <div className={low ? "chart-low" : undefined}>
-        {low && <span className="chart-low-tag">⚠ 예측 정확도 낮음 · 참고만 하세요 (문구 추후 추가)</span>}
-        <ForecastChart p={p} height={270}
-          marks={[{ date: hi.date, price: hi.price, label: "최고", color: "#d92d20" }, { date: lo.date, price: lo.price, label: "최저", color: "#1d63c9" }]}
-          zones={referenceZones(p)} />
+      </section>
+      <div className="pv-side">
+        <section className="card">
+          <div className="pv-head"><h2>주별 예측</h2><small>원/kg</small></div>
+          <ul className="pv-weeks">
+            {fut.map((f, i) => {
+              const c = pct(f.price, base);
+              return (
+                <li key={f.date} className={i === wi ? "best" : ""}>
+                  <span className="w"><b>{i + 1}주 뒤{i === wi && <em>출하 추천</em>}</b>{md(addDays(f.date, -6))}~{md(f.date)}</span>
+                  <span className="rg">범위 {won(f.lower)} ~ {won(f.upper)}원</span>
+                  <span className="pr">{won(f.price)}원<small className={c >= 0 ? "up" : "down"}>{signPct(c)}</small></span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+        <section className="card">
+          <div className="pv-head"><h2>이 예측, 믿을 만한가요?</h2></div>
+          <div className="pv-acc">
+            <div className="pv-ring" style={{ "--v": p.confidence }}><span>{p.confidence}%</span></div>
+            <p>지난 검증 기간에 이 품목 4주 예측은<br />실제 가격과 평균 <b>±{Math.round(p.error_pct)}% 안</b>에서 맞았어요.</p>
+          </div>
+          <ul className="pv-notes">
+            {p.alerts.map((a) => <li key={a.start}><span className="ic warn">⚠️</span>{md(a.start)}~{md(a.end)} 이상기후 주의 · 이 기간 예측은 참고만 하세요</li>)}
+            {p.reference && <li><span className="ic">🔖</span>{p.reference === "far" ? "6개월보다 먼 예측이라 참고용이에요" : "이 품목·기간은 예측이 덜 정확해 참고용이에요"}</li>}
+            {!p.alerts.length && !p.reference && <li><span className="ic ok">✓</span>이 기간에는 이상기후 주의 구간이 없어요</li>}
+          </ul>
+        </section>
       </div>
-      {bad.length > 0 && (
-        <p className="ai-long">🔖 <b>{p.item_name} {bad.map(bucketLabel).join("·")} 예측은 참고용이에요.</b></p>
-      )}
-      {long && (
-        <p className="ai-long">ℹ️ <b>6개월이 넘는 장기 예측은 참고용이에요.</b></p>
-      )}
-      <details className="more-info">
-        <summary>예측 오차·신뢰도는 어떻게 계산하나요?</summary>
-        오차 범위(띠)·신뢰도 = 모델 검증 오차(WAPE, 2025-07~) · {p.item_name} 1주 ±{Math.round(ACCURACY.items[p.item]?.wape["7"] ?? 0)}% · 1개월 ±{Math.round(ACCURACY.items[p.item]?.wape["30"] ?? 0)}% · 6개월 ±{Math.round(ACCURACY.items[p.item]?.wape["180"] ?? ACCURACY.average_wape["180"])}% · 신뢰도 = 100 − 오차 · 날씨·기후 변수와 과거 시세를 함께 학습한 모델
-      </details>
-      {alert ? (
-        <div className="banner" style={{ marginTop: 14 }}>
-          ⚠️
-          <div className="small">
-            <b>{md(alert.start)}~{md(alert.end)} 이상기후 주의</b>
-            <div>{alert.reason} · 이 기간 예측은 참고만 하세요</div>
-          </div>
-        </div>
-      ) : null}
-    </section>
+    </div>
   );
 }
 
@@ -136,8 +178,8 @@ export default function Predict() {
   const [params, setParams] = useSearchParams();
   const options = useAsync(async () => {
     // 도매시장 목록은 시세 쪽(전국 평균 + 32곳, 시장마다 거래하는 품목 items)을 쓴다
-    const [items, horizons, markets] = await Promise.all([getItems(), getHorizons(), getMarkets()]);
-    return { items, horizons, markets };
+    const [items, markets] = await Promise.all([getItems(), getMarkets()]);
+    return { items, markets };
   });
   const opts = options.data;
   const today = todayIso();
@@ -146,13 +188,12 @@ export default function Predict() {
     item: itemOf(params.get("item"))?.code ?? ITEMS50[0].code,
     variety: params.get("variety") ?? "",
     market: params.get("market") || DEFAULT_MARKET,
-    date: pDate && daysBetween(today, pDate) >= 1 && daysBetween(today, pDate) <= MAX_DAYS ? pDate : addDays(today, 30),
+    date: pDate && daysBetween(pDate, today) >= 0 && daysBetween(pDate, today) <= 365 ? pDate : today,
   };
-  const horizon = daysBetween(today, q.date);
   const variety = varietyOf(q.item, q.variety);
   const result = useAsync(async () => {
     if (!opts) return null;
-    const p = await predict({ item: q.item, horizon, market: q.market });
+    const p = await predict({ item: q.item, market: q.market, horizon: 28, history_days: 56, last_year: true, ...(q.date !== today ? { base_date: q.date } : {}) });
     // [샘플] 품종 가격 = 품목 예측 × 품종 계수 (품종별 모델이 붙으면 API 가 품종 값을 바로 준다)
     const f = varietyFactor(q.variety || null);
     const k = (v) => Math.round(v * f);
@@ -160,25 +201,24 @@ export default function Predict() {
       ...p, item_name: variety ? `${p.item_name} ${variety.label}` : p.item_name,
       base_price: k(p.base_price), predicted_price: k(p.predicted_price),
       history: p.history.map((h) => ({ ...h, price: k(h.price) })),
+      last_year: (p.last_year ?? []).map((h) => ({ ...h, price: k(h.price) })),
       forecast: p.forecast.map((x) => ({ ...x, price: k(x.price), lower: k(x.lower), upper: k(x.upper) })),
     };
-  }, [!!opts, q.item, q.variety, q.market, horizon]);
-  const search = (d) => setParams({ item: d.item, ...(d.variety ? { variety: d.variety } : {}), market: d.market, date: d.date }, { replace: true });
+  }, [!!opts, q.item, q.variety, q.market, q.date]);
+  const search = (d) => setParams({ item: d.item, ...(d.variety ? { variety: d.variety } : {}), market: d.market, ...(d.date !== today ? { date: d.date } : {}) }, { replace: true });
 
   return (
     <div className="page">
       <div className="page-head">
-        <h1>AI 가격 예측</h1>
-        <p>50개 품목 · 품종별 · 도매시장별 예상 경매 단가 · 1kg 기준 · 최대 1년 뒤까지</p>
+        <h1>언제 팔면 가장 비쌀까</h1>
+        <p>도매시장 · 품목과 기준 날짜를 고르면, 그날부터 4주 동안의 가격을 알려 드려요.</p>
       </div>
       <Async state={options}>
         {(o) => (
-          <div className="predict-layout stack">
-            <PredictSearch key={JSON.stringify(q)} value={q} markets={o.markets} horizons={o.horizons} today={today} maxDays={MAX_DAYS} onSearch={search} />
-            <Async state={result} minHeight={420}>
-              {(p) => <Result p={p} emoji={o.items.find((i) => i.code === p.item)?.emoji} />}
-            </Async>
-          </div>
+          <>
+            <PredictSearch key={JSON.stringify(q)} value={q} markets={o.markets} today={today} onSearch={search} />
+            <Async state={result} minHeight={420}>{(p) => <Result p={p} />}</Async>
+          </>
         )}
       </Async>
     </div>

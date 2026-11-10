@@ -136,34 +136,48 @@ function HeaderSearch() {
   );
 }
 
+/** 머리말 (v17): 로고 · 검색 · 메뉴(HOME·가격 예측·작물 추천·시세·뉴스·게시판) · 로그인 / 내 정보.
+ *  홈 첫 화면 위에서는 반투명, 스크롤하면 흰 띠(solid). 서비스 소개는 바닥글에서 들어감 */
 function Header() {
   const { user, isAdmin, logout } = useAuth();
   const nav = useNavigate();
-  // 가격 예측 · 작물 추천은 홈 바로 뒤에 강조 버튼으로 (CORE)
+  const loc = useLocation();
+  const [solid, setSolid] = useState(false);
+  useEffect(() => {
+    const on = () => setSolid(window.scrollY > 10);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, [loc.pathname]);
   const links = [
-    ["/", "홈"],
-    ["/market", "시세·수급"],
-    ...(AUCTION_ENABLED ? [["/auctions", "경매 마켓"]] : []),
-    ["/news", "농업 뉴스"],
+    ["/", "HOME"],
+    ["/ai", "가격 예측"],
+    ["/recommend", "작물 추천"],
+    ["/market", "시세"],
+    ...(AUCTION_ENABLED ? [["/auctions", "경매"]] : []),
+    ["/news", "뉴스"],
     ["/board", "게시판"],
-    ["/about", "서비스 소개"],
   ];
   return (
-    <header className="header">
+    <header className={`header ${solid ? "solid" : ""}`}>
       <div className="container header-inner">
         <Link to="/" className="logo">
-          🌱 FarmBid<small>팜비드</small>
+          🌱 FARMBID<small>농산물 가격 예측</small>
         </Link>
         <HeaderSearch />
+        <nav className="top-nav" aria-label="주 메뉴">
+          {links.map(([to, label]) => (
+            <NavLink key={to} to={to} end={to === "/"}>{label}</NavLink>
+          ))}
+        </nav>
         <div className="header-right">
           {user ? (
             <>
               {/* 관리자 화면은 별도 사이트 (/admin/) */}
               {isAdmin && <a className="btn sm" href="/admin/" target="_blank" rel="noreferrer">관리자 사이트 ↗</a>}
               <NotificationBell user={user} />
-              {/* 마이페이지는 로그인했을 때만, 오른쪽 끝에 */}
               <NavLink to="/mypage" className="user-chip" title={`${user.name} · ${USER_TYPE_LABEL[user.type]}`}>
-                👤 <b>{user.name}</b> <span className="muted">· 마이페이지</span>
+                <b>{user.name}</b> <span className="muted">· 마이페이지</span>
               </NavLink>
               <button
                 className="btn sm ghost"
@@ -176,29 +190,9 @@ function Header() {
               </button>
             </>
           ) : (
-            <>
-              <Link to="/login" className="btn sm">로그인</Link>
-              <Link to="/signup" className="btn sm primary">회원가입</Link>
-            </>
+            <Link to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} className="btn sm login">로그인</Link>
           )}
         </div>
-      </div>
-      <div className="container">
-        <nav className="nav">
-          <NavLink to="/" end>홈</NavLink>
-          <span className="nav-core">
-            {CORE.map(([to, icon, label]) => (
-              <NavLink key={to} to={to} className={`core ${to.slice(1)}`}>
-                <span className="ic">{icon}</span>{label}
-              </NavLink>
-            ))}
-          </span>
-          {links.slice(1).map(([to, label]) => (
-            <NavLink key={to} to={to}>
-              {label}
-            </NavLink>
-          ))}
-        </nav>
       </div>
     </header>
   );
@@ -231,17 +225,27 @@ const DEV_BADGE = import.meta.env.DEV && (() => {
 })();
 
 export default function Layout() {
+  const { pathname } = useLocation();
+  const home = pathname === "/";
   return (
     <>
+      {/* 배경 밭 사진: 홈은 첫 화면이 직접 그림(또렷하게), 나머지 화면은 흐리게 깔아 글씨가 잘 보이게 */}
+      {!home && <div className="farm-bg blur" aria-hidden><i /></div>}
       <Header />
-      <OfflineBanner />
-      <main className="container">
-        <Outlet />
-      </main>
+      {/* 홈은 첫 화면 사진이 머리말 뒤까지 깔려야 해서 ML API 안내 줄을 넣지 않음 (카드는 데모 값으로 그대로 보임) */}
+      {!home && <OfflineBanner />}
+      {home ? <Outlet /> : (
+        <main className="container">
+          <Outlet />
+        </main>
+      )}
       {DEV_BADGE && <div className="live-badge" title="frontend/.env 의 VITE_DATA_SOURCE · VITE_NEWS_URL. 나머지는 가짜 데이터">{DEV_BADGE}</div>}
-      <footer className="footer">
-        FarmBid · 시세·{AUCTION_ENABLED && "경매·"}회원 데이터는 개발용 가상 데이터입니다 (실서비스 연동 시 KAMIS·aT 도매시장 API) ·{" "}
-        <Link to="/about" className="link small">서비스 소개 · 문의</Link>
+      <footer className={`footer ${home ? "light" : ""}`}>
+        <span>© 팜비드 · 공영도매시장 경매 · KAMIS · 기상청 데이터</span>
+        <span className="r">
+          <Link to="/about">서비스 소개</Link>
+          <Link to="/about#contact">문의</Link>
+        </span>
       </footer>
       <CoreDock />
     </>

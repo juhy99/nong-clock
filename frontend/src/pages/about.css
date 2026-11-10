@@ -1,0 +1,42 @@
+/* 서비스 소개 (v17) — ab- */
+.ab { display: grid; gap: 16px; }
+.ab-hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 32px; align-items: center; padding: clamp(28px, 4vw, 52px); }
+.ab-eyebrow { font-size: 15px; letter-spacing: .12em; color: var(--muted); font-weight: 600; }
+.ab-hero h1 { font-size: clamp(32px, 4vw, 50px); line-height: 1.22; margin: 10px 0 16px; color: var(--ink); letter-spacing: -0.02em; }
+.ab-hero h1 em { font-style: normal; color: #d9600b; }
+.ab-hero p { font-size: 17px; line-height: 1.7; color: var(--muted); margin: 0; max-width: 620px; }
+.ab-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
+.ab-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ab-stats > div { background: rgba(255, 255, 255, 0.7); border-radius: 18px; padding: 18px 20px; display: grid; gap: 4px; }
+.ab-stats b { font-size: 34px; color: var(--ink); line-height: 1.1; }
+.ab-stats b small { font-size: 16px; margin-left: 3px; color: var(--muted); }
+.ab-stats span { font-size: 15px; color: var(--muted); }
+.ab-feats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.ab-feat { color: inherit; text-decoration: none; display: grid; gap: 8px; align-content: start; }
+.ab-feat i { font-style: normal; font-size: 24px; width: 46px; height: 46px; display: grid; place-items: center; background: #fff; border-radius: 14px; }
+.ab-feat h3 { margin: 4px 0 0; font-size: 19px; }
+.ab-feat p { margin: 0; font-size: 16px; line-height: 1.6; color: var(--muted); }
+.ab-feat:hover { box-shadow: 0 8px 24px rgba(19, 38, 26, 0.12); }
+.ab-h { font-size: 22px; margin: 0 0 14px; }
+.ab-hrow { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ab-hrow small { font-size: 15px; color: var(--muted); }
+.ab-flow { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.ab-flow li { position: relative; background: rgba(255, 255, 255, 0.7); border-radius: 18px; padding: 18px 20px; }
+.ab-flow em { position: absolute; top: 12px; right: 16px; font-style: normal; font-size: 34px; font-weight: 300; color: rgba(19, 38, 26, 0.3); }
+.ab-flow b { font-size: 18px; color: var(--brand); }
+.ab-flow p { margin: 6px 0 0; font-size: 16px; line-height: 1.6; color: var(--muted); padding-right: 24px; }
+.ab-note { margin: 12px 0 0; font-size: 15px; color: var(--muted); }
+.ab-two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; }
+.ab-team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ab-team > div { display: flex; gap: 12px; align-items: center; background: rgba(255, 255, 255, 0.7); border-radius: 14px; padding: 12px 16px; }
+.ab-team i { font-style: normal; width: 38px; height: 38px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; }
+.ab-team span { display: grid; }
+.ab-team small { font-size: 15px; color: var(--muted); }
+.ab-contact { margin: 0; display: grid; }
+.ab-contact > div { display: grid; grid-template-columns: 70px 1fr; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); align-items: baseline; }
+.ab-contact dt { font-size: 15px; color: var(--muted); }
+.ab-contact dd { margin: 0; font-size: 17px; font-weight: 700; }
+.ab-contact dd a { color: var(--ink); text-decoration: none; }
+.ab-contact dd small { font-weight: 400; font-size: 15px; color: var(--muted); margin-left: 6px; }
+@media (max-width: 860px) { .ab-hero, .ab-two { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .ab-team, .ab-stats { grid-template-columns: 1fr; } }

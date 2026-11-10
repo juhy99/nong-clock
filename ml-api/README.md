@@ -21,19 +21,19 @@ uvicorn app.main:app --reload --port 8000
 | 메서드 | 경로 | 용도 | 화면 |
 |---|---|---|---|
 | GET | `/health` | 상태 확인 | - |
-| GET | `/items` | 품목 107개 (이름·`code4` 공영 품목코드·공영 부류·이모지) | 품목 선택 상자, 시세 카드 |
+| GET | `/items` | 예측 품목 50개 (`shared/items50.json` 순서, 이름·`code4` 공영 품목코드·공영 부류·이모지) | 품목 선택 상자, 시세 카드 |
 | GET | `/markets` | 공영 도매시장 32곳 | AI 가격예측 › 도매시장 |
 | GET | `/regions` | (예전 방식) 지역 목록 — 전국만 | - |
 | GET | `/horizons` | 예측 기간 빠른 선택 (1주~1년) | 기간 버튼 |
-| POST | `/predict` | 품목·도매시장별 예측, 최대 365일 일별 | AI 가격예측 |
+| POST | `/predict` | 품목·도매시장별 예측, 최대 365일 일별. 기준일(`base_date`)·앞쪽 실제 시세(`history_days`)·작년 같은 시기(`last_year`) | AI 가격예측 |
 | GET | `/predict/top-movers?horizon=7&limit=4` | 변동률 절댓값 큰 순 품목 | 홈 · AI 추천 급등락 예상 품목 |
 | GET | `/recommend/crops` | 작물 추천용 작물 목록 | 작물 추천 |
 | POST | `/recommend/crops` | 토지 위치(시·도)·토지별 평수·임대료·기존 작물·시작 날짜 → 순이익 높은 작물 순(pH 맨 아래) + 빠진 이유 `excluded` | 작물 추천 › 내 땅으로, 작물 정보 |
 | GET | `/recommend/crops/{code}` | 작물 정보 (작형·수량·경영비·pH) | 작물 추천 › 작물 정보 |
 | POST | `/recommend/planting-dates` | 작물 → 1년 중 가장 좋은 심는 날 (화면에서는 안 씀) | - |
-| GET | `/recommend/crops/{code}/prices` | 13개월 예상 도매가 | 작물 추천 › 상세 그래프 |
+| GET | `/recommend/crops/{code}/prices` | 12개월 예상 도매가 (주 단위 53점) | 작물 추천 › 상세 그래프 |
 
-**목록 파일:** 품목 107개(`shared/items.json`), 도매시장 32곳(`shared/markets.json`), 작물별 흙 pH(`shared/soil_ph.json`)는 저장소 맨 위 `shared/` 에 있고 화면과 같이 읽어요 (`app/core/shared.py`). 그래서 도커는 저장소 맨 위에서 빌드해요(`docker compose` 가 알아서 함, 직접 할 때는 `docker build -f ml-api/Dockerfile .`).
+**목록 파일:** 예측 품목 50개(`shared/items50.json`), 품목 정보 107개(`shared/items.json`), 도매시장 32곳(`shared/markets.json`), 작물별 흙 pH(`shared/soil_ph.json`)는 저장소 맨 위 `shared/` 에 있고 화면과 같이 읽어요 (`app/core/shared.py`). 그래서 도커는 저장소 맨 위에서 빌드해요(`docker compose` 가 알아서 함, 직접 할 때는 `docker build -f ml-api/Dockerfile .`).
 
 작물 추천의 작물 달력·수량·경영비·월별 예상가는 `app/core/crop_calendar.py`(농진청 2024 농산물소득조사 + 추정값, `source` 로 구분), 시장 계수는 `app/core/markets.py`, pH 비교는 `app/core/soil_ph.py` 에 있어요. 자세한 형식은 `docs/06_api_spec.md` 1-2 · 1-3 · 1-4 · 1-6.
 

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getNotices } from "../../api/admin";
 import { deletePost, getPost } from "../../api/board";
@@ -6,7 +5,6 @@ import { useAuth } from "../../components/AuthContext";
 import { Async, useAsync } from "../../components/common";
 import { useErrorPopup, usePopupOnError } from "../../components/ErrorPopup";
 import Photo from "../../components/Photo";
-import ReportModal from "../../components/ReportModal";
 import Comments from "./Comments";
 import { dateTime } from "../../utils/format";
 
@@ -36,7 +34,6 @@ export function PostView() {
   const { user } = useAuth();
   const nav = useNavigate();
   const state = useAsync(() => getPost(id, { countView: true }), [id]);
-  const [reporting, setReporting] = useState(false);
   const showError = useErrorPopup();
   usePopupOnError(state.error, "글을 불러오지 못했어요");
 
@@ -68,13 +65,10 @@ export function PostView() {
                     <Link className="btn sm" to={`/board/${p.id}/edit`}>수정</Link>
                     <button className="btn sm danger" onClick={() => remove(p)}>삭제</button>
                   </div>
-                ) : (
-                  user && <button className="btn sm danger" onClick={() => setReporting(true)}>🚨 신고</button>
-                )
+                ) : null /* 신고 기능은 없음 (11-11, Spring 에 없음) */
               }
             />
             <Comments post={p} />
-            {reporting && <ReportModal target={{ kind: "post", id: p.id, label: p.title, post_id: p.id }} onClose={() => setReporting(false)} />}
           </>
         )}
       </Async>

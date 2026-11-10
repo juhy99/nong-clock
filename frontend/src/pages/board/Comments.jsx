@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { activeBan, banText, createComment, deleteComment, getComments } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
 import { useErrorPopup, usePopupOnError } from "../../components/ErrorPopup";
 import { useAsync } from "../../components/common";
-import ReportModal from "../../components/ReportModal";
 import { boardDate } from "../../utils/format";
 
 function CommentForm({ onSubmit, placeholder, autoFocus, onCancel }) {
@@ -64,11 +63,11 @@ function Comment({ c, post, reply, actions }) {
 export default function Comments({ post }) {
   const { user } = useAuth();
   const loc = useLocation();
+  const nav = useNavigate();
   const state = useAsync(() => getComments(post.id), [post.id]);
   const showError = useErrorPopup();
   usePopupOnError(state.error, "댓글을 불러오지 못했어요");
   const [replyTo, setReplyTo] = useState(null);
-  const [reporting, setReporting] = useState(null);
   const ban = user ? activeBan(user.id) : null;
 
   // 알림에서 들어오면 (#c12) 그 댓글로 스크롤
@@ -94,11 +93,7 @@ export default function Comments({ post }) {
     user && (
       <>
         {!ban && <button className="link small" onClick={() => setReplyTo(replyTo === c.id ? null : c.id)}>답글</button>}
-        {c.author === user.id ? (
-          <button className="link small muted" onClick={() => remove(c)}>삭제</button>
-        ) : (
-          <button className="link small muted" onClick={() => setReporting(c)}>신고</button>
-        )}
+        {c.author === user.id && <button className="link small muted" onClick={() => remove(c)}>삭제</button>}
       </>
     );
 
@@ -134,19 +129,18 @@ export default function Comments({ post }) {
         </div>
       ))}
       {!user ? (
-        <p className="muted small comment-login">
-          댓글을 쓰려면 <Link className="link" to={`/login?next=/board/${post.id}`}>로그인</Link>하세요.
-        </p>
+        // 로그인 전: 댓글 칸은 보이고, 누르면 로그인 화면으로 (로그인하면 이 글로 돌아옴)
+        <textarea
+          className="input comment-login"
+          rows={3}
+          readOnly
+          placeholder="댓글을 쓰려면 눌러서 로그인하세요"
+          onFocus={() => nav(`/login?next=${encodeURIComponent(`/board/${post.id}`)}`)}
+        />
       ) : ban ? (
         <div className="banner small">⛔ 게시판 이용이 제한되어 댓글을 쓸 수 없어요 ({banText(ban)} · 사유: {ban.reason})</div>
       ) : (
         <CommentForm placeholder="댓글을 남겨 보세요" onSubmit={(body) => add(body, null)} />
-      )}
-      {reporting && (
-        <ReportModal
-          target={{ kind: "comment", id: reporting.id, label: `${reporting.author_name}: ${reporting.body.slice(0, 30)}`, post_id: post.id }}
-          onClose={() => setReporting(null)}
-        />
       )}
     </section>
   );

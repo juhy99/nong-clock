@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getItems, predict } from "../api/ml";
-import { NEWS_CATEGORIES, NEWS_PAGE_SIZE, getNews, getNewsTrend } from "../api/news";
+import { NEWS_CATEGORIES, NEWS_PAGE_SIZE, getNews, getNewsMostCovered, getNewsTrend } from "../api/news";
 import { useAuth } from "../components/AuthContext";
 import { Async, PctChange, useAsync } from "../components/common";
 import ItemImage from "../components/ItemImage";
@@ -33,6 +33,59 @@ function NewsWithForecast({ top }) {
         이번 주 {top.name} 기사가 <b>{top.count}건</b>으로 가장 많아요. AI 예측은 다음 주 <PctChange value={d.change_pct} />이에요.
       </p>
       <Link className="btn primary sm" to={`/ai?item=${top.item}`}>AI 예측 보기</Link>
+    </div>
+  );
+}
+
+/** 많이 다룬 뉴스: 오늘 기사 중 다룬 언론사가 많은 순 */
+function MostCovered() {
+  const st = useAsync(() => getNewsMostCovered({ days: 1, limit: 5 }));
+  return (
+    <div className="news-box line">
+      <h3>많이 다룬 뉴스</h3>
+      <p className="muted small">오늘 같은 소식을 다룬 언론사 수 순</p>
+      <ol className="news-rank">
+        {(st.data ?? []).map((n, i) => (
+          <li key={n.id}>
+            <b className="no">{i + 1}</b>
+            <a href={n.url} target="_blank" rel="noreferrer">{n.title}</a>
+            <span className="cnt">{n.press_count}곳</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/** 내 관심 품목 뉴스 (로그인 전에는 로그인 안내) */
+function FavNews({ user, favorites, onMore }) {
+  const st = useAsync(() => (user && favorites.length ? getNews({ items: favorites, size: 4 }) : Promise.resolve(null)), [user?.id, favorites.join()]);
+  return (
+    <div className="news-box line">
+      <h3>내 관심 품목 뉴스</h3>
+      {!user && (
+        <>
+          <p className="muted small">로그인하면 관심 품목 기사만 모아 볼 수 있어요.</p>
+          <Link className="btn primary" to={`/login?next=${encodeURIComponent("/news?mine=1")}`}>로그인하기</Link>
+        </>
+      )}
+      {user && !favorites.length && (
+        <p className="muted small">아직 관심 품목이 없어요. <Link className="link" to="/mypage?tab=watch">관심 품목 고르기 ›</Link></p>
+      )}
+      {st.data && (
+        <>
+          <p className="muted small">{favorites.length}개 품목 · 새 기사 {st.data.total}건</p>
+          <ul className="news-rank plain">
+            {st.data.rows.map((n) => (
+              <li key={n.id}>
+                <span className="tag">{n.item_tags.find((t) => favorites.includes(t.item))?.name}</span>
+                <a href={n.url} target="_blank" rel="noreferrer">{n.title}</a>
+              </li>
+            ))}
+          </ul>
+          {st.data.total > st.data.rows.length && <button type="button" className="link" onClick={onMore}>관심 품목 기사 모두 보기 ›</button>}
+        </>
+      )}
     </div>
   );
 }
@@ -121,6 +174,8 @@ export default function News() {
           </Async>
         </div>
         <aside className="news-side">
+          <MostCovered />
+          <FavNews user={user} favorites={favorites} onMore={() => go({ mine: "1", item: "", category: "" })} />
           <div className="news-box">
             <h3>이번 주 뉴스에 많이 나온 품목</h3>
             <p className="muted small">기사 제목·요약 기준 · 누르면 그 품목 기사만</p>

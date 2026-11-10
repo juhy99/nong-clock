@@ -40,7 +40,8 @@ export const getHorizons = () => withFallback(() => request(ML_API_BASE, "/horiz
 /** 공영 도매시장 32곳 [{ code, name, sido, ... }] — 목록 기준은 ml-api/app/core/markets.py */
 export const getMarkets = () => withFallback(() => request(ML_API_BASE, "/markets"), () => MARKETS.filter((m) => m.code !== "national"));
 
-/** @param {{item: string, horizon: number, market?: string}} req  horizon 1~365, market = 도매시장 코드 */
+/** @param {{item: string, horizon: number, market?: string, base_date?: string, history_days?: number, last_year?: boolean}} req
+ *  horizon 1~365, market = 도매시장 코드, base_date = 기준일(오늘~1년 전), history_days = 앞쪽 실제 시세 일수, last_year = 작년 같은 시기 (11-11) */
 export const predict = (req) =>
   withFallback(() => request(ML_API_BASE, "/predict", { method: "POST", body: req }), () => mockPredict(req));
 
@@ -61,10 +62,10 @@ export const recommendCrops = (req) =>
 export const recommendPlantingDates = (req) =>
   withFallback(() => request(ML_API_BASE, "/recommend/planting-dates", { method: "POST", body: req }), () => mockPlantingDates(req));
 
-/** 작물의 앞으로 13개월 예상 도매가 (주 단위) */
 /** 작물 정보 탭: 작형·수량·경영비 */
 export const getCropInfo = (code) => withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}`), () => mockCropInfo(code));
 
+/** 작물의 앞으로 12개월 예상 도매가 (주 단위 53점, 11-11) */
 export const getCropPricePath = (code) =>
   withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}/prices`), () => mockPricePath(code));
 

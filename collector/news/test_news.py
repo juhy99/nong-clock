@@ -124,6 +124,7 @@ class CollectTest(unittest.TestCase):
         self.assertEqual(news["count"], 1)  # 같은 제목 기사 한 번만, 사과문 기사는 거름
         a = news["articles"][0]
         self.assertEqual((a["title"], a["press"], a["items"], a["category"]), ("배추 도매가 하락… 김장철 출하 늘어", "연합뉴스", ["napa_cabbage"], "가격·수급"))
+        self.assertEqual((a["press_count"], len(a["presses"])), (2, 2))  # 같은 소식을 실은 언론사 2곳 (많이 다룬 뉴스)
         self.assertEqual(len(self.read(collect_news.REJECTED_FILE)["articles"]), 1)
         self.assertEqual(self.read(collect_news.RECENT_FILE)["count"], 1)  # 화면용 최근 7일 파일도 함께
         self.assertEqual(len(FakeNaver.calls), len(rules.queries()))  # 처음엔 검색어마다 한 페이지
@@ -134,8 +135,13 @@ class CollectTest(unittest.TestCase):
         FakeNaver.articles.insert(0, article("양파 저장 물량 넉넉… 약보합 전망", "산지 출하 조절이 변수", "https://www.nongmin.com/4", 1, collect_news.now()))
         r2 = collect_news.collect()
         self.assertEqual(r2["added"], 1)
+        # 다음 수집에 같은 소식을 실은 언론사가 또 나오면 이미 저장된 기사의 언론사 수가 늘어남
+        FakeNaver.articles.insert(0, article("배추 도매가 하락 … 김장철 출하 늘어!", "세 번째 언론사", "https://www.nongmin.com/5", 1, collect_news.now()))
+        collect_news.collect()
+        cabbage = [n for n in self.read(collect_news.NEWS_FILE)["articles"] if n["items"] == ["napa_cabbage"]]
+        self.assertEqual((len(cabbage), cabbage[0]["press_count"]), (1, 3))
         self.assertEqual(self.read(collect_news.NEWS_FILE)["count"], 2)
-        self.assertEqual(len(self.read(collect_news.LOG_FILE)["runs"]), 2)
+        self.assertEqual(len(self.read(collect_news.LOG_FILE)["runs"]), 3)
 
     def test_failure_keeps_old_news(self):
         collect_news.collect()

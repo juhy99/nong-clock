@@ -1,0 +1,328 @@
+/* ─────────────────────────────────────────────────────────────
+   팜비드 새 디자인 (v17, 2026-11-11) — 사용자 사이트만 (main.jsx 에서 styles.css 다음에 읽음)
+   관리자 사이트(src/admin)는 이 파일을 읽지 않아 예전 모양 그대로.
+   - 배경: 밝은 밭 사진 (public/img/field.jpg). 홈 첫 화면은 또렷하게, 나머지 화면은 흐리게
+   - 카드: 외곽선 없이 흰 반투명(뒤가 흐리게 비침)
+   - 버튼·선택칩: 연한 세이지(#d5e6cb) 바탕 + 짙은 초록 글씨 — 진한 초록 버튼은 쓰지 않음
+   - 글씨: 설명·단위 같은 회색 글씨도 진하게(80% 이상), 작은 글씨는 15px 이상 (60대 이상도 읽기 쉽게)
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --ink: #13261a;
+  --brand: #2b5538;          /* 짙은 초록: 링크·선택된 글씨 */
+  --accent: #d5e6cb;         /* 버튼·선택칩 바탕 */
+  --accent-h: #c4dab7;
+  --amber: #f6e0b0;
+  --amber-ink: #7a5a12;
+  --glass: rgba(255, 255, 255, 0.84);
+  --chip: rgba(19, 38, 26, 0.07);
+  /* 재배 달력: 심기(청록) → 자람(잎 초록) → 수확(호박) → 보관(하늘) */
+  --cal-plant: #a6dccb; --cal-plant-ink: #1f5a49;
+  --cal-grow: #bcd99a; --cal-grow-ink: #3d5a22;
+  --cal-harv: #f5d48e; --cal-harv-ink: #6e4f0c;
+  --cal-store: #c9d8f2; --cal-store-ink: #2f4a78;
+
+  /* 예전 변수를 새 색으로 (기존 화면이 그대로 새 색을 씀) */
+  --green: #2b6e47;
+  --green-dark: #23593a;
+  --green-soft: #e4efdc;
+  --bg: #dfe9e4;
+  --soft: rgba(19, 38, 26, 0.05);
+  --card: var(--glass);
+  --line: rgba(19, 38, 26, 0.1);
+  --text: var(--ink);
+  --muted: #3f4c43;          /* 예전 #5d655f 보다 진하게 */
+  --up: #d92d20;
+  --down: #1d5fd8;
+  --radius: 24px;
+  --shadow: none;
+  --max: 1480px;
+}
+
+body { background: var(--bg); color: var(--ink); font-size: 17px; }
+
+/* ── 배경 사진 ── */
+.farm-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.farm-bg i { position: absolute; inset: -40px; background: url(/img/field.jpg) center 40% / cover no-repeat; animation: farm-drift 40s ease-in-out infinite alternate; transform-origin: 60% 60%; }
+.farm-bg.blur i { filter: blur(14px) saturate(1.08); }
+.farm-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(240, 246, 243, 0.35), rgba(240, 246, 243, 0.12) 35%, rgba(10, 34, 18, 0.18)); }
+@keyframes farm-drift { from { transform: scale(1.02); } to { transform: scale(1.1) translate(-1.5%, -1%); } }
+
+/* ── 머리말 ── */
+.header { position: sticky; top: 0; z-index: 30; background: rgba(255, 255, 255, 0.62); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 0; transition: background 0.3s, box-shadow 0.3s; }
+.header.solid { background: rgba(255, 255, 255, 0.96); box-shadow: 0 1px 0 rgba(19, 38, 26, 0.08); }
+.header-inner { height: 72px; gap: clamp(16px, 2vw, 32px); }
+.logo { color: var(--ink); font-size: 22px; letter-spacing: 0.02em; gap: 10px; }
+.logo small { font-size: 14px; font-weight: 600; border: 1px solid rgba(19, 38, 26, 0.3); border-radius: 999px; padding: 3px 10px; color: rgba(19, 38, 26, 0.85); margin: 0; }
+.header .search { max-width: 340px; height: 42px; border: 0; background: rgba(255, 255, 255, 0.72); padding: 0 6px 0 14px; }
+.header.solid .search { background: #eef2ea; }
+.header .search:focus-within { background: #fff; box-shadow: 0 0 0 2px #b9d6ab; }
+.header .search button { background: var(--accent); color: var(--brand); }
+.top-nav { display: flex; align-items: center; gap: clamp(14px, 1.8vw, 30px); margin-left: auto; }
+.top-nav a { font-size: 16px; color: rgba(19, 38, 26, 0.82); padding: 6px 0; border-bottom: 2px solid transparent; letter-spacing: 0.04em; white-space: nowrap; }
+.top-nav a:hover { color: var(--ink); }
+.top-nav a.active { color: var(--ink); font-weight: 700; border-color: #8fbb7f; }
+.header-right { margin-left: 0; }
+.user-chip { background: rgba(255, 255, 255, 0.72); font-weight: 600; }
+.user-chip.active { background: var(--accent); }
+.header .btn.login { background: var(--accent); color: var(--brand); border-radius: 999px; font-weight: 700; padding: 8px 18px; border: 0; }
+.nav { display: none; } /* 예전 두 번째 줄 메뉴는 쓰지 않음 */
+
+/* ── 바닥글 ── */
+.footer { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; text-align: left; padding: 22px max(16px, 3vw); font-size: 15px; color: rgba(255, 255, 255, 0.92); border: 0; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45); }
+.footer .r { margin-left: auto; display: flex; gap: 18px; }
+.footer a { color: inherit; }
+.footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.footer.light { background: #d6e4c6; color: rgba(19, 38, 26, 0.8); text-shadow: none; }
+
+/* ── 공통 부품 ── */
+.page { padding-top: 24px; }
+.page-head { display: flex; align-items: baseline; gap: 6px 18px; flex-wrap: wrap; }
+.page-head h1 { font-size: clamp(28px, 2.3vw, 38px); font-weight: 500; letter-spacing: -0.02em; }
+.page-head p { font-size: 17px; color: rgba(19, 38, 26, 0.8); margin: 0; }
+.card { background: var(--glass); border: 0; border-radius: var(--radius); box-shadow: none; backdrop-filter: blur(24px) saturate(1.15); -webkit-backdrop-filter: blur(24px) saturate(1.15); padding: clamp(20px, 2vw, 30px); }
+.card-head h2, .card h2 { font-size: 22px; }
+.card-head p { font-size: 15px; color: var(--muted); }
+.link { color: var(--brand); }
+.btn { border: 0; background: var(--chip); color: var(--ink); border-radius: 12px; font-size: 16px; }
+.btn:hover { background: rgba(19, 38, 26, 0.11); }
+.btn.primary { background: var(--accent); color: var(--brand); font-weight: 700; }
+.btn.primary:hover { background: var(--accent-h); }
+.btn.ghost { background: transparent; color: var(--muted); }
+.btn.danger { background: rgba(217, 45, 32, 0.08); color: #b42318; }
+.pill { border: 0; background: var(--chip); color: var(--ink); font-weight: 500; }
+.pill:hover { background: rgba(19, 38, 26, 0.11); }
+.pill.on { background: var(--accent); color: var(--brand); font-weight: 700; }
+.input, select.input, textarea.input { border: 0; background: rgba(19, 38, 26, 0.06); border-radius: 12px; padding: 12px 14px; font-size: 16px; color: var(--ink); }
+.input:focus { outline: 0; background: #fff; box-shadow: 0 0 0 2px #b9d6ab; }
+.input.invalid { box-shadow: 0 0 0 2px rgba(217, 45, 32, 0.4); background: #fff; }
+.input::placeholder { color: rgba(19, 38, 26, 0.62); }
+.table th { color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); }
+.table td { border-bottom: 1px solid rgba(19, 38, 26, 0.06); }
+.table tr.clickable:hover td { background: rgba(255, 255, 255, 0.5); }
+.table tr.selected td, .table tr.hl td { background: rgba(213, 230, 203, 0.55); }
+.badge { background: var(--chip); color: rgba(19, 38, 26, 0.85); }
+.badge.red { background: rgba(217, 45, 32, 0.1); color: #b42318; }
+.banner.info { background: rgba(255, 255, 255, 0.84); border: 0; }
+.banner.warn { background: rgba(246, 224, 176, 0.85); border: 0; }
+.tabs button, .seg button { color: var(--muted); }
+.tabs button.on, .seg button.on { color: var(--ink); }
+a:focus-visible, button:focus-visible { outline: 2px solid #8fbb7f; outline-offset: 2px; }
+
+/* 휴대폰 아래 고정 바 */
+.core-dock { background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); }
+
+@media (max-width: 960px) {
+  .top-nav, .header .search { display: none; }
+  .footer .r { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .farm-bg i { animation: none; } }
+
+/* ── 작은 글씨 키우기 (styles.css 의 10~15px 규칙을 같은 선택자로 덮음: 11~13→15, 14→16, 15→17) — 자동 생성 ── */
+.small { font-size: 17px; }
+.ticker { font-size: 16px; }
+.logo small { font-size: 16px; }
+.search input { font-size: 17px; }
+.user-chip { font-size: 17px; }
+.card-head p { font-size: 16px; }
+.link { font-size: 17px; }
+.btn { font-size: 17px; }
+.btn.sm { font-size: 16px; }
+.pill { font-size: 17px; }
+.badge { font-size: 16px; }
+.field label { font-size: 17px; }
+table.table { font-size: 17px; }
+.sec-head p { font-size: 17px; }
+.price-card .price small { font-size: 16px; }
+.seg .seg-link { font-size: 17px; }
+.timer-chip { font-size: 16px; }
+.auction-meta { font-size: 16px; }
+.chip { font-size: 17px; }
+.kv { font-size: 17px; }
+.check { font-size: 17px; }
+.icon-btn .cnt { font-size: 15px; }
+.noti-item { font-size: 17px; }
+.eyebrow { font-size: 16px; }
+.seg button { font-size: 17px; }
+.mini-mover { font-size: 17px; }
+.radio { font-size: 17px; }
+.basis-chips span { font-size: 17px; }
+.basis-grid h3 { font-size: 17px; }
+.basis-grid ul { font-size: 17px; }
+.basis-tag { font-size: 16px; }
+.map-label { font-size: 16px; }
+.map-label.on { font-size: 17px; }
+.weather-detail .stats div { font-size: 16px; }
+.rw-tip { font-size: 16px; }
+@media (max-width: 480px) {
+.rw-stats b { font-size: 17px; }
+}
+.warn-chip { font-size: 16px; }
+.region-markets li { font-size: 17px; }
+.map-credit { font-size: 15px; }
+.pill.sm { font-size: 16px; }
+.cmt-count { font-size: 16px; }
+.search-dd .g { font-size: 16px; }
+.search-dd .o { font-size: 17px; }
+.pill.recent button { font-size: 16px; }
+.search-item-info .cat { font-size: 16px; }
+.search-item .kpis .v small { font-size: 16px; }
+.search-sec-head h2 small { font-size: 17px; }
+.search-post .sn { font-size: 17px; }
+.news-cat { font-size: 16px; }
+.news-item-tag { font-size: 16px; }
+.news-updated { font-size: 16px; }
+.news-row .t { font-size: 17px; }
+.news-row .m { font-size: 16px; }
+.mine-row { font-size: 17px; }
+.news-bar { font-size: 17px; }
+.news-bar .n { font-size: 16px; }
+.news-day { font-size: 17px; }
+.news-article .ds { font-size: 17px; }
+.news-article .mt { font-size: 16px; }
+.news-ai p { font-size: 17px; }
+.news-source { font-size: 16px; }
+.mk-filter label { font-size: 16px; }
+.pill.sm { font-size: 16px; }
+.mk-sec span { font-size: 17px; }
+.mk-sec small { font-size: 16px; }
+.grade-card .tag { font-size: 15px; }
+.grade-card .p small { font-size: 16px; }
+.grade-card .d { font-size: 16px; }
+.grade-card .none { font-size: 16px; }
+.grade-card .ax { font-size: 15px; }
+.mk-card-head .seg button { font-size: 16px; }
+select.input.mk-days { font-size: 16px; }
+.mk-legend { font-size: 16px; }
+.mk-table { font-size: 17px; }
+.mk-sum .ring { font-size: 16px; }
+.mk-sum .ring .v { font-size: 17px; }
+.mk-sum .total { font-size: 17px; }
+.live-badge { font-size: 16px; }
+.footer { font-size: 16px; }
+@media (max-width: 900px) {
+.price-card .price { font-size: 16px; }
+.price-card .price small, .price-card .small { font-size: 15px; }
+.mini-mover { font-size: 16px; }
+}
+.rc-land b { font-size: 17px; }
+.rc-land small { font-size: 16px; }
+.rc-py { font-size: 16px; }
+.rc-crop small { font-size: 16px; }
+.rc-kv span { font-size: 16px; }
+.rc-fit th small, .rc-fit td small { font-size: 16px; }
+.rc-gb-key { font-size: 16px; }
+.rc-ruler span { font-size: 15px; }
+.rc-gb-leg { font-size: 16px; }
+.rc-rent b { font-size: 16px; }
+.rc-est { font-size: 15px; }
+.rc-scn span { font-size: 16px; }
+.rc-ship .table { font-size: 16px; }
+.rc-sub { font-size: 17px; }
+.rc-tag { font-size: 15px; }
+.rc-demote-head td { font-size: 16px; }
+.ip-btn small { font-size: 16px; }
+.ip-item { font-size: 16px; }
+.ai-long { font-size: 16px; }
+.rc-landinfo .ttl { font-size: 17px; }
+.rc-money .box i { font-size: 16px; }
+.ci-facts span { font-size: 16px; }
+.ci-facts b { font-size: 17px; }
+.ci-facts small { font-size: 16px; }
+.ci-land { font-size: 16px; }
+.ci-name b { font-size: 17px; }
+.ci-name small { font-size: 16px; }
+@media (max-width: 640px) {
+.ci-months span { font-size: 15px; }
+}
+@media (max-width: 700px) {
+.rc-fit tr.clickable td:nth-child(4), .rc-fit tr.clickable td:nth-child(5) { font-size: 16px; }
+}
+.mp-table td.r small { font-size: 15px; }
+.mp-ref { font-size: 15px; }
+.cf-tag { font-size: 16px; }
+.mini-fc-wrap span { font-size: 15px; }
+.cf-stats div { font-size: 17px; }
+.cf-stats small { font-size: 15px; }
+.cf-crops .nm small { font-size: 15px; }
+.ix-h { font-size: 16px; }
+.ix-h small { font-size: 15px; }
+.ix > em { font-size: 16px; }
+.ix-f { font-size: 15px; }
+.ix-f b { font-size: 16px; }
+.db-chart-head h2 small { font-size: 16px; }
+.candle .tick { font-size: 15px; }
+.db-ai small { font-size: 16px; }
+.db-row .n { font-size: 17px; }
+.db-row .nm small { font-size: 16px; }
+.db-row .pr { font-size: 17px; }
+.db-hint { font-size: 16px; }
+@media (max-width: 700px) {
+.core-dock b { font-size: 17px; }
+}
+.ip-warn { font-size: 15px; }
+.ip-legend { font-size: 16px; }
+.low-acc p { font-size: 16px; }
+.chart-low-tag { font-size: 16px; }
+.low-acc-mini { font-size: 16px; }
+.cf-head small { font-size: 16px; }
+.core-feat .cf-go { font-size: 16px; }
+.core-feat .cf-stats div { font-size: 16px; }
+.ix-l { font-size: 15px; }
+.core-feat .cf-go { font-size: 16px; }
+.ph-when { font-size: 16px; }
+.ph-ext span { font-size: 16px; }
+.ph-ext em { font-size: 17px; }
+.pred-bar .hint { font-size: 16px; }
+.ph-chg { font-size: 17px; }
+.ph-range { font-size: 16px; }
+.ph-ext em { font-size: 16px; }
+.predict-layout.stack .chip { font-size: 16px; }
+.ix-f b { font-size: 17px; }
+.ps-chip { font-size: 17px; }
+.ps-tag { font-size: 16px; }
+.ps-tag button { font-size: 16px; }
+.ps-reset { font-size: 17px; }
+.rc-var { font-size: 15px; }
+.rc-more-v { font-size: 15px; }
+.cs-f { font-size: 17px; }
+.ps-rl { font-size: 16px; }
+.mk-filter .cs-f { font-size: 15px; }
+.page > .banner { font-size: 16px; }
+.cf-best .t small { font-size: 15px; }
+.cf-best .v span { font-size: 16px; }
+.cf-crops li:first-child .n::after { font-size: 15px; }
+.cf-land span { font-size: 15px; }
+.cf-land small { font-size: 15px; }
+.cf-crops .v small { font-size: 15px; }
+.cf-crops .nm small { font-size: 15px; }
+.ps-note { font-size: 15px; }
+
+/* ── 사진 위에 바로 놓이는 글씨 (카드 밖 제목·안내): 흰 반투명 띠를 깔아 읽히게 ── */
+.mk-sec { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; width: fit-content; max-width: 100%; padding: 8px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(10px); margin-bottom: 12px; }
+.mk-sec h2 { font-size: 22px; } .mk-sec span, .mk-sec small { color: var(--muted); }
+.page > div > .hint, .page > .hint, .page > p.hint { display: inline-block; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.78); color: var(--muted); }
+/* 그래프(recharts) 눈금·범례 글씨: 화면 코드의 fontSize 보다 크게 */
+.recharts-cartesian-axis-tick text, .recharts-label, .recharts-legend-item-text { font-size: 15px !important; fill: #3f4c43; }
+.recharts-cartesian-axis-tick text { fill: #3f4c43 !important; }
+.recharts-tooltip-wrapper { font-size: 15px; }
+
+/* 뉴스: 많이 다룬 뉴스 · 내 관심 품목 뉴스 (v17) */
+.news-rank { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }
+.news-rank li { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 16px; line-height: 1.45; }
+.news-rank li:last-child { border-bottom: 0; }
+.news-rank .no { color: var(--brand); font-size: 17px; }
+.news-rank a { color: var(--ink); text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.news-rank a:hover { text-decoration: underline; }
+.news-rank .cnt { font-size: 15px; font-weight: 700; color: var(--brand); background: var(--accent); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.news-rank.plain li { grid-template-columns: auto 1fr; }
+.news-rank .tag { font-size: 15px; font-weight: 700; color: #7a4b00; background: #fdf0d5; border-radius: 6px; padding: 1px 8px; white-space: nowrap; }
+.news-box .btn.primary { justify-self: start; margin-top: 6px; }
+/* 흐린 사진 위에서 읽히도록 뉴스 목록·옆 상자를 흰 판 위에 */
+.news-layout > div:first-child { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-radius: var(--radius); padding: 8px clamp(18px, 2vw, 28px) 20px; }
+.news-side .news-box { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 0; }
+.news-source { background: rgba(255, 255, 255, 0.78); border-radius: 14px; padding: 12px 16px; color: var(--muted); }
+.news-head > div > p { display: inline-block; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.78); }
+/* 검색: 흐린 사진 위 흰 판 */
+.search-main, .search-empty { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-radius: var(--radius); padding: clamp(18px, 2vw, 28px); }
+.search-main .card { background: var(--soft); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.search-side .search-box { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 0; }

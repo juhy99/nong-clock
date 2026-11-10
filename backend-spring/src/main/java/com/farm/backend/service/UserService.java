@@ -4,6 +4,7 @@ import com.farm.backend.config.ApiException;
 import com.farm.backend.domain.User;
 import com.farm.backend.dto.SignupRequest;
 import com.farm.backend.dto.UserResponse;
+import com.farm.backend.repository.PostCommentRepository;
 import com.farm.backend.repository.PostRepository;
 import com.farm.backend.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,7 +20,7 @@ import java.util.Locale;
  * 회원가입·로그인 (11-10 보안 고침).
  * - 비밀번호: BCrypt 로 암호화해 저장, 확인도 BCrypt (예전: 글자 그대로 저장·비교)
  * - 로그인 실패 문장은 하나로 ("이메일 또는 비밀번호가 맞지 않습니다") → 어떤 이메일이 가입됐는지 알 수 없게
- * - 탈퇴하면 회원 정보와 쓴 글을 DB 에서 지운다 (11-10 결정: 정지 기능 없음, 탈퇴 = 삭제). 같은 이메일로 다시 가입할 수 있음
+ * - 탈퇴하면 회원 정보와 쓴 글·댓글을 DB 에서 지운다 (11-10 결정: 정지 기능 없음, 탈퇴 = 삭제). 같은 이메일로 다시 가입할 수 있음
  */
 @Service
 @Transactional(readOnly = true)
@@ -33,13 +34,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final PostCommentRepository commentRepository;
     private final PasswordEncoder passwordEncoder;
     /** 없는 이메일로 로그인할 때도 비밀번호 확인과 같은 시간이 걸리게 하는 가짜 해시 (응답 시간으로 가입 여부를 알 수 없게) */
     private final String dummyHash;
 
-    public UserService(UserRepository userRepository, PostRepository postRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PostRepository postRepository, PostCommentRepository commentRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
         this.passwordEncoder = passwordEncoder;
         this.dummyHash = passwordEncoder.encode("dummy-password-for-timing-1234");
     }
@@ -108,8 +112,8 @@ public class UserService {
     }
 
     /**
-     * 회원 탈퇴 (DELETE /api/me): 비밀번호를 한 번 더 확인한 뒤 쓴 글 → 회원 순서로 DB 에서 지운다 (글이 회원을 가리키므로 글 먼저).
-     * 댓글 표가 생기면 여기서 댓글도 먼저 지울 것. 되돌릴 수 없음
+     * 회원 탈퇴 (DELETE /api/me): 비밀번호를 한 번 더 확인한 뒤 내 댓글 → 내 글 → 회원 순서로 DB 에서 지운다
+     * (댓글·글이 회원을 가리키므로 먼저). 내 댓글에 달린 남의 답글, 내 글에 달린 남의 댓글은 DB 가 같이 지운다(CASCADE). 되돌릴 수 없음
      */
     @Transactional
     public void withdraw(Long id, String password) {
@@ -117,6 +121,7 @@ public class UserService {
         if (user == null) throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다");
         if (password == null || !passwordEncoder.matches(password, user.getPasswordHash()))
             throw new ApiException(HttpStatus.FORBIDDEN, "비밀번호가 맞지 않습니다");
+        commentRepository.deleteByAuthorId(id);
         postRepository.deleteByAuthorId(id);
         userRepository.delete(user);
     }

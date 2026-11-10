@@ -301,8 +301,10 @@ PIECE_MIN = 30   # 품목·달 줄이 이보다 적으면 그 품목 1년 전체
 #   예) 오이 10kg '11개' = 1개 0.9kg, 감귤 5kg '21개', 사과 10kg '11개' → 빼고 계산
 PIECE_CODE_LIKE = {2, 11, 12, 21, 22}
 # 11-10 사후 추가 2: 그래도 사과 여름 2kg·가지 3.3kg·수박 1~2kg 처럼 안 맞는 품목이 남음 → 12달 값의 최대 ÷ 최소가
-#   이 값 이하인 품목만 환산에 씀 (배추·무·양배추·호박·배·메론·참외). 틀린 소매가보다 빈칸이 나음
+#   이 값 이하인 품목만 환산에 씀 (배추·무·양배추·호박·배·메론·참외 → 참외는 아래 3에서 뺌). 틀린 소매가보다 빈칸이 나음
 PIECE_STABLE = 1.5
+# 11-10 사후 추가 3: 참외(0802)는 환산하면 소매가 < 도매가인 날이 286일 중 78일 → 1개당 무게(0.5kg)가 너무 무거운 것으로 보고 뺌
+PIECE_EXCLUDE = {'0802'}
 
 
 def piece_rows(m, nxt):
@@ -358,7 +360,7 @@ def piece_weight_table():
                 out.append((c4, mo, year, 'year', int(g.rows.sum())))
     pw = pd.DataFrame(out, columns=['code4', 'month', 'kg_per_piece', 'basis', 'rows'])
     spread = pw.groupby('code4').kg_per_piece.agg(lambda x: x.max() / x.min())
-    pw['use'] = pw.code4.map(spread <= PIECE_STABLE)
+    pw['use'] = pw.code4.map(spread <= PIECE_STABLE) & ~pw.code4.isin(PIECE_EXCLUDE)
     pw.to_csv(HIST / 'piece_weight.csv', index=False, encoding='utf-8')
     return pw
 

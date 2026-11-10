@@ -6,6 +6,7 @@ import com.farm.backend.domain.User;
 import com.farm.backend.dto.LoginRequest;
 import com.farm.backend.dto.SignupRequest;
 import com.farm.backend.dto.UserResponse;
+import com.farm.backend.dto.WithdrawRequest;
 import com.farm.backend.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,10 +28,11 @@ import java.util.Map;
 /**
  * 회원 API — docs/06_api_spec.md 2장 (11-10 보안 고침: 주소를 명세서대로 /api/auth/... 로, 세션 로그인)
  *   POST /api/auth/signup   가입 (성공하면 바로 로그인 상태)      201 · 409 중복 · 422 입력 오류
- *   POST /api/auth/login    로그인                               200 · 401 틀림 · 403 정지·탈퇴
+ *   POST /api/auth/login    로그인                               200 · 401 틀림
  *   POST /api/auth/logout   로그아웃                             204
  *   GET  /api/auth/check?email= | ?nickname=   중복 확인 {"taken": true}
  *   GET  /api/me            지금 로그인한 회원 (새로고침 때 화면이 확인)  200 · 401
+ *   DELETE /api/me {"password"}  회원 탈퇴: 회원·쓴 글을 DB 에서 지우고 로그아웃   204 · 403 비밀번호 틀림
  * 응답의 회원 정보에는 비밀번호가 없다 (UserResponse).
  */
 @RestController
@@ -72,15 +74,23 @@ public class UserController {
         throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "email 또는 nickname 을 주세요");
     }
 
-    /** 로그인 필수 (SecurityConfig). 정지·탈퇴된 회원의 남은 세션은 여기서 끊음 */
+    /** 로그인 필수 (SecurityConfig). 다른 기기에서 탈퇴해 지워진 회원의 남은 세션은 여기서 끊음 */
     @GetMapping("/me")
     public UserResponse me(@AuthenticationPrincipal LoginUser me, HttpServletRequest request) {
-        User user = userService.activeUser(me == null ? null : me.id());
+        User user = userService.findUser(me == null ? null : me.id());
         if (user == null) {
             endSession(request);
             throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다");
         }
         return UserService.toResponse(user);
+    }
+
+    /** 회원 탈퇴 (로그인 필수). 비밀번호 확인 → 쓴 글·회원 삭제 → 세션 끊기. 화면은 로그인 화면으로 이동 */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdraw(@AuthenticationPrincipal LoginUser me, @RequestBody WithdrawRequest body, HttpServletRequest request) {
+        userService.withdraw(me.id(), body.password());
+        endSession(request);
+        return ResponseEntity.noContent().build();
     }
 
     /**

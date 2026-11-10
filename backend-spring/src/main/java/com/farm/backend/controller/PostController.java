@@ -29,7 +29,7 @@ public class PostController {
         this.postService = postService;
     }
 
-    /** 게시글 작성 (POST /api/posts) → 201 {"id": 새 글 번호} · 401 로그인 필요 · 403 정지·탈퇴 · 422 입력 오류 */
+    /** 게시글 작성 (POST /api/posts) → 201 {"id": 새 글 번호} · 401 로그인 필요 · 422 입력 오류 */
     @PostMapping
     public ResponseEntity<Map<String, Long>> writePost(@AuthenticationPrincipal LoginUser me, @Valid @RequestBody PostRequest request) {
         Long id = postService.writePost(me.id(), request.category(), request.title().trim(), request.body());

@@ -205,12 +205,6 @@ export const getModelPerformance = () => fake(MODEL_PERFORMANCE);
 // ── 회원·경매 관리 ──
 export const getUsers = () => fake(usersDb.all().map(({ password, ...u }) => u));
 
-export function setUserStatus(id, status) {
-  const rows = usersDb.all().map((u) => (u.id === id ? { ...u, status } : u));
-  usersDb.saveAll(rows);
-  return getUsers();
-}
-
 export const getAllAuctions = () => fake(auctionsDb.all().map(({ bids, ...a }) => a));
 
 const AUCTION_STATUS_TEXT = { 진행중: "승인되어 경매 마켓에 올라갔어요", 중단: "관리자에 의해 중단되었어요" };

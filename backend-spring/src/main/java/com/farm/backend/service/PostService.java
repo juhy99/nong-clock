@@ -23,12 +23,12 @@ public class PostService {
 
     /**
      * 게시글 작성. authorId 는 컨트롤러가 세션에서 꺼낸 로그인 회원 번호만 받는다.
-     * 로그인한 뒤 정지·탈퇴된 회원(세션은 아직 살아 있음)은 여기서 막는다.
+     * 다른 기기에서 탈퇴해 회원이 지워졌는데 이 세션이 남아 있으면 여기서 막는다.
      */
     @Transactional
     public Long writePost(Long authorId, String category, String title, String body) {
-        if (userService.activeUser(authorId) == null)
-            throw new ApiException(HttpStatus.FORBIDDEN, "글을 쓸 수 없는 계정입니다");
+        if (userService.findUser(authorId) == null)
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다");
         Post post = new Post();
         post.setAuthorId(authorId);
         post.setCategory(category);

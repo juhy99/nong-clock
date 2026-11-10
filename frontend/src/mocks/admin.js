@@ -5,7 +5,7 @@ const ago = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
 export const INITIAL_REPORTS = [
   { id: 101, type: "허위매물", target: "경매 #3 청양 고추 10kg", auction_id: 3, reporter: "buyer1", reason: "사진과 실제 상품 상태가 다르다는 후기가 있습니다.", status: "접수", created_at: ago(2), memo: "" },
   { id: 102, type: "부정입찰", target: "경매 #2 해남 월동배추", auction_id: 2, reporter: "seller1", reason: "같은 사람이 여러 계정으로 가격을 올리는 것 같습니다.", status: "검토중", created_at: ago(20), memo: "IP 중복 확인 중" },
-  { id: 103, type: "사기의심", target: "회원 buyer2", reporter: "seller2", reason: "낙찰 후 입금하지 않고 연락이 두절되었습니다.", status: "처리완료", created_at: ago(70), memo: "계정 이용정지 처리" },
+  { id: 103, type: "사기의심", target: "회원 buyer2", reporter: "seller2", reason: "낙찰 후 입금하지 않고 연락이 두절되었습니다.", status: "처리완료", created_at: ago(70), memo: "회원에게 주의 안내" },
   { id: 104, type: "허위매물", target: "경매 #5 수경재배 청상추", auction_id: 5, reporter: "buyer2", reason: "원산지 표기가 의심됩니다.", status: "반려", created_at: ago(96), memo: "판매자 증빙 확인, 문제 없음" },
 ];
 

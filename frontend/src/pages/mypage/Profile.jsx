@@ -117,10 +117,10 @@ function Withdraw() {
 
   async function submit(e) {
     e.preventDefault();
-    if (!confirm("정말 탈퇴할까요? 탈퇴하면 같은 이메일로 다시 가입할 수 없어요.")) return;
+    if (!confirm("정말 탈퇴할까요? 회원 정보와 내가 쓴 글·댓글이 모두 지워지고 되돌릴 수 없어요.")) return;
     try {
       await withdraw(pw);
-      nav("/", { replace: true });
+      nav("/login", { replace: true }); // 탈퇴하면 로그아웃 상태 → 로그인 화면으로
     } catch (err) {
       setError(err.message);
     }
@@ -130,7 +130,7 @@ function Withdraw() {
     <form className="card danger-zone" style={{ display: "grid", gap: 10 }} onSubmit={submit}>
       <h3 style={{ color: "var(--danger)" }}>회원 탈퇴</h3>
       <p className="muted small" style={{ margin: 0 }}>
-        탈퇴하면 관심 품목과 알림이 사라지고 로그인할 수 없어요.
+        탈퇴하면 회원 정보와 내가 쓴 글·댓글, 관심 품목·알림이 모두 지워지고 되돌릴 수 없어요.
         {AUCTION_ENABLED && (
           <>
             {" "}지난 낙찰·거래 기록은 분쟁 처리를 위해 보관돼요.

@@ -44,9 +44,7 @@ public class User {
     @Column(name = "marketing_agree", nullable = false)
     private boolean marketingAgree;
 
-    /** ACTIVE(정상) · SUSPENDED(정지) · WITHDRAWN(탈퇴) — DB CHECK 제약과 같은 값 */
-    @Column(nullable = false, length = 20)
-    private String status = "ACTIVE";
+    // DB 의 status 열(ACTIVE 기본값)은 쓰지 않음: 11-10 정지 기능 없앰, 탈퇴는 행을 지움
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

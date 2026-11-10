@@ -53,7 +53,7 @@ export default function Dashboard() {
           : []),
         ["오늘 올라온 글", posts.filter((p) => new Date(p.created_at).toDateString() === today).length, "/board"],
         ["숨김 처리된 글", posts.filter((p) => p.hidden).length, "/board"],
-        ["활동 회원", users.filter((u) => u.status === "정상").length, "/members"],
+        ["회원", users.length, "/members"],
       ],
     };
   });

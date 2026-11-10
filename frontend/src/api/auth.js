@@ -6,6 +6,7 @@
 import axios from "axios";
 import { fake } from "./client";
 import { auctionsDb, usersDb } from "../mocks/auctions";
+import { commentsDb, postsDb } from "../mocks/board";
 import { load, save } from "../mocks/store";
 import { AUCTION_ENABLED } from "../features";
 
@@ -20,8 +21,6 @@ export function login(email, password) {
   if (SPRING) return springLogin(email, password);
   const u = usersDb.all().find((x) => x.email === email.trim().toLowerCase());
   if (!u || u.password !== password) return Promise.reject(new Error("이메일 또는 비밀번호가 맞지 않습니다"));
-  if (u.status === "탈퇴") return Promise.reject(new Error("탈퇴한 계정입니다"));
-  if (u.status === "정지") return Promise.reject(new Error("이용이 정지된 계정입니다. 고객센터에 문의하세요"));
   const session = publicUser(u);
   save("session", session);
   return fake(session);
@@ -139,16 +138,29 @@ export function withdrawBlockers(id) {
 }
 
 /**
- * 회원 탈퇴. 거래 기록이 깨지지 않도록 정보를 지우지 않고 "탈퇴" 상태로 바꾼다(소프트 삭제).
- * 실제로는 개인정보(이름·연락처)는 법정 보관 기간 뒤 Spring 이 지운다.
+ * 회원 탈퇴 (11-10 결정): 회원 정보와 그 회원이 쓴 글·댓글을 지운다. 되돌릴 수 없음. 정지 기능은 없음.
+ * spring: DELETE /api/me {password} → 서버가 비밀번호 확인 뒤 DB 에서 삭제하고 세션을 끊음
  */
-export function withdraw(id, password) {
-  if (SPRING) return notReady("회원 탈퇴");
+export async function withdraw(id, password) {
+  if (SPRING) {
+    try {
+      await api.delete("/api/me", { data: { password } });
+    } catch (e) {
+      throw springError(e, "탈퇴하지 못했습니다");
+    }
+    save("session", null);
+    return true;
+  }
   const u = usersDb.all().find((x) => x.id === id);
   if (!u || u.password !== password) return Promise.reject(new Error("비밀번호가 맞지 않습니다"));
   const blockers = withdrawBlockers(id);
   if (blockers.length) return Promise.reject(new Error(`${blockers.join(", ")}이 있어 탈퇴할 수 없습니다`));
-  updateUser(id, (x) => Object.assign(x, { status: "탈퇴", withdrawn_at: new Date().toISOString() }));
+  // 가짜 데이터에서도 같은 규칙: 내 글(과 그 글의 댓글), 내 댓글(과 그 답글), 회원 정보 삭제
+  const myPosts = new Set(postsDb.all().filter((p) => p.author === id).map((p) => p.id));
+  const myComments = new Set(commentsDb.all().filter((c) => c.author === id).map((c) => c.id));
+  commentsDb.saveAll(commentsDb.all().filter((c) => !myPosts.has(c.post_id) && !myComments.has(c.id) && !myComments.has(c.parent_id)));
+  postsDb.saveAll(postsDb.all().filter((p) => !myPosts.has(p.id)));
+  usersDb.saveAll(usersDb.all().filter((x) => x.id !== id));
   save("session", null);
   return fake(true);
 }
@@ -160,16 +172,14 @@ const api = axios.create({ timeout: 8000 });
 
 // 백엔드 값 → 화면이 쓰는 값 (예전 가짜 계정과 같은 모양)
 const USER_TYPE = { MEMBER: "member", ADMIN: "admin" };
-const USER_STATUS = { ACTIVE: "정상", SUSPENDED: "정지", WITHDRAWN: "탈퇴" };
 
 function fromSpring(u) {
   if (!u || typeof u !== "object" || !u.email) throw new Error("백엔드 응답에 회원 정보가 없습니다");
-  const { password, passwordHash, farmName, type, status, ...rest } = u; // 비밀번호(해시)는 브라우저에 남기지 않는다
+  const { password, passwordHash, farmName, type, ...rest } = u; // 비밀번호(해시)는 브라우저에 남기지 않는다
   return {
     ...rest,
     farm_name: farmName ?? rest.farm_name ?? "",
     type: USER_TYPE[String(type ?? "MEMBER").toUpperCase()] ?? "member",
-    status: USER_STATUS[status] ?? status ?? "정상",
   };
 }
 
@@ -190,9 +200,6 @@ async function springLogin(email, password) {
   } catch (e) {
     throw e.response || e.request ? springError(e, "이메일 또는 비밀번호가 맞지 않습니다") : e;
   }
-  // 백엔드가 막아야 하는 것이지만, 아직 막지 않는 동안 화면에서라도
-  if (user.status === "탈퇴") throw new Error("탈퇴한 계정입니다");
-  if (user.status === "정지") throw new Error("이용이 정지된 계정입니다. 고객센터에 문의하세요");
   save("session", user);
   return user;
 }

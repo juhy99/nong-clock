@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * 회원 API — docs/06_api_spec.md 2장 (11-10 보안 고침: 주소를 명세서대로 /api/auth/... 로, 세션 로그인)
  *   POST /api/auth/signup   가입 (성공하면 바로 로그인 상태)      201 · 409 중복 · 422 입력 오류
- *   POST /api/auth/login    로그인                               200 · 401 틀림 · 403 정지·탈퇴 · 429 잠금
+ *   POST /api/auth/login    로그인                               200 · 401 틀림 · 403 정지·탈퇴
  *   POST /api/auth/logout   로그아웃                             204
  *   GET  /api/auth/check?email= | ?nickname=   중복 확인 {"taken": true}
  *   GET  /api/me            지금 로그인한 회원 (새로고침 때 화면이 확인)  200 · 401

@@ -18,7 +18,6 @@ import java.util.Locale;
  * 회원가입·로그인 (11-10 보안 고침).
  * - 비밀번호: BCrypt 로 암호화해 저장, 확인도 BCrypt (예전: 글자 그대로 저장·비교)
  * - 로그인 실패 문장은 하나로 ("이메일 또는 비밀번호가 맞지 않습니다") → 어떤 이메일이 가입됐는지 알 수 없게
- * - 같은 이메일로 10분 안에 5번 틀리면 5분 잠금 (LoginAttemptService)
  * - 정지·탈퇴 회원은 비밀번호가 맞아도 로그인 거부
  */
 @Service
@@ -33,14 +32,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final LoginAttemptService attempts;
     /** 없는 이메일로 로그인할 때도 비밀번호 확인과 같은 시간이 걸리게 하는 가짜 해시 (응답 시간으로 가입 여부를 알 수 없게) */
     private final String dummyHash;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, LoginAttemptService attempts) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.attempts = attempts;
         this.dummyHash = passwordEncoder.encode("dummy-password-for-timing-1234");
     }
 
@@ -102,17 +99,9 @@ public class UserService {
 
     public User login(String rawEmail, String password) {
         String email = normEmail(rawEmail);
-        long locked = attempts.lockedSeconds(email);
-        if (locked > 0)
-            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "로그인을 여러 번 실패했어요. " + Math.max(1, (locked + 59) / 60) + "분 뒤 다시 시도하세요");
-
         User user = userRepository.findByEmail(email).orElse(null);
         boolean ok = passwordEncoder.matches(password, user == null ? dummyHash : user.getPasswordHash()) && user != null;
-        if (!ok) {
-            attempts.fail(email);
-            throw new ApiException(HttpStatus.UNAUTHORIZED, LOGIN_FAIL);
-        }
-        attempts.success(email);
+        if (!ok) throw new ApiException(HttpStatus.UNAUTHORIZED, LOGIN_FAIL);
         if ("SUSPENDED".equals(user.getStatus())) throw new ApiException(HttpStatus.FORBIDDEN, "이용이 정지된 계정입니다. 고객센터에 문의하세요");
         if ("WITHDRAWN".equals(user.getStatus())) throw new ApiException(HttpStatus.FORBIDDEN, "탈퇴한 계정입니다");
         return user;

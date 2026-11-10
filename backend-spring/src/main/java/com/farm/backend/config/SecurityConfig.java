@@ -27,7 +27,7 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
  * - 로그인 상태는 서버 세션에 둔다. 브라우저에는 세션 번호 쿠키(JSESSIONID)만 간다.
  *   쿠키는 HttpOnly(자바스크립트로 못 읽음) · SameSite=Lax (application.yml server.servlet.session.cookie)
  * - 비밀번호는 BCrypt 로 암호화해 저장한다 (같은 비밀번호도 저장값이 매번 다름, 되돌릴 수 없음)
- * - 로그인이 필요한 주소: /api/me/** (내 정보), 게시판 쓰기·고치기·지우기 (POST·PUT·PATCH·DELETE /api/posts/**).
+ * - 로그인이 필요한 주소: /api/me/** (내 정보), 게시판·댓글 쓰기·고치기·지우기 (POST·PUT·PATCH·DELETE /api/posts/**, DELETE /api/comments/**).
  *   관리자 주소: /api/admin/** (관리자 지정 열이 생기면 사용)
  *   나머지 주소(시세·게시판 읽기 등)는 지금처럼 누구나. 경매 등 새 API 는 만들 때 여기에 한 줄씩 추가
  * - CSRF 토큰은 끔: 화면과 API 가 같은 주소(nginx·vite 프록시)라 다른 사이트에서는 SameSite=Lax 때문에 쿠키가 안 붙고,
@@ -65,7 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(antMatcher("/api/me"), antMatcher("/api/me/**")).authenticated()
                         .requestMatchers(antMatcher(HttpMethod.POST, "/api/posts"), antMatcher(HttpMethod.POST, "/api/posts/**"),
                                 antMatcher(HttpMethod.PUT, "/api/posts/**"), antMatcher(HttpMethod.PATCH, "/api/posts/**"),
-                                antMatcher(HttpMethod.DELETE, "/api/posts/**")).authenticated()
+                                antMatcher(HttpMethod.DELETE, "/api/posts/**"), antMatcher(HttpMethod.DELETE, "/api/comments/**")).authenticated()
                         .requestMatchers(antMatcher("/api/admin/**")).hasRole("ADMIN")
                         .anyRequest().permitAll());
         return http.build();

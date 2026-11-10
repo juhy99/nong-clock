@@ -32,6 +32,10 @@ public class Post {
     @Column(nullable = false)
     private Integer views = 0; // Long -> Integer로 변경
 
+    /** VISIBLE(보임)·HIDDEN(관리자 숨김)·DELETED — DB 기본값 VISIBLE. 지금은 읽기만 (댓글을 달 수 있는 글인지 확인, 11-10) */
+    @Column(length = 20, insertable = false, updatable = false)
+    private String status;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

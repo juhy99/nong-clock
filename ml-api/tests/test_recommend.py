@@ -32,8 +32,11 @@ def test_recommend_sorted_by_margin_and_consistent():
     assert "rice" not in shown  # 논을 고르지 않음
 
 
-def test_recommend_start_date_must_be_within_30_days():
-    body = {"lands": [{"type": "open", "area_pyeong": 100}], "start_date": (TODAY + timedelta(days=31)).isoformat()}
+def test_recommend_start_date_within_one_year():
+    # 11-11: 심을 날짜는 오늘 ~ 1년 뒤 (예전 30일)
+    body = {"lands": [{"type": "open", "area_pyeong": 100}], "start_date": (TODAY + timedelta(days=200)).isoformat()}
+    assert client.post("/recommend/crops", json=body).status_code == 200
+    body["start_date"] = (TODAY + timedelta(days=366)).isoformat()
     assert client.post("/recommend/crops", json=body).status_code == 422
     body["start_date"] = (TODAY - timedelta(days=1)).isoformat()
     assert client.post("/recommend/crops", json=body).status_code == 422
@@ -56,7 +59,7 @@ def test_planting_dates_perennial_and_unknown():
 
 def test_price_path():
     d = client.get("/recommend/crops/tomato/prices").json()
-    assert len(d["points"]) == 57 and d["points"][0]["date"] == TODAY.isoformat()
+    assert len(d["points"]) == 53 and d["points"][0]["date"] == TODAY.isoformat()  # 12개월 (11-11)
     assert all(p["lower"] <= p["price"] <= p["upper"] for p in d["points"])
     assert client.get("/recommend/crops/apple/prices").json()["points"] == []
     assert client.get("/recommend/crops/durian/prices").status_code == 404

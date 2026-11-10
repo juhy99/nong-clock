@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from app.core.catalog import MAX_HORIZON, NATIONAL
+from app.core.catalog import MAX_HISTORY_DAYS, MAX_HORIZON, NATIONAL
 
 # 오늘로부터 며칠 뒤까지 예측할지. 1 ~ MAX_HORIZON(365)일 중 아무 값이나 가능
 Horizon = Annotated[int, Field(ge=1, le=MAX_HORIZON)]
@@ -13,7 +13,10 @@ class PredictRequest(BaseModel):
     item: str = Field(examples=["napa_cabbage"], description="품목 코드 (GET /items 참고)")
     market: str = Field(NATIONAL, examples=["110001"], description="도매시장 코드 (GET /markets). 생략하거나 national 이면 전국 도매시장 평균")
     region: str = Field(NATIONAL, examples=[NATIONAL], description="(예전 방식) 지역 코드. 지금은 national 만 — market 을 쓰세요")
-    horizon: Horizon = Field(examples=[90], description="예측 기간(일). 1~365 중 아무 값 (화면에서 고른 날짜 - 기준일). forecast 에 오늘 다음 날부터 그날까지 일별 경로가 온다")
+    horizon: Horizon = Field(examples=[28], description="예측 기간(일). 1~365 중 아무 값. forecast 에 기준일 다음 날부터 그날까지 일별 경로가 온다")
+    base_date: date | None = Field(None, examples=["2026-11-10"], description="기준일 (11-11). 생략하면 오늘. 오늘부터 1년 전까지. 기준일 시세가 base_price, 그 뒤 horizon 일을 예측")
+    history_days: int = Field(14, ge=1, le=MAX_HISTORY_DAYS, description="기준일 앞 실제 시세를 며칠 치 줄지 (11-11, 기본 14). 화면은 8주 = 56")
+    last_year: bool = Field(False, description="true 면 작년 같은 시기 실제 시세(last_year)도 줌 (11-11)")
 
 
 class PricePoint(BaseModel):
@@ -55,6 +58,7 @@ class PredictResponse(BaseModel):
     reference: Literal["far", "baseline"] | None = Field(None, description="참고용: far 6개월보다 먼 날 · baseline 이 품목·기간은 기준선(오늘 가격 그대로)보다 나쁨")
     confidence: int = Field(ge=0, le=100, description="신뢰도 지수 = 100 − 예측 오차(%)")
     alerts: list[WeatherAlert]
+    last_year: list[PricePoint] = Field(default_factory=list, description="작년 같은 시기 실제 시세 (요청 last_year=true 일 때). 52주(364일) 전 같은 요일로, history 첫날 ~ forecast 마지막 날과 같은 기간. date 는 작년 날짜")
     model_version: str
 
 

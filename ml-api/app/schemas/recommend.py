@@ -33,7 +33,7 @@ class WhereToSell(BaseModel):
 
 class RecommendCropsRequest(WhereToSell):
     lands: list[Land] = Field(min_length=1, description="보유 토지 (종류마다 하나)")
-    start_date: date = Field(description="농사 시작 날짜. 오늘 ~ 30일 뒤")
+    start_date: date = Field(description="농사 시작 날짜(심을 날짜). 오늘 ~ 1년 뒤 (11-11)")
 
 
 class MarketRef(BaseModel):
@@ -189,7 +189,7 @@ class PricePathPoint(BaseModel):
 
 class PricePathResponse(BaseModel):
     crop: CropOut
-    points: list[PricePathPoint] = Field(description="오늘부터 13개월, 주 단위 전국 공영도매 예상 경매 단가와 모델 검증 오차 범위 (원/kg). 시장별 값은 × 시장 계수")
+    points: list[PricePathPoint] = Field(description="오늘부터 12개월(53점), 주 단위 전국 공영도매 예상 경매 단가와 모델 검증 오차 범위 (원/kg). 시장별 값은 × 시장 계수")
     model_version: str
 
 

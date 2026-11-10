@@ -1,15 +1,15 @@
 from fastapi import APIRouter
 
-from app.core.catalog import HORIZONS, ITEMS, REGIONS
+from app.core.catalog import HORIZONS, PREDICT_ITEMS, REGIONS
 from app.core.markets import MARKETS
 from app.schemas.catalog import HorizonOut, ItemOut, MarketOut, RegionOut
 
 router = APIRouter(tags=["catalog"])
 
 
-@router.get("/items", response_model=list[ItemOut], summary="예측 가능한 품목 목록 (107개, 거래 물량 순)")
+@router.get("/items", response_model=list[ItemOut], summary="예측 품목 목록 (50개, 물량 순위 순 — shared/items50.json)")
 def list_items() -> list[ItemOut]:
-    return [ItemOut(code=i.code, name=i.name, code4=i.code4, unit=i.unit, category=i.category, emoji=i.emoji) for i in ITEMS.values()]
+    return [ItemOut(code=i.code, name=i.name, code4=i.code4, unit=i.unit, category=i.category, emoji=i.emoji) for i in PREDICT_ITEMS.values()]
 
 
 @router.get("/markets", response_model=list[MarketOut], summary="공영 도매시장 32곳 (가격 예측·작물 추천의 시장 코드)")

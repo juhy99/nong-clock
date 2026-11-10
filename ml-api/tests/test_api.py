@@ -15,15 +15,14 @@ def test_health():
 
 def test_items_and_regions():
     items = client.get("/items").json()
-    assert len(items) == 107
+    assert len(items) == 50  # 예측 품목 50개 (shared/items50.json, 11-11)
+    assert items[0]["code"] == "onion"  # 물량 순위 1위
     codes = {i["code"] for i in items}
-    # 기존 16개 영어 코드는 그대로
+    # 기존 16개 영어 코드는 그대로 (양송이 button_mushroom 은 50품목에 없어 빠짐)
     assert {"potato", "onion", "carrot", "apple", "watermelon", "napa_cabbage", "radish", "tomato", "cabbage", "sweet_potato",
-            "button_mushroom", "pear", "king_oyster_mushroom", "green_onion", "mandarin", "enoki_mushroom"} <= codes
+            "pear", "king_oyster_mushroom", "green_onion", "mandarin", "enoki_mushroom"} <= codes and "button_mushroom" not in codes
     assert all(i["unit"] == "kg" and i["emoji"] and len(i["code4"]) == 4 and i["category"] for i in items)
-    assert len({i["code4"] for i in items}) == 107 and len(codes) == 107
-    by = {i["code"]: i for i in items}
-    assert by["lettuce"]["code4"] == "1005" and by["iceberg_lettuce"]["code4"] == "1301"  # 잎상추 ≠ 결구상추
+    assert len({i["code4"] for i in items}) == 50 and len(codes) == 50
     # 기본은 전국만
     assert client.get("/regions").json() == [{"code": "national", "name": "전국"}]
 
@@ -64,6 +63,34 @@ def test_regional_forecast_when_enabled(monkeypatch):
     assert len(client.get("/regions").json()) == 2
     res = client.post("/predict", json={"item": "napa_cabbage", "region": "gyeonggi", "horizon": 7})
     assert res.status_code == 200 and res.json()["region"] == "gyeonggi"
+
+
+def test_predict_only_50_items():
+    # 107개 중 50개 밖 품목(석류)은 예측하지 않음
+    assert client.post("/predict", json={"item": "pomegranate", "horizon": 7}).status_code == 404
+
+
+def test_predict_base_date_history_and_last_year():
+    from datetime import date, timedelta
+
+    today = date.today()
+    base = today - timedelta(days=30)
+    b = client.post("/predict", json={"item": "napa_cabbage", "horizon": 28, "base_date": base.isoformat(), "history_days": 56, "last_year": True}).json()
+    assert b["base_date"] == base.isoformat()
+    assert len(b["history"]) == 57 and b["history"][0]["date"] == (base - timedelta(days=56)).isoformat() and b["history"][-1]["date"] == base.isoformat()
+    assert len(b["forecast"]) == 28 and b["forecast"][0]["date"] == (base + timedelta(days=1)).isoformat()
+    # 작년 같은 시기: history 첫날 ~ forecast 마지막 날, 52주 전 같은 요일
+    ly = b["last_year"]
+    assert len(ly) == 56 + 28 + 1
+    assert ly[0]["date"] == (base - timedelta(days=56 + 364)).isoformat() and ly[-1]["date"] == (base + timedelta(days=28 - 364)).isoformat()
+    assert all(p["price"] > 0 for p in ly)
+    # 기본은 오늘 · 14일 · 작년 없음
+    d = client.post("/predict", json={"item": "napa_cabbage", "horizon": 7}).json()
+    assert d["base_date"] == today.isoformat() and len(d["history"]) == 15 and d["last_year"] == []
+    # 기준일은 오늘 ~ 1년 전, history_days 1~400
+    assert client.post("/predict", json={"item": "napa_cabbage", "horizon": 7, "base_date": (today + timedelta(days=1)).isoformat()}).status_code == 422
+    assert client.post("/predict", json={"item": "napa_cabbage", "horizon": 7, "base_date": (today - timedelta(days=366)).isoformat()}).status_code == 422
+    assert client.post("/predict", json={"item": "napa_cabbage", "horizon": 7, "history_days": 401}).status_code == 422
 
 
 def test_region_defaults_to_national():
@@ -137,7 +164,6 @@ def test_predict_band_and_confidence_follow_model_accuracy():
     assert client.post("/predict", json={"item": "cabbage", "horizon": 14}).json()["reference"] is None
     assert client.post("/predict", json={"item": "carrot", "horizon": 90}).json()["reference"] == "baseline"
     assert client.post("/predict", json={"item": "radish", "horizon": 30}).json()["reference"] == "baseline"
-    assert client.post("/predict", json={"item": "pomegranate", "horizon": 180}).json()["reference"] == "baseline"
 
 
 def test_accuracy_table():

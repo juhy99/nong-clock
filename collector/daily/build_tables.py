@@ -102,17 +102,36 @@ def origin_region(name):
     return None, True  # 나라 이름·수입산
 
 
+def drop_double_feeds(day):
+    """원장에 같은 날·시장·법인 거래가 통째로 두 번 들어간 경우 한 벌만 남김 (11-10).
+    예: 2024-04-26~30 210009·230003 등 시장 하루치 전체, 2020 년 여러 날 (원본 점검표 01_원본/경매원장_공영_원본/00_점검.csv 의 '통째중복').
+    기준: 시장·법인·하루 묶음에서 모든 칸이 같은 줄의 비율이 0.2 이상이면 그 묶음의 똑같은 줄을 하나만 남김.
+    근거(정하기 전에 본 분포): 2024-04 묶음 2,167개 중 0.9 이상 163개(통째 두 번), 0.2~0.5 4개(240004 한 법인 일부 두 번), 0.05~0.2 1개,
+    나머지는 0.05 미만. 2025-05 는 0.05 이상이 하나도 없음 → 0.05 미만의 똑같은 줄은 진짜로 똑같은 거래로 보고 그대로 둠"""
+    if day.empty or '법인_공판장코드' not in day:
+        return day, 0
+    dup = day.duplicated(keep=False)
+    share = dup.groupby([day['도매시장코드'], day['법인_공판장코드']]).transform('mean')
+    drop = day.duplicated(keep='first') & (share >= 0.2)
+    return day[~drop], int(drop.sum())
+
+
 def read_auction(since, until=None):
     # until(그 날 앞까지)을 주면 그 달 파일만 읽는다. 없으면 since 뒤 전부 → 달마다 부를 때 전 기간을 다시 읽어 메모리가 터짐 (11-09 고침)
     lo, hi = since.strftime('%Y%m%d'), (until.strftime('%Y%m%d') if until else '99999999')
     files = sorted(f for f in glob.glob(str(RAW / 'auction' / '*.csv.gz')) if lo <= Path(f).name[:8] < hi)
     cols = ['정산일자', '도매시장코드', '대분류코드', '중분류코드', '소분류코드', '단위중량', '단위코드', '등급명', '산지명', '총물량', '총금액', '최저가', '최고가']
-    parts = []
+    parts, dropped = [], 0
     for f in files:
         try:
-            parts.append(pd.read_csv(f, dtype=str, usecols=cols, compression='gzip'))
-        except (ValueError, EOFError) as e:
+            day = pd.read_csv(f, dtype=str, compression='gzip')  # 하루 파일 = 정산일자 하나. 모든 칸으로 중복을 봐야 해서 통째로 읽음
+            day, n = drop_double_feeds(day)
+            dropped += n
+            parts.append(day[cols])
+        except (ValueError, EOFError, KeyError) as e:
             print('  읽기 실패', f, e)
+    if dropped:
+        print(f'  통째 중복으로 뺀 줄: {dropped:,}', flush=True)
     if not parts:
         return pd.DataFrame(columns=cols)
     a = pd.concat(parts, ignore_index=True)

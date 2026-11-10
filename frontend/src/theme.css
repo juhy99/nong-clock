@@ -326,3 +326,7 @@ select.input.mk-days { font-size: 16px; }
 .search-main, .search-empty { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-radius: var(--radius); padding: clamp(18px, 2vw, 28px); }
 .search-main .card { background: var(--soft); backdrop-filter: none; -webkit-backdrop-filter: none; }
 .search-side .search-box { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 0; }
+/* 사진 위에 바로 놓이던 판 (11-11 고침): 시세 조건 칸 · 반입 동향 요약 · 뉴스 분류·품목 칸 */
+.mk-sum { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.mk-filter { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 0; }
+.news-filters { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-radius: var(--radius); padding: 8px clamp(18px, 2vw, 28px) 18px; }

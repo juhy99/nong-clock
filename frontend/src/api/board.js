@@ -1,5 +1,9 @@
-// 게시판 (Spring 담당). 지금은 브라우저에 저장되는 가짜 데이터로 동작한다.
-// 맨 위 공지는 관리자 공지사항(api/admin.js getNotices)을 그대로 보여준다.
+// 게시판 (Spring 담당). 맨 위 공지는 관리자 공지사항(api/admin.js getNotices)을 그대로 보여준다.
+// 회원 기능이 spring(VITE_AUTH=spring)이면 글·댓글은 Spring 서버(/api/posts…, /api/comments…, 명세서 2-9·2-10)로 (11-10).
+//   작성자는 서버가 로그인 세션으로 정한다. 관리자 게시판 관리·이용 제한·사진 첨부는 아직 가짜 데이터/준비 중.
+// 아니면(mock) 브라우저에 저장되는 가짜 데이터로 동작한다.
+import axios from "axios";
+import { AUTH_MODE } from "./auth";
 import { fake } from "./client";
 import { notify } from "./notify";
 import { BOARD_CATEGORIES, commentsDb, postsDb } from "../mocks/board";
@@ -20,11 +24,25 @@ export const BAN_DAYS = [3, 7, 30, null]; // null = 영구
 
 /** 지금 걸려 있는 게시판 이용 제한 (없으면 null) */
 export function activeBan(userId) {
+  if (SPRING) return null; // 서버에 이용 제한 기능이 아직 없음
   const ban = usersDb.all().find((u) => u.id === userId)?.board_ban;
   if (!ban) return null;
   if (ban.until && new Date(ban.until) <= new Date()) return null;
   return ban;
 }
+
+// ── Spring 연결 ──
+const SPRING = AUTH_MODE === "spring";
+const api = axios.create({ timeout: 8000 });
+/** 서버 응답 → 데이터, 오류 → 서버가 보낸 {"message"} 문장 */
+const call = (req, fallback) =>
+  req.then(
+    (r) => r.data,
+    (e) => {
+      throw new Error(e.response?.data?.message || (e.response ? fallback : "게시판 서버에 연결할 수 없습니다. 잠시 뒤 다시 시도하세요"));
+    },
+  );
+const noPhotos = (form) => (form.images?.length ? Promise.reject(new Error("사진 첨부는 아직 준비 중이에요 (사진을 빼고 올려 주세요)")) : null);
 
 export const banText = (ban) => (ban.until ? `${new Date(ban.until).toLocaleDateString("ko-KR")}까지` : "영구");
 
@@ -49,6 +67,7 @@ function snippetOf(body, keyword, len = 70) {
  * @returns {Promise<{rows: object[], total: number, page: number, pages: number}>}
  */
 export function getPosts({ category = "", q = "", page = 1 } = {}) {
+  if (SPRING) return call(api.get("/api/posts", { params: { category: category || undefined, q: q.trim() || undefined, page } }), "글 목록을 불러오지 못했습니다");
   const users = usersDb.all();
   const keyword = q.trim().toLowerCase();
   const rows = postsDb
@@ -73,6 +92,7 @@ export function getPosts({ category = "", q = "", page = 1 } = {}) {
 
 /** 글 보기. countView 면 조회수 +1 (같은 브라우저 탭에서는 한 번만) */
 export function getPost(id, { countView = false } = {}) {
+  if (SPRING) return call(api.get(`/api/posts/${id}`, { params: countView ? { view: true } : {} }), "글을 불러오지 못했습니다"); // 조회수 중복은 서버가 막음
   const rows = postsDb.all();
   const p = rows.find((x) => x.id === Number(id));
   if (!p || p.hidden) return Promise.reject(new Error("삭제되었거나 볼 수 없는 글입니다"));
@@ -95,6 +115,7 @@ function validate(form) {
 
 /** @param {{category: string, title: string, body: string, images: string[]}} form */
 export function createPost(user, form) {
+  if (SPRING) return noPhotos(form) ?? call(api.post("/api/posts", { category: form.category, title: form.title, body: form.body }), "글을 올리지 못했습니다");
   const err = checkCanWrite(user) ?? validate(form);
   if (err) return Promise.reject(new Error(err));
   const rows = postsDb.all();
@@ -116,6 +137,7 @@ export function createPost(user, form) {
 }
 
 export function updatePost(user, id, form) {
+  if (SPRING) return noPhotos(form) ?? call(api.put(`/api/posts/${id}`, { category: form.category, title: form.title, body: form.body }), "글을 고치지 못했습니다");
   const rows = postsDb.all();
   const p = rows.find((x) => x.id === Number(id));
   if (!p || p.author !== user?.id) return Promise.reject(new Error("본인 글만 고칠 수 있습니다"));
@@ -128,6 +150,7 @@ export function updatePost(user, id, form) {
 
 /** 작성자 본인 삭제 */
 export function deletePost(user, id) {
+  if (SPRING) return call(api.delete(`/api/posts/${id}`), "글을 지우지 못했습니다");
   const rows = postsDb.all();
   const p = rows.find((x) => x.id === Number(id));
   if (!p || p.author !== user?.id) return Promise.reject(new Error("본인 글만 지울 수 있습니다"));
@@ -172,6 +195,7 @@ export function adminDeletePost(id, reason = "") {
  * 글의 댓글을 [{...댓글, replies: [...답글]}] 모양으로. 지운 댓글은 답글이 남아 있을 때만 "삭제된 댓글"로 남는다.
  */
 export function getComments(postId) {
+  if (SPRING) return call(api.get(`/api/posts/${postId}/comments`), "댓글을 불러오지 못했습니다");
   const users = usersDb.all();
   const rows = commentsDb.all().filter((c) => c.post_id === Number(postId)).sort((a, b) => a.id - b.id).map(withAuthor(users));
   const top = rows.filter((c) => !c.parent_id).map((c) => ({ ...c, replies: rows.filter((r) => r.parent_id === c.id) }));
@@ -183,6 +207,7 @@ export function getComments(postId) {
  * @param {{body: string, parent_id?: number}} form
  */
 export function createComment(user, postId, { body, parent_id = null }) {
+  if (SPRING) return call(api.post(`/api/posts/${postId}/comments`, { body, parent_id }), "댓글을 올리지 못했습니다");
   const err = checkCanWrite(user);
   if (err) return Promise.reject(new Error(err));
   const text = body.trim();
@@ -211,6 +236,7 @@ export function createComment(user, postId, { body, parent_id = null }) {
  * 관리자가 지우면 작성자에게 사유를 알린다.
  */
 export function deleteComment(user, id, reason = "") {
+  if (SPRING && user?.type !== "admin") return call(api.delete(`/api/comments/${id}`), "댓글을 지우지 못했습니다"); // 관리자 삭제는 아직 가짜 데이터
   let rows = commentsDb.all();
   const c = rows.find((x) => x.id === id);
   const isAdmin = user?.type === "admin";

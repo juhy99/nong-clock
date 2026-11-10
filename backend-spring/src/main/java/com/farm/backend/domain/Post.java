@@ -38,4 +38,7 @@ public class Post {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt; // 고친 때 (안 고쳤으면 null → 화면에 "(수정됨)" 없음)
 }

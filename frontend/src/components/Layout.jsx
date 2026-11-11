@@ -169,7 +169,7 @@ function Header() {
     <header className={`header ${solid || menu ? "solid" : ""}`}>
       <div className="container header-inner">
         <Link to="/" className="logo">
-          🌱 FARMBID<small>농산물 가격 예측</small>
+          🌱 FARMBID
         </Link>
         <HeaderSearch />
         <nav className="top-nav" aria-label="주 메뉴">

@@ -17,6 +17,7 @@ class PredictRequest(BaseModel):
     base_date: date | None = Field(None, examples=["2026-11-10"], description="기준일 (11-11). 생략하면 오늘. 오늘부터 1년 전까지. 기준일 시세가 base_price, 그 뒤 horizon 일을 예측")
     history_days: int = Field(14, ge=1, le=MAX_HISTORY_DAYS, description="기준일 앞 실제 시세를 며칠 치 줄지 (11-11, 기본 14). 화면은 8주 = 56")
     last_year: bool = Field(False, description="true 면 작년 같은 시기 실제 시세(last_year)도 줌 (11-11)")
+    variety: str = Field("", examples=["peach-1"], description="품종 id (shared/items50.json, 11-11). 비우면 품목 전체. DB 예측기만 씀 — 더미는 무시하고 variety 를 빈 값으로 돌려줌")
 
 
 class PricePoint(BaseModel):
@@ -60,6 +61,7 @@ class PredictResponse(BaseModel):
     alerts: list[WeatherAlert]
     last_year: list[PricePoint] = Field(default_factory=list, description="작년 같은 시기 실제 시세 (요청 last_year=true 일 때). 52주(364일) 전 같은 요일로, history 첫날 ~ forecast 마지막 날과 같은 기간. date 는 작년 날짜")
     model_version: str
+    variety: str = Field("", description="이 응답의 품종 id. 빈 값 = 품목 전체 (더미 예측기는 늘 빈 값 → 화면이 가짜 품종 계수를 곱함)")
 
 
 class TopMover(BaseModel):

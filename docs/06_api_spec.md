@@ -335,6 +335,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | `base_date` | string | X | **기준일** (11-11). 생략하면 오늘. **오늘부터 1년 전까지** (밖이면 `422`). 이날 시세가 `base_price`, 다음 날부터 `horizon` 일을 예측 |
 | `history_days` | number | X | 기준일 앞 실제 시세를 며칠 치 줄지 (11-11). 1 ~ 400, **기본 14** |
 | `last_year` | boolean | X | `true` 면 작년 같은 시기 실제 시세(`last_year`)도 줌 (11-11). 기본 `false` |
+| `variety` | string | X | 품종 id (`GET /items` 의 `varieties[].id`, 11-11). 생략하면 품목 전체. 응답 `variety` 에 그대로 돌아옴 — 빈 값이면(더미 예측기) 화면이 [샘플] 품종 계수를 곱함. 없는 id 는 `404` |
 
 ```json
 { "item": "tomato", "market": "110001", "horizon": 90 }

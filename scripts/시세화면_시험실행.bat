@@ -3,7 +3,7 @@ chcp 65001 >nul
 setlocal
 rem ============================================================
 rem  시세 화면을 실제 데이터로 보기 (내 PC 시험용, 2026-11-09)
-rem  1) 도커로 DB + Spring(backend) 켜기  2) 수집기 표(CSV)를 DB에 넣기  3) 화면(npm run dev) 켜기
+rem  1) 도커로 DB + Spring(backend) + AI 예측(ml-api, DB 예측기) 켜기  2) 수집기 표(CSV)를 DB에 넣기  3) 화면(npm run dev) 켜기
 rem  데이터 폴더가 다르면 아래 DATA 한 줄만 고치세요. (저장소 위치는 이 파일 위치로 자동)
 rem ============================================================
 set "DATA=D:\nong-clock-data\05_DB적재\data"
@@ -17,8 +17,10 @@ cd /d "%REPO%"
 if not exist ".env" ( echo [멈춤] %REPO%\.env 가 없어요 ^(.env.example 을 복사하고 DB_PASSWORD 를 채우세요^) & pause & exit /b 1 )
 for /f "tokens=1,* delims==" %%a in ('findstr /b "DB_PASSWORD=" .env') do set "DB_PASSWORD=%%b"
 
-echo [1/3] DB 와 Spring 을 켜는 중 ^(처음엔 Spring 빌드로 몇 분 걸려요^)...
-docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d --build db backend
+echo [1/3] DB · Spring · AI 예측^(ml-api^)을 켜는 중 ^(처음엔 빌드로 몇 분 걸려요^)...
+rem 예측기를 DB 예측기로 (가격 예측 = DB 의 price_forecast_monthly). 서버 기본은 dummy 그대로
+set "PREDICTOR=db"
+docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d --build db backend ml-api
 if errorlevel 1 ( echo [멈춤] docker compose 실패. 위 오류를 확인하세요. & pause & exit /b 1 )
 
 echo     DB 가 준비될 때까지 기다리는 중...
@@ -59,5 +61,6 @@ start "" "http://localhost:5173/market"
 echo.
 echo 끝. 브라우저에 시세 화면이 열려요. 안 열리면 http://localhost:5173/market
 echo 시세 API 확인: http://localhost:8080/api/prices/today  ^(Spring 이 켜지는 데 30초쯤 걸려요^)
+echo AI 예측 확인: http://localhost:8000/docs  ^(POST /predict 에 item=peach, variety=peach-1 등^)
 echo Spring 오류 보기: docker compose logs backend
 pause

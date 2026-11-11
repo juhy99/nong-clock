@@ -17,7 +17,7 @@ from typing import Protocol
 
 from app.core import accuracy
 from app.core.catalog import ITEMS, NATIONAL
-from app.core.config import MODEL_VERSION
+from app.core.config import MODEL_VERSION, PREDICTOR
 from app.core.markets import market_factor, market_name
 from app.schemas.prediction import (
     ForecastPoint,
@@ -32,7 +32,7 @@ LAST_YEAR_DAYS = 364  # 작년 같은 시기 = 52주 전 같은 요일
 
 
 class Predictor(Protocol):
-    def predict(self, item: str, market: str, horizon: Horizon, base_date: date, history_days: int = HISTORY_DAYS, last_year: bool = False) -> PredictResponse: ...
+    def predict(self, item: str, market: str, horizon: Horizon, base_date: date, history_days: int = HISTORY_DAYS, last_year: bool = False, variety: str = "") -> PredictResponse: ...
 
 
 def _rng(*parts: object) -> random.Random:
@@ -56,8 +56,8 @@ def band_ratio(item: str, t: int) -> float:
 class DummyPredictor:
     """전국 도매시장 평균의 가짜 예측 × 시장 계수 (markets.market_factor). 시장별 모델이 붙으면 이 클래스를 바꾼다."""
 
-    def predict(self, item: str, market: str, horizon: Horizon, base_date: date, history_days: int = HISTORY_DAYS, last_year: bool = False) -> PredictResponse:
-        info = ITEMS[item]
+    def predict(self, item: str, market: str, horizon: Horizon, base_date: date, history_days: int = HISTORY_DAYS, last_year: bool = False, variety: str = "") -> PredictResponse:
+        info = ITEMS[item]  # variety 는 무시 (품종 가짜 계수는 화면이 곱함)
         f = market_factor(item, market)
         base = round(info.base_price * f)
         rng = _rng(item, market, base_date)
@@ -131,4 +131,9 @@ class DummyPredictor:
 
 @lru_cache
 def get_predictor() -> Predictor:
+    """PREDICTOR=db 면 DB 예측기(app/services/db_predictor.py, 11-11), 아니면 더미"""
+    if PREDICTOR == "db":
+        from app.services.db_predictor import get_db_predictor
+
+        return get_db_predictor()
     return DummyPredictor()

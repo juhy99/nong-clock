@@ -69,12 +69,21 @@ uvicorn app.main:app --reload --port 8000
 app/
   main.py               # FastAPI 앱, CORS, 라우터 등록
   core/catalog.py       # 품목·지역 코드표 (팀 공통 코드)
-  core/config.py        # 환경변수 (MODEL_VERSION, CORS_ORIGINS)
+  core/config.py        # 환경변수 (MODEL_VERSION, CORS_ORIGINS, PREDICTOR)
   schemas/              # 요청·응답 Pydantic 모델 = API 명세
   routers/              # 엔드포인트
-  services/predictor.py # 예측기 (DummyPredictor → 실제 모델로 교체할 곳)
+  services/predictor.py # 예측기 (DummyPredictor, get_predictor)
+  services/db_predictor.py # DB 예측기 (PREDICTOR=db)
 tests/
 ```
+
+## DB 예측기 (11-11)
+`PREDICTOR=db` 이면 `services/db_predictor.py` 가 PostgreSQL(farmdb)을 읽어 답합니다 (기본 `dummy` 는 그대로).
+- 접속: `PGHOST` `PGPORT` `PGDATABASE` `PGUSER` `PGPASSWORD` (docker compose 가 `db` 로 넣어 줌)
+- 예측 = `price_forecast_monthly`(수집기 `tools/build_v4_forecast.py` 가 만드는 월 예측, 지금은 팀 v4 상황판 예측). 그 달 15일에 값을 두고 이웃 달 사이는 직선, 예측 없는 달(출하철 밖)은 빼고 줌. 고른 기간에 하나도 없으면 `404`
+- 최근 시세·기준가·작년 같은 시기 = 실제 시세 (품목 `price_daily`, 품종 `price_unit_daily` 단위 합산). 시장 = 전국 × `market_factor`(품목·시장·달)
+- 오차 범위 = 표의 하한·상한, `error_pct` = (상한 − 하한) ÷ 2 ÷ 예측
+- 내 PC: `scripts\시세화면_시험실행.bat` 이 `PREDICTOR=db` 로 켬. 서버 `.env` 에 `PREDICTOR=db` 를 넣으면 서버도 DB 예측기
 
 ## 실제 모델로 교체하기
 `services/predictor.py`의 `Predictor` 프로토콜을 구현하는 클래스를 만들고 `get_predictor()`가 그 클래스를 반환하게 바꾸면 됩니다. 라우터와 응답 형식은 수정할 필요가 없습니다.

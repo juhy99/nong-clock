@@ -14,8 +14,9 @@ export default function FavoriteAlerts({ onEdit }) {
     if (!favorites.length) return [];
     const today = await getTodayPrices();
     const rows = today.items.filter((p) => favorites.includes(p.item));
-    const preds = await Promise.all(rows.map((p) => predict({ item: p.item, horizon: 7 })));
-    return rows.map((p, i) => ({ ...p, compared_date: today.compared_date, forecast_pct: preds[i].change_pct }));
+    // 예측 없는 품목(출하철 밖 등, DB 예측기 404)은 그 품목만 '예측 없음' (11-11)
+    const preds = await Promise.all(rows.map((p) => predict({ item: p.item, horizon: 7 }).catch(() => null)));
+    return rows.map((p, i) => ({ ...p, compared_date: today.compared_date, forecast_pct: preds[i]?.change_pct ?? null }));
   }, [favorites.join()]);
 
   return (
@@ -35,7 +36,7 @@ export default function FavoriteAlerts({ onEdit }) {
                 <span className="num">{wonPerKg(p.price)}</span>
                 <PriceChange change={p.change} changePct={p.change_pct} comparedDate={p.compared_date} className="small" />
                 <span className="ai small muted">
-                  AI 예측: 1주 후 <PctChange value={p.forecast_pct} />
+                  AI 예측: 1주 후 {p.forecast_pct == null ? "예측 없음" : <PctChange value={p.forecast_pct} />}
                 </span>
               </div>
             ))}

@@ -42,8 +42,17 @@ services:
       MODEL_VERSION: ${MODEL_VERSION:-dummy-0.1}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
       ENABLE_REGIONAL_FORECAST: ${ENABLE_REGIONAL_FORECAST:-false}
+      # 예측기 (11-11): dummy(가짜, 기본) · db(DB 실제 시세 + price_forecast_monthly 월 예측). 내 PC 시험 bat 은 db 로 켬
+      PREDICTOR: ${PREDICTOR:-dummy}
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: farmdb
+      PGUSER: postgres
+      PGPASSWORD: ${DB_PASSWORD}
     ports:
       - "8000:8000"
+    depends_on:
+      - db
     restart: unless-stopped
 
   # 농업 뉴스 수집기: 켜자마자 한 번, 그 뒤 1시간마다 수집 → 볼륨 newsdata (collector/news/README.md)

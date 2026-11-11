@@ -3,6 +3,9 @@ import os
 APP_NAME = "nong-clock ml-api"
 MODEL_VERSION = os.getenv("MODEL_VERSION", "dummy-0.1")
 
+# 예측기: dummy(가짜, 기본) · db(DB 의 실제 시세 + price_forecast_monthly 월 예측, 11-11). db 면 PGHOST 등 DB 접속 정보도 필요
+PREDICTOR = os.getenv("PREDICTOR", "dummy").strip().lower()
+
 # 지역별 예측 사용 여부. 기본은 전국만.
 ENABLE_REGIONAL_FORECAST = os.getenv("ENABLE_REGIONAL_FORECAST", "false").lower() in ("1", "true", "yes")
 

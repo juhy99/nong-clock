@@ -26,6 +26,15 @@ const marketLabel = (n) => (n === "전국 평균" || n === "전국 도매시장 
 /** 며칠 뒤 → "3주 뒤" / "5개월 뒤" */
 const afterLabel = (t) => (t < 60 ? `${Math.round(t / 7)}주 뒤` : `${Math.round(t / 30.4)}개월 뒤`);
 
+/** 예측에서 기준일 t일 뒤 값. DB 예측기는 출하철 밖 날을 빼고 주므로(11-11) 순서가 아니라 날짜로 찾는다 */
+function fcAt(p, t) {
+  p._fc ??= new Map(p.forecast.map((f) => [f.date, f]));
+  const f = p._fc.get(addDays(p.base_date, t));
+  return f ? { ...f, t } : null;
+}
+/** 고른 날들에 예측이 하나도 없으면 마지막 예측 하나라도 (기간 중간에 예측 없는 달이 있을 때) */
+const orLast = (rows, p) => (rows.length || !p.forecast.length ? rows : [{ ...p.forecast.at(-1), t: daysBetween(p.base_date, p.forecast.at(-1).date) }]);
+
 /** 한 시장 응답 → 주 단위 점: 지난 8주(기준일 포함) · 예측(7일마다, 마지막 날 포함) */
 function weekly(p, horizon) {
   const byDate = new Map(p.history.map((h) => [h.date, h.price]));
@@ -36,7 +45,7 @@ function weekly(p, horizon) {
   const ts = [];
   for (let t = 7; t < horizon; t += 7) ts.push(t);
   ts.push(horizon);
-  const fut = ts.map((t) => ({ ...p.forecast[t - 1], t })).filter((x) => x.price != null);
+  const fut = orLast(ts.map((t) => fcAt(p, t)).filter((x) => x?.price != null), p);
   return { past, fut };
 }
 
@@ -47,7 +56,7 @@ function checkpoints(p, horizon) {
   for (let t = step; t < horizon; t += step) ts.push(t);
   if (!ts.length || horizon - ts[ts.length - 1] >= step / 2) ts.push(horizon);
   else ts[ts.length - 1] = horizon;
-  return ts.map((t) => ({ ...p.forecast[t - 1], t, from: addDays(p.forecast[t - 1].date, -(Math.min(step, t) - 1)) }));
+  return orLast(ts.map((t) => fcAt(p, t)).filter(Boolean), p).map((x) => ({ ...x, from: addDays(x.date, -(Math.min(step, x.t) - 1)) }));
 }
 
 /** 그래프: 시장마다 선 (지난 8주 얇게 → 예측 굵게). 시장 하나면 예측 범위 띠 */
@@ -247,11 +256,11 @@ export default function Predict() {
   const result = useAsync(async () => {
     if (!opts) return null;
     const ms = marketsIn(opts.markets, q.region, q.item);
-    // [샘플] 품종 가격 = 품목 예측 × 품종 계수
-    const f = varietyFactor(q.variety || null);
-    const k = (v) => Math.round(v * f);
-    const res = await Promise.all(ms.map((m) => predict({ item: q.item, market: m.code, horizon, history_days: 56 })));
+    // 품종: DB 예측기는 품종 예측을 그대로 돌려줌(raw.variety). 더미(raw.variety 빈 값)면 [샘플] 품목 예측 × 품종 계수
+    const res = await Promise.all(ms.map((m) => predict({ item: q.item, market: m.code, horizon, history_days: 56, ...(q.variety ? { variety: q.variety } : {}) })));
     const series = res.map((raw, i) => {
+      const f = (raw.variety ?? "") === q.variety ? 1 : varietyFactor(q.variety || null);
+      const k = (v) => Math.round(v * f);
       const p = {
         ...raw, base_price: k(raw.base_price),
         history: raw.history.map((h) => ({ ...h, price: k(h.price) })),

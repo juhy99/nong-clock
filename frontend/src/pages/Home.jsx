@@ -5,7 +5,7 @@ import { predict, recommendCrops } from "../api/ml";
 import { NEWS_CATEGORIES, getNews } from "../api/news";
 import { useAuth } from "../components/AuthContext";
 import { useAsync } from "../components/common";
-import { timeAgo, todayIso, won } from "../utils/format";
+import { addDays, timeAgo, todayIso, won } from "../utils/format";
 import "./home.css";
 
 /* ─────────────────────────────────────────────
@@ -70,10 +70,11 @@ function AiPane({ on }) {
 
   const d = state.data;
   const past = d ? weekly(d.history, 8).map((p) => p.price) : [];
-  const fut = d ? [7, 14, 21, 28].map((t) => d.forecast[t - 1]?.price).filter((v) => v != null) : [];
+  const futW = d ? [7, 14, 21, 28].map((t) => d.forecast.find((f) => f.date === addDays(d.base_date, t))?.price ?? null) : []; // 날짜로 찾음 (DB 예측기는 예측 없는 날을 뺌, 11-11)
+  const fut = futW.filter((v) => v != null);
   const now = d?.base_price ?? 0;
   const top = fut.length ? Math.max(...fut) : 0;
-  const wk = fut.indexOf(top) + 1;
+  const wk = futW.indexOf(top) + 1;
   const gain = top - now;
   const shown = useCountUp(d ? gain : null, `${code}-${on}`);
 

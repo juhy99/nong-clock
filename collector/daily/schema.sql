@@ -107,6 +107,21 @@ CREATE TABLE IF NOT EXISTS retail_price_daily (
     PRIMARY KEY (date, item_code)
 );
 
+-- 가격 예측 (11-11): 기준월에 만든 1~12달 뒤 월 예측. 전국 도매 단가(원/kg). variety_id 'ALL' = 품목 전체, 그 밖 = shared/items50.json 품종 id
+-- 시장별 값은 ml-api 가 market_factor 를 곱함. 만드는 법: tools/build_v4_forecast.py (팀 v4 상황판 예측)
+CREATE TABLE IF NOT EXISTS price_forecast_monthly (
+    base_month   DATE        NOT NULL,
+    item_code    VARCHAR(30) NOT NULL REFERENCES item(item_code),
+    variety_id   VARCHAR(40) NOT NULL DEFAULT 'ALL',
+    target_month DATE        NOT NULL,
+    price        INT         NOT NULL,
+    price_low    INT,
+    price_high   INT,
+    model        VARCHAR(40),
+    method       VARCHAR(120),
+    PRIMARY KEY (base_month, item_code, variety_id, target_month)
+);
+
 CREATE TABLE IF NOT EXISTS price_index_daily (
     date       DATE         NOT NULL,
     group_code VARCHAR(20)  NOT NULL,

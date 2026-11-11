@@ -19,7 +19,7 @@ TABLES = [
     ('price_daily', ['date', 'market_code', 'item_code', 'grade']),
     ('price_origin_daily', ['date', 'market_code', 'item_code', 'origin_region_id', 'is_import']),
     ('price_unit_daily', ['date', 'unit_id']), ('retail_price_daily', ['date', 'item_code']),
-    ('price_index_daily', ['date', 'group_code']), ('market_factor', ['item_code', 'market_code', 'month']),
+    ('price_index_daily', ['date', 'group_code']), ('market_factor', ['item_code', 'market_code', 'month']), ('price_forecast_monthly', ['base_month', 'item_code', 'variety_id', 'target_month']),
     ('weather_daily', ['date', 'region_id']), ('weather_normal', ['region_id', 'month', 'day']),
     ('weather_region_now', ['base_time', 'region_id']), ('weather_warning_daily', ['date', 'region_id', 'warn_type']),
     ('producer_price_daily', ['date', 'producer_code', 'item_code']),

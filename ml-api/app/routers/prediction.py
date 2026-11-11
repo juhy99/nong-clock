@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core.catalog import BASE_DATE_BACK_DAYS, MAX_HORIZON, NATIONAL, PREDICT_ITEMS, REGIONS
 from app.core.markets import MARKETS
 from app.schemas.prediction import PredictRequest, PredictResponse, TopMover
+from app.services.db_predictor import NoForecast
 from app.services.predictor import Predictor, get_predictor
 
 router = APIRouter(prefix="/predict", tags=["prediction"])
@@ -29,7 +30,12 @@ def predict(req: PredictRequest, predictor: PredictorDep) -> PredictResponse:
     base = req.base_date or today
     if not today - timedelta(days=BASE_DATE_BACK_DAYS) <= base <= today:
         raise HTTPException(status_code=422, detail=f"base_date 는 오늘부터 {BASE_DATE_BACK_DAYS}일 전까지만 고를 수 있어요")
-    res = predictor.predict(req.item, req.market, req.horizon, base, req.history_days, req.last_year)
+    try:
+        res = predictor.predict(req.item, req.market, req.horizon, base, req.history_days, req.last_year, req.variety)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown variety: {req.variety}")
+    except NoForecast as e:
+        raise HTTPException(status_code=404, detail=str(e))
     res.region = req.region  # (예전 방식) 지역은 그대로 돌려줌
     return res
 
@@ -45,7 +51,10 @@ def top_movers(
     today = date.today()
     movers = []
     for code in PREDICT_ITEMS:
-        p = predictor.predict(code, market, horizon, today)
+        try:
+            p = predictor.predict(code, market, horizon, today)
+        except NoForecast:
+            continue  # 이 기간 예측 없는 품목은 빼고 (DB 예측기)
         movers.append(
             TopMover(
                 item=p.item,

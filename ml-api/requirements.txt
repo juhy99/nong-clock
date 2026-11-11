@@ -1,6 +1,7 @@
 fastapi==0.143.1
 uvicorn[standard]==0.54.0
 pydantic==2.14.1
+psycopg2-binary==2.9.10  # DB 예측기 (PREDICTOR=db, 11-11)
 
 # test
 pytest==9.1.1

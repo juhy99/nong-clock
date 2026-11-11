@@ -139,6 +139,9 @@ def label(a):
         "crops": rules.find_crops(f"{title} {summary}"),
         "category": rules.categorize(title, summary),
         "score": rules.agri_score(title, summary),
+        # 같은 소식을 실은 언론사 (11-11, 화면 "많이 다룬 뉴스"). 같은 제목 기사를 합칠 때 늘어남
+        "presses": [rules.press_of(url)],
+        "press_count": 1,
     }
 
 
@@ -168,6 +171,7 @@ def collect():
     since = datetime.fromisoformat(log["last_success_at"]) - OVERLAP if log.get("last_success_at") else None
     stored = read_json(NEWS_FILE, {"articles": []})["articles"]
     seen = {n["url"] for n in stored} | {rules.title_key(n["title"]) for n in stored}
+    by_key = {rules.title_key(n["title"]): n for n in stored}  # 같은 제목 → 저장된(또는 이번에 더한) 기사
 
     raw, errors = [], []
     queries = rules.queries()
@@ -184,12 +188,23 @@ def collect():
     for a in sorted(raw, key=lambda a: parsedate_to_datetime(a["pubDate"]), reverse=True):
         url = a.get("originallink") or a.get("link")
         key = rules.title_key(rules.clean(a.get("title")))
-        if not url or url in seen or key in seen:
+        if not url or url in seen:
+            continue
+        if key in seen:
+            # 같은 제목을 다른 언론사가 실음 → 기사는 한 번만, 언론사 수만 늘림 (거른 기사면 by_key 에 없음)
+            same = by_key.get(key)
+            if same is not None:
+                presses = same.setdefault("presses", [same.get("press")])
+                if rules.press_of(url) not in presses:
+                    presses.append(rules.press_of(url))
+                same["press_count"] = len(presses)
+            seen.add(url)
             continue
         seen |= {url, key}
         n = label(a)
         if rules.is_agri_news(n["title"], n["summary"]):
             added.append(n | {"collected_at": started.isoformat()})
+            by_key[key] = added[-1]
         else:
             rejected.append({k: n[k] for k in ("title", "summary", "url", "score", "items", "crops")})
 

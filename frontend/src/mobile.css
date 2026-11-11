@@ -1,0 +1,89 @@
+/* ─────────────────────────────────────────────────────────────
+   휴대폰 맞춤 (11-11) — 사용자 사이트만, theme.css 다음에 읽음
+   기준 폭: 960px 이하 = 머리말 ☰ 메뉴 · 640px 이하 = 휴대폰 · 520px 이하 = 작은 휴대폰 (iPhone 13 = 390px)
+   ───────────────────────────────────────────────────────────── */
+
+/* 머리말 ☰ 메뉴 (넓은 화면에서는 숨김) */
+.hdr-menu { display: none; border: 0; background: rgba(255, 255, 255, 0.8); width: 42px; height: 42px; border-radius: 12px; font-size: 20px; color: var(--ink); cursor: pointer; }
+.hdr-drawer { display: none; }
+/* 재배 달력: 이름 칸 폭 (휴대폰에서는 이름이 막대 위로 올라가 0) */
+.rc-cal { --nm: 220px; }
+.rc-cal .today { left: calc(var(--nm) + (100% - var(--nm)) * var(--t, 0)); }
+.rc-mini .mm i { font-style: normal; }
+
+@media (max-width: 960px) {
+  .hdr-menu { display: grid; place-items: center; }
+  .header-inner { height: 60px; gap: 10px; }
+  .header .header-right { margin-left: auto; gap: 8px; }
+  .header .user-chip, .header .hdr-out, .header .hdr-admin { display: none; }
+  .hdr-drawer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 6px 16px 18px; border-top: 1px solid rgba(19, 38, 26, 0.08); max-height: calc(100vh - 60px); overflow-y: auto; }
+  .hdr-drawer .search { order: -1; display: flex; max-width: none; width: 100%; height: 48px; border: 0; background: #eef2ea; padding: 0 6px 0 14px; }
+  .hdr-drawer .search input { font-size: 17px; }
+  .hdr-drawer .search button { background: var(--accent); color: var(--brand); }
+  .hdr-drawer nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .hdr-drawer nav a { display: block; padding: 14px 16px; border-radius: 14px; background: rgba(19, 38, 26, 0.05); font-size: 18px; font-weight: 600; color: var(--ink); }
+  .hdr-drawer nav a.active { background: var(--accent); color: var(--brand); }
+  .hdr-user { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 4px; font-size: 17px; }
+  .hdr-user a { color: var(--ink); }
+  .hv { margin-top: -60px; }
+}
+
+/* 휴대폰 */
+@media (max-width: 640px) {
+  /* 바닥글: 사진 위에서도 읽히게 진한 띠 · 아래 고정 바에 가리지 않게 */
+  .footer { background: rgba(19, 38, 26, 0.72); color: #fff; padding-bottom: 96px; }
+  .footer.light { background: #d6e4c6; color: rgba(19, 38, 26, 0.85); }
+
+  /* 홈 첫 화면: 미리보기 카드가 잘리지 않게 높이를 내용만큼, 두 카드(가격 예측·작물 추천)를 위아래로 */
+  .hv-hero { min-height: 0; }
+  .hv-stage { padding-top: 84px; padding-bottom: 8px; gap: 20px; }
+  .hv-preview { height: auto; display: grid; gap: 14px; }
+  .hv-pane { position: relative; inset: auto; opacity: 1; transform: none; pointer-events: auto; }
+  .hv-cue { position: static; transform: none; margin: 18px auto 22px; }
+  .hv-crops { gap: 18px; }
+  .hv-crops li { grid-template-columns: 44px minmax(0, 1fr); }
+  .hv-crops .n { font-size: 32px; }
+  .hv-crops .nm small { display: block; margin-left: 0; }
+  .hv-crops .v { grid-column: 2; text-align: left; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .hv-crops .v small { display: inline; }
+  .hv-wx-grid button { padding: 8px 6px; text-align: center; font-size: 15px; white-space: nowrap; }
+  .hv-wx-grid b { display: block; font-size: 20px; }
+
+  /* 가격 예측 · 작물 추천 */
+  .rc-nm { padding-right: 128px; font-size: 30px; }
+  .rc-nm small { display: block; margin-left: 0; margin-top: 2px; }
+  .rc-art { right: 16px; }
+  .rc-art i { width: 76px; height: 76px; font-size: 48px; }
+  .rc-mini .mm { font-size: 14px; }
+  .rc-mini .mm i { display: none; }
+  .rc-mini .when { grid-template-columns: 1fr 1fr; }
+  .rc-cal { --nm: 0px; overflow-x: visible; }
+  .rc-cal .mh, .rc-cal .row { grid-template-columns: 1fr; min-width: 0; }
+  .rc-cal .mh > span:first-child { display: none; }
+  .rc-cal .months { font-size: 13px; }
+  .rc-cal .nm { margin-bottom: 6px; }
+  .rc-cal .today { top: 22px; }
+  .rc-cal .today span { left: 0; transform: translateX(calc(-100% * var(--t, 0))); } /* 이름표가 화면 밖으로 잘리지 않게 */
+
+  /* 시세: 등급 카드 숫자가 잘리지 않게 줄바꿈 */
+  .grade-card .d { flex-wrap: wrap; white-space: normal; gap: 0 8px; }
+  /* 시세 표: 칸 안에서 줄바꿈하지 않고 옆으로 밀어 보기 (오른쪽 끝이 흐려져 더 있다는 걸 알림) */
+  .table-wrap { -webkit-overflow-scrolling: touch; mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+  .table-wrap .table th, .table-wrap .table td { white-space: nowrap; }
+
+  /* 게시판 글: 수정·삭제 버튼 글자가 세로로 쪼개지지 않게 */
+  .post-head .btn { white-space: nowrap; flex-shrink: 0; }
+
+  /* 마이페이지: 화면 밖으로 넓어지지 않게, 글 목록은 제목 아래에 날짜 */
+  .mp-col { min-width: 0; }
+  .mp-list li { flex-wrap: wrap; gap: 4px 10px; }
+  .mp-list li a { flex: 1 1 60%; }
+  .mp-list .m { margin-left: 0; width: 100%; }
+}
+
+/* 작은 휴대폰 */
+@media (max-width: 520px) {
+  .logo small { display: none; }
+  .hv-ig { grid-template-columns: 1fr; }
+  .hv-team { flex-wrap: wrap; }
+}

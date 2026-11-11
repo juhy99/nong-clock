@@ -27,11 +27,12 @@ from app.schemas.prediction import (
     WeatherAlert,
 )
 
-HISTORY_DAYS = 14
+HISTORY_DAYS = 14  # 기본값 (요청 history_days 로 바꿀 수 있음)
+LAST_YEAR_DAYS = 364  # 작년 같은 시기 = 52주 전 같은 요일
 
 
 class Predictor(Protocol):
-    def predict(self, item: str, market: str, horizon: Horizon, base_date: date) -> PredictResponse: ...
+    def predict(self, item: str, market: str, horizon: Horizon, base_date: date, history_days: int = HISTORY_DAYS, last_year: bool = False) -> PredictResponse: ...
 
 
 def _rng(*parts: object) -> random.Random:
@@ -55,7 +56,7 @@ def band_ratio(item: str, t: int) -> float:
 class DummyPredictor:
     """전국 도매시장 평균의 가짜 예측 × 시장 계수 (markets.market_factor). 시장별 모델이 붙으면 이 클래스를 바꾼다."""
 
-    def predict(self, item: str, market: str, horizon: Horizon, base_date: date) -> PredictResponse:
+    def predict(self, item: str, market: str, horizon: Horizon, base_date: date, history_days: int = HISTORY_DAYS, last_year: bool = False) -> PredictResponse:
         info = ITEMS[item]
         f = market_factor(item, market)
         base = round(info.base_price * f)
@@ -64,7 +65,7 @@ class DummyPredictor:
         # 최근 실제 시세: 기준가 주변의 랜덤워크
         history: list[PricePoint] = []
         price = base * rng.uniform(0.88, 0.96)
-        for i in range(HISTORY_DAYS, 0, -1):
+        for i in range(history_days, 0, -1):
             price *= 1 + rng.gauss(0, 0.015)
             history.append(PricePoint(date=base_date - timedelta(days=i), price=round(price)))
         history.append(PricePoint(date=base_date, price=base))
@@ -79,6 +80,17 @@ class DummyPredictor:
             v = base * _season(item, d) / s0 * (1 + wob)
             band = v * band_ratio(item, t)
             forecast.append(ForecastPoint(date=d, price=round(v), lower=round(v - band), upper=round(v + band)))
+
+        # 작년 같은 시기 (실제 시세 자리): 계절 모양 × 작년 수준(품목마다 ±12%) + 잡음. 실제 모델·DB 가 붙으면 DB 시세로
+        ly: list[PricePoint] = []
+        if last_year:
+            ly_rng = _rng("last_year", item, market, base_date)
+            level = 1 + _rng("ly_level", item, base_date.year).uniform(-0.12, 0.12)
+            n = 0.0
+            for t in range(-history_days, horizon + 1):
+                d = base_date + timedelta(days=t) - timedelta(days=LAST_YEAR_DAYS)
+                n = n * 0.85 + ly_rng.gauss(0, 0.01)
+                ly.append(PricePoint(date=d, price=round(base * level * _season(item, d) / s0 * (1 + n))))
 
         predicted = forecast[-1].price
         alerts: list[WeatherAlert] = []
@@ -112,6 +124,7 @@ class DummyPredictor:
             reference=accuracy.reference_of(item, horizon),
             confidence=accuracy.confidence(item, horizon),
             alerts=alerts,
+            last_year=ly,
             model_version=MODEL_VERSION,
         )
 

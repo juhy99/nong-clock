@@ -33,7 +33,7 @@ from app.services import recommender
 
 router = APIRouter(prefix="/recommend", tags=["recommend"])
 
-START_WINDOW_DAYS = 30  # 농사 시작 날짜는 오늘부터 30일 안
+START_WINDOW_DAYS = 365  # 농사 시작 날짜는 오늘부터 1년 안 (11-11, 화면에서 정확한 날짜를 받음. 예전 30일)
 VERSION = f"{MODEL_VERSION}+crop-calendar-sample"
 
 
@@ -154,7 +154,7 @@ def crop_info(code: str) -> CropInfoResponse:
     )
 
 
-@router.get("/crops/{code}/prices", response_model=PricePathResponse, summary="작물의 앞으로 13개월 예상 도매가 (상세 그래프)")
+@router.get("/crops/{code}/prices", response_model=PricePathResponse, summary="작물의 앞으로 12개월 예상 도매가 (상세 그래프, 주 단위 53점)")
 def price_path(code: str) -> PricePathResponse:
     crop = CROPS.get(code)
     if crop is None:
@@ -163,7 +163,7 @@ def price_path(code: str) -> PricePathResponse:
         return PricePathResponse(crop=_crop_out(crop), points=[], model_version=VERSION)
     today = date.today()
     pts = []
-    for k in range(57):
+    for k in range(53):  # 오늘 + 52주 = 12개월 (11-11, 예전 13개월 57점)
         d = today + timedelta(days=7 * k)
         v = recommender.price_on(crop, d, today)
         e = accuracy.error_pct(code, max(1, (d - today).days)) / 100  # 모델 검증 오차(WAPE)

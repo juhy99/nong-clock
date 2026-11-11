@@ -90,6 +90,8 @@ export function labelNews(now = Date.now()) {
       title,
       summary,
       press,
+      // 같은 소식을 다룬 언론사 수 (수집기가 같은 제목을 묶어 셈 · 예시는 고정값)
+      press_count: 1 + ((id * 7) % 6),
       url: `https://example.com/news/${id}`,
       published_at: new Date(now - hoursAgo * 3600 * 1000).toISOString(),
       items: findItems(`${title} ${summary}`),

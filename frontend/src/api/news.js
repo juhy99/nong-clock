@@ -88,6 +88,23 @@ export async function getNews({ category = "", item = "", items = null, q = "", 
   return real ? res : fake(res);
 }
 
+/**
+ * 많이 다룬 뉴스: 최근 N일 기사 중 같은 소식을 다룬 언론사가 많은 순 (press_count, 없으면 1)
+ * @returns {Promise<object[]>} 기사 (withTags 모양) + press_count
+ */
+export async function getNewsMostCovered({ days = 1, limit = 5 } = {}) {
+  const { rows: pool, real } = await newsPool();
+  const newest = Math.max(...pool.map((n) => new Date(n.published_at).getTime()));
+  const since = newest - days * 86400000;
+  const rows = pool
+    .filter((n) => new Date(n.published_at) >= since)
+    .map((n) => ({ ...n, press_count: n.press_count ?? 1 }))
+    .sort((a, b) => b.press_count - a.press_count || newestFirst(a, b))
+    .slice(0, limit)
+    .map(withTags);
+  return real ? rows : fake(rows, 150);
+}
+
 /** 최근 N일 기사에 많이 나온 품목 (기사 수 순) */
 export async function getNewsTrend({ days = 7, limit = 5 } = {}) {
   const since = Date.now() - days * 86400000;

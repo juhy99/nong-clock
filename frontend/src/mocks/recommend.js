@@ -290,7 +290,7 @@ export function mockPricePath(code) {
   if (!c) throw Object.assign(new Error(`unknown crop: ${code}`), { status: 404 });
   if (c.note) return { crop: cropOut(c), points: [], model_version: VERSION };
   const today = todayIso();
-  const points = Array.from({ length: 57 }, (_, k) => {
+  const points = Array.from({ length: 53 }, (_, k) => { // 12개월 (11-11, ml-api 와 같게)
     const d = addDays(today, k * 7), v = priceOn(c, d, today), e = errorPct(c.code, Math.max(1, daysBetween(today, d))) / 100;
     return { date: d, price: Math.round(v), lower: Math.round(v * (1 - e)), upper: Math.round(v * (1 + e)) };
   });

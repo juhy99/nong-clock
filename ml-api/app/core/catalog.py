@@ -1,6 +1,7 @@
 """품목·지역·예측 기간 코드표.
 
-품목 107개의 기준은 저장소 맨 위 shared/items.json 한 파일 (화면 frontend/src/mocks/catalog.js 도 같은 파일을 읽음).
+예측 품목은 50개 — shared/items50.json (11-11, 화면 품목 고르기와 같은 목록, 순서 = 물량 순위). /items·/predict·/predict/top-movers 가 이 50개만 다룬다.
+품목 정보(code4·기준가 등) 107개의 기준은 저장소 맨 위 shared/items.json 한 파일 (화면 frontend/src/mocks/catalog.js 도 같은 파일을 읽음).
 품목을 추가·삭제할 때는 그 파일만 고치면 /items, /predict, /predict/top-movers 에 모두 반영된다.
 - code: 영어 코드 (프론트 URL ?item=napa_cabbage, Spring 이 같이 씀). 기존 16개는 바꾸지 않는다
 - code4: 공영도매 품목코드(4자리) — 모델 결과를 이 코드로 붙인다
@@ -39,6 +40,9 @@ ITEMS: dict[str, Item] = {
 }
 ITEMS_BY_CODE4: dict[str, Item] = {i.code4: i for i in ITEMS.values()}
 
+# 예측 품목 50개 (11-11): items50.json 의 code 순서. 107개 안에 모두 있다
+PREDICT_ITEMS: dict[str, Item] = {i["code"]: ITEMS[i["code"]] for i in load("items50.json")["items"]}
+
 # 지역(예전 방식, /regions): 전국(national)만. 가격은 이제 도매시장별 — GET /markets, POST /predict 의 market (06_api_spec.md 1-2)
 # 지역별 모델이 준비되면 환경변수 ENABLE_REGIONAL_FORECAST=true 로 아래 PROVINCES 를 켠다.
 # 켜거나 꺼도 API 형식은 그대로라 프론트·Spring 은 수정할 필요 없음.
@@ -68,4 +72,6 @@ HORIZONS: dict[int, str] = {
     365: "1년",
 }
 MAX_HORIZON = 365
+BASE_DATE_BACK_DAYS = 365  # 기준일은 오늘부터 1년 전까지 고를 수 있다 (11-11)
+MAX_HISTORY_DAYS = 400  # 기준일 앞 실제 시세는 최대 400일
 LONG_RANGE_DAYS = 180  # 모델은 6개월까지만 검증 → 이보다 먼 예측은 오차 범위를 더 넓히고 화면에 "참고용" (accuracy.py)

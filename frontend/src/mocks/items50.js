@@ -7,10 +7,12 @@ export const ITEMS50 = DATA.items;
 export const IN50 = new Set(ITEMS50.map((i) => i.code));
 export const CATEGORIES50 = [...new Set(ITEMS50.map((i) => i.category))];
 export const itemOf = (code) => ITEMS50.find((i) => i.code === code);
-export const varietyOf = (code, id) => itemOf(code)?.varieties.find((v) => v.id === id);
-/** 화면에 고를 수 있게 이름 있는 품종을 먼저, "기타(철·산지)" 는 뒤로 */
-export const sortedVarieties = (it) => [...(it?.varieties ?? [])].sort((a, b) => (a.kind === "other") - (b.kind === "other") || b.share - a.share);
+/** 품종 (11-11 팀 기준): 화면묶음 이름 = 품목 이름이면 예측 단위마다, 그 밖의 화면묶음은 묶음째 하나. units = 들어가는 예측 단위 이름들 */
+export const varietyOf = (code, id) => (id ? itemOf(code)?.varieties.find((v) => v.id === id) : undefined);
+/** 고르는 목록: 파일 순서 그대로 (품목 이름 묶음의 단위 → 따로 품종 → 기타). 품종이 "기타" 하나뿐이면(= 품목 전체) 목록을 비움 */
+export const sortedVarieties = (it) => {
+  const vs = it?.varieties ?? [];
+  return vs.length === 1 && vs[0].kind === "other" ? [] : vs;
+};
 /** 품종 가격 계수 (가짜) */
 export const varietyFactor = (id) => (id ? 0.8 + seeded(`v|${id}`)() * 0.45 : 1);
-/** 작물 추천에서 품종으로 나눌 때 쓰는 품종 (이름 있는 품종, 물량 비중 3% 이상, 최대 4개) */
-export const namedVarieties = (code) => (itemOf(code)?.varieties ?? []).filter((v) => v.kind !== "other" && v.share >= 3).slice(0, 4);

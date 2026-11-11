@@ -143,6 +143,9 @@ function Header() {
   const nav = useNavigate();
   const loc = useLocation();
   const [solid, setSolid] = useState(false);
+  // 휴대폰 메뉴 (☰): 다른 화면으로 가면 닫힘
+  const [menu, setMenu] = useState(false);
+  useEffect(() => setMenu(false), [loc.pathname, loc.search]);
   useEffect(() => {
     const on = () => setSolid(window.scrollY > 10);
     on();
@@ -158,8 +161,12 @@ function Header() {
     ["/news", "뉴스"],
     ["/board", "게시판"],
   ];
+  const out = () => {
+    logout();
+    nav("/");
+  };
   return (
-    <header className={`header ${solid ? "solid" : ""}`}>
+    <header className={`header ${solid || menu ? "solid" : ""}`}>
       <div className="container header-inner">
         <Link to="/" className="logo">
           🌱 FARMBID<small>농산물 가격 예측</small>
@@ -174,26 +181,41 @@ function Header() {
           {user ? (
             <>
               {/* 관리자 화면은 별도 사이트 (/admin/) */}
-              {isAdmin && <a className="btn sm" href="/admin/" target="_blank" rel="noreferrer">관리자 사이트 ↗</a>}
+              {isAdmin && <a className="btn sm hdr-admin" href="/admin/" target="_blank" rel="noreferrer">관리자 사이트 ↗</a>}
               <NotificationBell user={user} />
               <NavLink to="/mypage" className="user-chip" title={`${user.name} · ${USER_TYPE_LABEL[user.type]}`}>
                 <b>{user.name}</b> <span className="muted">· 마이페이지</span>
               </NavLink>
-              <button
-                className="btn sm ghost"
-                onClick={() => {
-                  logout();
-                  nav("/");
-                }}
-              >
+              <button className="btn sm ghost hdr-out" onClick={out}>
                 로그아웃
               </button>
             </>
           ) : (
             <Link to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} className="btn sm login">로그인</Link>
           )}
+          <button type="button" className="hdr-menu" aria-label={menu ? "메뉴 닫기" : "메뉴 열기"} aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
+            {menu ? "✕" : "☰"}
+          </button>
         </div>
       </div>
+      {/* 휴대폰 메뉴: 검색 · 모든 메뉴 · 마이페이지/로그아웃 (넓은 화면에서는 안 보임) */}
+      {menu && (
+        <div className="hdr-drawer">
+          <HeaderSearch />
+          <nav aria-label="휴대폰 메뉴">
+            {links.map(([to, label]) => (
+              <NavLink key={to} to={to} end={to === "/"}>{label}</NavLink>
+            ))}
+          </nav>
+          {user && (
+            <div className="hdr-user">
+              <NavLink to="/mypage">👤 <b>{user.name}</b> · 마이페이지</NavLink>
+              {isAdmin && <a href="/admin/" target="_blank" rel="noreferrer">관리자 사이트 ↗</a>}
+              <button type="button" className="btn sm ghost" onClick={out}>로그아웃</button>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

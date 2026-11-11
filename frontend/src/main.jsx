@@ -6,6 +6,7 @@ import { AuthProvider } from "./components/AuthContext";
 import { ErrorPopupProvider } from "./components/ErrorPopup";
 import "./styles.css";
 import "./theme.css"; // 새 디자인 (v17) — 사용자 사이트만
+import "./mobile.css"; // 휴대폰 맞춤 (theme.css 다음에)
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

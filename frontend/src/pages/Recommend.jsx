@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getCropInfo, getCropPricePath, getRecommendCrops, recommendCrops } from "../api/ml";
 import { useAuth } from "../components/AuthContext";
-import { Async, useAsync } from "../components/common";
+import { Async, useAsync, useNarrow } from "../components/common";
 import { LAND_TYPES, SIDO_LIST } from "../mocks/recommend";
 import { SOIL_PH } from "../mocks/soil_ph";
 import { IN50 } from "../mocks/items50";
@@ -94,7 +94,8 @@ function MiniCalendar({ o }) {
   const store = o.storage_days > 0;
   return (
     <div className="rc-mini">
-      <div className="mm">{months.map((m) => <span key={m}>{m}월</span>)}</div>
+      {/* 휴대폰은 칸이 좁아 "월" 을 빼고 숫자만 */}
+      <div className="mm">{months.map((m) => <span key={m}>{m}<i>월</i></span>)}</div>
       <div className="tr">
         {seg(o.plant_date, addDays(o.plant_date, 7), "s")}
         {seg(addDays(o.plant_date, 7), o.harvest_start, "g")}
@@ -321,7 +322,7 @@ function Calendar({ info, plantDate }) {
             </div>
           );
         })}
-        {today != null && <div className="today" style={{ left: `calc(220px + (100% - 220px) * ${today / 365})` }}><span>▲ {md(plantDate)} 내가 심을 날</span></div>}
+        {today != null && <div className="today" style={{ "--t": today / 365 }}><span>▲ {md(plantDate)} 내가 심을 날</span></div>}
       </div>
       <div className="rc-key"><span><i className="k-plant" />심는 기간</span><span><i className="k-grow" />자람</span><span><i className="k-harv" />수확</span><span><i className="k-store" />보관·출하</span></div>
     </section>
@@ -330,10 +331,12 @@ function Calendar({ info, plantDate }) {
 
 /** 앞으로 12개월 예상 도매가 (53점, 주 단위) + 내 수확 기간 */
 function PriceYear({ crop, harvest }) {
+  const narrow = useNarrow();
   const state = useAsync(() => getCropPricePath(crop), [crop]);
   const pts = state.data?.points ?? [];
   if (!pts.length) return state.data ? null : <section className="card state">불러오는 중…</section>;
-  const W = 1300, H = 300, L = 70, R = 24, T = 36, B = 34;
+  // 휴대폰: 좁은 그림으로 다시 그려 글씨가 작아지지 않게 (달 이름표는 3달마다)
+  const W = narrow ? 420 : 1300, H = narrow ? 320 : 300, L = narrow ? 54 : 70, R = narrow ? 14 : 24, T = 36, B = 34;
   const vals = pts.flatMap((x) => [x.lower, x.upper]);
   const step = [50, 100, 200, 300, 500, 1000, 2000, 5000].find((s) => (Math.max(...vals) - Math.min(...vals)) / s <= 5) ?? 10000;
   const lo = Math.floor(Math.min(...vals) / step) * step, hi = Math.ceil(Math.max(...vals) / step) * step;
@@ -342,7 +345,9 @@ function PriceYear({ crop, harvest }) {
   const mi = pts.reduce((a, x, i) => (x.price < pts[a].price ? i : a), 0), ma = pts.reduce((a, x, i) => (x.price > pts[a].price ? i : a), 0);
   const idx = (iso) => pts.reduce((a, x, i) => (Math.abs(daysBetween(x.date, iso)) < Math.abs(daysBetween(pts[a].date, iso)) ? i : a), 0);
   const ticks = []; for (let v = lo; v <= hi; v += step) ticks.push(v);
-  const monthsAt = pts.map((x, i) => [x, i]).filter(([x, i]) => i === 0 || x.date.slice(0, 7) !== pts[i - 1].date.slice(0, 7));
+  const monthsAt = pts.map((x, i) => [x, i]).filter(([x, i]) => i === 0 || x.date.slice(0, 7) !== pts[i - 1].date.slice(0, 7))
+    .filter((_, n) => !narrow || n % 3 === 0);
+  const inX = (x, w) => Math.min(Math.max(x, L + w / 2), W - R - w / 2); // 이름표가 그림 밖으로 잘리지 않게
   return (
     <section className="card">
       <div className="rc-ch"><h2>앞으로 12개월 예상 도매가</h2><small>원/kg · 전국 도매시장 · 예측은 최대 12개월</small></div>
@@ -356,8 +361,8 @@ function PriceYear({ crop, harvest }) {
         <polygon points={band} fill="rgba(20,96,59,.1)" />
         <polyline points={pts.map((x, i) => `${X(i)},${Y(x.price)}`).join(" ")} fill="none" stroke="#e08a00" strokeWidth="3.5" strokeLinejoin="round" />
         <circle cx={X(0)} cy={Y(pts[0].price)} r="6" fill="#13261a" />
-        <text x={X(mi)} y={Y(pts[mi].price) + 26} textAnchor="middle" fontSize="16" fontWeight="700" fill="#1d5fd8">최저 {won(pts[mi].price)}원</text>
-        <text x={X(ma)} y={Y(pts[ma].price) - 14} textAnchor="middle" fontSize="16" fontWeight="700" fill="#d92d20">최고 {won(pts[ma].price)}원</text>
+        <text x={inX(X(mi), 130)} y={Y(pts[mi].price) + 26} textAnchor="middle" fontSize="16" fontWeight="700" fill="#1d5fd8">최저 {won(pts[mi].price)}원</text>
+        <text x={inX(X(ma), 130)} y={Y(pts[ma].price) - 14} textAnchor="middle" fontSize="16" fontWeight="700" fill="#d92d20">최고 {won(pts[ma].price)}원</text>
       </svg>
       <div className="rc-key"><span><i style={{ background: "#e08a00", height: 3 }} />AI 예상 가격</span><span><i style={{ background: "rgba(20,96,59,.25)" }} />예측 범위</span>{harvest && <span><i style={{ background: "var(--amber)" }} />내 수확 기간</span>}</div>
     </section>

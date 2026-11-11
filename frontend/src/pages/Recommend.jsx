@@ -41,7 +41,6 @@ function reasonLines(o, region) {
   if (o.ph) out.push(PH_LINE[o.ph.kind](o));
   return out;
 }
-const errLine = (o) => `가격이 ±${Math.round(o.error_pct)}% 달라지면 순수익 ${man(o.margin_low)} ~ ${man(o.margin_high)}`;
 const refLine = (o) => ({ far: "수확이 6개월보다 멀어 참고용 예측이에요", baseline: "이 작물·기간은 예측이 덜 정확해 참고용이에요" })[o.reference] ?? "";
 
 const request = (f) => ({
@@ -66,21 +65,41 @@ function LandForm({ form, onApply }) {
       <label className="rc-f"><span>면적 (평)</span>
         <input className="input" type="number" min="1" inputMode="numeric" value={d.area} onChange={(e) => set({ area: e.target.value })} />
       </label>
-      <label className="rc-f"><span>기존에 키우던 작물</span>
+      <label className="rc-f"><span>기존에 키우던 작물 <Info>기존 작물로 흙 pH를 어림해서, 맞지 않는 작물은 아래로 내려요.</Info></span>
         <select className="input" value={d.prev} onChange={(e) => set({ prev: e.target.value })}>
           <option value="">없음 · 모름</option>
           {SOIL_PH.map((p) => <option key={p.name}>{p.name}</option>)}
         </select>
       </label>
-      <label className="rc-f"><span>임대료 (1년, 만원)</span>
+      <label className="rc-f"><span>임대료 (1년, 만원) <Info>임대료는 경영비에 더해 순수익에서 빼요. 내 땅이면 0을 넣으세요.</Info></span>
         <input className="input" type="number" min="0" inputMode="numeric" value={d.rent} onChange={(e) => set({ rent: e.target.value })} />
       </label>
       <label className="rc-f"><span>심을 날짜</span>
         <input className="input" type="date" min={today} max={addDays(today, 365)} value={d.date} onChange={(e) => e.target.value && set({ date: e.target.value })} />
       </label>
-      <p className="rc-hint">기존 작물로 흙 pH를 어림해서, 맞지 않는 작물은 아래로 내려요. 임대료는 경영비에 더해 순수익에서 빼요 (내 땅이면 0).</p>
       <button type="button" className="btn primary rc-go" onClick={() => onApply(d)}>다시 추천받기 →</button>
     </section>
+  );
+}
+
+/** ⓘ 버튼: 누르면 짧은 설명 말풍선 (바깥을 누르거나 Esc 로 닫힘). 칸 이름 옆 자잘한 설명은 기본으로 감춘다
+ *  말풍선은 칸 폭 안에서 왼쪽 맞춤 (휴대폰에서 화면 밖으로 안 나가게), 꼬리만 버튼 아래 (--ax) */
+function Info({ children }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const off = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const esc = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", off);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", off); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  return (
+    <span className="rc-info" ref={ref}>
+      <button type="button" aria-label="설명 보기" aria-expanded={open} onClick={(e) => { e.preventDefault(); setOpen(!open); }}>i</button>
+      {open && <span className="rc-tip" role="tooltip" style={{ "--ax": `${(ref.current?.offsetLeft ?? 0) + 4}px` }}>{children}</span>}
+    </span>
   );
 }
 
@@ -129,7 +148,6 @@ function CropCard({ o, rank, region, topProfit, topRate, goInfo }) {
         <div className={profit ? "hi-profit" : ""}><span>예상 순수익</span><b>{man(o.margin)}</b></div>
         <div className={rate ? "hi-rate" : ""}><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div>
       </div>
-      <p className="rc-err">{errLine(o)}</p>
       {o.reference && <span className="rc-ref">ⓘ {refLine(o)}</span>}
       <ul className="rc-why">{reasonLines(o, region).map((w) => <li key={w}>{w}</li>)}</ul>
       <button type="button" className="rc-toggle" aria-expanded={open} onClick={() => setOpen(!open)}><span>📅 재배 달력 보기</span><span className="ar">▾</span></button>
@@ -162,7 +180,6 @@ function Results({ state, form, goInfo }) {
                 </div>
               )}
             </div>
-            <p className="rc-calc">예상 순수익 = 달마다 예상 판매량 × AI 예상가 − (농진청 평균 경영비 + 임대료). 실제와 다를 수 있어요.</p>
           </>
         );
       }}
@@ -248,7 +265,6 @@ function WhyCard({ crop, cropName, emoji, rec, form, info, goLand }) {
           <span className="rc-badge">🏆 내 조건에서 {rank + 1}위</span>
           <p className="rc-txt">{form.region} {LAND_TYPES[form.type]} {won(form.area)}평에 <b>{md(o.plant_date)}</b> 심으면 임대료를 빼고<br /><b>약 {man(o.margin)}</b>이 남을 것으로 보여요.</p>
           <div className="rc-nums"><div><span>예상 순수익</span><b>{man(o.margin)}</b></div><div><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div><div><span>수확</span><b>{md(o.harvest_start)}~{md(o.harvest_end)}</b></div></div>
-          <p className="rc-err">{errLine(o)}</p>
           {o.reference && <span className="rc-ref">ⓘ {refLine(o)}</span>}
           <ul className="rc-why">{[...reasonLines(o, form.region), ...(windowLine ? [windowLine] : [])].map((t) => <li key={t}>{t}</li>)}</ul>
         </>

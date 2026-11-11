@@ -16,7 +16,8 @@
 body { background: #f3f4f1; }
 .admin-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100vh; }
 .admin-side { background: #1c1c1a; color: #fff; padding: 20px 14px; display: flex; flex-direction: column; gap: 18px; position: sticky; top: 0; height: 100vh; }
-.admin-brand { font-weight: 800; font-size: 19px; color: #7bd69a; }
+.admin-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 19px; color: #7bd69a; }
+.admin-brand img { width: 30px; height: 30px; padding: 3px; border-radius: 9px; background: #fff; }
 .admin-brand small { color: #bbb; font-weight: 500; font-size: 13px; margin-left: 4px; }
 .admin-side nav { display: grid; gap: 2px; flex: 1; align-content: start; }
 .admin-side nav a { padding: 9px 12px; border-radius: 9px; color: #d6d5d0; }

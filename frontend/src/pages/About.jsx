@@ -19,7 +19,7 @@ const TEAM = [
   { name: "이름", role: "데이터 수집 · DB" },
   { name: "이름", role: "예측 모델링" },
 ];
-const CONTACT = { email: "contact@farmbid.kr", phone: "02-000-0000", hours: "평일 10:00~18:00" };
+const CONTACT = { email: "contact@nongclock.kr", phone: "02-000-0000", hours: "평일 10:00~18:00" };
 const PROJECT = AUCTION_ENABLED ? "농산물 가격 예측·경매 플랫폼 팀 프로젝트 · 2026" : "농산물 가격 예측 플랫폼 팀 프로젝트 · 2026";
 
 const FEATURES = [
@@ -38,7 +38,7 @@ const BASIS = [
 ];
 const GRADE_ROWS = [
   ["특", "도매시장 경매에서 가장 좋은 품질로 매긴 등급", "시세·수급에서 골라 볼 수 있어요"],
-  ["상", "거래가 꾸준한 좋은 품질 등급 · 팜비드 시세의 기본 기준", "기본 시세 (AI 예측은 등급을 나누지 않은 경매 단가)"],
+  ["상", "거래가 꾸준한 좋은 품질 등급 · NongClock 시세의 기본 기준", "기본 시세 (AI 예측은 등급을 나누지 않은 경매 단가)"],
   ["중", "보통 품질 등급", "시세·수급에서 골라 볼 수 있어요"],
   ["하", "품질이 낮은 등급 · 거래가 없는 날이 많아요", "시세·수급에서 골라 볼 수 있어요"],
   ["평균", "모든 등급을 거래량만큼 반영한 가격", "시세·수급에서 골라 볼 수 있어요"],
@@ -56,12 +56,12 @@ export default function About() {
     <div className="page ab">
       <section className="card ab-hero" id="items">
         <div>
-          <div className="ab-eyebrow">팜비드 FARMBID</div>
+          <div className="ab-eyebrow">농클락 NONGCLOCK</div>
           <h1>오늘 시세가 아니라,<br /><em>다음 주 가격</em>을 보고 거래하세요.</h1>
           <p>
             {AUCTION_ENABLED
-              ? "팜비드는 AI 가격 예측과 온라인 경매를 하나로 묶은 농산물 거래 서비스예요. 날씨·명절·과거 시세를 학습한 모델이 앞으로의 도매가를 예측하고, 농가와 구매자는 그 예측을 참고해 경매로 직접 거래합니다."
-              : "팜비드는 AI 가격 예측으로 농가의 판단을 돕는 서비스예요. 날씨·명절·과거 시세를 학습한 모델이 앞으로의 도매가를 예측하고, 그 예측으로 언제 무엇을 심으면 좋을지까지 알려드려요."}
+              ? "NongClock은 AI 가격 예측과 온라인 경매를 하나로 묶은 농산물 거래 서비스예요. 날씨·명절·과거 시세를 학습한 모델이 앞으로의 도매가를 예측하고, 농가와 구매자는 그 예측을 참고해 경매로 직접 거래합니다."
+              : "NongClock은 AI 가격 예측으로 농가의 판단을 돕는 서비스예요. 날씨·명절·과거 시세를 학습한 모델이 앞으로의 도매가를 예측하고, 그 예측으로 언제 무엇을 심으면 좋을지까지 알려드려요."}
           </p>
           <div className="ab-btns">
             <Link className="btn primary" to="/ai">AI 가격 예측 보기</Link>

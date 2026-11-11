@@ -1,4 +1,4 @@
-// 글(검색어·뉴스 제목)에서 팜비드 품목 찾기. 통합 검색의 품목 판단과 뉴스 품목 태그가 같이 쓴다.
+// 글(검색어·뉴스 제목)에서 NongClock 품목 찾기. 통합 검색의 품목 판단과 뉴스 품목 태그가 같이 쓴다.
 // 단어 목록은 shared/news_rules.json 에 있고, 뉴스 수집기(collector/news/rules.py)도 같은 파일·같은 방식으로 찾는다.
 // 찾는 방식을 바꾸면 rules.py 도 똑같이 바꿔야 한다.
 import RULES from "../../../shared/news_rules.json";
@@ -13,7 +13,7 @@ const NOT_ITEM = RULES.not_item;
 const MISREAD = Object.fromEntries(Object.entries(RULES.misread).map(([code, re]) => [code, new RegExp(re)]));
 
 /**
- * 팜비드 16개 품목 밖이지만 기사에 자주 나오는 작물. 뉴스 태그로만 보여 준다 (시세·예측 화면이 없으므로 링크 없음).
+ * NongClock 16개 품목 밖이지만 기사에 자주 나오는 작물. 뉴스 태그로만 보여 준다 (시세·예측 화면이 없으므로 링크 없음).
  * 품목이 늘어나면 규칙 파일에서 items 로 옮기면 된다.
  */
 export const OTHER_CROPS = RULES.other_crops;

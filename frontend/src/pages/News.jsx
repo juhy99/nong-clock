@@ -119,7 +119,7 @@ export default function News() {
       <div className="page-head news-head">
         <div>
           <h1>농업 뉴스</h1>
-          <p>팜비드가 다루는 품목의 가격·기상·정책 기사를 모았어요. 기사 본문은 각 언론사 사이트에서 볼 수 있어요.</p>
+          <p>NongClock이 다루는 품목의 가격·기상·정책 기사를 모았어요. 기사 본문은 각 언론사 사이트에서 볼 수 있어요.</p>
         </div>
         {news.data && <NewsUpdated at={news.data.updated_at} />}
       </div>

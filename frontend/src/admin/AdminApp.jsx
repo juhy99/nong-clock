@@ -46,7 +46,7 @@ function AdminLogin() {
   return (
     <div className="admin-login">
       <form className="card" onSubmit={submit}>
-        <div className="admin-brand">🌱 FarmBid <small>관리자</small></div>
+        <div className="admin-brand"><img src="/logo-icon.png" alt="" /> NongClock <small>관리자</small></div>
         {user && (
           <div className="banner small">
             ⚠️
@@ -66,7 +66,7 @@ function AdminLogin() {
         </div>
         {error && <span className="hint error">{error}</span>}
         <button className="btn primary block">로그인</button>
-        <a className="link small" href={`${SITE_URL}/`}>← 팜비드 사용자 사이트로</a>
+        <a className="link small" href={`${SITE_URL}/`}>← NongClock 사용자 사이트로</a>
       </form>
     </div>
   );
@@ -78,7 +78,7 @@ function AdminLayout() {
   return (
     <div className="admin-shell">
       <aside className={`admin-side ${menuOpen ? "open" : ""}`}>
-        <div className="admin-brand">🌱 FarmBid <small>관리자</small></div>
+        <div className="admin-brand"><img src="/logo-icon.png" alt="" /> NongClock <small>관리자</small></div>
         <nav onClick={() => setMenuOpen(false)}>
           {MENU.map(([to, label]) => (
             <NavLink key={to} to={`/${to}`} end={to === ""}>{label}</NavLink>

@@ -189,7 +189,7 @@ export default function Predict() {
   const pDate = params.get("date");
   const q = {
     item: itemOf(params.get("item"))?.code ?? ITEMS50[0].code,
-    variety: params.get("variety") ?? "",
+    variety: varietyOf(itemOf(params.get("item"))?.code, params.get("variety")) ? params.get("variety") : "", // 없어진 품종 id(옛 주소)는 전체로
     market: params.get("market") || DEFAULT_MARKET,
     date: pDate && daysBetween(pDate, today) >= 0 && daysBetween(pDate, today) <= 365 ? pDate : today,
   };

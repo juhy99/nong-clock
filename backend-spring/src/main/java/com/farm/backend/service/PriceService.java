@@ -88,22 +88,26 @@ public class PriceService {
     }
 
     // ───────── 날짜 ─────────
-    /** upto(없으면 최근) 이전의 거래일 n개, 오래된 → 최근. 그 품목·시장(또는 품종)에 거래가 있던 날만 */
-    List<LocalDate> tradeDates(String item, String market, LocalDate upto, int n, Integer unitId) {
+    /** upto(없으면 최근) 이전의 거래일 n개, 오래된 → 최근. 그 품목·시장(또는 품종의 예측 단위 중 하나)에 거래가 있던 날만 */
+    List<LocalDate> tradeDates(String item, String market, LocalDate upto, int n, List<Integer> unitIds) {
         String cond = upto == null ? "" : " AND date <= :d";
-        List<Map<String, Object>> rows = unitId != null
-                ? db.rows("SELECT DISTINCT date FROM price_unit_daily WHERE unit_id = :u" + cond + " ORDER BY date DESC LIMIT :n",
-                        p("u", unitId, "d", upto, "n", n))
+        List<Map<String, Object>> rows = unitIds != null
+                ? db.rows("SELECT DISTINCT date FROM price_unit_daily WHERE unit_id IN (:u)" + cond + " ORDER BY date DESC LIMIT :n",
+                        p("u", unitIds, "d", upto, "n", n))
                 : db.rows("SELECT DISTINCT date FROM price_daily WHERE item_code = :i AND market_code = :m" + cond + " ORDER BY date DESC LIMIT :n",
                         p("i", item, "m", market, "d", upto, "n", n));
         return rows.stream().map(r -> date(r.get("date"))).sorted().collect(Collectors.toList());
     }
 
-    public Integer unitIdOf(String unitName) {
-        if (unitName == null) return null;
-        List<Map<String, Object>> r = db.rows("SELECT unit_id FROM variety_unit WHERE unit_name = :n", p("n", unitName));
-        return r.isEmpty() ? null : num(r.get(0).get("unit_id")).intValue();
+    /** 예측 단위 이름들 → DB 의 unit_id 들 (DB 에 없는 이름은 뺌, 하나도 없으면 빈 목록) */
+    public List<Integer> unitIdsOf(List<String> unitNames) {
+        if (unitNames == null || unitNames.isEmpty()) return List.of();
+        return db.rows("SELECT unit_id FROM variety_unit WHERE unit_name IN (:n) ORDER BY unit_id", p("n", unitNames)).stream()
+                .map(r -> num(r.get("unit_id")).intValue()).collect(Collectors.toList());
     }
+
+    /** 품종 시세 한 날 값: 들어가는 예측 단위들의 금액 합 ÷ 물량 합 (단위 하나면 그 단위 값과 같음). 금액이 없으면 단순 평균 */
+    private static final String UNIT_PRICE = "COALESCE(ROUND(SUM(amount_won) / NULLIF(SUM(CASE WHEN amount_won IS NOT NULL THEN volume_kg END), 0)), ROUND(AVG(price)))";
 
     // ───────── 소매가 (KAMIS, retail_price_daily) ─────────
     /** 품목의 소매가 기록 (날짜 → 원/kg). KAMIS 는 조사일이 도매 거래일과 달라서, 그날 또는 3일 안 앞선 조사일 값을 쓴다 */
@@ -208,19 +212,20 @@ public class PriceService {
         return obj("price", null, "prev_price", null, "change", null, "change_pct", null, "year_ago_pct", null, "points", pts);
     }
 
-    public Map<String, Object> grades(String item, String market, LocalDate date, Integer unitId) {
-        List<LocalDate> days = tradeDates(item, market, date, 5, unitId);
+    public Map<String, Object> grades(String item, String market, LocalDate date, List<Integer> unitIds) {
+        List<LocalDate> days = tradeDates(item, market, date, 5, unitIds);
         if (days.isEmpty())
             return obj("item", item, "market", market, "base_date", null, "compared_date", null, "unit", "kg", "grades", List.of(), "retail", emptyRetail(days));
         LocalDate base = days.get(days.size() - 1), prev = days.size() > 1 ? days.get(days.size() - 2) : null;
         LocalDate yaLo = base.minusDays(394), yaHi = base.minusDays(364);
         List<Map<String, Object>> grades = new ArrayList<>();
-        if (unitId != null) {   // 품종: 등급 구분이 없는 표 → 평균(ALL) 카드 하나
+        if (unitIds != null) {   // 품종: 등급 구분이 없는 표 → 평균(ALL) 카드 하나
             Map<LocalDate, Integer> s = new HashMap<>();
-            for (Map<String, Object> r : db.rows("SELECT date, price FROM price_unit_daily WHERE unit_id = :u AND date IN (:ds)", p("u", unitId, "ds", days)))
+            for (Map<String, Object> r : db.rows("SELECT date, " + UNIT_PRICE + " AS price FROM price_unit_daily WHERE unit_id IN (:u) AND date IN (:ds) GROUP BY date",
+                    p("u", unitIds, "ds", days)))
                 s.put(date(r.get("date")), won(r.get("price")));
-            List<Map<String, Object>> ya = db.rows("SELECT price FROM price_unit_daily WHERE unit_id = :u AND date BETWEEN :a AND :b ORDER BY date DESC LIMIT 1",
-                    p("u", unitId, "a", yaLo, "b", yaHi));
+            List<Map<String, Object>> ya = db.rows("SELECT date, " + UNIT_PRICE + " AS price FROM price_unit_daily WHERE unit_id IN (:u) AND date BETWEEN :a AND :b "
+                    + "GROUP BY date ORDER BY date DESC LIMIT 1", p("u", unitIds, "a", yaLo, "b", yaHi));
             Map<String, Object> g = obj("grade", "ALL");
             g.putAll(card(s, days, base, prev, ya.isEmpty() ? null : won(ya.get(0).get("price"))));
             grades.add(g);
@@ -244,7 +249,7 @@ public class PriceService {
         }
         // 최근 30일 그 시장에서 등급마다 거래된 날 수 (11-09): 시장마다 등급을 붙이는 방식이 달라(예: 특·보통만) 화면이 거의 빈 등급을 숨김
         Map<String, Long> d30 = new HashMap<>();
-        if (unitId == null)
+        if (unitIds == null)
             for (Map<String, Object> r : db.rows("SELECT grade, count(*) AS n FROM price_daily WHERE item_code = :i AND market_code = :m "
                     + "AND date BETWEEN :a AND :b GROUP BY grade", p("i", item, "m", market, "a", base.minusDays(29), "b", base)))
                 d30.put((String) r.get("grade"), num(r.get("n")).longValue());
@@ -259,14 +264,14 @@ public class PriceService {
     }
 
     // ───────── 2-15 가격 추이 ─────────
-    public Map<String, Object> history(String item, String market, String grade, LocalDate date, int days, Integer unitId) {
-        List<LocalDate> ds = tradeDates(item, market, date, days + 1, unitId);
+    public Map<String, Object> history(String item, String market, String grade, LocalDate date, int days, List<Integer> unitIds) {
+        List<LocalDate> ds = tradeDates(item, market, date, days + 1, unitIds);
         Map<LocalDate, Integer[]> pr = new HashMap<>();   // [가격, 최고, 최저]
         Map<LocalDate, Object> vol = new HashMap<>();
         if (!ds.isEmpty()) {
-            if (unitId != null) {
-                for (Map<String, Object> r : db.rows("SELECT date, price, volume_kg FROM price_unit_daily WHERE unit_id = :u AND date IN (:ds)",
-                        p("u", unitId, "ds", ds))) {
+            if (unitIds != null) {
+                for (Map<String, Object> r : db.rows("SELECT date, " + UNIT_PRICE + " AS price, SUM(volume_kg) AS volume_kg FROM price_unit_daily "
+                        + "WHERE unit_id IN (:u) AND date IN (:ds) GROUP BY date", p("u", unitIds, "ds", ds))) {
                     LocalDate d = date(r.get("date"));
                     pr.put(d, new Integer[]{won(r.get("price")), null, null});
                     vol.put(d, r.get("volume_kg"));
@@ -295,7 +300,7 @@ public class PriceService {
             pts.add(obj("date", iso(ds.get(0)), "price", x[0], "change", null, "change_pct", null, "high", x[1], "low", x[2],
                     "volume_t", ton(vol.get(ds.get(0))), "retail", at(rt, ds.get(0))));
         }
-        return obj("item", item, "market", market, "grade", unitId != null ? "ALL" : grade, "unit", "kg", "points", pts);
+        return obj("item", item, "market", market, "grade", unitIds != null ? "ALL" : grade, "unit", "kg", "points", pts);
     }
 
     // ───────── 2-15 출하지역별 가격 ─────────

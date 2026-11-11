@@ -17,7 +17,7 @@
 - 키·비밀번호: `collector/daily/.env`, 저장소 `.env`, `frontend/.env` (모두 git 에 안 올라감)
 
 ## Spring 시세 API (명세서 2-1 · 2-15 주소 그대로)
-`backend-spring/.../` 역할별 폴더 — controller/PriceController(주소 7개) · service/PriceService(계산) · service/VarietyCatalog(품종 id → 예측 단위 이름, shared/items50.json) · repository/PriceSql · JdbcPriceSql(SQL 실행)
+`backend-spring/.../` 역할별 폴더 — controller/PriceController(주소 7개) · service/PriceService(계산) · service/VarietyCatalog(품종 id → 예측 단위 이름 목록, shared/items50.json — 여럿이면 금액 합 ÷ 물량 합) · repository/PriceSql · JdbcPriceSql(SQL 실행)
 - 시세 표는 JPA 엔티티 없이 SQL(NamedParameterJdbcTemplate)로 읽는다 → `ddl-auto: validate` 와 무관
 - 계산 규칙은 같은 규칙의 파이썬판과 77개 호출 결과를 비교해 같음을 확인 (0.1톤 반올림 2곳만 다름)
 

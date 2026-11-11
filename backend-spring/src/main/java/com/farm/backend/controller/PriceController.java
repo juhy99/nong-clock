@@ -41,12 +41,12 @@ public class PriceController {
         }
     }
 
-    private Integer unit(String variety, String market) {
+    /** 품종의 예측 단위 id 들 (품종 하나 = 단위 하나 또는 화면묶음째 여럿). 품종을 안 골랐거나 시장을 골랐으면 null = 품목 전체 */
+    private List<Integer> units(String variety, String market) {
         if (variety == null || variety.isBlank() || !"national".equals(market)) return null;
-        String name = varieties.unitName(variety);
-        Integer id = name == null ? null : prices.unitIdOf(name);
-        if (id == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "품종 " + variety + " 의 시세가 DB 에 없습니다");
-        return id;
+        List<Integer> ids = prices.unitIdsOf(varieties.unitNames(variety));
+        if (ids.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "품종 " + variety + " 의 시세가 DB 에 없습니다");
+        return ids;
     }
 
     @GetMapping("/prices/today")
@@ -62,7 +62,7 @@ public class PriceController {
     @GetMapping("/prices/{item}/grades")
     public Map<String, Object> grades(@PathVariable String item, @RequestParam(defaultValue = "national") String market,
                                       @RequestParam(required = false) String date, @RequestParam(required = false) String variety) {
-        return prices.grades(item, market, day(date), unit(variety, market));
+        return prices.grades(item, market, day(date), units(variety, market));
     }
 
     @GetMapping("/prices/{item}/history")
@@ -70,7 +70,7 @@ public class PriceController {
                                        @RequestParam(defaultValue = "HIGH") String grade, @RequestParam(required = false) String date,
                                        @RequestParam(defaultValue = "8") int days, @RequestParam(required = false) String variety) {
         if (!GRADE_SET.contains(grade)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "grade 는 " + PriceService.GRADES + " 중 하나");
-        return prices.history(item, market, grade, day(date), Math.max(1, Math.min(days, 400)), unit(variety, market));
+        return prices.history(item, market, grade, day(date), Math.max(1, Math.min(days, 400)), units(variety, market));
     }
 
     @GetMapping("/prices/{item}/origins")

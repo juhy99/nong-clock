@@ -324,8 +324,8 @@ export default function Market() {
   const markets = useAsync(getMarkets);
   const items = today.data?.items ?? [];
   const item = params.get("item") || items[0]?.item;
-  const variety = params.get("variety") ?? "";
-  const vInfo = varietyOf(item, variety);
+  const vInfo = varietyOf(item, params.get("variety"));
+  const variety = vInfo ? vInfo.id : ""; // 없어진 품종 id(옛 주소)는 전체로
   const itemName = (items.find((i) => i.item === item)?.name ?? "") + (vInfo ? ` ${vInfo.label}` : "");
   const key = variety ? `${item}~${variety}` : item; // [샘플] 품종은 "품목~품종" 으로 넘긴다 (api/market.js)
   const market = params.get("market") || DEFAULT_MARKET;

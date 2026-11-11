@@ -55,3 +55,34 @@
 @media (max-width: 640px) { .pv-fields { grid-template-columns: 1fr 1fr; } .pv-big b { font-size: 44px; } .pv-weeks li { grid-template-columns: 1fr auto; } .pv-weeks .rg { display: none; } }
 @media (prefers-reduced-motion: reduce) { .pv-path { animation: none; stroke-dashoffset: 0; } }
 .pv-fields .input, .pv-fields select.input { width: 100%; }
+
+/* [샘플 11-11] 지역별 시장 선 · 시장별 예측 카드 넘기기 · 빠른 기간 버튼 */
+.pv-sep { width: 1px; height: 22px; background: var(--line); margin: 0 6px; }
+.pv-cmp { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.pv-cmp span { display: inline-block; line-height: 1.6; padding: 8px 12px; border-radius: 10px; background: rgba(19, 38, 26, 0.05); font-size: 16px; color: var(--muted); }
+.pv-cmp span.top { background: rgba(217, 138, 0, 0.12); color: #6b4a00; }
+.pv-cmp b { color: var(--ink); }
+.pv-cmp i, .pv-nav i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: 1px; }
+.pv-mk .pv-head { flex-wrap: wrap; }
+.pv-nav { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.pv-nav span { display: inline-flex; align-items: center; gap: 6px; font-size: 17px; font-weight: 700; }
+.pv-nav small { font-size: 15px; font-weight: 400; color: var(--muted); }
+.pv-nav button { width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(19, 38, 26, 0.07); font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink); }
+.pv-nav button:disabled { opacity: 0.3; cursor: default; }
+.pv-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.pv-track::-webkit-scrollbar { display: none; }
+.pv-slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; max-height: 520px; overflow-y: auto; }
+.pv-weeks li.now { color: var(--muted); }
+.pv-weeks li.now .pr { font-size: 18px; font-weight: 600; color: var(--muted); }
+.pv-dots { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.pv-dots button { width: 10px; height: 10px; border-radius: 50%; border: 0; padding: 0; background: rgba(19, 38, 26, 0.18); cursor: pointer; }
+.pv-dots button.on { width: 26px; border-radius: 6px; background: var(--c); }
+.pv-dots span { margin-left: auto; font-size: 15px; color: var(--muted); }
+.pv-side > * { min-width: 0; } /* 넘기는 카드가 칸보다 넓어지지 않게 */
+.pv-mk { overflow: hidden; }
+/* 빠른 버튼: 예측 날짜 칸 바로 아래 (날짜 칸 ~ 예측하기 버튼 폭) */
+.pv-quick { grid-column: 5; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: -4px; }
+.pv-quick .pill { justify-content: center; padding-left: 0; padding-right: 0; white-space: nowrap; }
+@media (max-width: 1200px) { .pv-quick { grid-column: 2; } }  /* 3칸: 날짜는 둘째 줄 가운데 */
+@media (max-width: 640px) { .pv-quick { grid-column: 1; grid-template-columns: 1fr 1fr; } }   /* 2칸: 날짜는 셋째 줄 왼쪽, 버튼은 두 줄 */
+@media (max-width: 640px) { .pv-fields select.input { font-size: 16px; padding-left: 12px; } }

@@ -308,7 +308,7 @@ const INTRO = [
   ["⛈️", "이상기후 주의 구간", [["주의 구간이란", "/about#how"], ["지역별 날씨", "/#today"], ["가격 영향", "/about#how"]]],
   ["🔔", "관심 품목 알림", [["관심 품목 담기", "/mypage"], ["시세 변동 알림", "/mypage"], ["이상기후 알림", "/mypage"], ["알림 설정", "/mypage"]]],
   ["❓", "자주 묻는 질문", [["등급 기준", "/about#grades"], ["가격 기준", "/about#price"], ["예측 정확도", "/about#how"], ["자료 출처", "/about#how"]]],
-  ["✉️", "문의하기", [["contact@farmbid.kr", "/about#contact"], ["02-000-0000", "/about#contact"], ["평일 10:00~18:00", "/about#contact"]]],
+  ["✉️", "문의하기", [["contact@nongclock.kr", "/about#contact"], ["02-000-0000", "/about#contact"], ["평일 10:00~18:00", "/about#contact"]]],
 ];
 
 export default function Home() {
@@ -336,7 +336,7 @@ export default function Home() {
       </section>
       <section className="hv-intro" id="intro">
         <div className="hv-wrap">
-          <div className="hv-sec-head"><h2>서비스 소개</h2><span>팜비드는 AI 가격 예측으로 농가의 판단을 돕는 서비스예요. 예측은 참고용이고, 실제 가격은 수급·유통 상황에 따라 달라질 수 있어요.</span></div>
+          <div className="hv-sec-head"><h2>서비스 소개</h2><span>NongClock은 AI 가격 예측으로 농가의 판단을 돕는 서비스예요. 예측은 참고용이고, 실제 가격은 수급·유통 상황에 따라 달라질 수 있어요.</span></div>
           <div className="hv-ig">
             {INTRO.map(([e, t, ls]) => (
               <div key={t} className="hv-ic-card">

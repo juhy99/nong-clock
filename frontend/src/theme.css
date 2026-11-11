@@ -330,3 +330,16 @@ select.input.mk-days { font-size: 16px; }
 .mk-sum { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 .mk-filter { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 0; }
 .news-filters { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-radius: var(--radius); padding: 8px clamp(18px, 2vw, 28px) 18px; }
+
+/* 안쪽 스크롤바 (11-11): 회색 기본 막대(위아래 화살표) 대신 카드에 녹아드는 얇은 둥근 막대 — 길이 칸 · 표 · 목록
+   크롬·엣지·사파리는 ::-webkit-scrollbar 로 (표준 속성을 주면 크롬이 화살표 달린 기본 막대로 돌아가서 파이어폭스에만 줌) */
+.pv-slide::-webkit-scrollbar, .rc-combo .panel::-webkit-scrollbar, .rc-cal::-webkit-scrollbar, .table-wrap::-webkit-scrollbar, .search-dd::-webkit-scrollbar, .hdr-drawer::-webkit-scrollbar { width: 6px; height: 6px; }
+.pv-slide::-webkit-scrollbar-track, .rc-combo .panel::-webkit-scrollbar-track, .rc-cal::-webkit-scrollbar-track, .table-wrap::-webkit-scrollbar-track, .search-dd::-webkit-scrollbar-track, .hdr-drawer::-webkit-scrollbar-track { background: transparent; }
+.pv-slide::-webkit-scrollbar-button, .rc-combo .panel::-webkit-scrollbar-button, .rc-cal::-webkit-scrollbar-button, .table-wrap::-webkit-scrollbar-button, .search-dd::-webkit-scrollbar-button, .hdr-drawer::-webkit-scrollbar-button { display: none; }
+.pv-slide::-webkit-scrollbar-thumb, .rc-combo .panel::-webkit-scrollbar-thumb, .rc-cal::-webkit-scrollbar-thumb, .table-wrap::-webkit-scrollbar-thumb, .search-dd::-webkit-scrollbar-thumb, .hdr-drawer::-webkit-scrollbar-thumb { background: rgba(19, 38, 26, 0.16); border-radius: 6px; }
+.pv-slide:hover::-webkit-scrollbar-thumb, .rc-combo .panel:hover::-webkit-scrollbar-thumb, .rc-cal:hover::-webkit-scrollbar-thumb, .table-wrap:hover::-webkit-scrollbar-thumb { background: rgba(19, 38, 26, 0.3); }
+@supports (-moz-appearance: none) {
+  .pv-slide, .rc-combo .panel, .rc-cal, .table-wrap, .search-dd, .hdr-drawer { scrollbar-width: thin; scrollbar-color: rgba(19, 38, 26, 0.16) transparent; }
+}
+/* 시장별 예측 목록: 막대와 숫자 사이 여백 */
+.pv-slide { padding-right: 12px; }

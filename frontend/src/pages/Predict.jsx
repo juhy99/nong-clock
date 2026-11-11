@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import { getItems, predict } from "../api/ml";
 import { getMarkets } from "../api/market";
-import { Async, useAsync } from "../components/common";
+import { Async, useAsync, useNarrow } from "../components/common";
 import PredictSearch from "../components/PredictSearch";
 import { ITEMS50, itemOf, varietyFactor, varietyOf } from "../mocks/items50";
 import { LOW_ACCURACY } from "../mocks/accuracy";
@@ -37,7 +37,9 @@ function weekly(p) {
 
 /** 그래프: 올해 실제(진한 초록) · AI 예측(주황) + 범위 · 작년 같은 시기(파랑) */
 function Chart({ past, fut, ly }) {
-  const W = 900, H = 340, L = 64, R = 24, T = 40, B = 40;
+  // 휴대폰: 좁은 그림으로 다시 그려 글씨가 작아지지 않게 (날짜 이름표는 몇 개만)
+  const narrow = useNarrow();
+  const W = narrow ? 420 : 900, H = narrow ? 380 : 340, L = narrow ? 52 : 64, R = narrow ? 14 : 24, T = 40, B = 40;
   const all = [...past, ...fut];
   const vals = [...all.map((x) => x.price), ...fut.flatMap((f) => [f.lower, f.upper]), ...ly.filter((v) => v != null)];
   const step = (() => { const r = Math.max(...vals) - Math.min(...vals) || 100; return [10, 20, 50, 100, 200, 500, 1000, 2000, 5000].find((s) => r / s <= 6) ?? 10000; })();
@@ -52,7 +54,8 @@ function Chart({ past, fut, ly }) {
   const lyTopV = Math.max(...ly.filter((v) => v != null));
   const lyTopI = ly.indexOf(lyTopV);
   const band = [...fu.map((f, i) => `${X(k + i)},${Y(i ? f.upper : f.price)}`), ...fu.map((f, i) => `${X(k + i)},${Y(i ? f.lower : f.price)}`).reverse()].join(" ");
-  const labels = all.map((x, i) => (i < k ? md(x.date) : i === k ? "기준일" : `${i - k}주 뒤`));
+  const labels = all.map((x, i) => (i < k ? md(x.date) : i === k ? "기준일" : `${i - k}주 뒤`))
+    .map((t, i) => (!narrow || i === 0 || i === k || i === all.length - 1 || i === Math.round(k / 2) ? t : ""));
   // 이름표가 그래프 밖으로 잘리지 않게 x 를 안쪽으로
   const inX = (x, w) => Math.min(Math.max(x, L + w / 2), W - R - w / 2);
   const ticks = [];
@@ -66,7 +69,7 @@ function Chart({ past, fut, ly }) {
         </g>
       ))}
       {labels.map((t, i) => (
-        <text key={i} x={X(i)} y={H - 10} textAnchor="middle" fontSize="15" fill={i === k ? "#13261a" : "rgba(19,38,26,.8)"} fontWeight={i === k ? 700 : 400}>{t}</text>
+        <text key={i} x={X(i)} y={H - 10} textAnchor={narrow && i === all.length - 1 ? "end" : narrow && i === 0 ? "start" : "middle"} fontSize="15" fill={i === k ? "#13261a" : "rgba(19,38,26,.8)"} fontWeight={i === k ? 700 : 400}>{t}</text>
       ))}
       <rect x={X(k)} y={T - 16} width={W - R - X(k)} height={H - T - B + 16} fill="rgba(217,138,0,.06)" rx="8" />
       <line x1={X(k)} x2={X(k)} y1={T - 16} y2={H - B} stroke="rgba(19,38,26,.35)" strokeDasharray="4 4" />
@@ -77,8 +80,8 @@ function Chart({ past, fut, ly }) {
           {lyPts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="3" fill="#fff" stroke="#4a6fb5" strokeWidth="2" />)}
           <text x={lyPts[0][0] + 6} y={lyPts[0][1] - 10} fontSize="15" fontWeight="700" fill="#4a6fb5">작년</text>
           <g>
-            <rect x={inX(X(lyTopI), 210) - 105} y={Y(lyTopV) - 46} width="210" height="30" rx="15" fill="#4a6fb5" />
-            <text x={inX(X(lyTopI), 210)} y={Y(lyTopV) - 25} textAnchor="middle" fontSize="15" fontWeight="700" fill="#fff">작년 최고 {won(lyTopV)}원 ({md(addDays(all[lyTopI].date, -LY_DAYS))})</text>
+            <rect x={inX(X(lyTopI), narrow ? 150 : 210) - (narrow ? 75 : 105)} y={Y(lyTopV) - 46} width={narrow ? 150 : 210} height="30" rx="15" fill="#4a6fb5" />
+            <text x={inX(X(lyTopI), narrow ? 150 : 210)} y={Y(lyTopV) - 25} textAnchor="middle" fontSize="15" fontWeight="700" fill="#fff">작년 최고 {won(lyTopV)}원{narrow ? "" : ` (${md(addDays(all[lyTopI].date, -LY_DAYS))})`}</text>
           </g>
         </>
       )}

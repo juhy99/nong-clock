@@ -20,6 +20,21 @@ export function useAsync(fn, deps = []) {
 }
 
 /** 로딩·에러·데이터 상태를 알아서 그려주는 감싸개 */
+/** 휴대폰처럼 좁은 화면인지 (그래프를 휴대폰용으로 다시 그릴 때) — 창 크기가 바뀌면 다시 계산 */
+export function useNarrow(max = 640) {
+  const q = `(max-width: ${max}px)`;
+  const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia?.(q);
+    if (!m) return;
+    const on = () => setNarrow(m.matches);
+    on();
+    m.addEventListener?.("change", on);
+    return () => m.removeEventListener?.("change", on);
+  }, [q]);
+  return narrow;
+}
+
 export function Async({ state, children, empty = "데이터가 없습니다", minHeight }) {
   if (state.loading && !state.data) return <div className="state" style={{ minHeight }}>불러오는 중…</div>;
   if (state.error)

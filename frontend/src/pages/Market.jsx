@@ -261,7 +261,7 @@ function VolumeSection({ item, itemName, market, date }) {
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={data} margin={{ top: 18, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
-                  <XAxis dataKey="period" fontSize={11} interval={0} />
+                  <XAxis dataKey="period" fontSize={11} interval="preserveStartEnd" minTickGap={6} />
                   <YAxis fontSize={12} tickFormatter={won} width={56} />
                   <Tooltip formatter={(v, name, p) => [`${won(v)}톤`, name === "1위" ? `1위 ${p.payload.r1}` : name === "2위" ? `2위 ${p.payload.r2}` : name]} />
                   <Bar name="1위" dataKey="top1" stackId="v" fill="#0e7a45" maxBarSize={32} />

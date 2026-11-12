@@ -41,7 +41,8 @@ function reasonLines(o, region) {
   if (o.ph) out.push(PH_LINE[o.ph.kind](o));
   return out;
 }
-const refLine = (o) => ({ far: "수확이 6개월보다 멀어 참고용 예측이에요", baseline: "이 작물·기간은 예측이 덜 정확해 참고용이에요" })[o.reference] ?? "";
+// 참고용 안내는 예측이 덜 정확한 작물·기간만 (수확이 멀다는 이유로는 띄우지 않음, 11-12)
+const refLine = (o) => (o.reference === "baseline" ? "이 작물·기간은 예측이 덜 정확해 참고용이에요" : "");
 
 const request = (f) => ({
   region: f.region,
@@ -132,7 +133,7 @@ function MiniCalendar({ o }) {
   );
 }
 
-function CropCard({ o, rank, region, topProfit, topRate, goInfo }) {
+function CropCard({ o, rank, topProfit, topRate, goInfo }) {
   const [open, setOpen] = useState(rank === 0);
   const profit = o === topProfit, rate = o === topRate;
   return (
@@ -148,8 +149,7 @@ function CropCard({ o, rank, region, topProfit, topRate, goInfo }) {
         <div className={profit ? "hi-profit" : ""}><span>예상 순수익</span><b>{man(o.margin)}</b></div>
         <div className={rate ? "hi-rate" : ""}><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div>
       </div>
-      {o.reference && <span className="rc-ref">ⓘ {refLine(o)}</span>}
-      <ul className="rc-why">{reasonLines(o, region).map((w) => <li key={w}>{w}</li>)}</ul>
+      {refLine(o) && <span className="rc-ref">ⓘ {refLine(o)}</span>}
       <button type="button" className="rc-toggle" aria-expanded={open} onClick={() => setOpen(!open)}><span>📅 재배 달력 보기</span><span className="ar">▾</span></button>
       <div className="rc-exp"><div><MiniCalendar o={o} /></div></div>
       <div className="rc-acts">
@@ -171,7 +171,7 @@ function Results({ state, form, goInfo }) {
         return (
           <>
             <div className="rc-top3">
-              {top.map((o, i) => <CropCard key={o.crop + o.cropping} o={o} rank={i} region={form.region} topProfit={topProfit} topRate={topRate} goInfo={goInfo} />)}
+              {top.map((o, i) => <CropCard key={o.crop + o.cropping} o={o} rank={i} topProfit={topProfit} topRate={topRate} goInfo={goInfo} />)}
               {top.length < 3 && (
                 <div className="card rc-few">
                   <b>이 조건에서 심을 수 있는 작물은 {top.length}개예요</b>
@@ -265,7 +265,7 @@ function WhyCard({ crop, cropName, emoji, rec, form, info, goLand }) {
           <span className="rc-badge">🏆 내 조건에서 {rank + 1}위</span>
           <p className="rc-txt">{form.region} {LAND_TYPES[form.type]} {won(form.area)}평에 <b>{md(o.plant_date)}</b> 심으면 임대료를 빼고<br /><b>약 {man(o.margin)}</b>이 남을 것으로 보여요.</p>
           <div className="rc-nums"><div><span>예상 순수익</span><b>{man(o.margin)}</b></div><div><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div><div><span>수확</span><b>{md(o.harvest_start)}~{md(o.harvest_end)}</b></div></div>
-          {o.reference && <span className="rc-ref">ⓘ {refLine(o)}</span>}
+          {refLine(o) && <span className="rc-ref">ⓘ {refLine(o)}</span>}
           <ul className="rc-why">{[...reasonLines(o, form.region), ...(windowLine ? [windowLine] : [])].map((t) => <li key={t}>{t}</li>)}</ul>
         </>
       ) : (

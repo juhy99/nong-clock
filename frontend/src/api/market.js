@@ -8,6 +8,7 @@ import {
 } from "../mocks/market";
 import { mockRegionalWeather } from "../mocks/weather";
 import { mockMarketIndex } from "../mocks/marketIndex";
+import { mockSeasonal } from "../mocks/seasonal";
 import { varietyFactor, varietyOf } from "../mocks/items50";
 
 // [샘플] 품종: 화면은 item 자리에 "품목코드~품종id" 를 넘긴다. 품종 가격 = 품목 가격 × 품종 계수, 반입량 = 품목 반입량 × 품종 물량 비중
@@ -88,3 +89,6 @@ export const getMarketCompare = (item) => (REAL ? real("/prices/{item}/markets")
 
 /** 홈 날씨 지도: 시·도 17곳의 오늘 날씨와 특보 (테스트 모드에서는 기상청 실제 값) */
 export const getRegionalWeather = () => (DATA_SOURCE === "live" ? liveRegionalWeather() : fake(mockRegionalWeather()));
+
+/** [샘플] 계절 패턴 · 월별 반입량 (가격 예측 화면). 아직 Spring API 없음 → 예시 데이터. 제안: GET /api/prices/{item}/monthly */
+export const getSeasonal = (item, { anchor } = {}) => fake(mockSeasonal(item, { anchor }));

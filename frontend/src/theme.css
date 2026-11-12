@@ -297,10 +297,15 @@ select.input.mk-days { font-size: 16px; }
 .cf-crops .nm small { font-size: 15px; }
 .ps-note { font-size: 15px; }
 
-/* ── 사진 위에 바로 놓이는 글씨 (카드 밖 제목·안내): 흰 반투명 띠를 깔아 읽히게 ── */
-.mk-sec { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; width: fit-content; max-width: 100%; padding: 8px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(10px); margin-bottom: 12px; }
-.mk-sec h2 { font-size: 22px; } .mk-sec span, .mk-sec small { color: var(--muted); }
-.page > div > .hint, .page > .hint, .page > p.hint { display: inline-block; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.78); color: var(--muted); }
+/* ── 시세 화면 구역 제목: 구역(등급별 · 자세한 가격 · 반입 동향 · 도매시장·산지)마다 옅은 유리판으로 묶고 제목·안내는 그 안에 (11-12) ── */
+.mk-sec { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; max-width: 100%; padding: 0 2px; margin: 6px 0 12px; }
+.mk-sec h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+.mk-sec span { color: var(--ink); font-weight: 700; }
+.page > div > .hint, .page > .hint, .page > p.hint { display: inline-block; padding: 0 2px; color: var(--ink); font-size: 15px; font-weight: 600; }
+.mk-group { padding: 18px 20px 20px; border-radius: calc(var(--radius) + 6px); background: rgba(255, 255, 255, 0.34); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.mk-group > .mk-sec { margin-top: 0; }
+.mk-group > .hint { margin-top: 10px !important; }
+@media (max-width: 640px) { .mk-group { padding: 14px 10px 12px; } .mk-sec h2 { font-size: 21px; } }
 /* 그래프(recharts) 눈금·범례 글씨: 화면 코드의 fontSize 보다 크게 */
 .recharts-cartesian-axis-tick text, .recharts-label, .recharts-legend-item-text { font-size: 15px !important; fill: #3f4c43; }
 .recharts-cartesian-axis-tick text { fill: #3f4c43 !important; }
@@ -329,6 +334,10 @@ select.input.mk-days { font-size: 16px; }
 /* 사진 위에 바로 놓이던 판 (11-11 고침): 시세 조건 칸 · 반입 동향 요약 · 뉴스 분류·품목 칸 */
 .mk-sum { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 .mk-filter { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 0; }
+/* 시세 조건 (11-12): "품목 · 품종" 묶음 이름을 빼고 부류 · 품목 · 품종 칸을 날짜 · 시장과 같은 줄 · 같은 높이로 */
+.mk-filter .cs-f { gap: 0; font-size: inherit; }
+.mk-filter .cs-f > span { display: block; font-size: 16px; font-weight: 700; color: var(--muted); margin-bottom: 8px; line-height: 25px; }
+.mk-filter .input, .mk-filter .mk-crop .cs-f .input { height: 48px; font-weight: 600; }
 .news-filters { background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-radius: var(--radius); padding: 8px clamp(18px, 2vw, 28px) 18px; }
 
 /* 안쪽 스크롤바 (11-11): 회색 기본 막대(위아래 화살표) 대신 카드에 녹아드는 얇은 둥근 막대 — 길이 칸 · 표 · 목록

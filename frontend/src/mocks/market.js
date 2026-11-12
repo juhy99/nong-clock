@@ -249,3 +249,43 @@ export function mockMarketCompare(code) {
   const markets = MARKETS.slice(1, 6).map((m) => ({ market: m.name, price: wholesale(code, m.code, "HIGH", base) ?? wholesale(code, m.code, "ALL", base) }));
   return { item: code, unit: "kg", markets };
 }
+
+// ── [샘플 11-12] 시세 화면 맨 아래 "도매시장별 가격 · 산지공판장 가격" (고른 시장과 상관없이 품목·품종만) ──
+// 실제는 경매원장 최근 12달 집계: 시장별 평균 경락가(총 금액 ÷ 총 물량)와 그 품목 전체 물량 중 그 시장 몫.
+// [이름, 시·도, 그래프용 짧은 이름]
+const AUCTION_HOUSES = [
+  ["풍기농협 공판장", "경북", "풍기"], ["안동농협 공판장", "경북", "안동"], ["영천농협 공판장", "경북", "영천"], ["예산능금농협 공판장", "충남", "예산능금"],
+  ["논산원예농협 공판장", "충남", "논산원예"], ["목포원예농협 공판장", "전남", "목포원예"], ["무안농협 공판장", "전남", "무안"], ["해남농협 공판장", "전남", "해남"],
+  ["전주농협 공판장", "전북", "전주"], ["군산원예농협 공판장", "전북", "군산원예"], ["남원원예농협 공판장", "전북", "남원원예"], ["거창사과원예농협 공판장", "경남", "거창사과"],
+  ["창녕농협 공판장", "경남", "창녕"], ["충주사과원예농협 공판장", "충북", "충주사과"], ["평창농협 공판장", "강원", "평창"], ["제주시농협 산물공판장", "제주", "제주시"],
+];
+const r1 = (n) => Math.round(n * 10) / 10;
+
+/** 도매시장별 최근 12달 평균 경락가 · 물량 몫 (물량 많은 시장 8곳, 몫 큰 순) + 물량 가중 평균(전체 시장) */
+export function mockMarketShare(item) {
+  const ms = MARKETS.filter((m) => m.code !== "national" && m.items.includes(item));
+  const w = ms.map((m) => ({ m, w: 0.2 + noise(`ms|${item}|${m.code}`) ** 2 * 3 }));
+  const total = w.reduce((a, x) => a + x.w, 0);
+  const rows = w.map(({ m, w: x }) => ({
+    market: m.name, code: m.code,
+    price: Math.round(BASE_PRICE[item] * marketFactor(item, m.code) * (0.9 + noise(`mp|${item}|${m.code}`) * 0.2)),
+    share_pct: r1((x / total) * 100),
+  })).sort((a, b) => b.share_pct - a.share_pct);
+  const vw = rows.reduce((a, r) => a + r.price * r.share_pct, 0) / rows.reduce((a, r) => a + r.share_pct, 0);
+  return { item, period: "최근 12달", markets: rows.slice(0, 8), market_count: rows.length, weighted_avg: Math.round(vw), sample: true };
+}
+
+/** 산지공판장 최근 12달 평균 경락가 · 지난 3년(23~25년) 평균 · 산지 물량 몫 (몫 큰 곳 8곳) */
+export function mockAuctionHouses(item) {
+  const pick = AUCTION_HOUSES.map(([name, sido, short]) => ({ name, sido, short, w: noise(`ah|${item}|${name}`) ** 3 }))
+    .sort((a, b) => b.w - a.w).slice(0, 8);
+  const total = pick.reduce((a, x) => a + x.w, 0) / 0.85; // 나머지 15% 는 목록 밖 공판장
+  return {
+    item, period: "최근 12달", past: "23~25년",
+    houses: pick.map((h) => {
+      const now = Math.round(BASE_PRICE[item] * (0.85 + noise(`ahp|${item}|${h.name}`) * 0.35));
+      return { name: h.name, short: h.short, sido: h.sido, price: now, past_price: Math.round(now * (0.82 + noise(`ahq|${item}|${h.name}`) * 0.2)), share_pct: r1((h.w / total) * 100) };
+    }),
+    sample: true,
+  };
+}

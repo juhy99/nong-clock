@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getItems, predict } from "../api/ml";
 import { getMarkets } from "../api/market";
 import { Async, useAsync, useNarrow } from "../components/common";
 import PredictSearch, { marketsIn, regionsOf } from "../components/PredictSearch";
+import SeasonCharts from "../components/SeasonCharts";
 import { ITEMS50, itemOf, varietyFactor, varietyOf } from "../mocks/items50";
 import { LOW_ACCURACY } from "../mocks/accuracy";
 import { addDays, daysBetween, md, todayIso, won } from "../utils/format";
@@ -60,9 +61,27 @@ function checkpoints(p, horizon) {
 }
 
 /** 그래프: 시장마다 선 (지난 8주 얇게 → 예측 굵게). 시장 하나면 예측 범위 띠 */
+/** 그래프 칸 크기 (넓은 화면은 카드가 오른쪽 열 높이만큼 늘어나고, 그래프가 남는 높이를 채움) */
+function useBox() {
+  const ref = useRef(null);
+  const [box, setBox] = useState(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(([e]) => setBox({ w: e.contentRect.width, h: e.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, box];
+}
+
 function Chart({ series, horizon }) {
   const narrow = useNarrow();
-  const W = narrow ? 420 : 900, H = narrow ? 380 : 360, L = narrow ? 52 : 64, R = narrow ? 14 : 24, T = 30, B = 40;
+  const [boxRef, box] = useBox();
+  const W = narrow ? 420 : 900;
+  // 칸의 가로세로 비율대로 그림 높이를 정함 (글씨 크기는 그대로, 세로로 늘어남)
+  const H = box?.w ? Math.max(narrow ? 340 : 300, Math.min(narrow ? 520 : 560, Math.round((box.h / box.w) * W))) : narrow ? 380 : 360;
+  const L = narrow ? 52 : 64, R = narrow ? 14 : 24, T = 30, B = 40;
   const one = series.length === 1 ? series[0] : null;
   const all = [...series[0].past, ...series[0].fut]; // x 축 = 첫 시장 기준 (시장마다 날짜는 같음)
   const k = series[0].past.length - 1;
@@ -89,6 +108,7 @@ function Chart({ series, horizon }) {
   })();
   const pts = (arr) => arr.map((x) => `${X(x.date)},${Y(x.price)}`).join(" ");
   return (
+    <div className="pv-chartbox" ref={boxRef}>
     <svg className="pv-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`지난 8주 실제 가격과 ${afterLabel(horizon)}까지 예측, 시장별`}>
       {ticks.map((v) => (
         <g key={v}>
@@ -115,6 +135,7 @@ function Chart({ series, horizon }) {
       ))}
       <circle cx={X(now)} cy={Y(series[0].past[k].price)} r="4.5" fill="#13261a" />
     </svg>
+    </div>
   );
 }
 
@@ -171,7 +192,7 @@ function MarketCards({ series, horizon }) {
 }
 
 function Result({ r }) {
-  const { series, horizon, regionName, itemName, item } = r;
+  const { series, horizon, regionName, itemName, item, baseName } = r;
   if (!series.length) return <div className="card state">이 지역 도매시장에서는 이 품목을 거래하지 않아요. 다른 지역을 골라 주세요.</div>;
   const top = series.reduce((a, s) => (s.best.price > a.best.price ? s : a));
   const gain = top.best.price - top.base;
@@ -223,11 +244,13 @@ function Result({ r }) {
           </div>
           <ul className="pv-notes">
             {p.alerts.map((a) => <li key={a.start}><span className="ic warn">⚠️</span>{md(a.start)}~{md(a.end)} 이상기후 주의 · 이 기간 예측은 참고만 하세요</li>)}
-            {p.reference && <li><span className="ic">🔖</span>{p.reference === "far" ? "6개월보다 먼 예측이라 참고용이에요" : "이 품목·기간은 예측이 덜 정확해 참고용이에요"}</li>}
-            {!p.alerts.length && !p.reference && <li><span className="ic ok">✓</span>이 기간에는 이상기후 주의 구간이 없어요</li>}
+            {p.reference === "baseline" && <li><span className="ic">🔖</span>이 품목·기간은 예측이 덜 정확해 참고용이에요</li>}
+            {!p.alerts.length && p.reference !== "baseline" && <li><span className="ic ok">✓</span>이 기간에는 이상기후 주의 구간이 없어요</li>}
           </ul>
         </section>
       </div>
+      {/* 계절 패턴 · 월별 반입량 (품목 단위, 전국) — 예시 데이터는 지금 시세 평균에 맞춰 크기 조정 */}
+      <div className="pv-wide"><SeasonCharts item={item} itemName={baseName} anchor={Math.round(series.reduce((a, s) => a + s.base, 0) / series.length)} /></div>
     </div>
   );
 }
@@ -274,7 +297,7 @@ export default function Predict() {
     });
     const regionName = q.region === "national" ? "전국 도매시장" : `${q.region} 도매시장 ${ms.length}곳`;
     const itemName = (res[0]?.item_name ?? itemOf(q.item)?.name) + (variety ? ` ${variety.label}` : "");
-    return { series, horizon, regionName, itemName, item: q.item };
+    return { series, horizon, regionName, itemName, item: q.item, baseName: res[0]?.item_name ?? itemOf(q.item)?.name ?? "" };
   }, [!!opts, q.region, q.item, q.variety, q.to]);
   const search = (d) => setParams({ item: d.item, ...(d.variety ? { variety: d.variety } : {}), region: d.region, to: d.to }, { replace: true });
 

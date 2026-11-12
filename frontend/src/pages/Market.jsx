@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Bar, BarChart, CartesianGrid, ComposedChart, Area, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { DEFAULT_GRADE, DEFAULT_MARKET, GRADES, getGradePrices, getMarkets, getOriginPrices, getPriceHistory, getTodayPrices, getVolumeTrend } from "../api/market";
-import { Async, PriceChange, useAsync } from "../components/common";
+import { Bar, BarChart, CartesianGrid, Cell, ComposedChart, Area, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { DEFAULT_GRADE, DEFAULT_MARKET, GRADES, getAuctionHouses, getGradePrices, getMarketShare, getMarkets, getOriginPrices, getPriceHistory, getTodayPrices, getVolumeTrend } from "../api/market";
+import { Async, PriceChange, useAsync, useNarrow } from "../components/common";
 import CropSelect from "../components/CropSelect";
 import { varietyOf } from "../mocks/items50";
 import { md, shortDate, todayIso, won, wonPerKg } from "../utils/format";
+import "./market.css";
 
 // 시세·수급: 날짜 · 시장 · 품목을 고르면 등급별 가격, 가격 추이, 출하지역, 반입 동향이 바뀐다.
 // 처음 열면 전국 도매시장 · 상 등급. 소매가는 전국 소매가 하나뿐이라 등급을 바꿔도 같다.
@@ -109,7 +110,7 @@ function TrendCard({ item, market, date, grade, setGrade, avail }) {
   const [more, setMore] = useState(false);
   const state = useAsync(() => getPriceHistory(item, { market, grade, date, days }), [item, market, grade, date, days]);
   return (
-    <section className="card">
+    <section className="card mk-flex">
       <div className="mk-card-head">
         <h3>가격 추이</h3>
         <div className="seg">
@@ -126,7 +127,7 @@ function TrendCard({ item, market, date, grade, setGrade, avail }) {
           const rows = [...d.points].reverse();
           return (
             <>
-              <ResponsiveContainer width="100%" height={240}>
+              <div className="mk-grow"><ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={d.points} margin={{ top: 18, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
                   <XAxis dataKey="date" tickFormatter={md} fontSize={12} minTickGap={16} />
@@ -135,7 +136,7 @@ function TrendCard({ item, market, date, grade, setGrade, avail }) {
                   <Area name={`도매 ${gradeName(grade)}`} dataKey="price" stroke="#1fa463" strokeWidth={2.4} fill="#e8f6ee" dot={{ r: 3 }} connectNulls={false} />
                   <Line name="소매가 (등급 무관)" dataKey="retail" stroke="#b8a06a" strokeWidth={2} strokeDasharray="6 4" dot={false} />
                 </ComposedChart>
-              </ResponsiveContainer>
+              </ResponsiveContainer></div>
               <div className="mk-legend"><span className="l-w">도매 {gradeName(grade)}</span><span className="l-r">소매가 (등급 무관)</span></div>
               <div className="table-wrap">
                 <table className="table mk-table">
@@ -318,6 +319,161 @@ function VolumeSection({ item, itemName, market, date }) {
   );
 }
 
+/* ── 도매시장 · 산지 (11-12 샘플): 고른 시장과 상관없이 품목·품종만, 최근 12달 ──
+   출하지역별 가격 카드처럼: 위 막대그래프(가격/몫 바꿔 보기) + 아래 표 4줄씩 넘김 */
+function SampleTag({ sample }) {
+  return <span className={`mk-tag ${sample ? "ex" : ""}`}>{sample ? "예시 데이터" : "실제"}</span>;
+}
+const PER = 4;
+function Pager({ page, pages, setPage }) {
+  if (pages <= 1) return null;
+  return (
+    <div className="mk-pager">
+      <button className="btn ghost sm" disabled={page === 0} onClick={() => setPage(page - 1)}>‹</button>
+      <span className="muted small">{page + 1} / {pages}</span>
+      <button className="btn ghost sm" disabled={page === pages - 1} onClick={() => setPage(page + 1)}>›</button>
+    </div>
+  );
+}
+const C_HI = "#0e7a45", C_MID = "#57c98a", C_LO = "#bfe3cc", C_PAST = "#cfd8cf";
+
+function MarketShareCard({ item }) {
+  const [view, setView] = useState("price");
+  const [page, setPage] = useState(0);
+  const state = useAsync(() => getMarketShare(item), [item]);
+  const narrow = useNarrow(); // 휴대폰은 그래프에 4곳만 (이름이 겹치지 않게)
+  return (
+    <section className="card mk-flex">
+      <div className="mk-card-head">
+        <h3>도매시장별 가격</h3>
+        <div className="seg">
+          <button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>가격</button>
+          <button className={view === "share" ? "on" : ""} onClick={() => setView("share")}>물량 몫</button>
+        </div>
+        {state.data && <SampleTag sample={state.data.sample} />}
+      </div>
+      <Async state={state} minHeight={300}>
+        {(d) => {
+          const prices = d.markets.map((m) => m.price);
+          const hi = Math.max(...prices), lo = Math.min(...prices);
+          const color = (m) => (view === "share" ? C_MID : m.price === hi ? C_HI : m.price === lo ? C_LO : C_MID);
+          const pages = Math.ceil(d.markets.length / PER), cur = Math.min(page, pages - 1);
+          return (
+            <>
+              <div className="mk-grow">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={narrow ? d.markets.slice(0, 4) : d.markets} margin={{ top: 22, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+                    <XAxis dataKey="market" fontSize={12} interval={0} />
+                    <YAxis fontSize={12} tickFormatter={view === "price" ? won : (v) => `${v}%`} width={56} />
+                    <Tooltip formatter={(v) => (view === "price" ? wonPerKg(v) : `${v}%`)} />
+                    {view === "price" && <ReferenceLine y={d.weighted_avg} stroke="#13261a" strokeDasharray="5 4" />}
+                    <Bar name={view === "price" ? "평균 경락가" : "물량 몫"} dataKey={view === "price" ? "price" : "share_pct"} radius={[8, 8, 0, 0]} maxBarSize={36}
+                      label={{ position: "top", fontSize: narrow ? 11 : 12, fill: "#1b1f1c", formatter: view === "price" ? won : (v) => `${v}%` }}>
+                      {(narrow ? d.markets.slice(0, 4) : d.markets).map((m) => <Cell key={m.code} fill={color(m)} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mk-key"><span><i style={{ background: C_HI }} />가장 비쌈</span><span><i style={{ background: C_LO }} />가장 쌈</span><span><i className="dash" />물량 가중 평균 {won(d.weighted_avg)}원</span></div>
+              <div className="table-wrap mk-nomask">
+                <table className="table mk-table mk-ms">
+                  <thead><tr><th>도매시장</th><th className="r">평균 가격 (원/kg)</th><th className="r">평균 대비</th><th className="r">물량 몫</th></tr></thead>
+                  <tbody>
+                    {d.markets.slice(cur * PER, cur * PER + PER).map((m) => {
+                      const diff = Math.round(((m.price - d.weighted_avg) / d.weighted_avg) * 1000) / 10;
+                      return (
+                        <tr key={m.code}>
+                          <td>{m.market}</td>
+                          <td className="r num"><b>{won(m.price)}</b></td>
+                          <td className={`r num ${diff > 0 ? "up" : diff < 0 ? "down" : ""}`}>{diff > 0 ? "▲" : diff < 0 ? "▼" : ""} {Math.abs(diff)}%</td>
+                          <td className="r num vol">{m.share_pct}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <Pager page={cur} pages={pages} setPage={setPage} />
+              <p className="mk-src">물량 많은 시장 {d.markets.length}곳 (전체 {d.market_count}곳) · 최근 12달 평균 경락가 · 자료: 공영도매시장 경매원장</p>
+            </>
+          );
+        }}
+      </Async>
+    </section>
+  );
+}
+
+function AuctionHouseCard({ item }) {
+  const [view, setView] = useState("price");
+  const [page, setPage] = useState(0);
+  const state = useAsync(() => getAuctionHouses(item), [item]);
+  const narrow = useNarrow();
+  return (
+    <section className="card mk-flex">
+      <div className="mk-card-head">
+        <h3>산지공판장 가격</h3>
+        <div className="seg">
+          <button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>가격</button>
+          <button className={view === "share" ? "on" : ""} onClick={() => setView("share")}>물량 몫</button>
+        </div>
+        {state.data && <SampleTag sample={state.data.sample} />}
+      </div>
+      <Async state={state} minHeight={300}>
+        {(d) => {
+          const pages = Math.ceil(d.houses.length / PER), cur = Math.min(page, pages - 1);
+          return (
+            <>
+              <div className="mk-grow">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={narrow ? d.houses.slice(0, 4) : d.houses} margin={{ top: 22, right: 8, left: 0, bottom: 0 }} barGap={2}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+                    <XAxis dataKey="short" fontSize={12} interval={0} />
+                    <YAxis fontSize={12} tickFormatter={view === "price" ? won : (v) => `${v}%`} width={56} />
+                    <Tooltip formatter={(v) => (view === "price" ? wonPerKg(v) : `${v}%`)} labelFormatter={(l) => d.houses.find((h) => h.short === l)?.name ?? l} />
+                    {view === "price" ? (
+                      <>
+                        <Bar name={d.past} dataKey="past_price" fill={C_PAST} radius={[6, 6, 0, 0]} maxBarSize={22} />
+                        <Bar name={d.period} dataKey="price" fill={C_HI} radius={[6, 6, 0, 0]} maxBarSize={22}
+                          label={narrow ? false : { position: "top", fontSize: 11, fill: "#1b1f1c", formatter: won }} />
+                      </>
+                    ) : (
+                      <Bar name="물량 몫" dataKey="share_pct" fill={C_MID} radius={[8, 8, 0, 0]} maxBarSize={36}
+                        label={{ position: "top", fontSize: 12, fill: "#1b1f1c", formatter: (v) => `${v}%` }} />
+                    )}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {view === "price" && <div className="mk-key"><span><i style={{ background: C_HI }} />{d.period}</span><span><i style={{ background: C_PAST }} />{d.past} 평균</span></div>}
+              <div className="table-wrap mk-nomask">
+                <table className="table mk-table mk-ah">
+                  <thead><tr><th>공판장</th><th>시·도</th><th className="r">{d.period}</th><th className="r">{d.past} 대비</th><th className="r">물량 몫</th></tr></thead>
+                  <tbody>
+                    {d.houses.slice(cur * PER, cur * PER + PER).map((h) => {
+                      const diff = Math.round(((h.price - h.past_price) / h.past_price) * 1000) / 10;
+                      return (
+                        <tr key={h.name}>
+                          <td>{h.name}<small className="sd">{h.sido}</small></td>
+                          <td>{h.sido}</td>
+                          <td className="r num"><b>{won(h.price)}</b></td>
+                          <td className={`r num ${diff > 0 ? "up" : diff < 0 ? "down" : ""}`}>{diff > 0 ? "▲" : diff < 0 ? "▼" : ""} {Math.abs(diff)}%</td>
+                          <td className="r num vol">{h.share_pct}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <Pager page={cur} pages={pages} setPage={setPage} />
+              <p className="mk-src">물량 많은 공판장 {d.houses.length}곳 · 최근 12달 평균 경락가 · 자료: aT 산지공판장 경락 자료</p>
+            </>
+          );
+        }}
+      </Async>
+    </section>
+  );
+}
+
 export default function Market() {
   const [params, setParams] = useSearchParams();
   const today = useAsync(getTodayPrices);
@@ -407,23 +563,30 @@ export default function Market() {
       )}
       {item && !notTraded && (
         <>
-          <div>
+          <div className="mk-group">
             <div className="mk-sec"><h2>등급별 가격 한눈에 보기</h2><span>{marketName} · {itemName}</span></div>
             {variety && market !== "national" && (
               <p className="hint" style={{ margin: "0 0 10px" }}>품종별 시세는 전국 평균만 있어요. {marketName} 시세는 {items.find((i) => i.item === item)?.name ?? ""} 전체 값이에요.</p>
             )}
             <GradeSection item={key} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, defGrade)} defGrade={defGrade} onAvail={setAvail} />
           </div>
-          <div>
+          <div className="mk-group">
             <div className="mk-sec"><h2>자세한 가격 정보</h2><span>{marketName} · {itemName}</span></div>
             <div className="two-col">
               <TrendCard item={key} market={market} date={date} grade={grade} setGrade={(g) => set("grade", g, defGrade)} avail={avail} />
               <OriginCard key={`${key}|${market}|${date}`} item={key} market={market} date={date} />
             </div>
           </div>
-          <div>
-            <div className="mk-sec"><h2>반입 동향</h2><span>{marketName} · {itemName}</span><small>순(10일) 단위</small></div>
+          <div className="mk-group">
+            <div className="mk-sec"><h2>반입 동향</h2><span>{marketName} · {itemName}</span></div>
             <VolumeSection item={key} itemName={itemName} market={market} date={date} />
+          </div>
+          <div className="mk-group">
+            <div className="mk-sec"><h2>도매시장 · 산지</h2><span>{itemName}</span></div>
+            <div className="two-col mk-eq">
+              <MarketShareCard item={key} />
+              <AuctionHouseCard item={key} />
+            </div>
           </div>
         </>
       )}

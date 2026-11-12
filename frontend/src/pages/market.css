@@ -1,0 +1,40 @@
+/* 시세 · 수급 — 11-12 추가분 (나머지는 styles.css · theme.css 의 mk-) */
+
+/* 카드 높이 맞춤: 나란한 카드는 같은 높이, 남는 높이는 그래프가 채움 */
+.two-col { align-items: stretch; }
+.mk-flex { display: flex; flex-direction: column; }
+.mk-grow { position: relative; flex: 1 1 auto; min-height: 240px; }
+.mk-grow > * { position: absolute !important; inset: 0; }
+.mk-volume { align-items: stretch; }
+.mk-volume > .mk-sum { align-self: stretch; display: flex; flex-direction: column; }
+/* 왼쪽 카드 높이만큼 고리 칸이 늘어나고, 고리·글씨도 크게 */
+.mk-volume > .mk-sum .rings { flex: 1 1 auto; align-items: stretch; }
+.mk-volume > .mk-sum .ring { align-content: center; gap: 4px; padding: 18px 8px; }
+.mk-volume > .mk-sum .ring svg { width: 112px; height: 112px; margin-bottom: 6px; }
+.mk-volume > .mk-sum .ring b { font-size: 18px; }
+.mk-volume > .mk-sum .ring .v { font-size: 20px; }
+@media (max-width: 1200px) { .mk-volume > .mk-sum .ring svg { width: 84px; height: 84px; } }
+
+/* 도매시장 · 산지 */
+.mk-tag { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: var(--brand); }
+.mk-tag.ex { background: rgba(19, 38, 26, 0.07); color: rgba(19, 38, 26, 0.7); }
+.mk-card-head .mk-tag { margin-left: auto; }
+.mk-src { margin: auto 0 0; padding-top: 12px; font-size: 14px; color: var(--muted); }
+.mk-key { display: flex; gap: 16px; flex-wrap: wrap; font-size: 15px; color: rgba(19, 38, 26, 0.85); margin: 8px 0 4px; }
+.mk-key span { display: inline-flex; align-items: center; gap: 6px; }
+.mk-key i { width: 12px; height: 12px; border-radius: 3px; }
+.mk-key i.dash { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed #13261a; }
+.mk-ah td, .mk-ah th { white-space: nowrap; }
+.mk-ah .sd { display: none; }
+@media (max-width: 640px) {
+  /* 공판장 표: 시·도는 이름 아래로, 지난 3년 칸은 숨겨 한 화면에 */
+  .mk-ah th:nth-child(2), .mk-ah td:nth-child(2), .mk-ah th:nth-child(4), .mk-ah td:nth-child(4) { display: none; }
+  .table-wrap .mk-ah td:first-child { white-space: normal; }
+  .mk-ah .sd { display: block; font-size: 13px; color: var(--muted); }
+  .table-wrap .mk-ah th, .table-wrap .mk-ah td, .table-wrap .mk-ms th, .table-wrap .mk-ms td { padding-left: 6px; padding-right: 6px; }
+  .mk-ms th:nth-child(3), .mk-ms td:nth-child(3) { display: none; } /* 도매시장 표: 평균 대비 칸 숨김 */
+  .mk-card-head .mk-tag { margin-left: 0; }
+  .table-wrap.mk-nomask { -webkit-mask-image: none; mask-image: none; } /* 칸을 줄여 화면에 다 들어가므로 오른쪽 흐림 없음 */
+}
+/* 유리판 안이라 카드가 조금 좁아짐 → 표 칸 여백을 줄이고 숫자는 한 줄로 (넘치면 표만 옆으로 밀림) */
+.mk-group .mk-table th, .mk-group .mk-table td { padding-left: 8px; padding-right: 8px; white-space: nowrap; }

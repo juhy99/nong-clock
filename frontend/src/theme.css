@@ -297,10 +297,15 @@ select.input.mk-days { font-size: 16px; }
 .cf-crops .nm small { font-size: 15px; }
 .ps-note { font-size: 15px; }
 
-/* ── 사진 위에 바로 놓이는 글씨 (카드 밖 제목·안내): 흰 반투명 띠를 깔아 읽히게 ── */
-.mk-sec { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; width: fit-content; max-width: 100%; padding: 8px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(10px); margin-bottom: 12px; }
-.mk-sec h2 { font-size: 22px; } .mk-sec span, .mk-sec small { color: var(--muted); }
-.page > div > .hint, .page > .hint, .page > p.hint { display: inline-block; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.78); color: var(--muted); }
+/* ── 시세 화면 구역 제목: 구역(등급별 · 자세한 가격 · 반입 동향 · 도매시장·산지)마다 옅은 유리판으로 묶고 제목·안내는 그 안에 (11-12) ── */
+.mk-sec { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; max-width: 100%; padding: 0 2px; margin: 6px 0 12px; }
+.mk-sec h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+.mk-sec span { color: var(--ink); font-weight: 700; }
+.page > div > .hint, .page > .hint, .page > p.hint { display: inline-block; padding: 0 2px; color: var(--ink); font-size: 15px; font-weight: 600; }
+.mk-group { padding: 18px 20px 20px; border-radius: calc(var(--radius) + 6px); background: rgba(255, 255, 255, 0.34); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.mk-group > .mk-sec { margin-top: 0; }
+.mk-group > .hint { margin-top: 10px !important; }
+@media (max-width: 640px) { .mk-group { padding: 14px 10px 12px; } .mk-sec h2 { font-size: 21px; } }
 /* 그래프(recharts) 눈금·범례 글씨: 화면 코드의 fontSize 보다 크게 */
 .recharts-cartesian-axis-tick text, .recharts-label, .recharts-legend-item-text { font-size: 15px !important; fill: #3f4c43; }
 .recharts-cartesian-axis-tick text { fill: #3f4c43 !important; }

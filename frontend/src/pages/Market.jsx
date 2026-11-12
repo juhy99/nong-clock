@@ -541,7 +541,6 @@ export default function Market() {
           </div>
         </div>
         <div className="f mk-crop">
-          <label>품목 · 품종</label>
           <CropSelect item={item} variety={variety} only={new Set(items.map((i) => i.item))} onChange={(v) => {
             const next = new URLSearchParams(params);
             next.set("item", v.item);

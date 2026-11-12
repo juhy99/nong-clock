@@ -169,7 +169,7 @@ function Header() {
     <header className={`header ${solid || menu ? "solid" : ""}`}>
       <div className="container header-inner">
         <Link to="/" className="logo">
-          🌱 FARMBID<small>농산물 가격 예측</small>
+          <img src="/logo-nongclock.png" alt="NongClock" />
         </Link>
         <HeaderSearch />
         <nav className="top-nav" aria-label="주 메뉴">
@@ -263,7 +263,7 @@ export default function Layout() {
       )}
       {DEV_BADGE && <div className="live-badge" title="frontend/.env 의 VITE_DATA_SOURCE · VITE_NEWS_URL. 나머지는 가짜 데이터">{DEV_BADGE}</div>}
       <footer className={`footer ${home ? "light" : ""}`}>
-        <span>© 팜비드 · 공영도매시장 경매 · KAMIS · 기상청 데이터</span>
+        <span>© NongClock · 공영도매시장 경매 · KAMIS · 기상청 데이터</span>
         <span className="r">
           <Link to="/about">서비스 소개</Link>
           <Link to="/about#contact">문의</Link>

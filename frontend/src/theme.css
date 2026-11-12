@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────
-   팜비드 새 디자인 (v17, 2026-11-11) — 사용자 사이트만 (main.jsx 에서 styles.css 다음에 읽음)
+   NongClock 새 디자인 (v17, 2026-11-11) — 사용자 사이트만 (main.jsx 에서 styles.css 다음에 읽음)
    관리자 사이트(src/admin)는 이 파일을 읽지 않아 예전 모양 그대로.
    - 배경: 밝은 밭 사진 (public/img/field.jpg). 홈 첫 화면은 또렷하게, 나머지 화면은 흐리게
    - 카드: 외곽선 없이 흰 반투명(뒤가 흐리게 비침)
@@ -77,7 +77,7 @@ body { background: var(--bg); color: var(--ink); font-size: 17px; }
 /* ── 공통 부품 ── */
 .page { padding-top: 24px; }
 .page-head { display: flex; align-items: baseline; gap: 6px 18px; flex-wrap: wrap; }
-.page-head h1 { font-size: clamp(28px, 2.3vw, 38px); font-weight: 500; letter-spacing: -0.02em; }
+.page-head h1 { font-size: clamp(28px, 2.3vw, 38px); font-weight: 700; letter-spacing: -0.02em; }
 .page-head p { font-size: 17px; color: rgba(19, 38, 26, 0.8); margin: 0; }
 .card { background: var(--glass); border: 0; border-radius: var(--radius); box-shadow: none; backdrop-filter: blur(24px) saturate(1.15); -webkit-backdrop-filter: blur(24px) saturate(1.15); padding: clamp(20px, 2vw, 30px); }
 .card-head h2, .card h2 { font-size: 22px; }
@@ -343,3 +343,7 @@ select.input.mk-days { font-size: 16px; }
 }
 /* 시장별 예측 목록: 막대와 숫자 사이 여백 */
 .pv-slide { padding-right: 12px; }
+
+/* 로고 이미지 (시안 20번 C 링 새싹) */
+.logo img { display: block; height: 40px; width: auto; }
+@media (max-width: 640px) { .logo img { height: 32px; } }

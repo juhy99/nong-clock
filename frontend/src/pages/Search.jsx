@@ -177,7 +177,7 @@ function Empty({ q, suggestion }) {
       {suggestion && (
         <p>혹시 <Link className="link" to={`/search?q=${encodeURIComponent(suggestion)}`}>'{suggestion}'</Link>을(를) 찾으셨나요?</p>
       )}
-      <p className="muted">팜비드에서 다루는 품목은 {items.data?.length ?? 16}가지예요</p>
+      <p className="muted">NongClock에서 다루는 품목은 {items.data?.length ?? 16}가지예요</p>
       <div className="pills" style={{ justifyContent: "center" }}>
         {(items.data ?? []).map((i) => (
           <Link key={i.code} className="pill sm" to={`/search?q=${encodeURIComponent(i.name)}`}>
@@ -229,7 +229,7 @@ function Results({ d, tab, setTab }) {
               </div>
             </section>
           )}
-          {tab === "item" && !item && !d.crops.length && <div className="state">'{q}'은(는) 팜비드 품목이 아니에요. 품목 이름(예: 사과, 배추)으로 검색하면 시세를 보여드려요.</div>}
+          {tab === "item" && !item && !d.crops.length && <div className="state">'{q}'은(는) NongClock 품목이 아니에요. 품목 이름(예: 사과, 배추)으로 검색하면 시세를 보여드려요.</div>}
 
           {(all ? d.auctions.length > 0 : tab === "auctions") && (
             <section>

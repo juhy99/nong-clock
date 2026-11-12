@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getRegionalWeather } from "../api/market";
 import { predict, recommendCrops } from "../api/ml";
 import { NEWS_CATEGORIES, getNews } from "../api/news";
+import { getWeatherHistory, summarizeRegion } from "../api/weather";
 import { useAuth } from "../components/AuthContext";
 import { useAsync } from "../components/common";
-import { addDays, timeAgo, todayIso, won } from "../utils/format";
+import { SIDO, addDays, md, timeAgo, todayIso, won } from "../utils/format";
 import "./home.css";
 
 /* ─────────────────────────────────────────────
@@ -245,36 +245,60 @@ function NewsCard() {
   );
 }
 
+/* 날씨 카드 (11-11): 서버 날씨 수집기가 만든 시·도 일별 관측(/data/weather/regions-daily.json)으로 어제 날씨 + 최근 7일 평년 대비·주의 신호.
+   서버 연결이 없는 개발 화면은 예시 데이터 (출처 줄에 "예시 데이터"). 예보가 아니라 관측이라 "어제" 기준 */
+const nz = (v, unit = "") => (v == null ? "–" : `${v}${unit}`);
+const skyOf = (d) => {
+  if ((d.rain_mm ?? 0) >= 1) return d.temp_max != null && d.temp_max <= 1 ? ["🌨️", "눈·비"] : ["🌧️", "비"];
+  if (d.sun_hours == null) return ["🌤️", ""];
+  return d.sun_hours >= 6 ? ["☀️", "맑음"] : d.sun_hours >= 2 ? ["⛅", "구름 조금"] : ["☁️", "흐림"];
+};
+function weekLine(s) {
+  const w = s.week_vs_normal;
+  if (!w) return `최근 7일 비 ${s.week_rain}mm`;
+  const t = Math.abs(w.temp_diff) < 0.5 ? "평년과 비슷했고" : `평년보다 ${Math.abs(w.temp_diff)}° ${w.temp_diff > 0 ? "따뜻했고" : "추웠고"}`;
+  return `최근 7일은 ${t}, 비는 ${w.rain}mm 왔어요 (평년 ${w.normal_rain}mm)`;
+}
+
 function WeatherCard() {
   const { user } = useAuth();
-  const state = useAsync(getRegionalWeather);
-  const regions = state.data?.regions ?? [];
+  const state = useAsync(getWeatherHistory);
   const [pick, setPick] = useState("");
-  const name = pick || user?.region || "경기";
-  const w = regions.find((r) => r.name === name) ?? regions[0];
-  const others = regions.filter((r) => r !== w).slice(0, 8);
+  const h = state.data;
+  const regions = h ? SIDO.filter((r) => h.daily.regions?.[r]?.length) : [];
+  const name = regions.includes(pick) ? pick : regions.includes(user?.region) ? user.region : regions.includes("경기") ? "경기" : regions[0];
+  const s = h && name ? summarizeRegion(h, name) : null;
+  const d = s?.last;
+  const lastOf = (r) => h.daily.regions[r].at(-1);
+  const others = regions.filter((r) => r !== name).slice(0, 8);
+  const [icon, sky] = d ? skyOf(d) : [];
+  const sig = s?.signals[0];
   return (
     <article className="hv-card">
       <div className="hv-card-head">
         <h3>🌤️ 우리 지역 농업 날씨</h3>
-        <select className="hv-sel" value={w?.name ?? ""} onChange={(e) => setPick(e.target.value)} aria-label="지역">
-          {regions.map((r) => <option key={r.id}>{r.name}</option>)}
-        </select>
+        {regions.length > 0 && (
+          <select className="hv-sel" value={name} onChange={(e) => setPick(e.target.value)} aria-label="지역">
+            {regions.map((r) => <option key={r}>{r}</option>)}
+          </select>
+        )}
       </div>
-      {w && (
+      {state.error && <p className="hv-wait">날씨 자료를 아직 받지 못했어요. 잠시 뒤 다시 확인해 주세요.</p>}
+      {h && !d && <p className="hv-wait">날씨 자료가 아직 없어요.</p>}
+      {d && (
         <>
-          <div className="hv-wx-now"><span className="ic" aria-hidden>{w.icon}</span><div><b>{w.temp}°</b><p>{w.sky} · 최저 {w.min}° / 최고 {w.max}°</p></div></div>
+          <div className="hv-wx-now"><span className="ic" aria-hidden>{icon}</span><div><b>{nz(d.temp_avg, "°")}</b><p>어제({md(d.date)}) 평균{sky ? ` · ${sky}` : ""} · 최저 {nz(d.temp_min, "°")} / 최고 {nz(d.temp_max, "°")}</p></div></div>
           <div className="hv-wx-facts">
-            <span>☔ 강수확률<b>{w.rain_prob}%</b></span><span>💧 습도<b>{w.humidity}%</b></span>
-            <span>🍃 풍속<b>{w.wind}m/s</b></span><span>🌡️ 지온<b>{w.soil_temp}°</b></span>
+            <span>☔ 강수량<b>{nz(d.rain_mm, "mm")}</b></span><span>💧 습도<b>{nz(d.humidity, "%")}</b></span>
+            <span>🍃 순간풍속<b>{nz(d.gust, "m/s")}</b></span><span>☀️ 일조<b>{nz(d.sun_hours, "시간")}</b></span>
           </div>
-          {w.warning ? <p className="hv-warn">⚠️ {w.name} {w.warning} — {w.note}</p> : <p className="hv-note">🌱 {w.note}</p>}
+          {sig ? <p className="hv-warn">⚠️ {name} 최근 7일 {sig.text} — {sig.tip}</p> : <p className="hv-note">🌱 {weekLine(s)}</p>}
           <div className="hv-wx-grid">
-            {others.map((r) => <button key={r.id} type="button" onClick={() => setPick(r.name)}>{r.icon} {r.name}<b>{r.temp}°</b></button>)}
+            {others.map((r) => <button key={r} type="button" onClick={() => setPick(r)}>{skyOf(lastOf(r))[0]} {r}<b>{nz(lastOf(r).temp_avg, "°")}</b></button>)}
           </div>
         </>
       )}
-      <p className="hv-src">기상청 단기예보 · 관측 자료</p>
+      <p className="hv-src">기상청 관측{d ? ` · ${md(d.date)}까지` : ""}{s?.stale_days > 0 ? ` (${s.stale_days}일 늦음)` : ""}{h?.sample ? " · 예시 데이터" : ""}</p>
     </article>
   );
 }
@@ -285,7 +309,7 @@ const INTRO = [
   ["⛈️", "이상기후 주의 구간", [["주의 구간이란", "/about#how"], ["지역별 날씨", "/#today"], ["가격 영향", "/about#how"]]],
   ["🔔", "관심 품목 알림", [["관심 품목 담기", "/mypage"], ["시세 변동 알림", "/mypage"], ["이상기후 알림", "/mypage"], ["알림 설정", "/mypage"]]],
   ["❓", "자주 묻는 질문", [["등급 기준", "/about#grades"], ["가격 기준", "/about#price"], ["예측 정확도", "/about#how"], ["자료 출처", "/about#how"]]],
-  ["✉️", "문의하기", [["contact@farmbid.kr", "/about#contact"], ["02-000-0000", "/about#contact"], ["평일 10:00~18:00", "/about#contact"]]],
+  ["✉️", "문의하기", [["contact@nongclock.kr", "/about#contact"], ["02-000-0000", "/about#contact"], ["평일 10:00~18:00", "/about#contact"]]],
 ];
 
 export default function Home() {
@@ -313,7 +337,7 @@ export default function Home() {
       </section>
       <section className="hv-intro" id="intro">
         <div className="hv-wrap">
-          <div className="hv-sec-head"><h2>서비스 소개</h2><span>팜비드는 AI 가격 예측으로 농가의 판단을 돕는 서비스예요. 예측은 참고용이고, 실제 가격은 수급·유통 상황에 따라 달라질 수 있어요.</span></div>
+          <div className="hv-sec-head"><h2>서비스 소개</h2><span>NongClock은 AI 가격 예측으로 농가의 판단을 돕는 서비스예요. 예측은 참고용이고, 실제 가격은 수급·유통 상황에 따라 달라질 수 있어요.</span></div>
           <div className="hv-ig">
             {INTRO.map(([e, t, ls]) => (
               <div key={t} className="hv-ic-card">

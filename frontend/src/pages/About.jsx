@@ -1,12 +1,14 @@
 import { averageText } from "../mocks/accuracy";
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { AUCTION_ENABLED } from "../features";
 import { ITEMS50 } from "../mocks/items50";
 import { MARKETS } from "../mocks/market";
 import "./about.css";
 
-/* 서비스 소개 (v17, 11-11): 유리 카드 머리 + 숫자 4칸 · 기능 4칸 · 예측 흐름 1~4 · 가격 기준 · 만든 사람들 / 문의
-   다른 화면이 거는 링크: #items #how #price #price-basis #grades #team #contact */
+/* 서비스 소개 (v17, 11-11): 유리 카드 머리 + 숫자 4칸 · 기능 칸 · 예측 흐름 1~4 · 가격 기준 · 자주 묻는 질문 · 만든 사람들 / 문의
+   다른 화면이 거는 링크: #items #how #price #price-basis #grades #faq #faq-<질문> #team #contact
+   #faq-price 처럼 질문 주소로 들어오면 그 질문을 펼쳐서 보여 줌 (홈 아래 "자주 묻는 질문" 칸) */
 const N_ITEMS = ITEMS50.length;
 const N_MARKETS = MARKETS.filter((m) => m.code !== "national").length;
 const N_VARIETIES = ITEMS50.reduce((n, i) => n + (i.varieties?.length ?? 0), 0);
@@ -24,10 +26,9 @@ const PROJECT = AUCTION_ENABLED ? "농산물 가격 예측·경매 플랫폼 팀
 
 const FEATURES = [
   ["📈", "AI 가격 예측", `공영 도매시장 ${N_ITEMS}개 품목의 도매가(원/kg)를 도매시장 ${N_MARKETS}곳별로, 최대 1년 뒤 원하는 날짜까지 오차범위와 함께 매일 보여드려요.`, "/ai"],
-  ["🌧️", "이상기후 주의 구간", "폭우·한파처럼 예측이 흔들릴 수 있는 기간을 미리 표시하고, 그때 모델 오차가 얼마나 커졌는지도 알려드려요.", "/ai"],
   ["🌱", "작물 추천", "내 땅과 시작 날짜를 넣으면 수확기 예상 가격으로 마진이 높은 작물을, 작물을 고르면 가장 좋은 심는 날을 알려드려요.", "/recommend"],
   ...(AUCTION_ENABLED ? [["🔨", "농가 직거래 경매", "인증된 농가가 직접 경매를 열고, AI 참고가를 보며 시작가를 정할 수 있어요.", "/auctions"]] : []),
-  ["🔔", "관심 품목 알림", `관심 품목의 시세 변동과 이상기후 소식${AUCTION_ENABLED ? ", 입찰 결과" : ""}를 알림으로 받아보세요.`, "/mypage"],
+  ["⭐", "관심 품목", "관심 품목을 담아 두면 마이페이지에서 오늘 시세와 AI 1주 뒤 예측을 한눈에 볼 수 있어요.", "/mypage"],
 ];
 
 // 가격 기준 안내 (/about#price-basis). 다른 화면에는 기준을 따로 적지 않고 여기에 모아 둔다.
@@ -46,12 +47,33 @@ const GRADE_ROWS = [
 
 const FLOW = [
   ["수집", "공영도매시장 경매 원장·가락시장·산지공판장 가격, 기상청 날씨, 정책 발표, 환율, 명절·공휴일 데이터를 모아요"],
-  ["학습", `${N_ITEMS}품목 공영도매시장 경매 단가를 1주·2주·1개월·3개월·6개월 뒤까지 맞히는 모델을 학습하고, 지난 기간으로 오차(WAPE)를 검증해요`],
-  ["예측", `품목·기간마다 검증 오차만큼 범위를 함께 보여 드려요 (품목 평균 ${averageText()}). 6개월보다 먼 날과 기준선보다 나쁜 품목·기간은 참고용이에요`],
+  ["학습", `${N_ITEMS}품목 공영도매시장 경매 단가를 내일부터 1년 뒤까지 맞히는 모델을 학습하고, 지난 기간으로 오차(WAPE)를 검증해요`],
+  ["예측", `품목·기간마다 검증 오차만큼 범위를 함께 보여 드려요 (품목 평균 ${averageText()}). 검증 성적이 기준선보다 나쁜 품목·기간은 참고용이에요`],
   ["활용", AUCTION_ENABLED ? "홈·AI 예측 화면과 경매 시작가 참고가에 바로 반영돼요" : "홈·AI 예측·작물 추천 화면에 바로 반영돼요"],
 ];
 
+// 자주 묻는 질문 (11-13). [주소 id, 질문, 답]
+const FAQ = [
+  ["faq-price", "가격은 어떤 기준인가요?", <>따로 고르는 칸이 없는 화면의 가격은 모두 <b>전국 도매시장 · 상 등급 · 1kg</b> 기준이에요. AI 가격 예측은 등급을 나누지 않은 <b>경매 단가</b>(그날 총 경락 금액 ÷ 총 물량)예요. <a href="#price">가격 기준 자세히 ›</a></>],
+  ["faq-grade", "특 · 상 · 중 · 하 등급은 무엇인가요?", <>도매시장 경매에서 품질에 따라 매기는 등급이에요. <b>상</b> 등급이 거래가 꾸준해서 기본 기준으로 써요. 시세 · 수급 화면에서 특 · 상 · 중 · 하 · 평균을 골라 볼 수 있어요. <a href="#grades">등급표 보기 ›</a></>],
+  ["faq-range", "얼마나 먼 날까지 예측하나요?", <>내일부터 <b>1년 뒤</b>까지 원하는 날짜를 고를 수 있어요. 1주 · 1개월 · 6개월 · 1년 버튼으로 바로 고를 수도 있어요. 2개월까지는 주별로, 그보다 먼 날은 달별로 보여 드려요.</>],
+  ["faq-accuracy", "예측은 얼마나 정확한가요?", <>지난 기간으로 검증한 오차를 품목 · 기간마다 함께 보여 드려요. 예측 화면의 "이 예측, 믿을 만한가요?"에서 신뢰도(100 − 오차)와 "실제 가격과 평균 ±n% 안에서 맞았어요"를 확인할 수 있어요. 품목 평균 오차는 {averageText()}예요. 오차가 큰 품목은 이름 옆에 <b>(!)</b>가 붙어요.</>],
+  ["faq-update", "예측은 언제 새로 나오나요?", <>매일 <b>오전 6시</b>에 전날까지의 시세로 새 예측을 만들어요.</>],
+  ["faq-source", "자료는 어디서 가져오나요?", <>도매가와 반입량은 <b>공영도매시장 경매 원장</b>, 소매가는 <b>KAMIS</b>(농산물유통정보), 날씨는 <b>기상청</b>, 농업 뉴스는 <b>네이버 뉴스 검색</b>에서 가져와요.</>],
+  ["faq-margin", "작물 추천의 순수익은 어떻게 계산하나요?", <>달마다 예상 판매량 × AI 예상 가격에서 <b>농촌진흥청 평균 경영비와 임대료</b>를 뺀 값이에요. 운송비 · 유통 마진은 빼지 않아서 실제와 다를 수 있어요.</>],
+  ["faq-member", "회원가입을 해야 쓸 수 있나요?", <>시세 · 수급, 농업 뉴스, 게시판 읽기는 누구나 볼 수 있어요. <b>AI 가격 예측 · 작물 추천 · 마이페이지</b>와 글쓰기는 로그인한 뒤에 쓸 수 있어요.</>],
+];
+
 export default function About() {
+  // #faq-xxx 로 들어오면 그 질문을 펼치고 그 자리로 (머리말 높이만큼은 CSS scroll-margin)
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (!el) return;
+    if (el.tagName === "DETAILS") el.open = true;
+    requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
+  }, [hash]);
   return (
     <div className="page ab">
       <section className="card ab-hero" id="items">
@@ -126,6 +148,18 @@ export default function About() {
           </table>
         </div>
         <p className="ab-note">시세·수급 화면에서 다른 시장이나 등급을 고르면, 홈이나 예측 화면의 가격과 숫자가 다를 수 있어요. 기준이 달라서 생기는 차이예요.</p>
+      </section>
+
+      <section className="card" id="faq">
+        <h2 className="ab-h">자주 묻는 질문</h2>
+        <div className="ab-faq">
+          {FAQ.map(([id, q, a]) => (
+            <details key={id} id={id}>
+              <summary>{q}</summary>
+              <p>{a}</p>
+            </details>
+          ))}
+        </div>
       </section>
 
       <div className="ab-two">

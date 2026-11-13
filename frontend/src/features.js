@@ -4,5 +4,9 @@
 // 다시 켜려면 frontend/.env 에 VITE_ENABLE_AUCTION=true 를 넣고 다시 빌드한다.
 export const AUCTION_ENABLED = import.meta.env.VITE_ENABLE_AUCTION === "true";
 
+// 알림: 팀 결정으로 숨김(2026-11-13). 꺼 두면 머리말 🔔 종, 마이페이지 새 알림 · 알림 목록 · 알림 설정,
+// 내 정보 수정의 "알림 받기" 가 숨겨진다. 코드·가짜 데이터·관리자 화면은 그대로. 다시 켜려면 VITE_ENABLE_NOTIFY=true
+export const NOTIFY_ENABLED = import.meta.env.VITE_ENABLE_NOTIFY === "true";
+
 /** 경매와 관련된 신고인지 (예전 신고는 kind 가 없고 경매 신고였다) */
 export const isAuctionReport = (r) => (r.kind ?? "auction") === "auction";

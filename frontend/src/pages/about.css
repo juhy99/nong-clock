@@ -38,5 +38,16 @@
 .ab-contact dd { margin: 0; font-size: 17px; font-weight: 700; }
 .ab-contact dd a { color: var(--ink); text-decoration: none; }
 .ab-contact dd small { font-weight: 400; font-size: 15px; color: var(--muted); margin-left: 6px; }
+/* 자주 묻는 질문 (11-13): 누르면 펼쳐지는 목록 */
+.ab-faq { display: grid; gap: 8px; }
+.ab-faq details { background: rgba(255, 255, 255, 0.7); border-radius: 16px; padding: 0 20px; scroll-margin-top: 96px; }
+.ab-faq summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px 0; font-size: 18px; font-weight: 700; color: var(--ink); }
+.ab-faq summary::-webkit-details-marker { display: none; }
+.ab-faq summary::before { content: "Q"; flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--brand); font-size: 15px; }
+.ab-faq summary::after { content: "▾"; margin-left: auto; color: var(--muted); transition: transform .2s; }
+.ab-faq details[open] summary::after { transform: rotate(180deg); }
+.ab-faq details p { margin: 0; padding: 0 0 18px 42px; font-size: 16px; line-height: 1.7; color: rgba(19, 38, 26, 0.85); }
+.ab-faq details p a { color: var(--brand); font-weight: 600; white-space: nowrap; }
+#faq, #items, #how, #price, #grades, #team, #contact { scroll-margin-top: 96px; }
 @media (max-width: 860px) { .ab-hero, .ab-two { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .ab-team, .ab-stats { grid-template-columns: 1fr; } }

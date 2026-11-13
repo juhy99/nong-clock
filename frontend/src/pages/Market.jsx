@@ -94,10 +94,7 @@ function GradeSection({ item, market, date, grade, setGrade, defGrade, onAvail }
               ))}
               <GradeCard title="소매가" tag="등급 무관" card={d.retail} kind="retail" dates={dates} />
             </div>
-            <p className="hint" style={{ margin: "10px 0 0" }}>
-              카드를 누르면 아래 가격 추이가 그 등급으로 바뀌어요.
-              {hidden.length > 0 && ` 이 시장은 최근 30일 ${hidden.join("·")} 등급 거래가 거의 없어 숨겼어요.`}
-            </p>
+            {hidden.length > 0 && <p className="hint" style={{ margin: "10px 0 0" }}>이 시장은 최근 30일 {hidden.join("·")} 등급 거래가 거의 없어 숨겼어요.</p>}
           </>
         );
       }}
@@ -223,7 +220,6 @@ function OriginCard({ item, market, date }) {
                   <button className="btn ghost sm" disabled={cur === pages - 1} onClick={() => setPage(cur + 1)}>›</button>
                 </div>
               )}
-              <p className="hint" style={{ margin: "8px 0 0" }}>출하지역은 시·도 단위, 가격은 등급 평균이에요.</p>
             </>
           );
         }}
@@ -321,9 +317,6 @@ function VolumeSection({ item, itemName, market, date }) {
 
 /* ── 도매시장 · 산지 (11-12 샘플): 고른 시장과 상관없이 품목·품종만, 최근 12달 ──
    출하지역별 가격 카드처럼: 위 막대그래프(가격/몫 바꿔 보기) + 아래 표 4줄씩 넘김 */
-function SampleTag({ sample }) {
-  return <span className={`mk-tag ${sample ? "ex" : ""}`}>{sample ? "예시 데이터" : "실제"}</span>;
-}
 const PER = 4;
 function Pager({ page, pages, setPage }) {
   if (pages <= 1) return null;
@@ -350,7 +343,6 @@ function MarketShareCard({ item }) {
           <button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>가격</button>
           <button className={view === "share" ? "on" : ""} onClick={() => setView("share")}>물량 몫</button>
         </div>
-        {state.data && <SampleTag sample={state.data.sample} />}
       </div>
       <Async state={state} minHeight={300}>
         {(d) => {
@@ -395,7 +387,6 @@ function MarketShareCard({ item }) {
                 </table>
               </div>
               <Pager page={cur} pages={pages} setPage={setPage} />
-              <p className="mk-src">물량 많은 시장 {d.markets.length}곳 (전체 {d.market_count}곳) · 최근 12달 평균 경락가 · 자료: 공영도매시장 경매원장</p>
             </>
           );
         }}
@@ -417,7 +408,6 @@ function AuctionHouseCard({ item }) {
           <button className={view === "price" ? "on" : ""} onClick={() => setView("price")}>가격</button>
           <button className={view === "share" ? "on" : ""} onClick={() => setView("share")}>물량 몫</button>
         </div>
-        {state.data && <SampleTag sample={state.data.sample} />}
       </div>
       <Async state={state} minHeight={300}>
         {(d) => {
@@ -465,7 +455,6 @@ function AuctionHouseCard({ item }) {
                 </table>
               </div>
               <Pager page={cur} pages={pages} setPage={setPage} />
-              <p className="mk-src">물량 많은 공판장 {d.houses.length}곳 · 최근 12달 평균 경락가 · 자료: aT 산지공판장 경락 자료</p>
             </>
           );
         }}

@@ -46,16 +46,13 @@ function MonthChart({ lines, label, unit }) {
   );
 }
 
-function Card({ title, sub, sample, legend, children, src }) {
+// 제목 · 범례 · 그래프만 (설명 줄 · 자료 줄 · 예시 데이터 표시는 11-13 뺌)
+function Card({ title, legend, children }) {
   return (
     <section className="card sc-card">
-      <div className="sc-head">
-        <h2>{title}</h2><span className={`sc-tag ${sample ? "ex" : ""}`}>{sample ? "예시 데이터" : "실제"}</span>
-      </div>
-      <p className="sc-sub">{sub}</p>
+      <div className="sc-head"><h2>{title}</h2></div>
       <div className="sc-legend">{legend.map(([t, c, dash]) => <span key={t}><i className={dash ? "dash" : ""} style={{ "--c": c }} />{t}</span>)}</div>
       {children}
-      <p className="sc-src"><b>자료</b> {src}</p>
     </section>
   );
 }
@@ -65,11 +62,9 @@ export default function SeasonCharts({ item, itemName, anchor }) {
   return (
     <Async state={state} minHeight={360}>
       {(d) => {
-        const [y0, y1] = d.normal_years;
         return (
           <div className="sc-grid">
-            <Card title="계절 패턴" sample={d.sample} src={d.source}
-              sub={`${itemName} 월평균 경락가 (원/kg, 전국) · 평년 = ${y0}~${y1}년 평균`}
+            <Card title="계절 패턴"
               legend={[["평년", C.normal], [`${d.year}년`, C.actual], ["예측", C.forecast, true]]}>
               <MonthChart unit="원" label={`${itemName} 월평균 경락가: 평년, ${d.year}년 실제와 예측`}
                 lines={[
@@ -78,8 +73,7 @@ export default function SeasonCharts({ item, itemName, anchor }) {
                   { key: "forecast", data: d.price.forecast, color: C.forecast, dash: true },
                 ]} />
             </Card>
-            <Card title="월별 반입량" sample={d.sample} src={`${d.source} · 국산 물량`}
-              sub={`도매시장에 들어온 ${itemName} 물량 (톤) · ${d.volume.partial_month}월은 오늘까지`}
+            <Card title="월별 반입량"
               legend={[["평년", C.normal], [`${d.year}년`, C.actual]]}>
               <MonthChart unit="톤" label={`${itemName} 월별 반입량: 평년과 ${d.year}년`}
                 lines={[

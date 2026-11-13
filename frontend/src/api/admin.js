@@ -1,6 +1,7 @@
 // 개발자(관리자) 페이지 API. ML API 상태는 실제로 확인하고, 나머지는 가짜 데이터.
 // 실제로는 Spring 이 관리자 권한(role=admin)을 확인한 뒤에만 응답해야 한다.
-import { fake } from "./client";
+import { PRICE_API_BASE, PRICE_SOURCE, fake } from "./client";
+import { AUTH_MODE } from "./auth";
 import { recalc } from "./auction";
 import { pingMl } from "./ml";
 import { notify, notifyAll } from "./notify";
@@ -113,8 +114,25 @@ export async function getSystemStatus() {
     },
     weatherSystemRow(weather),
     { name: "ML API (FastAPI)", ok: ml.ok, ms: ml.ms, detail: ml.ok ? `model ${ml.detail.model_version}` : ml.detail },
-    { name: "Backend (Spring Boot)", ok: false, ms: null, detail: "아직 개발 전 — 가짜 데이터 사용 중", pending: true },
-    { name: "Database (PostgreSQL)", ok: false, ms: null, detail: "Spring 연결 후 확인 가능", pending: true },
+    ...(await springRows()),
+  ];
+}
+
+/** Spring · DB 상태 (11-13): 이 화면이 Spring 을 쓰는 설정(VITE_AUTH=spring 또는 VITE_PRICE_SOURCE=db)일 때만 실제로 확인.
+ *  /api/markets 는 DB 를 읽으므로 200 이면 둘 다 정상, 응답은 왔는데 오류면 Spring 은 살아 있고 DB 문제 */
+async function springRows() {
+  if (AUTH_MODE !== "spring" && PRICE_SOURCE !== "db") {
+    const d = "이 화면은 가짜 데이터로 동작 중 (VITE_AUTH · VITE_PRICE_SOURCE)";
+    return [{ name: "Backend (Spring Boot)", ok: false, pending: true, ms: null, detail: d }, { name: "Database (PostgreSQL)", ok: false, pending: true, ms: null, detail: d }];
+  }
+  const t0 = performance.now();
+  const res = await fetch(`${PRICE_API_BASE}/api/markets`, { cache: "no-cache", credentials: "include" }).catch(() => null);
+  const ms = Math.round(performance.now() - t0);
+  if (!res) return [{ name: "Backend (Spring Boot)", ok: false, ms: null, detail: "응답 없음 (Spring 컨테이너 확인)" }, { name: "Database (PostgreSQL)", ok: false, pending: true, ms: null, detail: "Spring 이 응답해야 확인 가능" }];
+  const n = res.ok ? (await res.json().catch(() => [])).length : 0;
+  return [
+    { name: "Backend (Spring Boot)", ok: true, ms, detail: `응답 ${res.status}` },
+    { name: "Database (PostgreSQL)", ok: res.ok, ms: null, detail: res.ok ? `도매시장 ${n}곳 읽음` : `시세 조회 실패 (HTTP ${res.status}) — DB 연결 · 표 확인` },
   ];
 }
 

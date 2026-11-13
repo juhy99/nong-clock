@@ -7,7 +7,6 @@ import { useErrorPopup } from "../components/ErrorPopup";
 const DEMO = [
   ["김구매", "user@farmbid.kr", "user1234"],
   ["박농부", "farmer@farmbid.kr", "farmer1234"],
-  ["관리자", "admin@farmbid.kr", "admin1234"],
 ];
 
 export default function Login() {

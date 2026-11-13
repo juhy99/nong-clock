@@ -139,7 +139,7 @@ function HeaderSearch() {
 /** 머리말 (v17): 로고 · 검색 · 메뉴(HOME·가격 예측·작물 추천·시세·뉴스·게시판) · 로그인 / 내 정보.
  *  홈 첫 화면 위에서는 반투명, 스크롤하면 흰 띠(solid). 서비스 소개는 바닥글에서 들어감 */
 function Header() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, logout } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
   const [solid, setSolid] = useState(false);
@@ -180,8 +180,7 @@ function Header() {
         <div className="header-right">
           {user ? (
             <>
-              {/* 관리자 화면은 별도 사이트 (/admin/) */}
-              {isAdmin && <a className="btn sm hdr-admin" href="/admin/" target="_blank" rel="noreferrer">관리자 사이트 ↗</a>}
+              {/* 관리자 화면은 별도 사이트 — 사용자 사이트에는 들어가는 버튼을 두지 않음 (11-14). 주소창에 /admin/ 을 직접 쳐서 들어감 */}
               {NOTIFY_ENABLED && <NotificationBell user={user} />}
               <NavLink to="/mypage" className="user-chip" title={`${user.name} · ${USER_TYPE_LABEL[user.type]}`}>
                 <b>{user.name}</b> <span className="muted">· 마이페이지</span>
@@ -210,7 +209,6 @@ function Header() {
           {user && (
             <div className="hdr-user">
               <NavLink to="/mypage">👤 <b>{user.name}</b> · 마이페이지</NavLink>
-              {isAdmin && <a href="/admin/" target="_blank" rel="noreferrer">관리자 사이트 ↗</a>}
               <button type="button" className="btn sm ghost" onClick={out}>로그아웃</button>
             </div>
           )}

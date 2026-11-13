@@ -6,7 +6,7 @@
 ```
 
 ## 내 PC 시험
-`scripts\시세화면_시험실행.bat` 더블클릭 (Docker Desktop 켜 둔 상태). 데이터 폴더가 `D:\nong-clock-data\05_DB적재\data` 가 아니면 bat 맨 위 `DATA` 한 줄만 고침
+`scripts\시세화면_시험실행.bat` 더블클릭 (Docker Desktop 켜 둔 상태). 데이터 폴더는 `D:\nong-clock-data`(학원 PC) · `C:\finalproject\nong-clock-data`(집 PC) 중 있는 곳을 bat 가 자동으로 씀. 다른 곳이면 환경 변수 `NC_DATA_ROOT` 에 맨 위 폴더를 넣음
 1. `docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d --build db backend`
 2. 수집기 표를 DB 에 넣기 (`load_db.py --init`, 파이썬은 도커 이미지로 실행)
 3. `frontend` 에서 `npm run dev` → http://localhost:5173/market (vite 가 /api 를 localhost:8080 Spring 으로 넘김)

@@ -6,7 +6,14 @@ rem  시세 화면을 실제 데이터로 보기 (내 PC 시험용, 2026-11-09)
 rem  1) 도커로 DB + Spring(backend) + AI 예측(ml-api, DB 예측기) 켜기  2) 수집기 표(CSV)를 DB에 넣기  3) 화면(npm run dev) 켜기
 rem  데이터 폴더가 다르면 아래 DATA 한 줄만 고치세요. (저장소 위치는 이 파일 위치로 자동)
 rem ============================================================
-set "DATA=D:\nong-clock-data\05_DB적재\data"
+rem 데이터 폴더: 학원 PC = D:\nong-clock-data, 집 PC = C:\finalproject\nong-clock-data (있는 쪽을 자동으로 씀, 11-14)
+rem 다른 곳이면 환경 변수 NC_DATA_ROOT 에 맨 위 폴더를 넣거나 아래 DATA 를 직접 고치세요
+set "DATA_ROOT=%NC_DATA_ROOT%"
+if "%DATA_ROOT%"=="" if exist "D:\nong-clock-data\05_DB적재\data" set "DATA_ROOT=D:\nong-clock-data"
+if "%DATA_ROOT%"=="" if exist "C:\finalproject\nong-clock-data\05_DB적재\data" set "DATA_ROOT=C:\finalproject\nong-clock-data"
+if "%DATA_ROOT%"=="" set "DATA_ROOT=D:\nong-clock-data"
+set "DATA=%DATA_ROOT%\05_DB적재\data"
+echo 데이터 폴더: %DATA%
 for %%i in ("%~dp0..") do set "REPO=%%~fi"
 
 docker version >nul 2>&1

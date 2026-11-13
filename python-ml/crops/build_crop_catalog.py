@@ -2,7 +2,7 @@
 """작물 추천용 작물 표 만들기 (11-13) → shared/crops.json  (ml-api 작물 추천이 읽음)
 
   python python-ml/crops/build_crop_catalog.py                      # 기본 경로
-  python python-ml/crops/build_crop_catalog.py --data D:\\nong-clock-data --out shared/crops.json
+  python python-ml/crops/build_crop_catalog.py --data <자료 폴더(생략하면 자동)> --out shared/crops.json
 
 무엇을 어디서 가져오나 (손으로 넣는 숫자는 crop_map.csv 의 대응·보관 일수뿐)
   ① 심는 때·수확 때  농사로 재배력 (02_전처리/21_농사로_재배력_생육온도): 01 작형별 시기 · 09 공식도서 확인(감자·고구마·콩) · 04 달력 보조(옥수수·멜론·과수)
@@ -189,7 +189,9 @@ class Data:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default=r"D:\nong-clock-data", help="자료 폴더 맨 위")
+    sys.path.insert(0, str(REPO / "python-ml"))
+    from config import data_root   # 학원 D:\nong-clock-data / 집 C:\finalproject\nong-clock-data 중 있는 곳 (11-14)
+    ap.add_argument("--data", default=str(data_root()), help="자료 폴더 맨 위")
     ap.add_argument("--tables", default="", help="price_daily.csv (기본: <data>/05_DB적재/data/tables/price_daily.csv)")
     ap.add_argument("--price-cache", default="", help="전국·ALL 줄만 미리 거른 price_daily (있으면 이걸 읽음, 빠름)")
     ap.add_argument("--map", default=str(HERE / "crop_map.csv"))

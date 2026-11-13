@@ -3,7 +3,7 @@
   python python-ml/run_daily.py              전부
   python python-ml/run_daily.py --from 5     5단계부터 (앞 단계 결과 폴더는 가장 최근 것을 씀)
 
-단계 (결과는 모두 model 폴더 = config.model_dir(), 기본 D:\\nong-clock-data\\05_DB적재\\data\\model):
+단계 (결과는 모두 model 폴더 = config.model_dir(), 기본 <자료 폴더>\\05_DB적재\\data\\model, 자료 폴더는 config.data_root()):
   1 패널        1_panel.py           DB → panel_<기준일>/          (기준일 = DB 단위 시세 마지막 날)
   2 원인 엔진   2_engine.py          panel → run_<기준일>/forecast_unit_daily.csv.gz (기준일 다음 날부터 365일)
   3 팀원 일     u7_input.py + team/u7d_일주_물량뺌.py   DB → u7_<기준일>/75_최신_일별예측.csv (1~14거래일)

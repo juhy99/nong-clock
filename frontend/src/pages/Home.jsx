@@ -240,7 +240,6 @@ function NewsCard() {
         ))}
       </ul>
       {state.data && !state.data.rows.length && <p className="hv-wait">이 분류의 오늘 뉴스가 아직 없어요.</p>}
-      <p className="hv-src">제목을 누르면 언론사 기사로 이동해요 · 뉴스 제공: 네이버 검색 API</p>
     </article>
   );
 }
@@ -304,11 +303,10 @@ function WeatherCard() {
 }
 
 const INTRO = [
-  ["📈", "AI 가격 예측", [["품목 50개", "/about#items"], ["예측 기간", "/about#how"], ["오차 범위", "/about#how"], ["언제 팔까", "/ai"]]],
+  ["📈", "AI 가격 예측", [["언제 팔까", "/ai"], ["품목 50개", "/about#items"], ["예측 기간", "/about#faq-range"], ["오차 범위", "/about#faq-accuracy"]]],
   ["🌱", "작물 추천", [["내 땅 넣기", "/recommend"], ["순수익 순위", "/recommend"], ["재배 달력", "/recommend?tab=info"], ["작물 정보", "/recommend?tab=info"]]],
-  ["⛈️", "이상기후 주의 구간", [["주의 구간이란", "/about#how"], ["지역별 날씨", "/#today"], ["가격 영향", "/about#how"]]],
-  ["🔔", "관심 품목 알림", [["관심 품목 담기", "/mypage"], ["시세 변동 알림", "/mypage"], ["이상기후 알림", "/mypage"], ["알림 설정", "/mypage"]]],
-  ["❓", "자주 묻는 질문", [["등급 기준", "/about#grades"], ["가격 기준", "/about#price"], ["예측 정확도", "/about#how"], ["자료 출처", "/about#how"]]],
+  // 자주 묻는 질문은 서비스 소개 페이지의 "자주 묻는 질문"(#faq)으로, 누르면 그 질문이 펼쳐짐 (11-13)
+  ["❓", "자주 묻는 질문", [["가격 기준", "/about#faq-price"], ["등급 기준", "/about#faq-grade"], ["예측 정확도", "/about#faq-accuracy"], ["자료 출처", "/about#faq-source"], ["전체 질문 보기", "/about#faq"]]],
   ["✉️", "문의하기", [["contact@nongclock.kr", "/about#contact"], ["02-000-0000", "/about#contact"], ["평일 10:00~18:00", "/about#contact"]]],
 ];
 

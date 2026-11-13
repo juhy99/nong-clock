@@ -11,7 +11,7 @@ import "./recommend.css";
 
 /* ─────────────────────────────────────────────
    작물 추천 (v17, 11-11)  /recommend · /recommend?tab=info&crop=onion
-   - 입력: 시·도 · 재배 방식 · 면적 · 기존에 키우던 작물(흙 pH 어림) · 1년 임대료 · 심을 날짜(오늘~1년)
+   - 입력: 시·도 · 심을 날짜(오늘~1년) · 면적 · 기존에 키우던 작물(흙 pH 어림) · 1년 임대료 · 재배 방식 (11-13 날짜와 재배 방식 자리 바꿈)
    - 결과: 순이익 TOP3 카드. 추천 이유는 API 응답 값으로 만든 틀 문장만 (직접 쓴 설명 없음)
    - 작물 정보: 작물 고르기(드롭다운 검색) · 추천 결과 · 재배 조건 · 재배 달력 · 앞으로 12개월 예상 도매가
    ───────────────────────────────────────────── */
@@ -60,9 +60,9 @@ function LandForm({ form, onApply }) {
       <label className="rc-f"><span>시·도</span>
         <select className="input" value={d.region} onChange={(e) => set({ region: e.target.value })}>{SIDO_LIST.map((s) => <option key={s}>{s}</option>)}</select>
       </label>
-      <div className="rc-f wide"><span>재배 방식</span>
-        <div className="pills">{Object.entries(LAND_TYPES).map(([k, l]) => <button key={k} type="button" className={`pill ${d.type === k ? "on" : ""}`} onClick={() => set({ type: k })}>{l}</button>)}</div>
-      </div>
+      <label className="rc-f wide"><span>심을 날짜</span>
+        <input className="input" type="date" min={today} max={addDays(today, 365)} value={d.date} onChange={(e) => e.target.value && set({ date: e.target.value })} />
+      </label>
       <label className="rc-f"><span>면적 (평)</span>
         <input className="input" type="number" min="1" inputMode="numeric" value={d.area} onChange={(e) => set({ area: e.target.value })} />
       </label>
@@ -75,9 +75,9 @@ function LandForm({ form, onApply }) {
       <label className="rc-f"><span>임대료 (1년, 만원) <Info>임대료는 경영비에 더해 순수익에서 빼요. 내 땅이면 0을 넣으세요.</Info></span>
         <input className="input" type="number" min="0" inputMode="numeric" value={d.rent} onChange={(e) => set({ rent: e.target.value })} />
       </label>
-      <label className="rc-f"><span>심을 날짜</span>
-        <input className="input" type="date" min={today} max={addDays(today, 365)} value={d.date} onChange={(e) => e.target.value && set({ date: e.target.value })} />
-      </label>
+      <div className="rc-f"><span>재배 방식</span>
+        <div className="pills">{Object.entries(LAND_TYPES).map(([k, l]) => <button key={k} type="button" className={`pill ${d.type === k ? "on" : ""}`} onClick={() => set({ type: k })}>{l}</button>)}</div>
+      </div>
       <button type="button" className="btn primary rc-go" onClick={() => onApply(d)}>다시 추천받기 →</button>
     </section>
   );

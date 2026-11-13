@@ -242,11 +242,10 @@ function Result({ r }) {
             <div className="pv-ring" style={{ "--v": p.confidence }}><span>{p.confidence}%</span></div>
             <p>지난 검증 기간에 이 품목 {afterLabel(horizon)} 예측은<br />실제 가격과 평균 <b>±{Math.round(p.error_pct)}% 안</b>에서 맞았어요.</p>
           </div>
-          <ul className="pv-notes">
-            {p.alerts.map((a) => <li key={a.start}><span className="ic warn">⚠️</span>{md(a.start)}~{md(a.end)} 이상기후 주의 · 이 기간 예측은 참고만 하세요</li>)}
-            {p.reference === "baseline" && <li><span className="ic">🔖</span>이 품목·기간은 예측이 덜 정확해 참고용이에요</li>}
-            {!p.alerts.length && p.reference !== "baseline" && <li><span className="ic ok">✓</span>이 기간에는 이상기후 주의 구간이 없어요</li>}
-          </ul>
+          {/* 이상기후 주의 구간은 실제 모델이 붙을 때까지 숨김 (11-13, 지금 ml-api 값은 더미) */}
+          {p.reference === "baseline" && (
+            <ul className="pv-notes"><li><span className="ic">🔖</span>이 품목·기간은 예측이 덜 정확해 참고용이에요</li></ul>
+          )}
         </section>
       </div>
       {/* 계절 패턴 · 월별 반입량 (품목 단위, 전국) — 예시 데이터는 지금 시세 평균에 맞춰 크기 조정 */}

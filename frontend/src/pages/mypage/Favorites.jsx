@@ -56,7 +56,7 @@ export function FavoritePicker() {
     updateProfile({ favorites: favorites.includes(code) ? favorites.filter((c) => c !== code) : [...favorites, code] });
   return (
     <section className="card">
-      <SectionHead title="관심 품목" desc="탭해서 추가·해제 · 고른 품목은 위 가격 변동과 알림에 쓰여요" />
+      <SectionHead title="관심 품목" desc="탭해서 추가·해제 · 고른 품목은 위 가격 변동에 쓰여요" />
       <Async state={items}>
         {(rows) => (
           <div className="pills">

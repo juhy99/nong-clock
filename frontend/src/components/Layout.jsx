@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { DATA_SOURCE, ML_API_BASE, NEWS_URL } from "../api/client";
 import { onMlOffline } from "../api/ml";
-import { AUCTION_ENABLED } from "../features";
+import { AUCTION_ENABLED, NOTIFY_ENABLED } from "../features";
 import { recommendLink, suggest } from "../api/search";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
 import { Highlight } from "./common";
@@ -182,7 +182,7 @@ function Header() {
             <>
               {/* 관리자 화면은 별도 사이트 (/admin/) */}
               {isAdmin && <a className="btn sm hdr-admin" href="/admin/" target="_blank" rel="noreferrer">관리자 사이트 ↗</a>}
-              <NotificationBell user={user} />
+              {NOTIFY_ENABLED && <NotificationBell user={user} />}
               <NavLink to="/mypage" className="user-chip" title={`${user.name} · ${USER_TYPE_LABEL[user.type]}`}>
                 <b>{user.name}</b> <span className="muted">· 마이페이지</span>
               </NavLink>

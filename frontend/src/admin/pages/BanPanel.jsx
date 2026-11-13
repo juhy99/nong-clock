@@ -35,7 +35,7 @@ export default function BanPanel({ userId, name, onDone }) {
       <select className="input" value={days ?? ""} onChange={(e) => setDays(e.target.value ? Number(e.target.value) : null)} aria-label="제한 기간">
         {BAN_DAYS.map((d) => <option key={d ?? "forever"} value={d ?? ""}>{d ? `${d}일` : "영구"}</option>)}
       </select>
-      <input className="input" placeholder="제한 사유 (회원에게 전달됨)" value={reason} onChange={(e) => setReason(e.target.value)} />
+      <input className="input" placeholder="제한 사유 (회원이 댓글을 쓰려 할 때 보여요)" value={reason} onChange={(e) => setReason(e.target.value)} />
       <button className="btn sm danger" onClick={() => confirm(`${name} 님의 글·댓글 작성을 제한할까요?`) && run(() => banUser(userId, days, reason))}>제한하기</button>
       {error && <span className="hint error">{error}</span>}
     </div>

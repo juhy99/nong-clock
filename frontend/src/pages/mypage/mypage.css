@@ -16,6 +16,7 @@
 .mp-stats b { font-size: 32px; font-weight: 700; }
 .mp-stats b small { font-size: 16px; font-weight: 400; color: var(--muted); margin-left: 3px; }
 .mp-stats b.new { color: #d92d20; }
+.mp-stats.n3 { grid-template-columns: repeat(3, 1fr); } /* 알림 숨김: 3칸 */
 .mp-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .mp-col { display: grid; gap: 20px; min-width: 0; }
 .mp-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -63,4 +64,4 @@
 .mp-tg.on { background: #8cc49b; } .mp-tg.on::after { left: 21px; }
 .mp-danger { margin-top: 10px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 15px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; padding: 0; }
 @media (max-width: 1200px) { .mp-grid { grid-template-columns: 1fr; } .mp-favs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .mp-stats { grid-template-columns: 1fr 1fr; gap: 12px 0; } .mp-stats > *:nth-child(3) { border-left: 0; } .mp-btns { margin-left: 0; } }
+@media (max-width: 640px) { .mp-stats { grid-template-columns: 1fr 1fr; gap: 12px 0; } .mp-stats > *:nth-child(3) { border-left: 0; } .mp-stats.n3 { grid-template-columns: repeat(3, 1fr); } .mp-stats.n3 > * { padding: 2px 10px; } .mp-stats.n3 > *:nth-child(3) { border-left: 1px solid var(--line); } .mp-btns { margin-left: 0; } }

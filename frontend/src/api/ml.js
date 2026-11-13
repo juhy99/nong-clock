@@ -3,8 +3,7 @@
 import { ML_API_BASE, request } from "./client";
 import { HORIZONS, ITEMS, REGIONS } from "../mocks/catalog";
 import { MARKETS } from "../mocks/market";
-import { mockPredict, mockTopMovers } from "../mocks/prediction";
-import { mockCropInfo, mockCropList, mockPlantingDates, mockPricePath, mockRecommendCrops } from "../mocks/recommend";
+import { mockTopMovers } from "../mocks/prediction";
 
 const listeners = new Set();
 let offline = false;
@@ -42,8 +41,11 @@ export const getMarkets = () => withFallback(() => request(ML_API_BASE, "/market
 
 /** @param {{item: string, horizon: number, market?: string, base_date?: string, history_days?: number, last_year?: boolean}} req
  *  horizon 1~365, market = 도매시장 코드, base_date = 기준일(오늘~1년 전), history_days = 앞쪽 실제 시세 일수, last_year = 작년 같은 시기 (11-11) */
+// 가격 예측은 가짜 값으로 대신하지 않는다 (11-13): ML API 가 안 되면 오류를 보여 줌
 export const predict = (req) =>
-  withFallback(() => request(ML_API_BASE, "/predict", { method: "POST", body: req }), () => mockPredict(req));
+  withFallback(() => request(ML_API_BASE, "/predict", { method: "POST", body: req }), () => {
+    throw new Error("AI 예측 서버에 연결할 수 없어요. 잠시 뒤 다시 시도해 주세요.");
+  });
 
 export const getTopMovers = ({ horizon = 7, limit = 4 } = {}) =>
   withFallback(
@@ -52,22 +54,24 @@ export const getTopMovers = ({ horizon = 7, limit = 4 } = {}) =>
   );
 
 // ── 작물 추천 (docs/06_api_spec.md 1-6) ──
-export const getRecommendCrops = () => withFallback(() => request(ML_API_BASE, "/recommend/crops"), mockCropList);
+// 작물 추천 (11-13): 실제 자료(shared/crops.json + DB 예측)로 계산 — 서버가 안 되면 가짜 값 대신 오류를 보여 줌
+const noMock = () => { throw new Error("AI 서버에 연결할 수 없어요. 잠시 뒤 다시 시도해 주세요."); };
+export const getRecommendCrops = () => withFallback(() => request(ML_API_BASE, "/recommend/crops"), noMock);
 
 /** 내 땅으로 작물 고르기. @param {{lands: {type: string, area_pyeong: number}[], start_date: string}} req */
 export const recommendCrops = (req) =>
-  withFallback(() => request(ML_API_BASE, "/recommend/crops", { method: "POST", body: req }), () => mockRecommendCrops(req));
+  withFallback(() => request(ML_API_BASE, "/recommend/crops", { method: "POST", body: req }), noMock);
 
 /** 작물로 가장 좋은 심는 날 고르기. @param {{crop: string, area_pyeong: number}} req */
 export const recommendPlantingDates = (req) =>
-  withFallback(() => request(ML_API_BASE, "/recommend/planting-dates", { method: "POST", body: req }), () => mockPlantingDates(req));
+  withFallback(() => request(ML_API_BASE, "/recommend/planting-dates", { method: "POST", body: req }), noMock);
 
 /** 작물 정보 탭: 작형·수량·경영비 */
-export const getCropInfo = (code) => withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}`), () => mockCropInfo(code));
+export const getCropInfo = (code) => withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}`), noMock);
 
 /** 작물의 앞으로 12개월 예상 도매가 (주 단위 53점, 11-11) */
 export const getCropPricePath = (code) =>
-  withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}/prices`), () => mockPricePath(code));
+  withFallback(() => request(ML_API_BASE, `/recommend/crops/${code}/prices`), noMock);
 
 /** 개발자 페이지: 응답 속도까지 재는 상태 확인 */
 export async function pingMl() {

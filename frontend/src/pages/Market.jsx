@@ -346,6 +346,7 @@ function MarketShareCard({ item }) {
       </div>
       <Async state={state} minHeight={300}>
         {(d) => {
+          if (!d.markets.length) return <p className="hint">최근 12달 도매시장 거래 기록이 없어요.</p>;
           const prices = d.markets.map((m) => m.price);
           const hi = Math.max(...prices), lo = Math.min(...prices);
           const color = (m) => (view === "share" ? C_MID : m.price === hi ? C_HI : m.price === lo ? C_LO : C_MID);
@@ -411,6 +412,7 @@ function AuctionHouseCard({ item }) {
       </div>
       <Async state={state} minHeight={300}>
         {(d) => {
+          if (!d.houses.length) return <p className="hint">이 품목은 산지공판장 거래 기록이 없어요.</p>;
           const pages = Math.ceil(d.houses.length / PER), cur = Math.min(page, pages - 1);
           return (
             <>
@@ -440,13 +442,13 @@ function AuctionHouseCard({ item }) {
                   <thead><tr><th>공판장</th><th>시·도</th><th className="r">{d.period}</th><th className="r">{d.past} 대비</th><th className="r">물량 몫</th></tr></thead>
                   <tbody>
                     {d.houses.slice(cur * PER, cur * PER + PER).map((h) => {
-                      const diff = Math.round(((h.price - h.past_price) / h.past_price) * 1000) / 10;
+                      const diff = h.past_price ? Math.round(((h.price - h.past_price) / h.past_price) * 1000) / 10 : null; // 23~25년 거래가 없던 공판장은 비교 없음
                       return (
                         <tr key={h.name}>
                           <td>{h.name}<small className="sd">{h.sido}</small></td>
                           <td>{h.sido}</td>
                           <td className="r num"><b>{won(h.price)}</b></td>
-                          <td className={`r num ${diff > 0 ? "up" : diff < 0 ? "down" : ""}`}>{diff > 0 ? "▲" : diff < 0 ? "▼" : ""} {Math.abs(diff)}%</td>
+                          <td className={`r num ${diff > 0 ? "up" : diff < 0 ? "down" : ""}`}>{diff == null ? "–" : `${diff > 0 ? "▲" : diff < 0 ? "▼" : ""} ${Math.abs(diff)}%`}</td>
                           <td className="r num vol">{h.share_pct}%</td>
                         </tr>
                       );

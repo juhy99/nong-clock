@@ -172,7 +172,7 @@ function MarketCards({ series, horizon }) {
               const c = pct(f.price, m.base), best = f.t === m.bestRow.t && f.price > m.base; // 지금보다 비쌀 때만 출하 추천
               return (
                 <li key={f.t} className={best ? "best" : ""}>
-                  <span className="w"><b>{horizon <= 60 ? afterLabel(f.t) : `${Math.max(1, Math.round(f.t / 30.4))}개월 뒤`}{best && <em>출하 추천</em>}</b>{md(f.from)}~{md(f.date)}</span>
+                  <span className="w"><b>{horizon <= 60 ? afterLabel(f.t) : `${Math.max(1, Math.round(f.t / 30.4))}개월 뒤`}{best && <em>출하 추천</em>}{f.off_season && <em className="ref" title="출하철이 아닌 시기라 정확도를 확인하지 못한 값">참고</em>}</b>{md(f.from)}~{md(f.date)}</span>
                   <span className="rg">범위 {won(f.lower)} ~ {won(f.upper)}원</span>
                   <span className="pr">{won(f.price)}원<small className={c >= 0 ? "up" : "down"}>{signPct(c)}</small></span>
                 </li>
@@ -246,6 +246,13 @@ function Result({ r }) {
           {p.reference === "baseline" && (
             <ul className="pv-notes"><li><span className="ic">🔖</span>이 품목·기간은 예측이 덜 정확해 참고용이에요</li></ul>
           )}
+          {/* 11-13: 출하철 밖 날(두 모델 다 채점해 본 적 없는 달)은 참고값 — 고른 기간 안에 있으면 그 기간을 알려 줌 */}
+          {(() => {
+            const off = p.forecast.filter((f) => f.off_season);
+            return off.length > 0 && (
+              <ul className="pv-notes"><li><span className="ic">🔖</span>{md(off[0].date)}~{md(off.at(-1).date)} 중 출하철이 아닌 날은 정확도를 확인하지 못해 참고용이에요 (표의 ‘참고’)</li></ul>
+            );
+          })()}
         </section>
       </div>
       {/* 계절 패턴 · 월별 반입량 (품목 단위, 전국) — 예시 데이터는 지금 시세 평균에 맞춰 크기 조정 */}

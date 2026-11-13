@@ -162,7 +162,13 @@ def drop_entry_errors(a):
     n = a.groupby(keys).up.transform('size')
     ref = ref.where(n >= 10, a.code4.map(_wmed(a, ['code4'])))
     ok = (a.up >= ref / 10) & (a.up <= ref * 10)
-    return a[ok].copy()
+    # 11-13 추가 (팀원 규칙과 같은 생각): 무게를 크게 잘못 적은 줄이 금액까지 커서 그 달 금액 대부분을 차지하면 금액 가중 중앙값이
+    #   그 줄 쪽으로 끌려가 위 검사를 빠져나감 (예: 2024-04-11 브로콜리 20,661t × 6.8원/kg, 마늘 남도 19,411t × 10원/kg).
+    #   그래서 '줄 수' 기준 중앙 단가의 1/8 미만이면서 줄 물량이 중앙 물량의 8배를 넘는 줄도 뺌 (같은 달 같은 품목·품종, 줄 3개 이상)
+    cnt_med = a.groupby(keys).up.transform('median')
+    vol_med = a.groupby(keys).총물량.transform('median')
+    heavy_cheap = (n >= 3) & (a.up < cnt_med / 8) & (a.총물량 > vol_med * 8)
+    return a[ok & ~heavy_cheap].copy()
 
 
 def _prices_chunk(a, first, hist):

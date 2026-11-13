@@ -19,10 +19,10 @@ TABLES = [
     ('price_daily', ['date', 'market_code', 'item_code', 'grade']),
     ('price_origin_daily', ['date', 'market_code', 'item_code', 'origin_region_id', 'is_import']),
     ('price_unit_daily', ['date', 'unit_id']), ('retail_price_daily', ['date', 'item_code']),
-    ('price_index_daily', ['date', 'group_code']), ('market_factor', ['item_code', 'market_code', 'month']), ('price_forecast_monthly', ['base_month', 'item_code', 'variety_id', 'target_month']),
+    ('price_index_daily', ['date', 'group_code']), ('market_factor', ['item_code', 'market_code', 'month']), ('price_forecast_monthly', ['base_month', 'item_code', 'variety_id', 'target_month']), ('price_forecast_daily', ['base_date', 'item_code', 'variety_id', 'target_date']), ('production_yearly', ['supply_unit', 'year']),
     ('weather_daily', ['date', 'region_id']), ('weather_normal', ['region_id', 'month', 'day']),
     ('weather_region_now', ['base_time', 'region_id']), ('weather_warning_daily', ['date', 'region_id', 'warn_type']),
-    ('producer_price_daily', ['date', 'producer_code', 'item_code']),
+    ('producer', ['producer_code']), ('producer_price_daily', ['date', 'producer_code', 'item_code']), ('price_unit_market_monthly', ['month', 'market_code', 'unit_id']),
     ('garak_inout_daily', ['date', 'kind', 'garak_name', 'garak_code', 'item_code']),
     ('shipment_reservation_daily', ['date', 'market_code', 'item_code', 'variety_code']),
     ('fx_daily', ['date', 'currency_code']), ('policy_doc', ['doc_id']),
@@ -41,6 +41,10 @@ def connect():
                             password=os.getenv('PGPASSWORD', ''))
 
 
+# NC_REPLACE=표,표 : 그 표는 비우고 넣음 (전 기간 파일일 때만)
+REPLACE = {s.strip() for s in os.getenv('NC_REPLACE', '').split(',') if s.strip()}
+
+
 def load(cur, name, keys):
     f = C.OUT / f'{name}.csv'
     if not f.exists():
@@ -53,6 +57,12 @@ def load(cur, name, keys):
         cur.execute('ALTER TABLE _t ALTER COLUMN log_id DROP NOT NULL')
     with f.open(encoding='utf-8') as fh:
         cur.copy_expert(f"COPY _t ({','.join(map(q, cols))}) FROM STDIN WITH (FORMAT csv, HEADER true, NULL '')", fh)
+    if name in REPLACE:   # 표를 비우고 통째로 다시 넣기 (11-12, 단위 정의를 바꾼 뒤 옛 줄이 남지 않게). 파일 줄이 너무 적으면 안 비움
+        cur.execute('SELECT count(*) FROM _t'); n_new = cur.fetchone()[0]
+        if n_new >= 100000:
+            cur.execute(f'TRUNCATE {name}'); print(f'  {name}: 비우고 다시 넣음 ({n_new:,}줄)')
+        else:
+            print(f'  {name}: 파일이 {n_new:,}줄뿐이라 비우지 않고 덮어쓰기만 함')
     upd = [c for c in cols if c not in keys]
     set_ = ', '.join(f'{q(c)} = EXCLUDED.{q(c)}' for c in upd) or None
     k = ','.join(map(q, keys))   # 같은 키가 파일에 두 번 있으면 마지막 줄만 (ctid 순서)

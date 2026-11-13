@@ -28,6 +28,7 @@ class PricePoint(BaseModel):
 class ForecastPoint(PricePoint):
     lower: int = Field(description="예측 오차범위 하단")
     upper: int = Field(description="예측 오차범위 상단")
+    off_season: bool = Field(False, description="출하철 밖 날 — 두 모델 다 채점해 본 적 없는 달이라 참고용 (11-13, DB 예측 표 off_season)")
 
 
 class WeatherAlert(BaseModel):

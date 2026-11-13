@@ -50,7 +50,8 @@ const liveProxy = (env) => {
 // 서버 화면에서는 nginx 가 같은 일을 한다 (frontend/nginx.conf). 주소(Host)를 바꾸지 않고 넘겨야 Spring 이 같은 사이트 요청으로 보고 CORS 로 막지 않는다
 // 시세(VITE_PRICE_SOURCE=db)도 /api/prices… 라서 같은 길로 Spring 에 넘긴다
 const springProxy = (env) =>
-  env.VITE_AUTH === "spring" || (env.VITE_PRICE_SOURCE === "db" && !env.VITE_PRICE_API_BASE) ? { "/api": { target: env.SPRING_URL || "http://localhost:8080" } } : {};
+  // 11-13: 시세 기본값이 db 가 됨 (client.js) → VITE_PRICE_SOURCE=mock 이 아닐 때는 늘 넘긴다
+  env.VITE_AUTH === "spring" || (env.VITE_PRICE_SOURCE !== "mock" && !env.VITE_PRICE_API_BASE) ? { "/api": { target: env.SPRING_URL || "http://localhost:8080" } } : {};
 
 // 테스트 모드: 뉴스 수집기(collector/news)가 저장한 기사 파일을 /live/collected-news 로 보여준다. 파일이 없으면 404 → 화면이 네이버를 직접 부름
 const collectedNews = (env) => ({

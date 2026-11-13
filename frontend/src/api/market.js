@@ -90,11 +90,11 @@ export const getMarketCompare = (item) => (REAL ? real("/prices/{item}/markets")
 /** 홈 날씨 지도: 시·도 17곳의 오늘 날씨와 특보 (테스트 모드에서는 기상청 실제 값) */
 export const getRegionalWeather = () => (DATA_SOURCE === "live" ? liveRegionalWeather() : fake(mockRegionalWeather()));
 
-/** [샘플] 계절 패턴 · 월별 반입량 (가격 예측 화면). 아직 Spring API 없음 → 예시 데이터. 제안: GET /api/prices/{item}/monthly */
-export const getSeasonal = (item, { anchor } = {}) => fake(mockSeasonal(item, { anchor }));
+/** 계절 패턴 · 월별 반입량 (가격 예측 화면). Spring GET /api/prices/{item}/monthly (11-13): 평년 · 올해 실제 · 남은 달 예측. mock 모드만 예시 데이터 */
+export const getSeasonal = (item, { anchor } = {}) => (REAL ? real("/prices/{item}/monthly")(item) : fake(mockSeasonal(item, { anchor })));
 
-// [샘플] 시세 화면 맨 아래 두 카드 — 고른 시장과 상관없이 품목·품종만. 아직 Spring API 없음 → 예시 데이터 (품종은 품종 계수를 곱함)
-// 실제 연결 제안: GET /api/prices/{item}/market-share · GET /api/prices/{item}/auction-houses (?variety=)
+// 시세 화면 맨 아래 두 카드 — 고른 시장과 상관없이 품목·품종만. VITE_PRICE_SOURCE=db 면 Spring(11-12), 아니면 [샘플] 예시 데이터 (품종은 품종 계수를 곱함)
+// Spring: GET /api/prices/{item}/market-share?variety= (품종은 시장 × 품종 월 표) · GET /api/prices/{item}/auction-houses (산지는 품종 자료가 없어 품목 값)
 const scaleBy = (key, d, rows, fields) => { const f = varietyFactor(split(key).variety); return { ...d, [rows]: d[rows].map((r) => ({ ...r, ...Object.fromEntries(fields.map((k) => [k, Math.round(r[k] * f)])) })) }; };
-export const getMarketShare = (key) => fake(mockMarketShare(split(key).item)).then((d) => { const s = scaleBy(key, d, "markets", ["price"]); return { ...s, weighted_avg: Math.round(d.weighted_avg * varietyFactor(split(key).variety)) }; });
-export const getAuctionHouses = (key) => fake(mockAuctionHouses(split(key).item)).then((d) => scaleBy(key, d, "houses", ["price", "past_price"]));
+export const getMarketShare = (key) => REAL ? real("/prices/{item}/market-share")(key) : fake(mockMarketShare(split(key).item)).then((d) => { const s = scaleBy(key, d, "markets", ["price"]); return { ...s, weighted_avg: Math.round(d.weighted_avg * varietyFactor(split(key).variety)) }; });
+export const getAuctionHouses = (key) => REAL ? real("/prices/{item}/auction-houses")(key) : fake(mockAuctionHouses(split(key).item)).then((d) => scaleBy(key, d, "houses", ["price", "past_price"]));

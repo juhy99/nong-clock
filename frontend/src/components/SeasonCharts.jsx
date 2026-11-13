@@ -5,7 +5,7 @@ import { won } from "../utils/format";
 /* 가격 예측 화면 아래 "계절 패턴 · 월별 반입량" 두 카드 (11-12 샘플)
    계절 패턴: 월평균 경락가 — 평년(최근 5년 평균, 회색) · 올해 실제(검정) · 남은 달 예측(주황 점선)
    월별 반입량: 도매시장에 들어온 양(톤) — 평년 · 올해 (이번 달은 오늘까지라 속이 빈 점)
-   데이터: getSeasonal(item) — 지금은 예시 데이터 (Spring API 생기면 api/market.js 안쪽만 바꿈) */
+   데이터: getSeasonal(item) — Spring GET /api/prices/{item}/monthly (11-13, 철 밖 달 = 물량이 가장 많은 달의 2% 미만은 가격 비움) */
 const C = { normal: "#7c867f", actual: "#13261a", forecast: "#d9600b" };
 const niceStep = (range) => [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].find((s) => range / s <= 5) ?? 50000;
 
@@ -13,6 +13,7 @@ function MonthChart({ lines, label, unit }) {
   const narrow = useNarrow();
   const W = narrow ? 420 : 640, H = narrow ? 300 : 280, L = narrow ? 58 : 66, R = 16, T = 18, B = 34;
   const vals = lines.flatMap((l) => l.data.filter((v) => v != null));
+  if (!vals.length) return <p className="hint">이 품목은 월별 자료가 없어요.</p>;
   const step = niceStep(Math.max(...vals) - Math.min(0, ...vals) || 1);
   const lo = unit === "톤" ? 0 : Math.floor(Math.min(...vals) / step) * step; // 물량은 0부터
   const hi = Math.ceil(Math.max(...vals) / step) * step;

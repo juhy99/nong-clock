@@ -55,6 +55,8 @@ def top_movers(
             p = predictor.predict(code, market, horizon, today)
         except NoForecast:
             continue  # 이 기간 예측 없는 품목은 빼고 (DB 예측기)
+        if p.forecast and p.forecast[-1].off_season:
+            continue  # 11-13: 그날이 출하철 밖(정확도를 모르는 참고값)인 품목은 홈 급등락 카드에 올리지 않음
         movers.append(
             TopMover(
                 item=p.item,

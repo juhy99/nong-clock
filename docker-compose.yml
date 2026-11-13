@@ -6,8 +6,10 @@ services:
       POSTGRES_DB: farmdb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    # 11-13 보안: DB 는 이 컴퓨터 안(127.0.0.1)에서만 열림 — 같은 와이파이의 다른 컴퓨터가 5432 로 들어오지 못하게.
+    # 컨테이너끼리(backend · ml-api · 수집기)는 도커 내부망으로 그대로 됨. 다른 PC 에서 DB 에 꼭 붙어야 하면 서버 .env 에 DB_BIND=0.0.0.0 (끝나면 지우기)
     ports:
-      - "5432:5432"
+      - "${DB_BIND:-127.0.0.1}:5432:5432"
     volumes:
       - ./db/init:/docker-entrypoint-initdb.d
       - pgdata:/var/lib/postgresql/data
@@ -42,15 +44,16 @@ services:
       MODEL_VERSION: ${MODEL_VERSION:-dummy-0.1}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
       ENABLE_REGIONAL_FORECAST: ${ENABLE_REGIONAL_FORECAST:-false}
-      # 예측기 (11-11): dummy(가짜, 기본) · db(DB 실제 시세 + price_forecast_monthly 월 예측). 내 PC 시험 bat 은 db 로 켬
-      PREDICTOR: ${PREDICTOR:-dummy}
+      # 예측기: db(DB 실제 시세 + price_forecast_daily 일 단위 예측, 기본 11-13) · dummy(가짜)
+      PREDICTOR: ${PREDICTOR:-db}
       PGHOST: db
       PGPORT: "5432"
       PGDATABASE: farmdb
       PGUSER: postgres
       PGPASSWORD: ${DB_PASSWORD}
+    # 11-13 보안: ml-api 도 이 컴퓨터 안에서만. 밖에서는 nginx 의 /ml/ (요청 수 제한이 걸린 길)로만. 직접 열어야 하면 ML_BIND=0.0.0.0
     ports:
-      - "8000:8000"
+      - "${ML_BIND:-127.0.0.1}:8000:8000"
     depends_on:
       - db
     restart: unless-stopped
@@ -106,7 +109,7 @@ services:
       dockerfile: frontend/Dockerfile
       args:  # 배포 버전 (deploy/deploy.ps1 이 채움, 관리자 화면에 표시) · 회원 기능 mock/spring (서버 .env 의 AUTH_MODE)
         VITE_AUTH: ${AUTH_MODE:-mock}
-        VITE_PRICE_SOURCE: ${PRICE_SOURCE:-mock}  # 시세: mock(가짜) · db(Spring /api/prices… 가 DB 를 읽음)
+        VITE_PRICE_SOURCE: ${PRICE_SOURCE:-db}  # 시세: db(Spring /api/prices… 가 DB 를 읽음, 기본 11-13) · mock(가짜)
         VITE_ENABLE_AUCTION: ${ENABLE_AUCTION:-false}
         BUILD_SHA: ${BUILD_SHA:-}
         BUILD_MSG: ${BUILD_MSG:-}

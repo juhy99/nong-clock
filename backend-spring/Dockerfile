@@ -8,5 +8,8 @@ RUN gradle bootJar --no-daemon -q
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
+# 11-13 보안: 관리자(root)가 아닌 일반 사용자로 실행 — 혹시 뚫려도 컨테이너 안에서 할 수 있는 일이 적게
+RUN useradd --system --uid 1001 --no-create-home spring
+USER spring
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -441,4 +441,160 @@ public class PriceService {
                 .limit(5).map(r -> obj("market", r.get("name"), "price", won(r.get("price")))).toList();
         return obj("item", item, "unit", "kg", "markets", ms);
     }
+
+    // ───────── 시세 화면 맨 아래 "도매시장 · 산지" 두 카드 (11-12, 화면 PR #40) ─────────
+    // 위에서 고른 시장과 상관없이 품목(또는 품종)만 · 최근 12달. 응답 모양은 frontend/src/mocks/market.js 의 mockMarketShare · mockAuctionHouses 와 같다
+    private static final int TOP = 8;
+
+    /**
+     * 도매시장별 최근 12달 평균 경락가 · 물량 몫 (물량 많은 시장 8곳) + 물량 가중 평균(전체 시장).
+     * 품목: price_daily(시장 × 품목, grade='ALL', 국산) — 그 품목 전국 마지막 거래일부터 365일.
+     * 품종: price_unit_market_monthly(시장 × 예측 단위 × 달) — 마지막 달 포함 12달. 평균 경락가 = 금액 합 ÷ 물량 합
+     */
+    public Map<String, Object> marketShare(String item, List<Integer> unitIds) {
+        List<Map<String, Object>> rows;
+        Object from, to;
+        if (unitIds != null) {
+            Map<String, Object> span = db.rows("SELECT max(month) AS b FROM price_unit_market_monthly WHERE unit_id IN (:u)", p("u", unitIds)).get(0);
+            LocalDate last = date(span.get("b"));
+            if (last == null) return obj("item", item, "period", "최근 12달", "markets", List.of(), "market_count", 0, "weighted_avg", null, "sample", false);
+            LocalDate first = last.minusMonths(11);
+            rows = db.rows("SELECT u.market_code AS code, m.name AS market, sum(u.amount_won) AS a, sum(u.volume_kg) AS v FROM price_unit_market_monthly u "
+                    + "JOIN market m ON m.market_code = u.market_code WHERE u.unit_id IN (:u) AND u.month BETWEEN :a AND :b GROUP BY u.market_code, m.name",
+                    p("u", unitIds, "a", first, "b", last));
+            from = iso(first); to = iso(last.plusMonths(1).minusDays(1));
+        } else {
+            Map<String, Object> span = db.rows("SELECT max(date) AS b FROM price_daily WHERE item_code = :i AND market_code = 'national' AND grade = 'ALL'", p("i", item)).get(0);
+            LocalDate last = date(span.get("b"));
+            if (last == null) return obj("item", item, "period", "최근 12달", "markets", List.of(), "market_count", 0, "weighted_avg", null, "sample", false);
+            rows = db.rows("SELECT p.market_code AS code, m.name AS market, sum(p.amount_won) AS a, sum(p.volume_kg) AS v FROM price_daily p "
+                    + "JOIN market m ON m.market_code = p.market_code WHERE p.item_code = :i AND p.grade = 'ALL' AND p.market_code <> 'national' "
+                    + "AND p.date > :a AND p.date <= :b GROUP BY p.market_code, m.name", p("i", item, "a", last.minusDays(365), "b", last));
+            from = iso(last.minusDays(364)); to = iso(last);
+        }
+        double va = 0, vv = 0;
+        List<Map<String, Object>> ms = new ArrayList<>();
+        for (Map<String, Object> r : rows) {
+            Double a = num(r.get("a")), v = num(r.get("v"));
+            if (a == null || v == null || v <= 0) continue;
+            va += a; vv += v;
+            ms.add(obj("market", r.get("market"), "code", r.get("code"), "price", (int) Math.round(a / v), "_v", v));
+        }
+        final double tot = vv;
+        ms.sort((x, y) -> Double.compare((double) y.get("_v"), (double) x.get("_v")));
+        ms.forEach(m -> m.put("share_pct", round1((double) m.remove("_v") * 100 / tot)));
+        return obj("item", item, "period", "최근 12달", "from", from, "to", to, "markets", ms.subList(0, Math.min(TOP, ms.size())),
+                "market_count", ms.size(), "weighted_avg", vv > 0 ? (int) Math.round(va / vv) : null, "variety_applied", unitIds != null, "sample", false);
+    }
+
+    /** 공판장 이름 → 그래프용 짧은 이름 (예: 군산원예농업협동조합 → 군산원예, 제주시농협농산물공판장 → 제주시) */
+    static String shortName(String name) {
+        if (name == null) return "";
+        String s = name.replaceAll("(농업협동조합|원협|농협|축협|조합|공판장|\\().*$", "").trim();
+        return s.isEmpty() ? name : s;
+    }
+
+    /**
+     * 산지공판장 최근 12달 평균 경락가 · 23~25년 평균 · 물량 몫 (물량 많은 공판장 8곳). 표: producer_price_daily + producer(시·도).
+     * 최근 12달 = 그 품목 산지 자료 마지막 날부터 365일. 품종별 산지 가격은 원자료에 없어서 품목 값 (variety_applied = false)
+     */
+    public Map<String, Object> auctionHouses(String item) {
+        LocalDate last = date(db.rows("SELECT max(date) AS b FROM producer_price_daily WHERE item_code = :i AND producer_code <> 'national'", p("i", item)).get(0).get("b"));
+        if (last == null) return obj("item", item, "period", "최근 12달", "past", "23~25년", "houses", List.of(), "sample", false);
+        String q = "SELECT d.producer_code AS code, max(d.producer_name) AS name, max(r.sido) AS sido, sum(d.amount_won) AS a, sum(d.volume_kg) AS v "
+                + "FROM producer_price_daily d LEFT JOIN producer r ON r.producer_code = d.producer_code "
+                + "WHERE d.item_code = :i AND d.producer_code <> 'national' AND d.date BETWEEN :a AND :b GROUP BY d.producer_code";
+        List<Map<String, Object>> now = db.rows(q, p("i", item, "a", last.minusDays(364), "b", last));
+        Map<String, Integer> past = new HashMap<>();
+        for (Map<String, Object> r : db.rows(q, p("i", item, "a", LocalDate.of(2023, 1, 1), "b", LocalDate.of(2025, 12, 31)))) {
+            Double a = num(r.get("a")), v = num(r.get("v"));
+            if (a != null && v != null && v > 0) past.put((String) r.get("code"), (int) Math.round(a / v));
+        }
+        double tot = now.stream().mapToDouble(r -> Optional.ofNullable(num(r.get("v"))).orElse(0.0)).sum();
+        List<Map<String, Object>> hs = now.stream().filter(r -> num(r.get("v")) != null && num(r.get("v")) > 0 && num(r.get("a")) != null)
+                .sorted((x, y) -> Double.compare(num(y.get("v")), num(x.get("v")))).limit(TOP)
+                .map(r -> obj("name", r.get("name"), "short", shortName((String) r.get("name")), "sido", r.get("sido"),
+                        "price", (int) Math.round(num(r.get("a")) / num(r.get("v"))), "past_price", past.get((String) r.get("code")),
+                        "share_pct", round1(num(r.get("v")) * 100 / tot)))
+                .collect(Collectors.toList());
+        return obj("item", item, "period", "최근 12달", "past", "23~25년", "from", iso(last.minusDays(364)), "to", iso(last),
+                "houses", hs, "variety_applied", false, "sample", false);
+    }
+
+    // ───────── 가격 예측 화면 "계절 패턴 · 월별 반입량" (11-13) ─────────
+    /**
+     * 월별 평균 경락가·반입량: 평년(올해 빼고 최근 5년, 해마다 그 달 값의 평균) · 올해 실제(마지막 거래 달까지) · 남은 달 예측(price_forecast_daily 의 그 달 하루 값 평균).
+     * 품목: price_daily(전국, grade='ALL') — /ai 의 기준가와 같은 표. 품종: price_unit_daily 의 예측 단위들 금액 합 ÷ 물량 합.
+     * 응답 모양은 frontend/src/mocks/seasonal.js 와 같다 (sample = false). 올해 = 그 품목 마지막 거래일의 해
+     */
+    private static final double THIN = 0.02;
+
+    public Map<String, Object> monthly(String item, String variety, List<Integer> unitIds) {
+        LocalDate last = unitIds != null
+                ? date(db.rows("SELECT max(date) AS b FROM price_unit_daily WHERE unit_id IN (:u)", p("u", unitIds)).get(0).get("b"))
+                : date(db.rows("SELECT max(date) AS b FROM price_daily WHERE item_code = :i AND market_code = 'national' AND grade = 'ALL'", p("i", item)).get(0).get("b"));
+        if (last == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "이 품목의 시세가 DB 에 없습니다: " + item);
+        int year = last.getYear(), cur = last.getMonthValue();
+        LocalDate from = LocalDate.of(year - 5, 1, 1);
+        List<Map<String, Object>> rows = unitIds != null
+                ? db.rows("SELECT extract(year FROM date)::int AS y, extract(month FROM date)::int AS m, sum(amount_won) AS a, sum(volume_kg) AS v "
+                        + "FROM price_unit_daily WHERE unit_id IN (:u) AND date BETWEEN :a AND :b GROUP BY 1, 2", p("u", unitIds, "a", from, "b", last))
+                : db.rows("SELECT extract(year FROM date)::int AS y, extract(month FROM date)::int AS m, sum(amount_won) AS a, sum(volume_kg) AS v "
+                        + "FROM price_daily WHERE item_code = :i AND market_code = 'national' AND grade = 'ALL' AND date BETWEEN :a AND :b GROUP BY 1, 2",
+                        p("i", item, "a", from, "b", last));
+        double[] nP = new double[13], nV = new double[13];
+        int[] nPc = new int[13], nVc = new int[13];
+        Integer[] aP = new Integer[12], fP = new Integer[12];
+        Double[] aV = new Double[12];
+        for (Map<String, Object> r : rows) {
+            int y = num(r.get("y")).intValue(), m = num(r.get("m")).intValue();
+            Double a = num(r.get("a")), v = num(r.get("v"));
+            if (v == null || v <= 0) continue;
+            if (y == year) {
+                aV[m - 1] = ton(v);
+                if (a != null) aP[m - 1] = (int) Math.round(a / v);
+            } else {
+                nV[m] += v / 1000; nVc[m]++;
+                if (a != null) { nP[m] += a / v; nPc[m]++; }
+            }
+        }
+        // 물량이 가장 많은 달의 2% 도 안 되는 달은 몇 kg 거래로 값이 튀어서 가격을 비움 (철 밖 달, 11-13)
+        double nMax = 0, aMax = 0;
+        for (int m = 1; m <= 12; m++) {
+            if (nVc[m] > 0) nMax = Math.max(nMax, nV[m] / nVc[m]);
+            if (aV[m - 1] != null) aMax = Math.max(aMax, aV[m - 1]);
+        }
+        for (int m = 0; m < cur - 1; m++) if (aV[m] != null && aV[m] < aMax * THIN) aP[m] = null; // 이번 달은 아직 덜 차서 빼고
+        List<Integer> normal = new ArrayList<>();
+        List<Double> vNormal = new ArrayList<>();
+        for (int m = 1; m <= 12; m++) {
+            normal.add(nPc[m] > 0 && nV[m] / nVc[m] >= nMax * THIN ? (int) Math.round(nP[m] / nPc[m]) : null);
+            vNormal.add(nVc[m] > 0 ? round1(nV[m] / nVc[m]) : null);
+        }
+        // 예측: 오늘 이전에 만든 가장 최근 기준일의 예측 표. 표가 없는 DB(예전 판)면 예측 없이
+        String vid = variety == null || variety.isBlank() ? "ALL" : variety;
+        try {
+            for (Map<String, Object> r : db.rows("SELECT extract(month FROM target_date)::int AS m, avg(price) AS p FROM price_forecast_daily "
+                    + "WHERE item_code = :i AND variety_id = :v AND base_date = (SELECT max(base_date) FROM price_forecast_daily WHERE item_code = :i AND variety_id = :v AND base_date <= :t) "
+                    + "AND extract(year FROM target_date) = :y AND extract(month FROM target_date) > :c GROUP BY 1", p("i", item, "v", vid, "t", LocalDate.now(), "y", year, "c", cur))) {
+                fP[num(r.get("m")).intValue() - 1] = won(r.get("p"));
+            }
+        } catch (RuntimeException e) {
+            // price_forecast_daily 가 없으면 예측 칸은 비움
+        }
+        fP[cur - 1] = aP[cur - 1]; // 예측 점선은 이번 달 실제 점에서 시작
+        boolean anyForecast = false;
+        for (int m = cur; m < 12; m++) anyForecast |= fP[m] != null;
+        List<Integer> actual = new ArrayList<>(), forecast = new ArrayList<>();
+        List<Double> vActual = new ArrayList<>();
+        for (int m = 0; m < 12; m++) {
+            actual.add(m < cur ? aP[m] : null);
+            vActual.add(m < cur ? aV[m] : null);
+            forecast.add(m >= cur - 1 && anyForecast && (m == cur - 1 || normal.get(m) != null) ? fP[m] : null); // 평년 가격이 빈 달(철 밖)은 예측도 비움
+        }
+        return obj("item", item, "variety", vid, "year", year, "current_month", cur, "last_date", iso(last), "normal_years", List.of(year - 5, year - 1),
+                "price", obj("normal", normal, "actual", actual, "forecast", forecast),
+                "volume", obj("normal", vNormal, "actual", vActual, "partial_month", last.lengthOfMonth() == last.getDayOfMonth() ? null : cur),
+                "source", "공영도매시장 경매원장 " + (year - 5) + "~" + year + " 월별 · 예측 = 일 단위 예측 표", "sample", false);
+    }
 }

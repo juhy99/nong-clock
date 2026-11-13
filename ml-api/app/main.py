@@ -9,8 +9,8 @@ app = FastAPI(title=APP_NAME, version=MODEL_VERSION)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],      # 11-13 보안: 화면이 쓰는 것만 (예전 "*")
+    allow_headers=["Content-Type"],
 )
 
 app.include_router(catalog.router)

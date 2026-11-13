@@ -1,7 +1,8 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.0'
-    id 'io.spring.dependency-management' version '1.1.4'
+    // 11-13 보안: 3.2.0(2023-11, 지원 끝, 알려진 취약점 있음) → 3.5 최신 패치. 3.x 안에서만 올림 (4.x 는 큰 변경이라 안 함)
+    id 'org.springframework.boot' version '3.5.16'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.farm'

@@ -31,6 +31,8 @@ import java.util.Set;
 @RequestMapping("/api/posts")
 public class PostController {
     private static final String VIEWED = "viewedPosts";
+    private static final int MAX_QUERY = 100;   // 검색어 최대 글자 수 (11-13: 아주 긴 검색어로 DB 를 오래 붙잡지 않게)
+    private static final int MAX_VIEWED = 1000; // 세션 하나가 기억하는 본 글 수 (11-13: 세션 메모리가 끝없이 늘지 않게)
 
     private final PostService postService;
 
@@ -41,6 +43,7 @@ public class PostController {
     @GetMapping
     public PostPage list(@RequestParam(required = false) String category, @RequestParam(required = false) String q,
                          @RequestParam(defaultValue = "1") int page) {
+        if (q != null && q.length() > MAX_QUERY) q = q.substring(0, MAX_QUERY);
         return postService.list(category, q, page);
     }
 
@@ -74,6 +77,7 @@ public class PostController {
         HttpSession session = request.getSession(true);
         Set<Long> seen = (Set<Long>) session.getAttribute(VIEWED);
         if (seen == null) seen = new HashSet<>();
+        if (seen.size() >= MAX_VIEWED && !seen.contains(id)) return false; // 상한에 닿으면 더 세지 않음
         boolean first = seen.add(id);
         session.setAttribute(VIEWED, seen);
         return first;

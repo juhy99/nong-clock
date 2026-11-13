@@ -89,4 +89,22 @@ public class PriceController {
     public Map<String, Object> compare(@PathVariable String item) {
         return prices.compare(item);
     }
+
+    /** 도매시장별 최근 12달 평균 경락가 · 물량 몫 (시세 화면 맨 아래, 11-12). 품종을 주면 그 품종 (시장 × 품종 월 표) */
+    @GetMapping("/prices/{item}/market-share")
+    public Map<String, Object> marketShare(@PathVariable String item, @RequestParam(required = false) String variety) {
+        return prices.marketShare(item, units(variety, "national"));
+    }
+
+    /** 산지공판장 최근 12달 · 23~25년 평균 경락가 · 물량 몫 (시세 화면 맨 아래, 11-12). 품종별 산지 자료가 없어 품목 값 */
+    @GetMapping("/prices/{item}/auction-houses")
+    public Map<String, Object> auctionHouses(@PathVariable String item, @RequestParam(required = false) String variety) {
+        return prices.auctionHouses(item);
+    }
+
+    /** 가격 예측 화면의 계절 패턴 · 월별 반입량 (11-13): 평년 · 올해 실제 · 남은 달 예측. 품종을 주면 그 품종 */
+    @GetMapping("/prices/{item}/monthly")
+    public Map<String, Object> monthly(@PathVariable String item, @RequestParam(required = false) String variety) {
+        return prices.monthly(item, variety, units(variety, "national"));
+    }
 }

@@ -10,8 +10,8 @@ ARG VITE_ML_API_BASE=/ml
 ARG VITE_NEWS_URL=/data/news-recent.json
 # 회원 기능: mock(가짜 계정, 기본) · spring(/api → backend). 서버 .env 의 AUTH_MODE (deploy/README.md "회원 백엔드 켜기")
 ARG VITE_AUTH=mock
-# 시세: mock(가짜, 기본) · db(/api/prices… → backend 가 DB 를 읽음). 서버 .env 의 PRICE_SOURCE
-ARG VITE_PRICE_SOURCE=mock
+# 시세: db(/api/prices… → backend 가 DB 를 읽음, 기본 11-13) · mock(가짜). 서버 .env 의 PRICE_SOURCE
+ARG VITE_PRICE_SOURCE=db
 # 경매 보류 중: 기본 꺼짐 (켜려면 true)
 ARG VITE_ENABLE_AUCTION=false
 # 배포 버전 (deploy.ps1 → docker-compose 의 build args). 관리자 화면에 표시

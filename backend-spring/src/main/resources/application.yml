@@ -1,5 +1,7 @@
 # 로그인 세션 (11-10): 브라우저에는 세션 번호 쿠키만. 자바스크립트로 못 읽게(http-only), 다른 사이트에서 온 요청엔 안 붙게(same-site lax)
 server:
+  # nginx 뒤에서 진짜 접속 IP 를 쓰기 (11-13): nginx 가 넘긴 X-Forwarded-For 를 request.getRemoteAddr() 로 (요청 수 제한 RateLimitFilter 가 씀)
+  forward-headers-strategy: native
   servlet:
     session:
       timeout: 12h          # 12시간 동안 아무 요청이 없으면 로그아웃

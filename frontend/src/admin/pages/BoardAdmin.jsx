@@ -6,6 +6,7 @@ import Photo from "../../components/Photo";
 import { dateTime } from "../../utils/format";
 import { SITE_URL } from "../siteUrl";
 import BanPanel from "./BanPanel";
+import { NOTIFY_ENABLED } from "../../features";
 
 /** 이용 제한 중인 회원 */
 function BannedUsers({ version, onChange }) {
@@ -39,7 +40,7 @@ function PostComments({ postId, onChange }) {
   const state = useAsync(() => getPostComments(postId), [postId]);
   const [banFor, setBanFor] = useState(null);
   async function remove(c) {
-    const reason = prompt("댓글을 지우는 사유 (작성자에게 전달됩니다)", "운영 정책 위반");
+    const reason = prompt(NOTIFY_ENABLED ? "댓글을 지우는 사유 (작성자에게 전달됩니다)" : "댓글을 지우는 사유 (관리 기록용)", "운영 정책 위반");
     if (reason === null) return;
     await deleteComment(user, c.id, reason);
     state.reload();
@@ -106,7 +107,7 @@ export default function BoardAdmin() {
     <section className="card">
       <SectionHead
         title="게시판 관리"
-        desc="숨긴 글은 사용자에게 보이지 않고, 숨김·삭제 사유는 작성자에게 알림으로 전달됩니다 · 공지는 '공지사항' 메뉴에서 작성"
+        desc={`숨긴 글은 사용자에게 보이지 않아요${NOTIFY_ENABLED ? " · 숨김·삭제 사유는 작성자에게 알림으로 전달돼요" : ""} · 공지는 '공지사항' 메뉴에서 작성`}
       />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
         <select className="input" style={{ maxWidth: 140 }} value={cat} onChange={(e) => setCat(e.target.value)} aria-label="말머리">
@@ -161,7 +162,7 @@ export default function BoardAdmin() {
                                 </div>
                               )}
                               {p.hidden && <div className="small muted">숨김 사유: {p.hidden_reason}</div>}
-                              <input className="input" placeholder="사유 (숨김은 필수, 작성자에게 전달됨)" value={reason} onChange={(e) => setReason(e.target.value)} />
+                              <input className="input" placeholder={NOTIFY_ENABLED ? "사유 (숨김은 필수, 작성자에게 전달됨)" : "사유 (숨김은 필수, 관리 기록용)"} value={reason} onChange={(e) => setReason(e.target.value)} />
                               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                                 {!p.hidden && <a className="btn sm" href={`${SITE_URL}/board/${p.id}`} target="_blank" rel="noreferrer">사이트에서 보기 ↗</a>}
                                 {p.hidden ? (

@@ -5,7 +5,7 @@ import { NEWS_CATEGORIES, NEWS_PAGE_SIZE, getNews, getNewsMostCovered, getNewsTr
 import { useAuth } from "../components/AuthContext";
 import { Async, PctChange, useAsync } from "../components/common";
 import ItemImage from "../components/ItemImage";
-import { NewsArticle, NewsSource, NewsTrend, NewsUpdated } from "../components/NewsParts";
+import { NewsArticle, NewsTrend, NewsUpdated } from "../components/NewsParts";
 import { dayLabel } from "../utils/format";
 
 const ITEM_CHIPS = 8; // 나머지는 "+N" 을 눌러 펼친다
@@ -182,7 +182,6 @@ export default function News() {
             {trend.data && <NewsTrend rows={trend.data} active={item} onPick={(c) => go({ item: item === c ? "" : c })} />}
           </div>
           <NewsWithForecast top={trend.data?.[0]} />
-          <NewsSource />
         </aside>
       </div>
     </div>

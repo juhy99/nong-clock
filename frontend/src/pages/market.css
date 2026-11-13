@@ -16,10 +16,6 @@
 @media (max-width: 1200px) { .mk-volume > .mk-sum .ring svg { width: 84px; height: 84px; } }
 
 /* 도매시장 · 산지 */
-.mk-tag { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: var(--brand); }
-.mk-tag.ex { background: rgba(19, 38, 26, 0.07); color: rgba(19, 38, 26, 0.7); }
-.mk-card-head .mk-tag { margin-left: auto; }
-.mk-src { margin: auto 0 0; padding-top: 12px; font-size: 14px; color: var(--muted); }
 .mk-key { display: flex; gap: 16px; flex-wrap: wrap; font-size: 15px; color: rgba(19, 38, 26, 0.85); margin: 8px 0 4px; }
 .mk-key span { display: inline-flex; align-items: center; gap: 6px; }
 .mk-key i { width: 12px; height: 12px; border-radius: 3px; }
@@ -33,7 +29,6 @@
   .mk-ah .sd { display: block; font-size: 13px; color: var(--muted); }
   .table-wrap .mk-ah th, .table-wrap .mk-ah td, .table-wrap .mk-ms th, .table-wrap .mk-ms td { padding-left: 6px; padding-right: 6px; }
   .mk-ms th:nth-child(3), .mk-ms td:nth-child(3) { display: none; } /* 도매시장 표: 평균 대비 칸 숨김 */
-  .mk-card-head .mk-tag { margin-left: 0; }
   .table-wrap.mk-nomask { -webkit-mask-image: none; mask-image: none; } /* 칸을 줄여 화면에 다 들어가므로 오른쪽 흐림 없음 */
 }
 /* 유리판 안이라 카드가 조금 좁아짐 → 표 칸 여백을 줄이고 숫자는 한 줄로 (넘치면 표만 옆으로 밀림) */

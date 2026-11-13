@@ -8,7 +8,7 @@ import { useAuth } from "../components/AuthContext";
 import { Async, Highlight, PctChange, PriceChange, useAsync } from "../components/common";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ItemImage from "../components/ItemImage";
-import { NewsArticle, NewsRow, NewsSource, NewsUpdated } from "../components/NewsParts";
+import { NewsArticle, NewsRow, NewsUpdated } from "../components/NewsParts";
 import { AuctionCard } from "./Auctions";
 import { AUCTION_ENABLED } from "../features";
 import { boardDate, md, won, wonPerKg } from "../utils/format";
@@ -101,9 +101,8 @@ function ItemSide({ item }) {
           </table>
         </div>
       )}
+      {/* "소식 받기"(알림 안내)는 알림 기능을 숨기면서 뺌 (11-13). 뉴스로 가는 링크만 남김 */}
       <div className="search-box">
-        <h3>{item.name} 소식 받기</h3>
-        <p className="muted small" style={{ margin: "0 0 10px" }}>관심 품목에 넣으면 {AUCTION_ENABLED ? "경매·" : ""}이상기후 알림을 받고, 농업 뉴스에서 모아 볼 수 있어요.</p>
         <Link className="link" to={`/news?item=${item.code}`}>📰 {item.name} 뉴스 모아 보기 ›</Link>
       </div>
     </aside>
@@ -161,7 +160,6 @@ function NewsTab({ q, qItem }) {
           {d.total > d.rows.length && (
             <div className="news-more"><button className="btn" onClick={() => setSize(size + NEWS_PAGE_SIZE)}>기사 더 보기 ({d.rows.length}/{d.total})</button></div>
           )}
-          <NewsSource />
         </>
       )}
     </Async>
@@ -248,7 +246,6 @@ function Results({ d, tab, setTab }) {
             <section>
               <SecHead title="뉴스" count={d.news.total} more={d.news.total > PREVIEW.news} onMore={() => setTab("news")} extra={<NewsUpdated at={d.news.updated_at} />} />
               <div className="news-list">{d.news.rows.slice(0, PREVIEW.news).map((n) => <NewsRow key={n.id} n={n} q={q} />)}</div>
-              <p className="muted small" style={{ margin: "8px 0 0" }}>제목을 누르면 언론사 기사로 이동해요 · 뉴스 제공: 네이버 검색 API · 각 언론사</p>
             </section>
           )}
           {tab === "news" && (

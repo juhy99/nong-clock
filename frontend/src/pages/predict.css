@@ -93,15 +93,11 @@
 .sc-card { display: grid; gap: 8px; }
 .sc-head { display: flex; align-items: center; gap: 10px; }
 .sc-head h2 { margin: 0; font-size: 22px; }
-.sc-tag { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: var(--brand); }
-.sc-tag.ex { background: rgba(19, 38, 26, 0.07); color: rgba(19, 38, 26, 0.7); }
-.sc-sub { margin: 0; font-size: 15px; color: var(--muted); }
 .sc-legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 15px; color: rgba(19, 38, 26, 0.85); margin-top: 4px; }
 .sc-legend span { display: inline-flex; align-items: center; gap: 7px; }
 .sc-legend i { width: 18px; height: 0; border-top: 3px solid var(--c); }
 .sc-legend i.dash { border-top-style: dashed; }
 .sc-chart { width: 100%; height: auto; display: block; }
-.sc-src { margin: 0; font-size: 14px; color: var(--muted); } .sc-src b { color: var(--ink); margin-right: 4px; }
 @media (max-width: 1200px) { .sc-grid { grid-template-columns: 1fr; } }
 
 /* 그래프 카드가 오른쪽 열 높이에 맞춰 늘어나고, 그래프가 남는 높이를 채움 (아래 빈 공간 없음, 11-12) */

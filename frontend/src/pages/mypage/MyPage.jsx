@@ -7,7 +7,7 @@ import { getNotifications, markRead, onNotificationsChanged } from "../../api/no
 import { USER_TYPE_LABEL, canSell, useAuth } from "../../components/AuthContext";
 import { useAsync } from "../../components/common";
 import { NOTIFY_TYPES } from "../../mocks/notifications";
-import { AUCTION_ENABLED } from "../../features";
+import { AUCTION_ENABLED, NOTIFY_ENABLED } from "../../features";
 import { boardDate, timeAgo, won } from "../../utils/format";
 import { FavoritePicker } from "./Favorites";
 import MyAuctions from "./MyAuctions";
@@ -17,7 +17,7 @@ import "./mypage.css";
 
 /* ─────────────────────────────────────────────
    마이페이지 (v17, 11-11)
-   위: 내 정보 + 숫자 4칸(관심 품목 · 새 알림 · 내가 쓴 글 · 내가 쓴 댓글)
+   위: 내 정보 + 숫자 4칸(관심 품목 · 새 알림 · 내가 쓴 글 · 내가 쓴 댓글) — 알림을 끄면(features.js) 새 알림 · 알림 목록 · 알림 설정은 숨김
    왼쪽: 관심 품목 가격(오늘 도매가 · 8거래일 흐름 · AI 1주 뒤) · 내가 쓴 글/댓글
    오른쪽: 알림 · 내 정보·알림 설정 요약
    "내 정보 수정" · "관심 품목 더하기" 는 같은 화면 안에서 편집 화면으로 바뀜 (?tab=profile · ?tab=watch)
@@ -138,12 +138,12 @@ function Settings({ onEdit }) {
   const kinds = Object.entries(NOTIFY_TYPES).filter(([k]) => AUCTION_ENABLED || k !== "auction");
   return (
     <section className="card">
-      <div className="mp-head"><h2>내 정보 · 알림 설정</h2><button type="button" className="link" onClick={onEdit}>수정 ›</button></div>
+      <div className="mp-head"><h2>{NOTIFY_ENABLED ? "내 정보 · 알림 설정" : "내 정보"}</h2><button type="button" className="link" onClick={onEdit}>수정 ›</button></div>
       <ul className="mp-set">
         <li><span>닉네임</span>{user.name}</li>
         <li><span>지역</span>{user.region || "-"}</li>
         <li><span>연락처</span>{user.phone ? user.phone.replace(/(\d{3})-?(\d{3,4})-?(\d{4})/, "$1-****-$3") : "-"}</li>
-        {kinds.map(([k, t]) => (
+        {NOTIFY_ENABLED && kinds.map(([k, t]) => (
           <li key={k}>
             {t.label} 알림
             <button type="button" role="switch" aria-checked={!!notify[k]} aria-label={`${t.label} 알림`} className={`mp-tg ${notify[k] ? "on" : ""}`}
@@ -163,7 +163,7 @@ export default function MyPage() {
   const edit = params.get("tab");
   const go = (k) => { setParams(k ? { tab: k } : {}, { replace: true }); window.scrollTo({ top: 0 }); };
   const act = useAsync(() => getMyActivity(user), [user.id]);
-  const noti = useAsync(() => getNotifications(user.id), [user.id]);
+  const noti = useAsync(() => (NOTIFY_ENABLED ? getNotifications(user.id) : Promise.resolve([])), [user.id]);
   useEffect(() => onNotificationsChanged(noti.reload), [noti.reload]);
   const unread = (noti.data ?? []).filter((n) => !n.read).length;
 
@@ -198,9 +198,9 @@ export default function MyPage() {
             <button type="button" className="btn primary" onClick={() => go("profile")}>내 정보 수정</button>
           </div>
         </div>
-        <div className="mp-stats">
+        <div className={`mp-stats ${NOTIFY_ENABLED ? "" : "n3"}`}>
           <button type="button" onClick={() => go("watch")}><span>관심 품목</span><b>{(user.favorites ?? []).length}<small>개</small></b></button>
-          <div><span>새 알림</span><b className={unread ? "new" : ""}>{unread}<small>개</small></b></div>
+          {NOTIFY_ENABLED && <div><span>새 알림</span><b className={unread ? "new" : ""}>{unread}<small>개</small></b></div>}
           <div><span>내가 쓴 글</span><b>{act.data?.posts?.length ?? "-"}<small>개</small></b></div>
           <div><span>내가 쓴 댓글</span><b>{act.data?.comments?.length ?? "-"}<small>개</small></b></div>
         </div>
@@ -214,7 +214,7 @@ export default function MyPage() {
           <Activity act={act.data} />
         </div>
         <div className="mp-col">
-          <Notifications list={noti.data} reload={noti.reload} />
+          {NOTIFY_ENABLED && <Notifications list={noti.data} reload={noti.reload} />}
           <Settings onEdit={() => go("profile")} />
         </div>
       </div>

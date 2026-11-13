@@ -5,7 +5,7 @@ import { useAuth } from "../../components/AuthContext";
 import { useErrorPopup } from "../../components/ErrorPopup";
 import { SectionHead } from "../../components/common";
 import { DEFAULT_NOTIFY, NOTIFY_TYPES } from "../../mocks/notifications";
-import { AUCTION_ENABLED } from "../../features";
+import { AUCTION_ENABLED, NOTIFY_ENABLED } from "../../features";
 import { SIDO, formatPhone } from "../../utils/format";
 
 function InfoForm() {
@@ -56,7 +56,7 @@ function InfoForm() {
         <label htmlFor="p-farm">농장·상호명 <span className="muted small">(선택{AUCTION_ENABLED && ", 경매 판매자 이름으로 표시"})</span></label>
         <input id="p-farm" className="input" value={f.farm_name} onChange={set("farm_name")} />
       </div>
-      <div className="field">
+      {NOTIFY_ENABLED && <div className="field">
         <label>알림 받기</label>
         <div className="pills">
           {Object.entries(NOTIFY_TYPES).filter(([k]) => AUCTION_ENABLED || k !== "auction").map(([k, t]) => (
@@ -66,7 +66,7 @@ function InfoForm() {
           ))}
         </div>
         <span className="hint">끈 종류의 알림은 종 아이콘으로 오지 않아요</span>
-      </div>
+      </div>}
       <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "flex-end" }}>
         {msg && <span className={`hint ${msg.ok ? "ok" : "error"}`}>{msg.text}</span>}
         <button className="btn primary">저장</button>
@@ -131,7 +131,7 @@ function Withdraw() {
     <form className="card danger-zone" style={{ display: "grid", gap: 10 }} onSubmit={submit}>
       <h3 style={{ color: "var(--danger)" }}>회원 탈퇴</h3>
       <p className="muted small" style={{ margin: 0 }}>
-        탈퇴하면 회원 정보와 내가 쓴 글·댓글, 관심 품목·알림이 모두 지워지고 되돌릴 수 없어요.
+        탈퇴하면 회원 정보와 내가 쓴 글·댓글, 관심 품목이 모두 지워지고 되돌릴 수 없어요.
         {AUCTION_ENABLED && (
           <>
             {" "}지난 낙찰·거래 기록은 분쟁 처리를 위해 보관돼요.

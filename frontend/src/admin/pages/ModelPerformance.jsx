@@ -3,7 +3,7 @@ import { getModelPerformance } from "../../api/admin";
 import { getItems } from "../../api/ml";
 import { Async, SectionHead, useAsync } from "../../components/common";
 
-// 모델 성능: 107품목 가격 예측 모델(최종 앙상블)의 검증 기간 오차 (shared/model_accuracy.json)
+// 모델 성능: 품목별 가격 예측 모델(최종 앙상블)의 검증 기간 오차 (shared/model_accuracy.json)
 // 오차 = WAPE(%) — 낮을수록 좋음. 기준선 = "오늘 가격이 그대로 간다"
 const GROUPS = ["전체", "연중", "제철", "비수기뚜렷", "계절편차", "수입위주", "참고용"];
 const tone = (v) => (v == null ? "" : v <= 15 ? "#1f9d55" : v <= 25 ? "#7a9a1f" : v <= 35 ? "#e0a100" : "#d93025");
@@ -94,7 +94,7 @@ export default function ModelPerformance() {
               <p className="muted small" style={{ marginTop: 12, lineHeight: 1.7 }}>
                 {rows.length}개 품목 · 칸 = 최종 앙상블 오차(%), 아래 작은 숫자 = 기준선(오늘 가격 그대로) 오차 · 3·6개월은 "그날 가격" 정답 기준(달 평균 정답은 위 카드) ·
                 <b> 참고용</b> = 최종이 기준선보다 0.1%p 넘게 나쁜 품목·기간 (양배추 1·3·6개월, 당근 3·6개월, 무 1개월, 석류 6개월) — 예측 화면에도 "참고용"으로 표시해요 ·
-                6개월보다 먼 예측(최대 1년)은 검증하지 않아 화면에서 6개월 오차보다 넓게 잡고 참고용으로 표시해요 ·
+                6개월보다 먼 예측(최대 1년)은 아직 검증하지 않아 화면에서 6개월 오차보다 넓게 잡아요 ·
                 예측 대상일이 지나면 서비스 운영 중 "예측 vs 실제" 비교가 추가될 예정이에요.
               </p>
             </>

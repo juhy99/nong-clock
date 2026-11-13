@@ -35,7 +35,7 @@ uvicorn app.main:app --reload --port 8000
 
 **목록 파일:** 예측 품목 50개(`shared/items50.json`), 품목 정보 107개(`shared/items.json`), 도매시장 32곳(`shared/markets.json`), 작물별 흙 pH(`shared/soil_ph.json`)는 저장소 맨 위 `shared/` 에 있고 화면과 같이 읽어요 (`app/core/shared.py`). 그래서 도커는 저장소 맨 위에서 빌드해요(`docker compose` 가 알아서 함, 직접 할 때는 `docker build -f ml-api/Dockerfile .`).
 
-작물 추천의 작물 달력·수량·경영비·월별 예상가는 `app/core/crop_calendar.py`(농진청 2024 농산물소득조사 + 추정값, `source` 로 구분), 시장 계수는 `app/core/markets.py`, pH 비교는 `app/core/soil_ph.py` 에 있어요. 자세한 형식은 `docs/06_api_spec.md` 1-2 · 1-3 · 1-4 · 1-6.
+작물 추천의 작물 달력·수량·경영비는 `shared/crops.json`(농사로 재배력 + 소득조사·생산비조사 3개 해 평균, `python-ml/crops/build_crop_catalog.py` 가 만듦)을 `app/core/crop_catalog.py` 가 읽고, 가격은 DB 예측 표 × 농가 수취 비율(`app/services/crop_prices.py`), 시장 계수는 `app/core/markets.py`, pH 비교는 `app/core/soil_ph.py` 에 있어요. 자세한 형식은 `docs/06_api_spec.md` 1-2 · 1-3 · 1-4 · 1-6.
 
 ### POST /predict 예시
 

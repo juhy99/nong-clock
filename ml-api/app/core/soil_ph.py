@@ -38,7 +38,11 @@ def soil_ph_from_prev(prev: str | None) -> float | None:
 
 
 def ph_of(crop_code: str) -> SoilPh | None:
-    return SOIL_PH.get(CROP_MAP.get(crop_code, ""))
+    """작물 표(shared/crops.json)의 soil_ph_name 을 먼저, 없으면 soil_ph.json 의 crop_map (11-13)"""
+    from app.core.crop_catalog import CROPS  # 순환 import 피하려고 여기서
+
+    c = CROPS.get(crop_code)
+    return SOIL_PH.get((c.soil_ph_name if c else None) or CROP_MAP.get(crop_code, ""))
 
 
 def ph_check(crop_code: str, soil: float | None) -> tuple[str, SoilPh | None, float] | None:

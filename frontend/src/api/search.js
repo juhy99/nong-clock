@@ -6,15 +6,18 @@ import { displayStatus } from "./auction";
 import { getPosts } from "./board";
 import { getNews } from "./news";
 import { ITEMS } from "../mocks/catalog";
-import { mockCropList } from "../mocks/recommend";
+import CROP_TABLE from "../../../shared/crops.json";
 import { auctionsDb } from "../mocks/auctions";
 import { AUCTION_ENABLED } from "../features";
 import { itemOfQuery, suggestItemName } from "../utils/itemMatch";
 
 const PUBLIC_STATUS = ["진행중", "낙찰", "유찰"];
 
-// 작물 추천에 있는 작물 (ml-api /recommend/crops 와 같은 목록). 검색어가 작물 이름이면 "작물 정보" 탭으로 바로 갈 수 있게
-const CROPS = mockCropList();
+// 작물 추천에 있는 작물 (ml-api /recommend/crops 와 같은 목록 = shared/crops.json, 11-13 실제 자료 34개). 검색어가 작물 이름이면 "작물 정보" 탭으로 바로 갈 수 있게
+const LAND_NAME = CROP_TABLE.land_types;
+const CROPS = CROP_TABLE.crops.map((c) => ({
+  code: c.code, name: c.name, emoji: c.emoji, land_type: c.land_types[0], land_types: c.land_types, land_type_name: LAND_NAME[c.land_types[0]], perennial: !!c.perennial_note,
+}));
 export const RECOMMEND_AREA = 600; // 검색에서 작물 추천으로 갈 때 기본 평수
 
 /** 작물 추천 주소 (작물로 심을 날짜 고르기 탭) */

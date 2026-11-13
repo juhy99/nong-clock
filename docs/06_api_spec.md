@@ -354,7 +354,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | `base_date` | string | 기준일 (요청 `base_date`, 없으면 오늘) | 그래프 실제↔예측 경계 "기준일" |
 | `base_price` | number | 기준일 공영도매시장 경매 단가 (원/kg) | |
 | `history` | 배열 | 기준일 앞 실제 시세 `{date, price}` (`history_days` 일 + 기준일, 기본 15개) | 그래프 진한 초록 선 "올해 실제" (화면은 주 단위로 묶어 8점) |
-| `forecast` | 배열 | 일별 예측 `{date, price, lower, upper}` — 기준일 다음 날부터 `horizon`일. `lower`·`upper` = 예측 ± 그날까지의 모델 검증 오차 | 초록 점선 "예측" + 초록 영역 "오차범위", 화면이 이 안에서 가장 비싼 날·싼 날을 찾음 |
+| `forecast` | 배열 | 일별 예측 `{date, price, lower, upper, off_season}` — 기준일 다음 날부터 `horizon`일. `lower`·`upper` = 예측 ± 그날까지의 모델 검증 오차. `off_season` = 출하철 밖 날(두 모델 다 채점해 본 적 없는 달, 화면 '참고', 11-13) | 초록 점선 "예측" + 초록 영역 "오차범위", 화면이 이 안에서 가장 비싼 날·싼 날을 찾음 |
 | `predicted_price` | number | `horizon`일 후 예상 도매가 (= forecast 마지막 값) | "14일 후 예상 도매가" 금액 |
 | `change_pct` | number | 기준가 대비 변동률 (%) | "▲ OO% vs 오늘" |
 | `error_pct` | number | 고른 날의 예측 오차 ±% (모델 검증 WAPE, 품목·기간별) | "예측 오차 ±OO%" |
@@ -459,18 +459,22 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 
 ### 1-6. 작물 추천 `/recommend`
 
-> ⚠️ 값의 출처 (`ml-api/app/core/crop_calendar.py`, 프론트 예비 데이터 `frontend/src/mocks/recommend.js` 와 같음)
-> - 10a당 수량·경영비·가격 수준: **농촌진흥청 2024년도 농산물소득조사**. 조사표 행과 맞는 작형은 `source: "rda"`, 나머지 작형과 조사표에 없는 작물(양파·봄동·마늘·쌀·콩)은 `source: "est"`(추정)
-> - 심는 시기·수확 기간: 농사로 재배력 작형 기준. 보관 일수·상품화율·계절 가격 모양·출하 비중: 추정
-> - 알맞은 흙 pH: 팀 자료 「작물별 땅 조건」 v4 엑셀 → **`shared/soil_ph.json`** (화면·ml-api `app/core/soil_ph.py` 가 같이 읽음). 값이 없는 작물은 추정해서 채우지 않음
-> - 시장별 가격: 전국 평균 예측 × 시장 계수(0.9~1.1, 시세 가짜 데이터와 같은 규칙). 시장별 모델이 붙으면 `app/core/markets.py` 의 `market_factor` 자리를 바꾼다
+> 값의 출처 (11-13 실제 자료로 바꿈) — 작물 표 **`shared/crops.json`** (34작물 · 66작형). `python-ml/crops/build_crop_catalog.py` 가 `crop_map.csv` 와 아래 자료로 만든다 (손으로 고치지 않음). ml-api 는 `app/core/crop_catalog.py` 로 읽고, 화면 검색도 같은 파일을 읽음
+> - 심는 때·수확 때: **농사로 재배력** (순 단위라 ±10일). 재배력에 없는 작형은 `source: "est"`(추정) — 화면에 "추정" 표시
+> - 10a당 수량·경영비·농가 수취가격: **농진청 농산물소득조사 · 통계청 농축산물생산비조사 최근 3개 해 평균**. 경영비에서 조사 평균 토지임차료는 빼고, 사용자가 넣은 임대료를 따로 더함
+> - 가격: DB **`price_forecast_daily`**(가격 예측과 같은 AI 예측, 전국·ALL, 기준일이 오늘 이전인 가장 최근 것) × **`farm_ratio`**(조사 농가 수취가 ÷ 같은 해 수확 달 전국 도매 평균). 예측이 없는 날(1년 밖)은 2021~2025 같은 달 평년 도매가. **쌀·콩**은 도매시장 값이 없어 조사 수취가격 그대로(`price_source: "survey"`, 시장 비교 없이 전국)
+> - 알맞은 흙 pH: 팀 자료 → **`shared/soil_ph.json`** (값이 없는 작물은 추정해서 채우지 않음)
+> - 시장별 가격: 전국 × DB **`market_factor`**(품목·시장·달). `PREDICTOR=db` 가 아니면 예측·시장 계수 없이 평년 가격 · 계수 1
+> - 과수 7개: 여러 해 기르는 나무라 날짜별 추천은 안 하고 작물 정보만(수확 달·조사표·가격 그래프)
 
 **계산 기준**
 - **순이익(마진)** = 예상 매출 − 총경영비
 - 예상 매출 = Σ(월별 판매량 × 판 도매시장의 월별 예상가). 수확 기간(첫 수확 `harvest_start` ~ 마지막 수확 `harvest_end`)을 주 단위로 나눠, 여러 번 따는 작형(`multi_harvest`, 토마토·오이 등)은 처음·끝에 적고 가운데 많이 출하
-- 판매량 = 10a당 수량 × 면적(평 ÷ 302.5) × 상품화율 (조사표 작물은 조사표 가격에 비품이 섞여 있어 상품화율 1)
-- 총경영비 = 10a당 경영비(전국 평균, 고용 인건비 포함·자가노동비 제외) × 면적 + 사용자가 넣은 임대료(토지·농기계·시설, **만원 단위**, 그대로 더함)
-- `margin_low`·`margin_high` = 가격이 예측 오차(`error_pct`)만큼 내리거나 올랐을 때. `error_pct` = 그 작물·수확 시작까지 남은 날의 모델 검증 오차(WAPE), `reference` = 참고용(위 `/predict` 와 같은 규칙)
+- 판매량 = 10a당 수량(조사 평균) × 면적(평 ÷ 302.5). 조사 수량이 이미 판 주산물이라 상품화율은 1
+- 그날 농가 수취가 = 전국 AI 예측 도매가 × `farm_ratio` (쌀·콩은 조사 수취가). `price_basis` = 매출 가운데 가격 출처 몫 `{forecast, normal, survey}`, `forecast_base_date` = 쓴 예측 기준일
+- 총경영비 = 10a당 경영비(조사 평균, 토지임차료 뺌) × 면적 + 사용자가 넣은 임대료(토지·농기계·시설, **만원 단위**, 그대로 더함)
+- `margin_low`·`margin_high` = 예측 표 하한·상한 가격으로 팔았을 때(평년이면 2021~2025 최저·최고). `error_pct` = 그 매출 범위의 반폭(±%). `reference`: `baseline` = 매출 절반 넘게가 출하철 밖(참고값) 예측 · `far` = 평년 가격이 절반 넘음 → 화면 '참고용'
+- 한 작물에 작형·토지가 여럿이면(예: 수박 노지·시설) 고른 날 심을 수 있는 것 중 순이익이 가장 큰 것 하나만
 - 땅 종류: `open` 노지 · `house` 시설 · `paddy` 논 · `orchard` 과수원 (과수는 다년생이라 날짜별 비교 안 함)
 - **팔 시장 (11/4 팀 결정):** 수확한 지역 안의 도매시장에서 판다고 가정하고, **운송비와 유통 마진은 계산하지 않는다.**
   - `region`(시·도) 안의 공영 도매시장끼리 비교해서 작물마다 **순이익이 가장 높은 시장**을 결과로 준다 (예: 경기 → 수원·안양·안산·구리). 시장이 1곳이면 그 시장(예: 충남 → 천안)
@@ -510,10 +514,10 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
                { "crop": "paprika", "crop_name": "파프리카", "land_type": "house", "kind": "season",
                  "reason": "지금(11월)은 심는 시기가 아니에요. 시설 장기재배 8월 상순~8월 하순이에요. 다음 심는 때: 8/1부터(장기재배)" }],
   "unavailable": [ "… 심는 시기가 아닌 작물과 다음 심는 날 (예전 형식 그대로) …" ],
-  "model_version": "dummy-0.1+crop-calendar-sample" }
+  "model_version": "작물표 2026-11-13 · AI 예측 기준일 2026-11-11" }
 ```
 
-`results[]` 의 그 밖의 항목: `days_to_harvest` · `harvest_days`(첫 수확 ~ 마지막 수확) · `multi_harvest` · `storage_days` · `storage_end` · `factor` · `national_price_per_kg` · `error_pct` · `yield_t` · `sellable_t` · `marketable_rate` · `base_cost` · `land_rent` · `machine_rent` · `margin_per_pyeong` · `margin_low` · `margin_high` · `national_margin` · `source` · `rda`(조사표 10a당 값) · `per_10a` · `shipments`(달마다 판매량·예상가·매출)
+`results[]` 의 그 밖의 항목: `days_to_harvest` · `harvest_days`(첫 수확 ~ 마지막 수확) · `multi_harvest` · `storage_days` · `storage_end` · `factor` · `national_price_per_kg` · `error_pct` · `yield_t` · `sellable_t` · `marketable_rate` · `base_cost` · `land_rent` · `machine_rent` · `margin_per_pyeong` · `margin_low` · `margin_high` · `national_margin` · `source` · `schedule_source`·`econ_source`(출처 글) · `farm_ratio` · `price_basis` · `forecast_base_date` · `rda`(조사표 10a당 값 + `source`·`years`·`land_rent`) · `per_10a` · `shipments`(달마다 판매량·예상가·매출)
 
 **빠진 이유(`excluded`)는 서버에서 계산합니다.** 작물 정보 탭이 ① 탭 입력으로 이 API 를 부르고, 고른 작물이 `excluded` 에 있으면 `reason` 을 그대로 보여 줍니다 (상위 3위 안이면 "추천 N위에 있어요").
 
@@ -533,8 +537,9 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
   "soil_ph": { "name": "오이", "min": 5.5, "max": 6.8, "memo": "pH 4.3 이하 말라 죽음" },
   "croppings": [{ "name": "촉성재배", "plant_from": [10, 11], "plant_to": [12, 10], "days_to_harvest": 40, "harvest_days": 110,
                   "storage_days": 7, "multi_harvest": true, "yield_t_per_10a": 10.5, "cost_per_10a": 12300000, "source": "rda" }, "…"],
-  "model_version": "dummy-0.1+crop-calendar-sample" }
+  "model_version": "작물표 2026-11-13 · 평년 가격" }
 ```
+- 11-13 추가: `crop.land_types`(기를 수 있는 토지 모두), `croppings[].land`·`harvest_from`·`harvest_to`·`farm_ratio`·`schedule_source`·`econ_source`, `price_source`(forecast · survey), `normal`(평년 월별 도매가 price·low·high 12개, 쌀·콩은 null), 과수 `harvest_months`
 - 다년생(`apple` 등): `note` 에 안내 문구, `croppings` 는 빈 배열 · 없는 작물 → `404`
 
 **`POST /recommend/planting-dates`** 작물로 가장 좋은 심는 날 고르기 — **화면에서는 쓰지 않음** (11/4: "작물로 심을 날짜 고르기" 탭을 "작물 정보" 탭으로 바꿈). API 는 지우지 않고 남겨 둠
@@ -544,7 +549,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 // 응답 — points 는 오늘부터 53주, 심을 수 없는 주는 option: null. best·top 은 results 항목과 같은 모양
 ```
 
-**`GET /recommend/crops/{code}/prices`** 작물 상세 그래프: 오늘부터 **53점(12개월, 11-11 — 예전 57주)**, 주 단위 전국 공영도매 예상 경매 단가 `{ date, price, lower, upper }` (원/kg, 범위 = 모델 검증 오차). 고른 시장 그래프는 × `factor`
+**`GET /recommend/crops/{code}/prices`** 작물 상세 그래프: 오늘부터 **53점(12개월, 11-11 — 예전 57주)**, 주 단위 전국 공영도매 예상 경매 단가 `{ date, price, lower, upper, basis, off_season }` (원/kg, 범위 = 예측 표 하한·상한, 평년이면 최저·최고). `basis` = forecast · normal · survey, 응답에 `forecast_base_date`. 오늘 점은 예측 첫날(내일) 값. 쌀·콩은 조사 수취가 한 값이라 화면은 그래프 대신 안내 글
 
 ---
 
@@ -566,6 +571,9 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | GET | `/api/prices/{item}/origins?market=&date=` | 출하지역(시·도)별 평균 가격·반입량 | 시세 › 출하지역별 가격 | `getOriginPrices` |
 | GET | `/api/volumes/{item}?market=&date=` | 순(10일) 단위 출하지역별 반입량 + 이번 순 요약 | 시세 › 반입 동향 | `getVolumeTrend` |
 | GET | `/api/prices/{item}/markets` | 시장별 오늘 가격 (상 등급) | 통합 검색 › 시장별 오늘 시세 | `getMarketCompare` |
+| GET | `/api/prices/{item}/market-share?variety=` | 도매시장별 최근 12달 평균 경락가 · 물량 몫 (물량 많은 8곳) + 물량 가중 평균 (11-12) | 시세 › 도매시장별 가격 | `getMarketShare` |
+| GET | `/api/prices/{item}/auction-houses` | 산지공판장 최근 12달 · 23~25년 평균 경락가 · 물량 몫 (8곳, 품종 구분 없음) (11-12) | 시세 › 산지공판장 가격 | `getAuctionHouses` |
+| GET | `/api/prices/{item}/monthly?variety=` | 월별 평균 경락가·반입량: 평년(올해 빼고 5년) · 올해 실제 · 남은 달 예측(`price_forecast_daily` 그 달 평균). 물량이 가장 많은 달의 2% 미만인 달은 가격 비움 (11-13) | 가격 예측 › 계절 패턴 · 월별 반입량 | `getSeasonal` |
 | GET | `/api/weather/regions` | 시·도 17곳 오늘 날씨 + 특보 | 홈 날씨 지도 | `getRegionalWeather` |
 | POST | `/api/uploads` (multipart, `files` 여러 개) | 사진 업로드 → 사진 주소 목록 | 경매 등록, 게시판 글쓰기 | `uploadImages` |
 | GET | `/api/posts?category=&q=&page=` | 게시글 목록 (숨김 제외, 15개씩) | 게시판 | `getPosts` |
@@ -595,8 +603,8 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | GET | `/api/me/auctions` | 내가 등록한 경매 | 마이페이지 › 내 경매 | `getMyAuctions` |
 | POST | `/api/auctions` | 경매 등록 (판매자만, `승인대기`로 생성) | 마이페이지 › 새 경매 등록 | `createAuction` |
 | POST | `/api/auctions/{id}/cancel` | 내 경매 취소 (입찰 0건일 때만) | 마이페이지 › 내 경매 | `cancelMyAuction` |
-| GET | `/api/me/notifications` | 내 알림 목록 | 종 아이콘, 마이페이지 › 알림 | `getNotifications` |
-| GET | `/api/me/notifications/unread-count` | 안 읽은 알림 수 (30초마다 호출) | 종 아이콘 배지 | `getUnreadCount` |
+| GET | `/api/me/notifications` | 내 알림 목록 **(11-13 알림 숨김 — 지금은 만들지 않음)** | 종 아이콘, 마이페이지 › 알림 | `getNotifications` |
+| GET | `/api/me/notifications/unread-count` | 안 읽은 알림 수 (30초마다 호출) **(11-13 숨김 — 만들지 않음)** | 종 아이콘 배지 | `getUnreadCount` |
 | POST | `/api/me/notifications/read` `{ "id" }` (생략 시 전부) | 읽음 처리 | 종 아이콘, 마이페이지 › 알림 | `markRead` |
 | POST | `/api/admin/auctions/{id}/bids/cancel` `{ "bid_ids", "reason" }` | 비정상 입찰 취소 → 현재가 재계산, 입찰자·판매자 알림 | 개발자 › 신고·분쟁, 회원·경매 관리 | `cancelBids` |
 | | `/api/admin/...` | 공지·회원·경매 관리 (관리자만) | 개발자 페이지 | `api/admin.js` |
@@ -660,6 +668,8 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 - **로그인이 필요한 API 만들 때 (Spring):** `SecurityConfig` 의 `authorizeHttpRequests` 에 주소를 추가하고, 컨트롤러에서 `@AuthenticationPrincipal LoginUser me` 로 회원 번호(`me.id()`)를 꺼낸다. **요청 본문의 작성자 번호(authorId 등)를 믿지 말 것.**
 
 ### 2-4. 알림 항목 예시 (`GET /api/me/notifications`)
+
+> **11-13 팀 결정으로 알림 기능은 숨김** (`frontend/src/features.js` 의 `NOTIFY_ENABLED`, `VITE_ENABLE_NOTIFY=true` 로 다시 켬). 지금은 알림 표·API 를 만들지 않는다. 화면의 알림은 브라우저 가짜 데이터라 서버를 부르지 않음. 회원 표의 `notify_settings` 열은 다시 켤 때를 위해 그대로 둠(기본 `{}`, 지금은 아무도 안 씀)
 
 ```json
 { "id": 12, "type": "auction", "title": "입찰 상회", "body": "'해남 월동배추 10kg × 20망'에 더 높은 입찰(240,000원)이 들어왔어요.",
@@ -906,7 +916,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 - [ ] 예측을 **요청 때마다 계산**할지, **매일 미리 계산해 DB에 저장**할지
 - [ ] 품목·지역 코드를 위 영어 코드로 확정할지 (KAMIS 품목코드와의 매핑 포함)
 - [ ] 비정상 입찰 판단 기준 (지금은 관리자가 신고를 보고 직접 골라 취소. 입찰 IP 저장 여부)
-- [ ] 새 DB 테이블: 관심 품목, 알림 (+ 입찰에 `cancelled`, 회원에 `status`·알림 설정). 신고는 만들지 않음 (11-11)
+- [ ] 새 DB 테이블: 관심 품목 (+ 입찰에 `cancelled`, 회원에 `status`). 신고는 만들지 않음 (11-11). 알림 표는 만들지 않음 — 알림 숨김 (11-13)
 - [ ] 새 DB 테이블: 게시글(숨김 여부·사유 포함), 사진 주소(경매·게시글 공용), 경매에 사진 목록
 - [ ] 예측 모델이 1~30일 **매일** 값을 낼 수 있는지 (사용자가 아무 날짜나 고름)
 - [ ] 관리자 사이트 배포 주소 (같은 도메인 `/admin/` 또는 `admin.` 서브도메인)
@@ -946,3 +956,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | 2026-11-07 | 회원가입: 약관 동의(`marketing`) 삭제, `name` → `nickname`, 중복 확인 `GET /api/auth/check` 제안 추가(2-3). 가격 예측 도매시장 고르기는 `GET /api/markets`(전국 평균 + 32곳, 시장별 `items` = 최근 1년 거래 품목)를 씀 | |
 | 2026-11-11 | **새 디자인(v17) 반영.** ML API: `GET /items`·`POST /predict`·`top-movers` 를 **예측 품목 50개**(`shared/items50.json`)로 — 50개 밖은 `404`(양송이 `button_mushroom` 빠짐). `POST /predict` 에 `base_date`(기준일, 오늘~1년 전)·`history_days`(1~400, 기본 14)·`last_year`(작년 같은 시기 실제 시세, 52주 전 같은 요일) 추가. 작물 추천 `start_date` 를 오늘~30일 → **오늘~1년**, `/recommend/crops/{code}/prices` 를 13개월 57점 → **12개월 53점**. 뉴스 수집: 같은 소식을 실은 언론사 수 `press_count`·`presses`(많이 다룬 뉴스). 신고 기능 삭제(2-5, 한눈에 보기·알림 종류에서 뺌). 마이페이지 내가 쓴 글·댓글 API 제안(2-9). 프론트 가짜 데이터(`frontend/src/mocks`)도 같이: 예측 `last_year`·`base_date`, 가격 경로 53점, 뉴스 `press_count`, 알림 종류에서 신고 뺌. 회원가입 요청에서 `marketing` 을 보내지 않음(마케팅 동의는 넣지 않기로 함 — Spring 의 `marketing` 칸은 비어 들어감) | |
 | 2026-11-11 | **품종 기준 변경 (1-2-1).** 팀 자료 `50품목_화면묶음140_예측단위322` 로 `shared/items50.json` 품종을 다시 만듦: 화면묶음 이름 = 품목 이름이면 예측단위마다, 그 밖은 화면묶음째 → 품종 322 → **196** (예측단위 312, 뺌 10). 품종에 `units`(예측 단위 이름 목록) 추가, `unit` 은 뺌, `type` 종류 없앰, id 새로 매김. Spring 시세(2-15 `?variety=`)는 단위 여럿을 금액 합 ÷ 물량 합으로 | |
+| 2026-11-13 | **알림 숨김(팀 결정).** 알림 API(`/api/me/notifications` 3개)·알림 표는 만들지 않음, 2-4 에 안내. 정해야 할 것의 새 DB 테이블에서 알림 뺌. 회원 표 `notify_settings` 열은 다시 켤 때를 위해 그대로 | |
+| 2026-11-13 | **시세·예측 실제 데이터로.** Spring `GET /api/prices/{item}/monthly` 추가(계절 패턴 · 월별 반입량), 11-12 의 market-share · auction-houses 표에 적음. 화면 시세 기본값을 db 로(`VITE_PRICE_SOURCE=mock` 일 때만 가짜), ml-api `PREDICTOR` 기본값 db, 가격 예측은 서버가 안 되면 가짜 값 대신 오류 | |
+| 2026-11-13 | **작물 추천 실제 자료로.** 작물 표 `shared/crops.json`(농사로 재배력 · 소득조사/생산비조사 3개 해 평균 · farm_ratio · 평년가, 34작물 66작형) 를 ml-api `crop_catalog.py` 가 읽음(`crop_calendar.py` 지움). 가격 = DB 예측 × farm_ratio, 시장 = DB market_factor. 응답에 `land_types`·`price_basis`·`forecast_base_date`·`schedule_source`·`econ_source`·`normal` 등 추가, `/prices` 에 `basis`·`off_season` | |
+| 2026-11-13 | **출하철 밖 표시·보정.** `POST /predict` 의 `forecast[]` 에 `off_season`(출하철 밖 = 참고값) 추가 — DB `price_forecast_daily.off_season`. `GET /predict/top-movers` 는 그날이 출하철 밖인 품목을 뺌. 15거래일~12달 v4 값에 금액÷물량 ↔ 일 단순평균 보정비(0.9~1.1) | |

@@ -9,8 +9,8 @@
 .rc-card { position: relative; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
 .rc-n { font-size: 56px; font-weight: 700; line-height: 1; color: rgba(19, 38, 26, 0.55); }
 .rc-n.first { color: #d6a24a; }
-.rc-nm { font-size: 34px; font-weight: 700; }
-.rc-nm small { font-size: 16px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+.rc-nm { font-size: 34px; font-weight: 700; padding-right: 112px; }
+.rc-nm small { display: block; font-size: 16px; font-weight: 400; color: var(--muted); margin-top: 4px; }
 /* 그림 자리: 순수익 1위 · 마진율 1위는 빛나는 원 + 이름표 */
 .rc-art { position: absolute; right: 22px; top: 18px; display: grid; justify-items: center; gap: 6px; }
 .rc-art i { font-style: normal; font-size: 60px; line-height: 1; width: 92px; height: 92px; display: grid; place-items: center; border-radius: 50%; }

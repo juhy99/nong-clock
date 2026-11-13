@@ -1,5 +1,5 @@
 // 작물 추천 예비 데이터. ml-api 가 꺼져 있을 때 화면이 대신 쓴다.
-// 작물 달력·계산 방식은 ml-api/app/core/crop_calendar.py, app/core/markets.py, app/services/recommender.py 와 같다 (값을 바꾸면 둘 다 고칠 것).
+// 11-13: 화면은 ml-api 실제 계산만 씀(가짜 계산으로 넘어가지 않음). 여기서는 LAND_TYPES · SIDO_LIST 만 쓰이고, 아래 계산은 예전 예비 데이터(쓰지 않음).
 import { addDays, daysBetween, todayIso } from "../utils/format";
 import { marketFactor } from "./market";
 import MARKET_DATA from "../../../shared/markets.json";

@@ -1,0 +1,69 @@
+code,name,land,cropping,multi,sched_src,sched_crop,sched_cropping,sched_region,stage,ps,pe,hs,he,econ_src,econ_row,storage_days
+onion,양파,open,보통재배,0,n01,양파,보통재배,,정식,,,,,kostat,양파,210
+garlic,마늘,open,보통재배,0,n01,마늘,보통재배,,파종,,,,,kostat,마늘,240
+radish,무,open,가을재배,0,n01,무,가을무,,파종,,,,,rda,노지가을무,90
+radish,무,open,고랭지 여름재배,0,n01,무(고랭지재배),여름재배,,파종,,,,,rda,노지고랭지무,30
+napa_cabbage,배추,open,가을재배,0,n01,배추,가을재배,,정식,,,,,rda,노지가을배추,60
+napa_cabbage,배추,open,봄재배,0,n01,배추,봄재배,,정식,,,,,rda,노지봄배추,20
+napa_cabbage,배추,open,고랭지 여름재배,0,n01,배추(고랭지재배),여름재배,,파종,,,,,rda,노지고랭지배추,20
+cabbage,양배추,open,여름 아주심기(10~11월 출하),0,n01,양배추,10월~11월출하,,정식,,,28,33,rda,노지양배추,60
+cabbage,양배추,open,월동재배(1~3월 출하),0,n01,양배추,1월~3월출하,,정식,,,1,9,rda,노지양배추,60
+green_onion,대파,open,봄뿌림재배,0,n01,파,봄뿌림재배,,정식,,,,,rda,노지대파,14
+green_onion,대파,open,가을뿌림재배,0,n01,파,가을뿌림재배,,정식,,,,,rda,노지대파,14
+scallion,쪽파,open,가을재배,0,n01,쪽파,노지(가을재배),,파종,,,,,rda,노지쪽파,7
+potato,감자,open,봄재배,0,n09,감자,봄재배,,심기,,,,,rda,봄감자,120
+potato,감자,open,가을재배,0,n09,감자,가을재배,,심기,,,,,rda,가을감자,120
+sweet_potato,고구마,open,조기재배,0,n09,고구마,조기재배(비닐멀칭·터널·하우스),,심기,,,,,rda,고구마,180
+sweet_potato,고구마,open,보통기재배,0,n09,고구마,"보통기(적기) 재배, 무멀칭",남부,심기,,,,,rda,고구마,180
+carrot,당근,open,봄재배,0,n01,당근,봄재배,,파종,,,,,rda,노지당근,120
+carrot,당근,open,여름재배,0,n01,당근,여름재배,,파종,,,,,rda,노지당근,120
+carrot,당근,open,가을재배,0,n01,당근,가을재배,,파종,,,,,rda,노지당근,120
+carrot,당근,open,월동재배,0,n01,당근,월동재배,,파종,,,,,rda,노지당근,120
+spinach,시금치,open,봄재배,0,n01,시금치,봄재배,,파종,,,,,rda,노지시금치,10
+spinach,시금치,open,여름재배,0,n01,시금치,여름재배,,파종,,,,,rda,노지시금치,10
+spinach,시금치,open,가을재배,0,n01,시금치,가을재배,,파종,,,,,rda,노지시금치,10
+watermelon,수박,open,조숙재배,0,n01,수박,조숙재배,,정식,,,,,rda,노지수박,14
+watermelon,수박,house,촉성재배,0,n01,수박,촉성재배,,정식,,,,,rda,시설수박,14
+watermelon,수박,house,반촉성재배,0,n01,수박,반촉성재배,,정식,,,,,rda,시설수박,14
+watermelon,수박,house,억제재배,0,n01,수박,억제재배,,정식,,,,,rda,시설수박,14
+corn,옥수수,open,풋옥수수,0,n04,옥수수,,,파종,,,,22,rda,풋옥수수,5
+tomato,토마토,house,촉성재배,1,n01,"토마토,방울토마토",촉성재배,,정식,,,,,rda,시설토마토,10
+tomato,토마토,house,반촉성재배,1,n01,"토마토,방울토마토",반촉성재배,,정식,,,,,rda,시설토마토,10
+tomato,토마토,house,조숙재배,1,n01,"토마토,방울토마토",조숙재배,,정식,,,,,rda,시설토마토,10
+cherry_tomato,방울토마토,house,촉성재배,1,n01,"토마토,방울토마토",촉성재배,,정식,,,,,rda,시설방울토마토,10
+cherry_tomato,방울토마토,house,반촉성재배,1,n01,"토마토,방울토마토",반촉성재배,,정식,,,,,rda,시설방울토마토,10
+cherry_tomato,방울토마토,house,조숙재배,1,n01,"토마토,방울토마토",조숙재배,,정식,,,,,rda,시설방울토마토,10
+cucumber,오이,house,촉성재배,1,n01,오이,촉성재배,,정식,,,,,rda,시설오이,7
+cucumber,오이,house,반촉성재배,1,n01,오이,반촉성재배,,정식,,,,,rda,시설오이,7
+cucumber,오이,house,조숙재배,1,n01,오이,조숙재배,,정식,,,,,rda,시설오이,7
+cucumber,오이,house,억제재배,1,n01,오이,억제재배,,정식,,,,,rda,시설오이,7
+eggplant,가지,house,촉성재배,1,n01,가지,촉성재배,,정식,,,,,rda,시설가지,7
+eggplant,가지,house,반촉성재배,1,n01,가지,반촉성재배,,정식,,,,,rda,시설가지,7
+eggplant,가지,house,억제재배,1,n01,가지,억제재배,,정식,,,,,rda,시설가지,7
+green_chili,풋고추,house,촉성재배,1,n01,고추(촉성재배),반촉성재배,,정식,,,,,rda,시설고추,14
+paprika,파프리카,house,겨울재배,1,n01,파프리카,겨울재배,,정식,,,,,rda,시설파프리카,21
+strawberry,딸기,house,촉성재배,1,n01,딸기(촉성재배),촉성재배,,정식,,,,,rda,시설딸기,5
+strawberry,딸기,house,초촉성재배,1,n01,딸기(촉성재배),초촉성재배,,정식,,,,,rda,시설딸기,5
+korean_melon,참외,house,촉성재배,1,n01,참외,촉성재배,,정식,,,,,rda,시설참외,10
+korean_melon,참외,house,반촉성재배,1,n01,참외,반촉성재배,,정식,,,,,rda,시설참외,10
+korean_melon,참외,house,조숙재배,1,n01,참외,조숙재배,,정식,,,,,rda,시설참외,10
+korean_melon,참외,house,억제재배,1,n01,참외,억제재배,,정식,,,,,rda,시설참외,10
+melon,멜론,house,봄재배,0,n04,멜론,봄재배,,파종,,,,,rda,시설멜론,14
+melon,멜론,house,여름재배,0,n04,멜론,여름재배,,파종,,,,,rda,시설멜론,14
+lettuce,상추,house,봄재배,1,n01,상추,시설봄재배,,정식,,,,,rda,시설상추,7
+lettuce,상추,house,여름재배,1,n01,상추,여름재배,,정식,,,,,rda,시설상추,7
+lettuce,상추,house,가을재배,1,n01,상추,가을재배,,정식,,,,,rda,시설상추,7
+lettuce,상추,house,겨울재배,1,n01,상추,겨울재배,,정식,,,,,rda,시설상추,7
+chive,부추,house,시설재배,1,n01,부추,시설재배,,파종,,,,,rda,시설부추,7
+squash,호박,house,촉성재배,1,n01,호박,촉성재배,,정식,,,,,rda,시설호박,14
+squash,호박,house,반촉성재배,1,n01,호박,반촉성재배,,정식,,,,,rda,시설호박,14
+squash,호박,house,억제재배,1,n01,호박,억제재배,,정식,,,,,rda,시설호박,14
+rice,쌀,paddy,모내기(중만생종),0,manual,벼,,,이앙,14,17,28,30,kostat,쌀(논벼),365
+soybean,콩,paddy,논콩(홑짓기),0,n09,콩,콩 홑짓기(단작),남부,심기,,,,,kostat_soy,콩,365
+apple,사과,orchard,,0,n04,사과,,,,,,,,rda,사과,
+pear,배,orchard,,0,manual,배,,,,,,23,31,rda,배,
+peach,복숭아,orchard,,0,n04,복숭아,,,,,,,,rda,복숭아,
+grape,포도,orchard,,0,n04,포도(무가온),,,,,,,,rda,노지포도,
+mandarin,감귤,orchard,,0,n04,감귤(노지재배),보통재배(노지),,,,,,,rda,노지감귤,
+sweet_persimmon,단감,orchard,,0,n04,단감,,,,,,,,rda,단감,
+plum,자두,orchard,,0,n04,자두,,,,,,,,rda,자두,

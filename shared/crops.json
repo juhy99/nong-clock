@@ -1,0 +1,5698 @@
+{
+ "_about": "작물 추천용 작물 표. python-ml/crops/build_crop_catalog.py 가 만듦 (손으로 고치지 말 것 — crop_map.csv 를 고치고 다시 만들기). 심는 때·수확 때 = 농사로 재배력(전국 표준 달력, 순 단위라 ±10일), 수량·경영비 = 농진청 농산물소득조사·통계청 생산비조사 최근 3개 해 평균(전국), farm_ratio = 조사 농가수취가격 ÷ 같은 해 수확 달 전국 도매 평균가, normal = 2021~2025 같은 달 전국 도매 평균(최저·최고). storage_days 는 추정. 농사로 자료는 공공누리 제4유형(출처표시·상업적 이용금지·변경금지)",
+ "built_at": "2026-11-13",
+ "land_types": {
+  "open": "노지",
+  "house": "시설",
+  "paddy": "논",
+  "orchard": "과수원"
+ },
+ "rules": {
+  "single_harvest_days": 14,
+  "min_days": 30,
+  "farm_ratio_range": [
+   0.4,
+   1.3
+  ],
+  "normal_years": [
+   2021,
+   2025
+  ]
+ },
+ "crops": [
+  {
+   "code": "onion",
+   "name": "양파",
+   "emoji": "🧅",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "양파",
+   "rda": {
+    "row": "양파",
+    "source": "통계청 농축산물생산비조사",
+    "years": [
+     2023,
+     2024,
+     2025
+    ],
+    "revenue": 4437503,
+    "cost": 2351833,
+    "income": 2085669,
+    "kg": 6595,
+    "price": 673,
+    "land_rent": 0
+   },
+   "normal": {
+    "price": [
+     1137,
+     1219,
+     1231,
+     996,
+     797,
+     791,
+     872,
+     993,
+     1034,
+     1058,
+     1055,
+     1020
+    ],
+    "low": [
+     551,
+     432,
+     368,
+     507,
+     543,
+     557,
+     600,
+     784,
+     858,
+     868,
+     845,
+     712
+    ],
+    "high": [
+     1518,
+     1735,
+     1605,
+     1266,
+     1062,
+     1026,
+     1121,
+     1179,
+     1260,
+     1340,
+     1321,
+     1302
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "보통재배",
+     "land": "open",
+     "plant_from": [
+      10,
+      11
+     ],
+     "plant_to": [
+      11,
+      20
+     ],
+     "harvest_from": [
+      4,
+      1
+     ],
+     "harvest_to": [
+      6,
+      20
+     ],
+     "days_first": 172,
+     "days_last": 198,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 6.595,
+     "cost_per_10a": 2351833,
+     "cost_survey_per_10a": 2351833,
+     "land_rent_in_survey": 0,
+     "farm_ratio": 0.686,
+     "farm_ratio_raw": 0.686,
+     "storage_days": 210,
+     "source": {
+      "schedule": "농사로 재배력 「양파 · 보통재배」 (정식)",
+      "econ": "통계청 농축산물생산비조사 「양파」 2023~2025 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "양파",
+      "source": "통계청 농축산물생산비조사",
+      "years": [
+       2023,
+       2024,
+       2025
+      ],
+      "revenue": 4437503,
+      "cost": 2351833,
+      "income": 2085669,
+      "kg": 6595,
+      "price": 673,
+      "land_rent": 0
+     }
+    }
+   ]
+  },
+  {
+   "code": "garlic",
+   "name": "마늘",
+   "emoji": "🧄",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "마늘",
+   "rda": {
+    "row": "마늘",
+    "source": "통계청 농축산물생산비조사",
+    "years": [
+     2023,
+     2024,
+     2025
+    ],
+    "revenue": 5033143,
+    "cost": 2795590,
+    "income": 2237553,
+    "kg": 1287,
+    "price": 3902,
+    "land_rent": 0
+   },
+   "normal": {
+    "price": [
+     5766,
+     5752,
+     5635,
+     5350,
+     3989,
+     4248,
+     5357,
+     5388,
+     5458,
+     5955,
+     6103,
+     6112
+    ],
+    "low": [
+     4941,
+     4936,
+     4792,
+     4528,
+     3212,
+     3506,
+     4584,
+     4245,
+     3995,
+     5022,
+     4973,
+     5245
+    ],
+    "high": [
+     6504,
+     6402,
+     6162,
+     5855,
+     4705,
+     5477,
+     6764,
+     6706,
+     6639,
+     6776,
+     6827,
+     6642
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "보통재배",
+     "land": "open",
+     "plant_from": [
+      9,
+      21
+     ],
+     "plant_to": [
+      10,
+      31
+     ],
+     "harvest_from": [
+      5,
+      21
+     ],
+     "harvest_to": [
+      6,
+      30
+     ],
+     "days_first": 242,
+     "days_last": 228,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 1.287,
+     "cost_per_10a": 2795590,
+     "cost_survey_per_10a": 2795590,
+     "land_rent_in_survey": 0,
+     "farm_ratio": 1.053,
+     "farm_ratio_raw": 1.053,
+     "storage_days": 240,
+     "source": {
+      "schedule": "농사로 재배력 「마늘 · 보통재배」 (파종)",
+      "econ": "통계청 농축산물생산비조사 「마늘」 2023~2025 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "마늘",
+      "source": "통계청 농축산물생산비조사",
+      "years": [
+       2023,
+       2024,
+       2025
+      ],
+      "revenue": 5033143,
+      "cost": 2795590,
+      "income": 2237553,
+      "kg": 1287,
+      "price": 3902,
+      "land_rent": 0
+     }
+    }
+   ]
+  },
+  {
+   "code": "radish",
+   "name": "무",
+   "emoji": "🌱",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "무",
+   "rda": {
+    "row": "노지가을무",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 2730053,
+    "cost": 1237511,
+    "income": 1492542,
+    "kg": 5877,
+    "price": 466,
+    "land_rent": 102438
+   },
+   "normal": {
+    "price": [
+     609,
+     614,
+     589,
+     575,
+     590,
+     518,
+     579,
+     719,
+     704,
+     645,
+     559,
+     567
+    ],
+    "low": [
+     435,
+     352,
+     300,
+     330,
+     335,
+     375,
+     439,
+     439,
+     375,
+     355,
+     392,
+     396
+    ],
+    "high": [
+     1167,
+     1276,
+     1181,
+     979,
+     747,
+     632,
+     750,
+     1017,
+     1261,
+     1016,
+     877,
+     978
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "가을재배",
+     "land": "open",
+     "plant_from": [
+      7,
+      11
+     ],
+     "plant_to": [
+      9,
+      10
+     ],
+     "harvest_from": [
+      9,
+      1
+     ],
+     "harvest_to": [
+      12,
+      20
+     ],
+     "days_first": 52,
+     "days_last": 87,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 5.877,
+     "cost_per_10a": 1135073,
+     "cost_survey_per_10a": 1237511,
+     "land_rent_in_survey": 102438,
+     "farm_ratio": 0.693,
+     "farm_ratio_raw": 0.693,
+     "storage_days": 90,
+     "source": {
+      "schedule": "농사로 재배력 「무 · 가을무」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지가을무」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지가을무",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 2730053,
+      "cost": 1237511,
+      "income": 1492542,
+      "kg": 5877,
+      "price": 466,
+      "land_rent": 102438
+     }
+    },
+    {
+     "name": "고랭지 여름재배",
+     "land": "open",
+     "plant_from": [
+      4,
+      21
+     ],
+     "plant_to": [
+      5,
+      20
+     ],
+     "harvest_from": [
+      7,
+      1
+     ],
+     "harvest_to": [
+      8,
+      10
+     ],
+     "days_first": 71,
+     "days_last": 68,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 7.546,
+     "cost_per_10a": 1492238,
+     "cost_survey_per_10a": 1672876,
+     "land_rent_in_survey": 180638,
+     "farm_ratio": 0.578,
+     "farm_ratio_raw": 0.578,
+     "storage_days": 30,
+     "source": {
+      "schedule": "농사로 재배력 「무(고랭지재배) · 여름재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지고랭지무」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지고랭지무",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 3381355,
+      "cost": 1672876,
+      "income": 1708479,
+      "kg": 7546,
+      "price": 448,
+      "land_rent": 180638
+     }
+    }
+   ]
+  },
+  {
+   "code": "napa_cabbage",
+   "name": "배추",
+   "emoji": "🥬",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "배추(봄동·얼갈이)",
+   "rda": {
+    "row": "노지가을배추",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 3345742,
+    "cost": 1419809,
+    "income": 1925933,
+    "kg": 6098,
+    "price": 550,
+    "land_rent": 70972
+   },
+   "normal": {
+    "price": [
+     732,
+     817,
+     931,
+     959,
+     692,
+     623,
+     795,
+     1113,
+     1339,
+     896,
+     766,
+     817
+    ],
+    "low": [
+     479,
+     531,
+     653,
+     742,
+     512,
+     475,
+     459,
+     696,
+     863,
+     485,
+     521,
+     548
+    ],
+    "high": [
+     1317,
+     1416,
+     1308,
+     1351,
+     881,
+     742,
+     1077,
+     1455,
+     1836,
+     1518,
+     1024,
+     1069
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "가을재배",
+     "land": "open",
+     "plant_from": [
+      8,
+      21
+     ],
+     "plant_to": [
+      9,
+      10
+     ],
+     "harvest_from": [
+      10,
+      11
+     ],
+     "harvest_to": [
+      12,
+      10
+     ],
+     "days_first": 51,
+     "days_last": 77,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 6.098,
+     "cost_per_10a": 1348837,
+     "cost_survey_per_10a": 1419809,
+     "land_rent_in_survey": 70972,
+     "farm_ratio": 0.707,
+     "farm_ratio_raw": 0.707,
+     "storage_days": 60,
+     "source": {
+      "schedule": "농사로 재배력 「배추 · 가을재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「노지가을배추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지가을배추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 3345742,
+      "cost": 1419809,
+      "income": 1925933,
+      "kg": 6098,
+      "price": 550,
+      "land_rent": 70972
+     }
+    },
+    {
+     "name": "봄재배",
+     "land": "open",
+     "plant_from": [
+      4,
+      1
+     ],
+     "plant_to": [
+      5,
+      20
+     ],
+     "harvest_from": [
+      5,
+      21
+     ],
+     "harvest_to": [
+      6,
+      20
+     ],
+     "days_first": 50,
+     "days_last": 50,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 7.264,
+     "cost_per_10a": 1184649,
+     "cost_survey_per_10a": 1272410,
+     "land_rent_in_survey": 87761,
+     "farm_ratio": 0.489,
+     "farm_ratio_raw": 0.489,
+     "storage_days": 20,
+     "source": {
+      "schedule": "농사로 재배력 「배추 · 봄재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「노지봄배추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지봄배추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 2586593,
+      "cost": 1272410,
+      "income": 1314183,
+      "kg": 7264,
+      "price": 356,
+      "land_rent": 87761
+     }
+    },
+    {
+     "name": "고랭지 여름재배",
+     "land": "open",
+     "plant_from": [
+      5,
+      1
+     ],
+     "plant_to": [
+      7,
+      31
+     ],
+     "harvest_from": [
+      7,
+      1
+     ],
+     "harvest_to": [
+      10,
+      10
+     ],
+     "days_first": 61,
+     "days_last": 57,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 5.246,
+     "cost_per_10a": 1371915,
+     "cost_survey_per_10a": 1492388,
+     "land_rent_in_survey": 120473,
+     "farm_ratio": 0.448,
+     "farm_ratio_raw": 0.448,
+     "storage_days": 20,
+     "source": {
+      "schedule": "농사로 재배력 「배추(고랭지재배) · 여름재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지고랭지배추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지고랭지배추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 2650422,
+      "cost": 1492388,
+      "income": 1158033,
+      "kg": 5246,
+      "price": 508,
+      "land_rent": 120473
+     }
+    }
+   ]
+  },
+  {
+   "code": "cabbage",
+   "name": "양배추",
+   "emoji": "🥗",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "양배추·적채",
+   "rda": {
+    "row": "노지양배추",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 2414874,
+    "cost": 1387632,
+    "income": 1027242,
+    "kg": 6334,
+    "price": 382,
+    "land_rent": 112843
+   },
+   "normal": {
+    "price": [
+     652,
+     685,
+     758,
+     925,
+     887,
+     563,
+     543,
+     695,
+     738,
+     730,
+     614,
+     616
+    ],
+    "low": [
+     389,
+     466,
+     410,
+     352,
+     440,
+     421,
+     453,
+     513,
+     401,
+     363,
+     419,
+     396
+    ],
+    "high": [
+     1089,
+     1280,
+     1298,
+     1482,
+     1587,
+     787,
+     681,
+     918,
+     1056,
+     970,
+     937,
+     932
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "여름 아주심기(10~11월 출하)",
+     "land": "open",
+     "plant_from": [
+      6,
+      11
+     ],
+     "plant_to": [
+      6,
+      20
+     ],
+     "harvest_from": [
+      10,
+      1
+     ],
+     "harvest_to": [
+      11,
+      30
+     ],
+     "days_first": 112,
+     "days_last": 149,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 6.334,
+     "cost_per_10a": 1274789,
+     "cost_survey_per_10a": 1387632,
+     "land_rent_in_survey": 112843,
+     "farm_ratio": 0.571,
+     "farm_ratio_raw": 0.571,
+     "storage_days": 60,
+     "source": {
+      "schedule": "농사로 재배력 「양배추 · 10월~11월출하」 (정식)",
+      "econ": "농진청 농산물소득조사 「노지양배추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지양배추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 2414874,
+      "cost": 1387632,
+      "income": 1027242,
+      "kg": 6334,
+      "price": 382,
+      "land_rent": 112843
+     }
+    },
+    {
+     "name": "월동재배(1~3월 출하)",
+     "land": "open",
+     "plant_from": [
+      7,
+      11
+     ],
+     "plant_to": [
+      7,
+      20
+     ],
+     "harvest_from": [
+      1,
+      1
+     ],
+     "harvest_to": [
+      3,
+      31
+     ],
+     "days_first": 174,
+     "days_last": 240,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 6.334,
+     "cost_per_10a": 1274789,
+     "cost_survey_per_10a": 1387632,
+     "land_rent_in_survey": 112843,
+     "farm_ratio": 0.571,
+     "farm_ratio_raw": 0.571,
+     "storage_days": 60,
+     "source": {
+      "schedule": "농사로 재배력 「양배추 · 1월~3월출하」 (정식)",
+      "econ": "농진청 농산물소득조사 「노지양배추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지양배추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 2414874,
+      "cost": 1387632,
+      "income": 1027242,
+      "kg": 6334,
+      "price": 382,
+      "land_rent": 112843
+     }
+    }
+   ]
+  },
+  {
+   "code": "green_onion",
+   "name": "대파",
+   "emoji": "🌿",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "대파",
+   "rda": {
+    "row": "노지대파",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 4182832,
+    "cost": 1793533,
+    "income": 2389299,
+    "kg": 3798,
+    "price": 1101,
+    "land_rent": 156235
+   },
+   "normal": {
+    "price": [
+     2017,
+     2448,
+     2263,
+     1676,
+     1490,
+     1218,
+     1287,
+     1529,
+     1647,
+     1718,
+     1830,
+     1816
+    ],
+    "low": [
+     1189,
+     1165,
+     1336,
+     880,
+     948,
+     896,
+     764,
+     1133,
+     1375,
+     1228,
+     1339,
+     1174
+    ],
+    "high": [
+     2927,
+     4464,
+     4286,
+     3598,
+     1996,
+     1400,
+     1555,
+     1725,
+     1889,
+     2419,
+     2654,
+     2873
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "봄뿌림재배",
+     "land": "open",
+     "plant_from": [
+      5,
+      1
+     ],
+     "plant_to": [
+      6,
+      30
+     ],
+     "harvest_from": [
+      10,
+      1
+     ],
+     "harvest_to": [
+      4,
+      30
+     ],
+     "days_first": 153,
+     "days_last": 290,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 3.798,
+     "cost_per_10a": 1637298,
+     "cost_survey_per_10a": 1793533,
+     "land_rent_in_survey": 156235,
+     "farm_ratio": 0.625,
+     "farm_ratio_raw": 0.625,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「파 · 봄뿌림재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「노지대파」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지대파",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 4182832,
+      "cost": 1793533,
+      "income": 2389299,
+      "kg": 3798,
+      "price": 1101,
+      "land_rent": 156235
+     }
+    },
+    {
+     "name": "가을뿌림재배",
+     "land": "open",
+     "plant_from": [
+      9,
+      1
+     ],
+     "plant_to": [
+      10,
+      31
+     ],
+     "harvest_from": [
+      4,
+      1
+     ],
+     "harvest_to": [
+      5,
+      31
+     ],
+     "days_first": 212,
+     "days_last": 198,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 3.798,
+     "cost_per_10a": 1637298,
+     "cost_survey_per_10a": 1793533,
+     "land_rent_in_survey": 156235,
+     "farm_ratio": 0.625,
+     "farm_ratio_raw": 0.625,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「파 · 가을뿌림재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「노지대파」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지대파",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 4182832,
+      "cost": 1793533,
+      "income": 2389299,
+      "kg": 3798,
+      "price": 1101,
+      "land_rent": 156235
+     }
+    }
+   ]
+  },
+  {
+   "code": "scallion",
+   "name": "쪽파",
+   "emoji": "🧄",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "쪽파(실파)",
+   "rda": {
+    "row": "노지쪽파",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 5513758,
+    "cost": 2612429,
+    "income": 2901329,
+    "kg": 1717,
+    "price": 3221,
+    "land_rent": 113899
+   },
+   "normal": {
+    "price": [
+     7238,
+     5902,
+     3212,
+     2844,
+     4014,
+     5208,
+     4966,
+     5316,
+     4626,
+     4349,
+     4323,
+     4224
+    ],
+    "low": [
+     5235,
+     3502,
+     2204,
+     2351,
+     3490,
+     3585,
+     3672,
+     3845,
+     3215,
+     2948,
+     2696,
+     2664
+    ],
+    "high": [
+     10752,
+     8131,
+     4570,
+     3590,
+     4635,
+     6698,
+     6284,
+     7629,
+     6988,
+     5225,
+     5898,
+     5770
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "가을재배",
+     "land": "open",
+     "plant_from": [
+      8,
+      1
+     ],
+     "plant_to": [
+      9,
+      30
+     ],
+     "harvest_from": [
+      10,
+      1
+     ],
+     "harvest_to": [
+      11,
+      30
+     ],
+     "days_first": 61,
+     "days_last": 47,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 1.717,
+     "cost_per_10a": 2498530,
+     "cost_survey_per_10a": 2612429,
+     "land_rent_in_survey": 113899,
+     "farm_ratio": 0.864,
+     "farm_ratio_raw": 0.864,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「쪽파 · 노지(가을재배)」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지쪽파」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지쪽파",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 5513758,
+      "cost": 2612429,
+      "income": 2901329,
+      "kg": 1717,
+      "price": 3221,
+      "land_rent": 113899
+     }
+    }
+   ]
+  },
+  {
+   "code": "potato",
+   "name": "감자",
+   "emoji": "🥔",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "감자",
+   "rda": {
+    "row": "봄감자",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 2670655,
+    "cost": 1437973,
+    "income": 1232682,
+    "kg": 2176,
+    "price": 1228,
+    "land_rent": 85001
+   },
+   "normal": {
+    "price": [
+     1592,
+     1647,
+     1784,
+     2156,
+     1888,
+     1138,
+     1074,
+     1312,
+     1377,
+     1333,
+     1394,
+     1526
+    ],
+    "low": [
+     1405,
+     1441,
+     1294,
+     1458,
+     1121,
+     790,
+     777,
+     1106,
+     1148,
+     1073,
+     1198,
+     1281
+    ],
+    "high": [
+     1806,
+     1847,
+     2239,
+     2802,
+     2393,
+     1370,
+     1312,
+     1542,
+     1604,
+     1553,
+     1578,
+     1735
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "봄재배",
+     "land": "open",
+     "plant_from": [
+      2,
+      21
+     ],
+     "plant_to": [
+      3,
+      31
+     ],
+     "harvest_from": [
+      5,
+      21
+     ],
+     "harvest_to": [
+      6,
+      30
+     ],
+     "days_first": 89,
+     "days_last": 77,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 2.176,
+     "cost_per_10a": 1352972,
+     "cost_survey_per_10a": 1437973,
+     "land_rent_in_survey": 85001,
+     "farm_ratio": 0.788,
+     "farm_ratio_raw": 0.788,
+     "storage_days": 120,
+     "source": {
+      "schedule": "농업기술길잡이 「감자 · 봄재배」 (전국 평난지대)",
+      "econ": "농진청 농산물소득조사 「봄감자」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "봄감자",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 2670655,
+      "cost": 1437973,
+      "income": 1232682,
+      "kg": 2176,
+      "price": 1228,
+      "land_rent": 85001
+     }
+    },
+    {
+     "name": "가을재배",
+     "land": "open",
+     "plant_from": [
+      8,
+      11
+     ],
+     "plant_to": [
+      8,
+      31
+     ],
+     "harvest_from": [
+      11,
+      1
+     ],
+     "harvest_to": [
+      11,
+      30
+     ],
+     "days_first": 82,
+     "days_last": 77,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 1.817,
+     "cost_per_10a": 1513868,
+     "cost_survey_per_10a": 1667241,
+     "land_rent_in_survey": 153373,
+     "farm_ratio": 1.08,
+     "farm_ratio_raw": 1.08,
+     "storage_days": 120,
+     "source": {
+      "schedule": "농업기술길잡이 「감자 · 가을재배」 (제주도, 남부 해안지대)",
+      "econ": "농진청 농산물소득조사 「가을감자」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "가을감자",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 2753114,
+      "cost": 1667241,
+      "income": 1085874,
+      "kg": 1817,
+      "price": 1525,
+      "land_rent": 153373
+     }
+    }
+   ]
+  },
+  {
+   "code": "sweet_potato",
+   "name": "고구마",
+   "emoji": "🍠",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "고구마(고구마순)",
+   "rda": {
+    "row": "고구마",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 3657940,
+    "cost": 1945489,
+    "income": 1712451,
+    "kg": 1671,
+    "price": 2148,
+    "land_rent": 159068
+   },
+   "normal": {
+    "price": [
+     2093,
+     2174,
+     2133,
+     2198,
+     2448,
+     2327,
+     1951,
+     2160,
+     1892,
+     1682,
+     1740,
+     1872
+    ],
+    "low": [
+     1636,
+     1715,
+     1632,
+     1522,
+     1557,
+     1464,
+     1330,
+     1645,
+     1530,
+     1505,
+     1559,
+     1649
+    ],
+    "high": [
+     2888,
+     3017,
+     2947,
+     3202,
+     3548,
+     3305,
+     2435,
+     2629,
+     2075,
+     1818,
+     1941,
+     2092
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "조기재배",
+     "land": "open",
+     "plant_from": [
+      3,
+      21
+     ],
+     "plant_to": [
+      4,
+      20
+     ],
+     "harvest_from": [
+      8,
+      1
+     ],
+     "harvest_to": [
+      9,
+      10
+     ],
+     "days_first": 133,
+     "days_last": 129,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 1.671,
+     "cost_per_10a": 1786421,
+     "cost_survey_per_10a": 1945489,
+     "land_rent_in_survey": 159068,
+     "farm_ratio": 1.183,
+     "farm_ratio_raw": 1.183,
+     "storage_days": 180,
+     "source": {
+      "schedule": "농업기술길잡이 「고구마 · 조기재배(비닐멀칭·터널·하우스)」 (전국(주로 남부))",
+      "econ": "농진청 농산물소득조사 「고구마」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "고구마",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 3657940,
+      "cost": 1945489,
+      "income": 1712451,
+      "kg": 1671,
+      "price": 2148,
+      "land_rent": 159068
+     }
+    },
+    {
+     "name": "보통기재배",
+     "land": "open",
+     "plant_from": [
+      5,
+      1
+     ],
+     "plant_to": [
+      5,
+      10
+     ],
+     "harvest_from": [
+      9,
+      11
+     ],
+     "harvest_to": [
+      10,
+      31
+     ],
+     "days_first": 133,
+     "days_last": 160,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 1.671,
+     "cost_per_10a": 1786421,
+     "cost_survey_per_10a": 1945489,
+     "land_rent_in_survey": 159068,
+     "farm_ratio": 1.183,
+     "farm_ratio_raw": 1.183,
+     "storage_days": 180,
+     "source": {
+      "schedule": "농업기술길잡이 「고구마 · 보통기(적기) 재배, 무멀칭」 (남부)",
+      "econ": "농진청 농산물소득조사 「고구마」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "고구마",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 3657940,
+      "cost": 1945489,
+      "income": 1712451,
+      "kg": 1671,
+      "price": 2148,
+      "land_rent": 159068
+     }
+    }
+   ]
+  },
+  {
+   "code": "carrot",
+   "name": "당근",
+   "emoji": "🥕",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "당근",
+   "rda": {
+    "row": "노지당근",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 5453371,
+    "cost": 2390148,
+    "income": 3063223,
+    "kg": 3980,
+    "price": 1393,
+    "land_rent": 242841
+   },
+   "normal": {
+    "price": [
+     1501,
+     1628,
+     1671,
+     1817,
+     1519,
+     1626,
+     1656,
+     1971,
+     2280,
+     1832,
+     1426,
+     1393
+    ],
+    "low": [
+     879,
+     814,
+     914,
+     1114,
+     1043,
+     889,
+     807,
+     941,
+     1168,
+     981,
+     864,
+     949
+    ],
+    "high": [
+     2442,
+     2607,
+     2465,
+     3030,
+     2424,
+     2850,
+     2999,
+     3213,
+     3531,
+     2943,
+     2447,
+     2378
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "봄재배",
+     "land": "open",
+     "plant_from": [
+      3,
+      1
+     ],
+     "plant_to": [
+      4,
+      30
+     ],
+     "harvest_from": [
+      7,
+      1
+     ],
+     "harvest_to": [
+      8,
+      31
+     ],
+     "days_first": 122,
+     "days_last": 109,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 3.98,
+     "cost_per_10a": 2147307,
+     "cost_survey_per_10a": 2390148,
+     "land_rent_in_survey": 242841,
+     "farm_ratio": 0.784,
+     "farm_ratio_raw": 0.784,
+     "storage_days": 120,
+     "source": {
+      "schedule": "농사로 재배력 「당근 · 봄재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지당근」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지당근",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 5453371,
+      "cost": 2390148,
+      "income": 3063223,
+      "kg": 3980,
+      "price": 1393,
+      "land_rent": 242841
+     }
+    },
+    {
+     "name": "여름재배",
+     "land": "open",
+     "plant_from": [
+      4,
+      1
+     ],
+     "plant_to": [
+      5,
+      31
+     ],
+     "harvest_from": [
+      8,
+      1
+     ],
+     "harvest_to": [
+      9,
+      30
+     ],
+     "days_first": 122,
+     "days_last": 108,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 3.98,
+     "cost_per_10a": 2147307,
+     "cost_survey_per_10a": 2390148,
+     "land_rent_in_survey": 242841,
+     "farm_ratio": 0.784,
+     "farm_ratio_raw": 0.784,
+     "storage_days": 120,
+     "source": {
+      "schedule": "농사로 재배력 「당근 · 여름재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지당근」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지당근",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 5453371,
+      "cost": 2390148,
+      "income": 3063223,
+      "kg": 3980,
+      "price": 1393,
+      "land_rent": 242841
+     }
+    },
+    {
+     "name": "가을재배",
+     "land": "open",
+     "plant_from": [
+      7,
+      1
+     ],
+     "plant_to": [
+      7,
+      31
+     ],
+     "harvest_from": [
+      11,
+      1
+     ],
+     "harvest_to": [
+      11,
+      30
+     ],
+     "days_first": 123,
+     "days_last": 108,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 3.98,
+     "cost_per_10a": 2147307,
+     "cost_survey_per_10a": 2390148,
+     "land_rent_in_survey": 242841,
+     "farm_ratio": 0.784,
+     "farm_ratio_raw": 0.784,
+     "storage_days": 120,
+     "source": {
+      "schedule": "농사로 재배력 「당근 · 가을재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지당근」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지당근",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 5453371,
+      "cost": 2390148,
+      "income": 3063223,
+      "kg": 3980,
+      "price": 1393,
+      "land_rent": 242841
+     }
+    },
+    {
+     "name": "월동재배",
+     "land": "open",
+     "plant_from": [
+      7,
+      1
+     ],
+     "plant_to": [
+      8,
+      31
+     ],
+     "harvest_from": [
+      12,
+      1
+     ],
+     "harvest_to": [
+      3,
+      31
+     ],
+     "days_first": 153,
+     "days_last": 198,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 3.98,
+     "cost_per_10a": 2147307,
+     "cost_survey_per_10a": 2390148,
+     "land_rent_in_survey": 242841,
+     "farm_ratio": 0.784,
+     "farm_ratio_raw": 0.784,
+     "storage_days": 120,
+     "source": {
+      "schedule": "농사로 재배력 「당근 · 월동재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지당근」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지당근",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 5453371,
+      "cost": 2390148,
+      "income": 3063223,
+      "kg": 3980,
+      "price": 1393,
+      "land_rent": 242841
+     }
+    }
+   ]
+  },
+  {
+   "code": "spinach",
+   "name": "시금치",
+   "emoji": "🥬",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "시금치",
+   "rda": {
+    "row": "노지시금치",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 3616067,
+    "cost": 1248957,
+    "income": 2367111,
+    "kg": 1131,
+    "price": 3240,
+    "land_rent": 58357
+   },
+   "normal": {
+    "price": [
+     3493,
+     3571,
+     2553,
+     2303,
+     2572,
+     3070,
+     6017,
+     10660,
+     9004,
+     4243,
+     2832,
+     2970
+    ],
+    "low": [
+     2644,
+     2413,
+     1680,
+     2113,
+     2259,
+     2876,
+     4073,
+     8783,
+     5410,
+     3118,
+     1991,
+     2042
+    ],
+    "high": [
+     4632,
+     4637,
+     3981,
+     2590,
+     2905,
+     3264,
+     7513,
+     12922,
+     13390,
+     6156,
+     3729,
+     3635
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "봄재배",
+     "land": "open",
+     "plant_from": [
+      2,
+      1
+     ],
+     "plant_to": [
+      5,
+      31
+     ],
+     "harvest_from": [
+      3,
+      11
+     ],
+     "harvest_to": [
+      7,
+      10
+     ],
+     "days_first": 38,
+     "days_last": 38,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 1.131,
+     "cost_per_10a": 1190601,
+     "cost_survey_per_10a": 1248957,
+     "land_rent_in_survey": 58357,
+     "farm_ratio": 0.993,
+     "farm_ratio_raw": 0.993,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「시금치 · 봄재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지시금치」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지시금치",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 3616067,
+      "cost": 1248957,
+      "income": 2367111,
+      "kg": 1131,
+      "price": 3240,
+      "land_rent": 58357
+     }
+    },
+    {
+     "name": "여름재배",
+     "land": "open",
+     "plant_from": [
+      6,
+      1
+     ],
+     "plant_to": [
+      8,
+      31
+     ],
+     "harvest_from": [
+      7,
+      1
+     ],
+     "harvest_to": [
+      10,
+      10
+     ],
+     "days_first": 30,
+     "days_last": 30,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 1.131,
+     "cost_per_10a": 1190601,
+     "cost_survey_per_10a": 1248957,
+     "land_rent_in_survey": 58357,
+     "farm_ratio": 0.993,
+     "farm_ratio_raw": 0.993,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「시금치 · 여름재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지시금치」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지시금치",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 3616067,
+      "cost": 1248957,
+      "income": 2367111,
+      "kg": 1131,
+      "price": 3240,
+      "land_rent": 58357
+     }
+    },
+    {
+     "name": "가을재배",
+     "land": "open",
+     "plant_from": [
+      9,
+      11
+     ],
+     "plant_to": [
+      11,
+      30
+     ],
+     "harvest_from": [
+      10,
+      1
+     ],
+     "harvest_to": [
+      3,
+      31
+     ],
+     "days_first": 30,
+     "days_last": 107,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 1.131,
+     "cost_per_10a": 1190601,
+     "cost_survey_per_10a": 1248957,
+     "land_rent_in_survey": 58357,
+     "farm_ratio": 0.993,
+     "farm_ratio_raw": 0.993,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「시금치 · 가을재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「노지시금치」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지시금치",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 3616067,
+      "cost": 1248957,
+      "income": 2367111,
+      "kg": 1131,
+      "price": 3240,
+      "land_rent": 58357
+     }
+    }
+   ]
+  },
+  {
+   "code": "watermelon",
+   "name": "수박",
+   "emoji": "🍉",
+   "land_types": [
+    "open",
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "수박",
+   "rda": {
+    "row": "노지수박",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 4812498,
+    "cost": 2341572,
+    "income": 2470926,
+    "kg": 4628,
+    "price": 1041,
+    "land_rent": 142079
+   },
+   "normal": {
+    "price": [
+     null,
+     null,
+     3486,
+     2877,
+     2083,
+     1545,
+     1700,
+     2037,
+     1851,
+     1913,
+     2153,
+     null
+    ],
+    "low": [
+     null,
+     null,
+     2861,
+     2316,
+     1564,
+     1388,
+     1438,
+     1571,
+     1333,
+     1554,
+     1870,
+     null
+    ],
+    "high": [
+     null,
+     null,
+     4006,
+     3636,
+     2302,
+     1710,
+     2377,
+     2756,
+     2157,
+     2552,
+     2524,
+     null
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "조숙재배",
+     "land": "open",
+     "plant_from": [
+      3,
+      21
+     ],
+     "plant_to": [
+      5,
+      10
+     ],
+     "harvest_from": [
+      6,
+      1
+     ],
+     "harvest_to": [
+      7,
+      20
+     ],
+     "days_first": 72,
+     "days_last": 57,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 4.628,
+     "cost_per_10a": 2199493,
+     "cost_survey_per_10a": 2341572,
+     "land_rent_in_survey": 142079,
+     "farm_ratio": 0.691,
+     "farm_ratio_raw": 0.691,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「수박 · 조숙재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「노지수박」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "노지수박",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 4812498,
+      "cost": 2341572,
+      "income": 2470926,
+      "kg": 4628,
+      "price": 1041,
+      "land_rent": 142079
+     }
+    },
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      1,
+      11
+     ],
+     "plant_to": [
+      1,
+      31
+     ],
+     "harvest_from": [
+      3,
+      21
+     ],
+     "harvest_to": [
+      4,
+      30
+     ],
+     "days_first": 69,
+     "days_last": 75,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 4.502,
+     "cost_per_10a": 3256650,
+     "cost_survey_per_10a": 3393980,
+     "land_rent_in_survey": 137330,
+     "farm_ratio": 0.665,
+     "farm_ratio_raw": 0.665,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「수박 · 촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설수박」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설수박",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 7082232,
+      "cost": 3393980,
+      "income": 3688253,
+      "kg": 4502,
+      "price": 1574,
+      "land_rent": 137330
+     }
+    },
+    {
+     "name": "반촉성재배",
+     "land": "house",
+     "plant_from": [
+      2,
+      1
+     ],
+     "plant_to": [
+      2,
+      28
+     ],
+     "harvest_from": [
+      4,
+      21
+     ],
+     "harvest_to": [
+      5,
+      31
+     ],
+     "days_first": 79,
+     "days_last": 78,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 4.502,
+     "cost_per_10a": 3256650,
+     "cost_survey_per_10a": 3393980,
+     "land_rent_in_survey": 137330,
+     "farm_ratio": 0.665,
+     "farm_ratio_raw": 0.665,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「수박 · 반촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설수박」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설수박",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 7082232,
+      "cost": 3393980,
+      "income": 3688253,
+      "kg": 4502,
+      "price": 1574,
+      "land_rent": 137330
+     }
+    },
+    {
+     "name": "억제재배",
+     "land": "house",
+     "plant_from": [
+      8,
+      21
+     ],
+     "plant_to": [
+      9,
+      10
+     ],
+     "harvest_from": [
+      11,
+      1
+     ],
+     "harvest_to": [
+      12,
+      31
+     ],
+     "days_first": 72,
+     "days_last": 98,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 4.502,
+     "cost_per_10a": 3256650,
+     "cost_survey_per_10a": 3393980,
+     "land_rent_in_survey": 137330,
+     "farm_ratio": 0.665,
+     "farm_ratio_raw": 0.665,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「수박 · 억제재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설수박」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설수박",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 7082232,
+      "cost": 3393980,
+      "income": 3688253,
+      "kg": 4502,
+      "price": 1574,
+      "land_rent": 137330
+     }
+    }
+   ]
+  },
+  {
+   "code": "corn",
+   "name": "옥수수",
+   "emoji": "🌽",
+   "land_types": [
+    "open"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "옥수수",
+   "rda": {
+    "row": "풋옥수수",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 1932068,
+    "cost": 897243,
+    "income": 1034825,
+    "kg": 2848,
+    "price": 674,
+    "land_rent": 69343
+   },
+   "normal": {
+    "price": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     1936,
+     1234,
+     1582,
+     1597,
+     null,
+     null,
+     null
+    ],
+    "low": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     1481,
+     939,
+     1208,
+     1237,
+     null,
+     null,
+     null
+    ],
+    "high": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     2455,
+     1385,
+     1792,
+     2098,
+     null,
+     null,
+     null
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "풋옥수수",
+     "land": "open",
+     "plant_from": [
+      3,
+      11
+     ],
+     "plant_to": [
+      3,
+      31
+     ],
+     "harvest_from": [
+      7,
+      11
+     ],
+     "harvest_to": [
+      8,
+      10
+     ],
+     "days_first": 122,
+     "days_last": 118,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 2.848,
+     "cost_per_10a": 827900,
+     "cost_survey_per_10a": 897243,
+     "land_rent_in_survey": 69343,
+     "farm_ratio": 0.486,
+     "farm_ratio_raw": 0.486,
+     "storage_days": 5,
+     "source": {
+      "schedule": "농사로 재배력 달력 「옥수수」",
+      "econ": "농진청 농산물소득조사 「풋옥수수」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days",
+      "schedule"
+     ],
+     "rda": {
+      "row": "풋옥수수",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 1932068,
+      "cost": 897243,
+      "income": 1034825,
+      "kg": 2848,
+      "price": 674,
+      "land_rent": 69343
+     }
+    }
+   ]
+  },
+  {
+   "code": "tomato",
+   "name": "토마토",
+   "emoji": "🍅",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "토마토·방울토마토",
+   "rda": {
+    "row": "시설토마토",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2023,
+     2024
+    ],
+    "revenue": 19735722,
+    "cost": 9589754,
+    "income": 10145967,
+    "kg": 6347,
+    "price": 3113,
+    "land_rent": 423304
+   },
+   "normal": {
+    "price": [
+     2882,
+     3440,
+     3834,
+     3348,
+     2248,
+     1592,
+     1940,
+     2521,
+     3241,
+     3833,
+     3304,
+     2981
+    ],
+    "low": [
+     1861,
+     2487,
+     3334,
+     2673,
+     1944,
+     1283,
+     1657,
+     1693,
+     2038,
+     2404,
+     2175,
+     1579
+    ],
+    "high": [
+     4364,
+     4575,
+     5135,
+     4616,
+     3149,
+     1944,
+     2261,
+     3274,
+     4403,
+     5619,
+     4659,
+     3700
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      10,
+      21
+     ],
+     "plant_to": [
+      11,
+      30
+     ],
+     "harvest_from": [
+      1,
+      11
+     ],
+     "harvest_to": [
+      5,
+      10
+     ],
+     "days_first": 82,
+     "days_last": 82,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 6.347,
+     "cost_per_10a": 9166450,
+     "cost_survey_per_10a": 9589754,
+     "land_rent_in_survey": 423304,
+     "farm_ratio": 1.085,
+     "farm_ratio_raw": 1.085,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「토마토,방울토마토 · 촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설토마토」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설토마토",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 19735722,
+      "cost": 9589754,
+      "income": 10145967,
+      "kg": 6347,
+      "price": 3113,
+      "land_rent": 423304
+     }
+    },
+    {
+     "name": "반촉성재배",
+     "land": "house",
+     "plant_from": [
+      12,
+      21
+     ],
+     "plant_to": [
+      2,
+      10
+     ],
+     "harvest_from": [
+      3,
+      1
+     ],
+     "harvest_to": [
+      6,
+      10
+     ],
+     "days_first": 70,
+     "days_last": 70,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 6.347,
+     "cost_per_10a": 9166450,
+     "cost_survey_per_10a": 9589754,
+     "land_rent_in_survey": 423304,
+     "farm_ratio": 1.085,
+     "farm_ratio_raw": 1.085,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「토마토,방울토마토 · 반촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설토마토」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설토마토",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 19735722,
+      "cost": 9589754,
+      "income": 10145967,
+      "kg": 6347,
+      "price": 3113,
+      "land_rent": 423304
+     }
+    },
+    {
+     "name": "조숙재배",
+     "land": "house",
+     "plant_from": [
+      5,
+      1
+     ],
+     "plant_to": [
+      5,
+      31
+     ],
+     "harvest_from": [
+      6,
+      11
+     ],
+     "harvest_to": [
+      7,
+      31
+     ],
+     "days_first": 41,
+     "days_last": 41,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 6.347,
+     "cost_per_10a": 9166450,
+     "cost_survey_per_10a": 9589754,
+     "land_rent_in_survey": 423304,
+     "farm_ratio": 1.085,
+     "farm_ratio_raw": 1.085,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「토마토,방울토마토 · 조숙재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설토마토」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설토마토",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 19735722,
+      "cost": 9589754,
+      "income": 10145967,
+      "kg": 6347,
+      "price": 3113,
+      "land_rent": 423304
+     }
+    }
+   ]
+  },
+  {
+   "code": "cherry_tomato",
+   "name": "방울토마토",
+   "emoji": "🍅",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "토마토·방울토마토",
+   "rda": {
+    "row": "시설방울토마토",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 18430134,
+    "cost": 9999335,
+    "income": 8430799,
+    "kg": 4645,
+    "price": 3989,
+    "land_rent": 214686
+   },
+   "normal": {
+    "price": [
+     5009,
+     5128,
+     6213,
+     4885,
+     3652,
+     2944,
+     3281,
+     4815,
+     5947,
+     5619,
+     5286,
+     5106
+    ],
+    "low": [
+     3475,
+     3860,
+     5179,
+     3935,
+     2954,
+     2563,
+     2677,
+     3632,
+     4693,
+     3249,
+     3416,
+     3372
+    ],
+    "high": [
+     6619,
+     6696,
+     7953,
+     6741,
+     4961,
+     3168,
+     3945,
+     5962,
+     7317,
+     7816,
+     6475,
+     6396
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      10,
+      21
+     ],
+     "plant_to": [
+      11,
+      30
+     ],
+     "harvest_from": [
+      1,
+      11
+     ],
+     "harvest_to": [
+      5,
+      10
+     ],
+     "days_first": 82,
+     "days_last": 82,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 4.645,
+     "cost_per_10a": 9784650,
+     "cost_survey_per_10a": 9999335,
+     "land_rent_in_survey": 214686,
+     "farm_ratio": 0.924,
+     "farm_ratio_raw": 0.924,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「토마토,방울토마토 · 촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설방울토마토」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설방울토마토",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 18430134,
+      "cost": 9999335,
+      "income": 8430799,
+      "kg": 4645,
+      "price": 3989,
+      "land_rent": 214686
+     }
+    },
+    {
+     "name": "반촉성재배",
+     "land": "house",
+     "plant_from": [
+      12,
+      21
+     ],
+     "plant_to": [
+      2,
+      10
+     ],
+     "harvest_from": [
+      3,
+      1
+     ],
+     "harvest_to": [
+      6,
+      10
+     ],
+     "days_first": 70,
+     "days_last": 70,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 4.645,
+     "cost_per_10a": 9784650,
+     "cost_survey_per_10a": 9999335,
+     "land_rent_in_survey": 214686,
+     "farm_ratio": 0.924,
+     "farm_ratio_raw": 0.924,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「토마토,방울토마토 · 반촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설방울토마토」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설방울토마토",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 18430134,
+      "cost": 9999335,
+      "income": 8430799,
+      "kg": 4645,
+      "price": 3989,
+      "land_rent": 214686
+     }
+    },
+    {
+     "name": "조숙재배",
+     "land": "house",
+     "plant_from": [
+      5,
+      1
+     ],
+     "plant_to": [
+      5,
+      31
+     ],
+     "harvest_from": [
+      6,
+      11
+     ],
+     "harvest_to": [
+      7,
+      31
+     ],
+     "days_first": 41,
+     "days_last": 41,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 4.645,
+     "cost_per_10a": 9784650,
+     "cost_survey_per_10a": 9999335,
+     "land_rent_in_survey": 214686,
+     "farm_ratio": 0.924,
+     "farm_ratio_raw": 0.924,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「토마토,방울토마토 · 조숙재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설방울토마토」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설방울토마토",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 18430134,
+      "cost": 9999335,
+      "income": 8430799,
+      "kg": 4645,
+      "price": 3989,
+      "land_rent": 214686
+     }
+    }
+   ]
+  },
+  {
+   "code": "cucumber",
+   "name": "오이",
+   "emoji": "🥒",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "오이",
+   "rda": {
+    "row": "시설오이",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2023,
+     2024
+    ],
+    "revenue": 23956312,
+    "cost": 12159026,
+    "income": 11797287,
+    "kg": 10240,
+    "price": 2338,
+    "land_rent": 216500
+   },
+   "normal": {
+    "price": [
+     3891,
+     3756,
+     3192,
+     1976,
+     1596,
+     1436,
+     1873,
+     2131,
+     2277,
+     2391,
+     2773,
+     3139
+    ],
+    "low": [
+     3035,
+     2671,
+     2413,
+     1547,
+     1347,
+     1268,
+     1315,
+     1700,
+     1748,
+     1794,
+     1732,
+     2851
+    ],
+    "high": [
+     4557,
+     5070,
+     4002,
+     2344,
+     1879,
+     1575,
+     2498,
+     2443,
+     2615,
+     3063,
+     3608,
+     3422
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      11,
+      1
+     ],
+     "plant_to": [
+      12,
+      20
+     ],
+     "harvest_from": [
+      1,
+      11
+     ],
+     "harvest_to": [
+      4,
+      30
+     ],
+     "days_first": 71,
+     "days_last": 71,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 10.24,
+     "cost_per_10a": 11942525,
+     "cost_survey_per_10a": 12159026,
+     "land_rent_in_survey": 216500,
+     "farm_ratio": 1.008,
+     "farm_ratio_raw": 1.008,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「오이 · 촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설오이」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설오이",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 23956312,
+      "cost": 12159026,
+      "income": 11797287,
+      "kg": 10240,
+      "price": 2338,
+      "land_rent": 216500
+     }
+    },
+    {
+     "name": "반촉성재배",
+     "land": "house",
+     "plant_from": [
+      1,
+      1
+     ],
+     "plant_to": [
+      2,
+      20
+     ],
+     "harvest_from": [
+      3,
+      11
+     ],
+     "harvest_to": [
+      6,
+      30
+     ],
+     "days_first": 69,
+     "days_last": 69,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 10.24,
+     "cost_per_10a": 11942525,
+     "cost_survey_per_10a": 12159026,
+     "land_rent_in_survey": 216500,
+     "farm_ratio": 1.008,
+     "farm_ratio_raw": 1.008,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「오이 · 반촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설오이」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설오이",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 23956312,
+      "cost": 12159026,
+      "income": 11797287,
+      "kg": 10240,
+      "price": 2338,
+      "land_rent": 216500
+     }
+    },
+    {
+     "name": "조숙재배",
+     "land": "house",
+     "plant_from": [
+      3,
+      1
+     ],
+     "plant_to": [
+      4,
+      20
+     ],
+     "harvest_from": [
+      5,
+      11
+     ],
+     "harvest_to": [
+      7,
+      31
+     ],
+     "days_first": 71,
+     "days_last": 71,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 10.24,
+     "cost_per_10a": 11942525,
+     "cost_survey_per_10a": 12159026,
+     "land_rent_in_survey": 216500,
+     "farm_ratio": 1.008,
+     "farm_ratio_raw": 1.008,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「오이 · 조숙재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설오이」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설오이",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 23956312,
+      "cost": 12159026,
+      "income": 11797287,
+      "kg": 10240,
+      "price": 2338,
+      "land_rent": 216500
+     }
+    },
+    {
+     "name": "억제재배",
+     "land": "house",
+     "plant_from": [
+      9,
+      1
+     ],
+     "plant_to": [
+      10,
+      20
+     ],
+     "harvest_from": [
+      10,
+      11
+     ],
+     "harvest_to": [
+      1,
+      31
+     ],
+     "days_first": 40,
+     "days_last": 40,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 10.24,
+     "cost_per_10a": 11942525,
+     "cost_survey_per_10a": 12159026,
+     "land_rent_in_survey": 216500,
+     "farm_ratio": 1.008,
+     "farm_ratio_raw": 1.008,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「오이 · 억제재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설오이」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설오이",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 23956312,
+      "cost": 12159026,
+      "income": 11797287,
+      "kg": 10240,
+      "price": 2338,
+      "land_rent": 216500
+     }
+    }
+   ]
+  },
+  {
+   "code": "eggplant",
+   "name": "가지",
+   "emoji": "🍆",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "가지",
+   "rda": {
+    "row": "시설가지",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 28000074,
+    "cost": 14307303,
+    "income": 13692770,
+    "kg": 12478,
+    "price": 2243,
+    "land_rent": 231498
+   },
+   "normal": {
+    "price": [
+     4297,
+     3764,
+     3448,
+     2621,
+     2188,
+     1887,
+     1501,
+     1613,
+     1581,
+     1894,
+     2410,
+     4095
+    ],
+    "low": [
+     3834,
+     3076,
+     3030,
+     2322,
+     1953,
+     1712,
+     1139,
+     1407,
+     1339,
+     1749,
+     1998,
+     3465
+    ],
+    "high": [
+     5351,
+     4811,
+     4229,
+     3096,
+     2334,
+     2083,
+     2024,
+     1948,
+     2061,
+     2143,
+     2693,
+     4454
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      8,
+      21
+     ],
+     "plant_to": [
+      9,
+      10
+     ],
+     "harvest_from": [
+      10,
+      1
+     ],
+     "harvest_to": [
+      6,
+      30
+     ],
+     "days_first": 41,
+     "days_last": 41,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 12.478,
+     "cost_per_10a": 14075806,
+     "cost_survey_per_10a": 14307303,
+     "land_rent_in_survey": 231498,
+     "farm_ratio": 1.0,
+     "farm_ratio_raw": 1.0,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「가지 · 촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설가지」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설가지",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 28000074,
+      "cost": 14307303,
+      "income": 13692770,
+      "kg": 12478,
+      "price": 2243,
+      "land_rent": 231498
+     }
+    },
+    {
+     "name": "반촉성재배",
+     "land": "house",
+     "plant_from": [
+      3,
+      1
+     ],
+     "plant_to": [
+      4,
+      30
+     ],
+     "harvest_from": [
+      4,
+      1
+     ],
+     "harvest_to": [
+      7,
+      31
+     ],
+     "days_first": 31,
+     "days_last": 31,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 12.478,
+     "cost_per_10a": 14075806,
+     "cost_survey_per_10a": 14307303,
+     "land_rent_in_survey": 231498,
+     "farm_ratio": 1.0,
+     "farm_ratio_raw": 1.0,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「가지 · 반촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설가지」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설가지",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 28000074,
+      "cost": 14307303,
+      "income": 13692770,
+      "kg": 12478,
+      "price": 2243,
+      "land_rent": 231498
+     }
+    },
+    {
+     "name": "억제재배",
+     "land": "house",
+     "plant_from": [
+      6,
+      21
+     ],
+     "plant_to": [
+      7,
+      20
+     ],
+     "harvest_from": [
+      8,
+      1
+     ],
+     "harvest_to": [
+      12,
+      31
+     ],
+     "days_first": 41,
+     "days_last": 41,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 12.478,
+     "cost_per_10a": 14075806,
+     "cost_survey_per_10a": 14307303,
+     "land_rent_in_survey": 231498,
+     "farm_ratio": 1.0,
+     "farm_ratio_raw": 1.0,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「가지 · 억제재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설가지」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설가지",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 28000074,
+      "cost": 14307303,
+      "income": 13692770,
+      "kg": 12478,
+      "price": 2243,
+      "land_rent": 231498
+     }
+    }
+   ]
+  },
+  {
+   "code": "green_chili",
+   "name": "풋고추",
+   "emoji": "🌶️",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "고추(풋·꽈리·홍고추)",
+   "rda": {
+    "row": "시설고추",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 20600448,
+    "cost": 9651276,
+    "income": 10949172,
+    "kg": 5278,
+    "price": 3919,
+    "land_rent": 208166
+   },
+   "normal": {
+    "price": [
+     6055,
+     8716,
+     6904,
+     3632,
+     3180,
+     3157,
+     3948,
+     3083,
+     3733,
+     3979,
+     4090,
+     4031
+    ],
+    "low": [
+     4857,
+     5529,
+     4053,
+     2991,
+     2703,
+     2735,
+     2745,
+     2087,
+     2138,
+     2637,
+     3620,
+     3282
+    ],
+    "high": [
+     7824,
+     12633,
+     12471,
+     5207,
+     3713,
+     3620,
+     4948,
+     4064,
+     4756,
+     4993,
+     4703,
+     4343
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      12,
+      11
+     ],
+     "plant_to": [
+      12,
+      31
+     ],
+     "harvest_from": [
+      2,
+      1
+     ],
+     "harvest_to": [
+      6,
+      20
+     ],
+     "days_first": 52,
+     "days_last": 52,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 5.278,
+     "cost_per_10a": 9443110,
+     "cost_survey_per_10a": 9651276,
+     "land_rent_in_survey": 208166,
+     "farm_ratio": 0.803,
+     "farm_ratio_raw": 0.803,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「고추(촉성재배) · 반촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설고추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설고추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 20600448,
+      "cost": 9651276,
+      "income": 10949172,
+      "kg": 5278,
+      "price": 3919,
+      "land_rent": 208166
+     }
+    }
+   ]
+  },
+  {
+   "code": "paprika",
+   "name": "파프리카",
+   "emoji": "🫑",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "파프리카·피망",
+   "rda": {
+    "row": "시설파프리카",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 40505417,
+    "cost": 29271126,
+    "income": 11234291,
+    "kg": 12030,
+    "price": 3374,
+    "land_rent": 201772
+   },
+   "normal": {
+    "price": [
+     5994,
+     6438,
+     5902,
+     4246,
+     3374,
+     2557,
+     2160,
+     4846,
+     5100,
+     4187,
+     2901,
+     3632
+    ],
+    "low": [
+     5722,
+     5606,
+     4269,
+     3480,
+     2971,
+     2069,
+     1803,
+     3203,
+     3987,
+     3171,
+     2147,
+     2691
+    ],
+    "high": [
+     6641,
+     8105,
+     7667,
+     5152,
+     3655,
+     2963,
+     2302,
+     6048,
+     6808,
+     5046,
+     3833,
+     5106
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "겨울재배",
+     "land": "house",
+     "plant_from": [
+      8,
+      11
+     ],
+     "plant_to": [
+      9,
+      10
+     ],
+     "harvest_from": [
+      11,
+      1
+     ],
+     "harvest_to": [
+      7,
+      10
+     ],
+     "days_first": 82,
+     "days_last": 82,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 12.03,
+     "cost_per_10a": 29069354,
+     "cost_survey_per_10a": 29271126,
+     "land_rent_in_survey": 201772,
+     "farm_ratio": 0.914,
+     "farm_ratio_raw": 0.914,
+     "storage_days": 21,
+     "source": {
+      "schedule": "농사로 재배력 「파프리카 · 겨울재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설파프리카」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설파프리카",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 40505417,
+      "cost": 29271126,
+      "income": 11234291,
+      "kg": 12030,
+      "price": 3374,
+      "land_rent": 201772
+     }
+    }
+   ]
+  },
+  {
+   "code": "strawberry",
+   "name": "딸기",
+   "emoji": "🍓",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "딸기",
+   "rda": {
+    "row": "시설딸기",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 27297990,
+    "cost": 15668396,
+    "income": 11629594,
+    "kg": 3006,
+    "price": 9077,
+    "land_rent": 365622
+   },
+   "normal": {
+    "price": [
+     13028,
+     9965,
+     7118,
+     6171,
+     6487,
+     9953,
+     null,
+     null,
+     null,
+     null,
+     19576,
+     16815
+    ],
+    "low": [
+     9895,
+     7831,
+     5911,
+     5217,
+     5948,
+     8704,
+     null,
+     null,
+     null,
+     null,
+     13156,
+     14623
+    ],
+    "high": [
+     16129,
+     12277,
+     8513,
+     6860,
+     6805,
+     11066,
+     null,
+     null,
+     null,
+     null,
+     23173,
+     18610
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      9,
+      11
+     ],
+     "plant_to": [
+      9,
+      30
+     ],
+     "harvest_from": [
+      11,
+      21
+     ],
+     "harvest_to": [
+      5,
+      10
+     ],
+     "days_first": 71,
+     "days_last": 71,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 3.006,
+     "cost_per_10a": 15302774,
+     "cost_survey_per_10a": 15668396,
+     "land_rent_in_survey": 365622,
+     "farm_ratio": 0.903,
+     "farm_ratio_raw": 0.903,
+     "storage_days": 5,
+     "source": {
+      "schedule": "농사로 재배력 「딸기(촉성재배) · 촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설딸기」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설딸기",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 27297990,
+      "cost": 15668396,
+      "income": 11629594,
+      "kg": 3006,
+      "price": 9077,
+      "land_rent": 365622
+     }
+    },
+    {
+     "name": "초촉성재배",
+     "land": "house",
+     "plant_from": [
+      8,
+      21
+     ],
+     "plant_to": [
+      8,
+      31
+     ],
+     "harvest_from": [
+      10,
+      11
+     ],
+     "harvest_to": [
+      5,
+      10
+     ],
+     "days_first": 51,
+     "days_last": 51,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 3.006,
+     "cost_per_10a": 15302774,
+     "cost_survey_per_10a": 15668396,
+     "land_rent_in_survey": 365622,
+     "farm_ratio": 0.903,
+     "farm_ratio_raw": 0.903,
+     "storage_days": 5,
+     "source": {
+      "schedule": "농사로 재배력 「딸기(촉성재배) · 초촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설딸기」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설딸기",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 27297990,
+      "cost": 15668396,
+      "income": 11629594,
+      "kg": 3006,
+      "price": 9077,
+      "land_rent": 365622
+     }
+    }
+   ]
+  },
+  {
+   "code": "korean_melon",
+   "name": "참외",
+   "emoji": "🍈",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "참외",
+   "rda": {
+    "row": "시설참외",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 12942858,
+    "cost": 6204817,
+    "income": 6738042,
+    "kg": 4173,
+    "price": 3105,
+    "land_rent": 345476
+   },
+   "normal": {
+    "price": [
+     null,
+     6805,
+     6489,
+     5304,
+     3079,
+     2399,
+     1559,
+     2429,
+     2222,
+     null,
+     null,
+     null
+    ],
+    "low": [
+     null,
+     5546,
+     5788,
+     4498,
+     2806,
+     1961,
+     1347,
+     1915,
+     1831,
+     null,
+     null,
+     null
+    ],
+    "high": [
+     null,
+     8692,
+     7452,
+     6942,
+     3536,
+     2881,
+     1708,
+     3320,
+     2741,
+     null,
+     null,
+     null
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      12,
+      1
+     ],
+     "plant_to": [
+      1,
+      10
+     ],
+     "harvest_from": [
+      3,
+      1
+     ],
+     "harvest_to": [
+      5,
+      31
+     ],
+     "days_first": 90,
+     "days_last": 90,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 4.173,
+     "cost_per_10a": 5859341,
+     "cost_survey_per_10a": 6204817,
+     "land_rent_in_survey": 345476,
+     "farm_ratio": 0.939,
+     "farm_ratio_raw": 0.939,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「참외 · 촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설참외」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설참외",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 12942858,
+      "cost": 6204817,
+      "income": 6738042,
+      "kg": 4173,
+      "price": 3105,
+      "land_rent": 345476
+     }
+    },
+    {
+     "name": "반촉성재배",
+     "land": "house",
+     "plant_from": [
+      1,
+      21
+     ],
+     "plant_to": [
+      3,
+      10
+     ],
+     "harvest_from": [
+      5,
+      1
+     ],
+     "harvest_to": [
+      6,
+      20
+     ],
+     "days_first": 100,
+     "days_last": 100,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 4.173,
+     "cost_per_10a": 5859341,
+     "cost_survey_per_10a": 6204817,
+     "land_rent_in_survey": 345476,
+     "farm_ratio": 0.939,
+     "farm_ratio_raw": 0.939,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「참외 · 반촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설참외」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설참외",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 12942858,
+      "cost": 6204817,
+      "income": 6738042,
+      "kg": 4173,
+      "price": 3105,
+      "land_rent": 345476
+     }
+    },
+    {
+     "name": "조숙재배",
+     "land": "house",
+     "plant_from": [
+      4,
+      11
+     ],
+     "plant_to": [
+      4,
+      30
+     ],
+     "harvest_from": [
+      6,
+      11
+     ],
+     "harvest_to": [
+      8,
+      10
+     ],
+     "days_first": 61,
+     "days_last": 61,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 4.173,
+     "cost_per_10a": 5859341,
+     "cost_survey_per_10a": 6204817,
+     "land_rent_in_survey": 345476,
+     "farm_ratio": 0.939,
+     "farm_ratio_raw": 0.939,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「참외 · 조숙재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설참외」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설참외",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 12942858,
+      "cost": 6204817,
+      "income": 6738042,
+      "kg": 4173,
+      "price": 3105,
+      "land_rent": 345476
+     }
+    },
+    {
+     "name": "억제재배",
+     "land": "house",
+     "plant_from": [
+      9,
+      21
+     ],
+     "plant_to": [
+      10,
+      31
+     ],
+     "harvest_from": [
+      1,
+      21
+     ],
+     "harvest_to": [
+      3,
+      20
+     ],
+     "days_first": 122,
+     "days_last": 122,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 4.173,
+     "cost_per_10a": 5859341,
+     "cost_survey_per_10a": 6204817,
+     "land_rent_in_survey": 345476,
+     "farm_ratio": 0.939,
+     "farm_ratio_raw": 0.939,
+     "storage_days": 10,
+     "source": {
+      "schedule": "농사로 재배력 「참외 · 억제재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설참외」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설참외",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 12942858,
+      "cost": 6204817,
+      "income": 6738042,
+      "kg": 4173,
+      "price": 3105,
+      "land_rent": 345476
+     }
+    }
+   ]
+  },
+  {
+   "code": "melon",
+   "name": "멜론",
+   "emoji": "🍈",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "멜론",
+   "rda": {
+    "row": "시설멜론",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2023,
+     2024
+    ],
+    "revenue": 10324619,
+    "cost": 5708859,
+    "income": 4615760,
+    "kg": 2694,
+    "price": 3833,
+    "land_rent": 166840
+   },
+   "normal": {
+    "price": [
+     4535,
+     6481,
+     6646,
+     5152,
+     3862,
+     2941,
+     2617,
+     2856,
+     2736,
+     2754,
+     3368,
+     4425
+    ],
+    "low": [
+     2719,
+     4395,
+     4776,
+     4355,
+     3483,
+     2674,
+     2198,
+     2406,
+     2495,
+     2525,
+     2676,
+     4081
+    ],
+    "high": [
+     6005,
+     9249,
+     8493,
+     6187,
+     4376,
+     3364,
+     3273,
+     3892,
+     3018,
+     2900,
+     4300,
+     5063
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "봄재배",
+     "land": "house",
+     "plant_from": [
+      1,
+      21
+     ],
+     "plant_to": [
+      3,
+      31
+     ],
+     "harvest_from": [
+      4,
+      1
+     ],
+     "harvest_to": [
+      6,
+      10
+     ],
+     "days_first": 70,
+     "days_last": 57,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 2.694,
+     "cost_per_10a": 5542018,
+     "cost_survey_per_10a": 5708859,
+     "land_rent_in_survey": 166840,
+     "farm_ratio": 1.244,
+     "farm_ratio_raw": 1.244,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 달력 「멜론 · 봄재배」",
+      "econ": "농진청 농산물소득조사 「시설멜론」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days",
+      "schedule"
+     ],
+     "rda": {
+      "row": "시설멜론",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 10324619,
+      "cost": 5708859,
+      "income": 4615760,
+      "kg": 2694,
+      "price": 3833,
+      "land_rent": 166840
+     }
+    },
+    {
+     "name": "여름재배",
+     "land": "house",
+     "plant_from": [
+      6,
+      11
+     ],
+     "plant_to": [
+      6,
+      30
+     ],
+     "harvest_from": [
+      9,
+      21
+     ],
+     "harvest_to": [
+      10,
+      20
+     ],
+     "days_first": 102,
+     "days_last": 98,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 2.694,
+     "cost_per_10a": 5542018,
+     "cost_survey_per_10a": 5708859,
+     "land_rent_in_survey": 166840,
+     "farm_ratio": 1.244,
+     "farm_ratio_raw": 1.244,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 달력 「멜론 · 여름재배」",
+      "econ": "농진청 농산물소득조사 「시설멜론」 2023~2024 평균"
+     },
+     "estimated": [
+      "storage_days",
+      "schedule"
+     ],
+     "rda": {
+      "row": "시설멜론",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2023,
+       2024
+      ],
+      "revenue": 10324619,
+      "cost": 5708859,
+      "income": 4615760,
+      "kg": 2694,
+      "price": 3833,
+      "land_rent": 166840
+     }
+    }
+   ]
+  },
+  {
+   "code": "lettuce",
+   "name": "상추",
+   "emoji": "🥬",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "상추",
+   "rda": {
+    "row": "시설상추",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 11295662,
+    "cost": 6157191,
+    "income": 5138470,
+    "kg": 3230,
+    "price": 3499,
+    "land_rent": 182732
+   },
+   "normal": {
+    "price": [
+     4062,
+     2754,
+     2709,
+     2494,
+     2433,
+     3026,
+     6681,
+     6988,
+     8296,
+     6443,
+     2940,
+     3213
+    ],
+    "low": [
+     2453,
+     2226,
+     2254,
+     2176,
+     2209,
+     2463,
+     4490,
+     5806,
+     4524,
+     2740,
+     1756,
+     2713
+    ],
+    "high": [
+     5341,
+     3738,
+     3440,
+     2730,
+     2776,
+     3612,
+     9315,
+     8552,
+     12459,
+     10180,
+     3432,
+     4495
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "봄재배",
+     "land": "house",
+     "plant_from": [
+      2,
+      1
+     ],
+     "plant_to": [
+      3,
+      20
+     ],
+     "harvest_from": [
+      3,
+      21
+     ],
+     "harvest_to": [
+      5,
+      31
+     ],
+     "days_first": 48,
+     "days_last": 48,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 3.23,
+     "cost_per_10a": 5974459,
+     "cost_survey_per_10a": 6157191,
+     "land_rent_in_survey": 182732,
+     "farm_ratio": 0.809,
+     "farm_ratio_raw": 0.809,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「상추 · 시설봄재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설상추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설상추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 11295662,
+      "cost": 6157191,
+      "income": 5138470,
+      "kg": 3230,
+      "price": 3499,
+      "land_rent": 182732
+     }
+    },
+    {
+     "name": "여름재배",
+     "land": "house",
+     "plant_from": [
+      6,
+      1
+     ],
+     "plant_to": [
+      6,
+      20
+     ],
+     "harvest_from": [
+      7,
+      1
+     ],
+     "harvest_to": [
+      8,
+      10
+     ],
+     "days_first": 30,
+     "days_last": 30,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 3.23,
+     "cost_per_10a": 5974459,
+     "cost_survey_per_10a": 6157191,
+     "land_rent_in_survey": 182732,
+     "farm_ratio": 0.809,
+     "farm_ratio_raw": 0.809,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「상추 · 여름재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설상추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설상추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 11295662,
+      "cost": 6157191,
+      "income": 5138470,
+      "kg": 3230,
+      "price": 3499,
+      "land_rent": 182732
+     }
+    },
+    {
+     "name": "가을재배",
+     "land": "house",
+     "plant_from": [
+      8,
+      11
+     ],
+     "plant_to": [
+      8,
+      31
+     ],
+     "harvest_from": [
+      9,
+      11
+     ],
+     "harvest_to": [
+      11,
+      10
+     ],
+     "days_first": 31,
+     "days_last": 31,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 3.23,
+     "cost_per_10a": 5974459,
+     "cost_survey_per_10a": 6157191,
+     "land_rent_in_survey": 182732,
+     "farm_ratio": 0.809,
+     "farm_ratio_raw": 0.809,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「상추 · 가을재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설상추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설상추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 11295662,
+      "cost": 6157191,
+      "income": 5138470,
+      "kg": 3230,
+      "price": 3499,
+      "land_rent": 182732
+     }
+    },
+    {
+     "name": "겨울재배",
+     "land": "house",
+     "plant_from": [
+      11,
+      21
+     ],
+     "plant_to": [
+      12,
+      10
+     ],
+     "harvest_from": [
+      1,
+      1
+     ],
+     "harvest_to": [
+      3,
+      31
+     ],
+     "days_first": 41,
+     "days_last": 41,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 3.23,
+     "cost_per_10a": 5974459,
+     "cost_survey_per_10a": 6157191,
+     "land_rent_in_survey": 182732,
+     "farm_ratio": 0.809,
+     "farm_ratio_raw": 0.809,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「상추 · 겨울재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설상추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설상추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 11295662,
+      "cost": 6157191,
+      "income": 5138470,
+      "kg": 3230,
+      "price": 3499,
+      "land_rent": 182732
+     }
+    }
+   ]
+  },
+  {
+   "code": "chive",
+   "name": "부추",
+   "emoji": "🥬",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "부추",
+   "rda": {
+    "row": "시설부추",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 12217390,
+    "cost": 6843207,
+    "income": 5374183,
+    "kg": 3922,
+    "price": 3114,
+    "land_rent": 426800
+   },
+   "normal": {
+    "price": [
+     5776,
+     5464,
+     4240,
+     2686,
+     2118,
+     1789,
+     2471,
+     3812,
+     3267,
+     3634,
+     5310,
+     5303
+    ],
+    "low": [
+     4853,
+     3778,
+     2660,
+     1938,
+     1755,
+     1632,
+     1911,
+     2823,
+     2833,
+     3146,
+     4007,
+     4154
+    ],
+    "high": [
+     7157,
+     6942,
+     6331,
+     3176,
+     2424,
+     2010,
+     3435,
+     4675,
+     3653,
+     4039,
+     6981,
+     6913
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "시설재배",
+     "land": "house",
+     "plant_from": [
+      3,
+      21
+     ],
+     "plant_to": [
+      4,
+      20
+     ],
+     "harvest_from": [
+      11,
+      1
+     ],
+     "harvest_to": [
+      3,
+      31
+     ],
+     "days_first": 225,
+     "days_last": 225,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 3.922,
+     "cost_per_10a": 6416407,
+     "cost_survey_per_10a": 6843207,
+     "land_rent_in_survey": 426800,
+     "farm_ratio": 0.6,
+     "farm_ratio_raw": 0.6,
+     "storage_days": 7,
+     "source": {
+      "schedule": "농사로 재배력 「부추 · 시설재배」 (파종)",
+      "econ": "농진청 농산물소득조사 「시설부추」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설부추",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 12217390,
+      "cost": 6843207,
+      "income": 5374183,
+      "kg": 3922,
+      "price": 3114,
+      "land_rent": 426800
+     }
+    }
+   ]
+  },
+  {
+   "code": "squash",
+   "name": "호박",
+   "emoji": "🎃",
+   "land_types": [
+    "house"
+   ],
+   "price_source": "forecast",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "호박",
+   "rda": {
+    "row": "시설호박",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 17229924,
+    "cost": 7910274,
+    "income": 9319650,
+    "kg": 8479,
+    "price": 2029,
+    "land_rent": 304216
+   },
+   "normal": {
+    "price": [
+     3160,
+     3165,
+     2904,
+     1773,
+     1534,
+     1398,
+     1427,
+     1795,
+     2133,
+     2058,
+     1967,
+     2370
+    ],
+    "low": [
+     2800,
+     2079,
+     2285,
+     1441,
+     1148,
+     1158,
+     847,
+     1389,
+     1866,
+     1717,
+     1373,
+     2133
+    ],
+    "high": [
+     3504,
+     4065,
+     4058,
+     2231,
+     1821,
+     1609,
+     1852,
+     2549,
+     2403,
+     2585,
+     2282,
+     2485
+    ]
+   },
+   "survey_price": null,
+   "croppings": [
+    {
+     "name": "촉성재배",
+     "land": "house",
+     "plant_from": [
+      1,
+      1
+     ],
+     "plant_to": [
+      2,
+      20
+     ],
+     "harvest_from": [
+      2,
+      11
+     ],
+     "harvest_to": [
+      4,
+      30
+     ],
+     "days_first": 41,
+     "days_last": 41,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 8.479,
+     "cost_per_10a": 7606058,
+     "cost_survey_per_10a": 7910274,
+     "land_rent_in_survey": 304216,
+     "farm_ratio": 0.949,
+     "farm_ratio_raw": 0.949,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「호박 · 촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설호박」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설호박",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 17229924,
+      "cost": 7910274,
+      "income": 9319650,
+      "kg": 8479,
+      "price": 2029,
+      "land_rent": 304216
+     }
+    },
+    {
+     "name": "반촉성재배",
+     "land": "house",
+     "plant_from": [
+      2,
+      1
+     ],
+     "plant_to": [
+      3,
+      31
+     ],
+     "harvest_from": [
+      4,
+      11
+     ],
+     "harvest_to": [
+      6,
+      30
+     ],
+     "days_first": 69,
+     "days_last": 69,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 8.479,
+     "cost_per_10a": 7606058,
+     "cost_survey_per_10a": 7910274,
+     "land_rent_in_survey": 304216,
+     "farm_ratio": 0.949,
+     "farm_ratio_raw": 0.949,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「호박 · 반촉성재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설호박」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설호박",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 17229924,
+      "cost": 7910274,
+      "income": 9319650,
+      "kg": 8479,
+      "price": 2029,
+      "land_rent": 304216
+     }
+    },
+    {
+     "name": "억제재배",
+     "land": "house",
+     "plant_from": [
+      9,
+      11
+     ],
+     "plant_to": [
+      9,
+      30
+     ],
+     "harvest_from": [
+      11,
+      11
+     ],
+     "harvest_to": [
+      1,
+      31
+     ],
+     "days_first": 61,
+     "days_last": 61,
+     "harvest_days": null,
+     "multi_harvest": true,
+     "yield_t_per_10a": 8.479,
+     "cost_per_10a": 7606058,
+     "cost_survey_per_10a": 7910274,
+     "land_rent_in_survey": 304216,
+     "farm_ratio": 0.949,
+     "farm_ratio_raw": 0.949,
+     "storage_days": 14,
+     "source": {
+      "schedule": "농사로 재배력 「호박 · 억제재배」 (정식)",
+      "econ": "농진청 농산물소득조사 「시설호박」 2022~2024 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "시설호박",
+      "source": "농진청 농산물소득조사",
+      "years": [
+       2022,
+       2023,
+       2024
+      ],
+      "revenue": 17229924,
+      "cost": 7910274,
+      "income": 9319650,
+      "kg": 8479,
+      "price": 2029,
+      "land_rent": 304216
+     }
+    }
+   ]
+  },
+  {
+   "code": "rice",
+   "name": "쌀",
+   "emoji": "🌾",
+   "land_types": [
+    "paddy"
+   ],
+   "price_source": "survey",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": null,
+   "rda": {
+    "row": "쌀(논벼)",
+    "source": "통계청 농축산물생산비조사",
+    "years": [
+     2023,
+     2024,
+     2025
+    ],
+    "revenue": 1244832,
+    "cost": 590597,
+    "income": 654236,
+    "kg": 722,
+    "price": 1724,
+    "land_rent": 0
+   },
+   "normal": null,
+   "survey_price": 1724,
+   "croppings": [
+    {
+     "name": "모내기(중만생종)",
+     "land": "paddy",
+     "plant_from": [
+      5,
+      11
+     ],
+     "plant_to": [
+      6,
+      20
+     ],
+     "harvest_from": [
+      10,
+      1
+     ],
+     "harvest_to": [
+      10,
+      31
+     ],
+     "days_first": 143,
+     "days_last": 119,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 0.722,
+     "cost_per_10a": 590597,
+     "cost_survey_per_10a": 590597,
+     "land_rent_in_survey": 0,
+     "farm_ratio": null,
+     "farm_ratio_raw": null,
+     "storage_days": 365,
+     "source": {
+      "schedule": "이앙: 농업기술길잡이 벼 중만생종 이앙적기 · 수확: 추정",
+      "econ": "통계청 농축산물생산비조사 「쌀(논벼)」 2023~2025 평균"
+     },
+     "estimated": [
+      "storage_days",
+      "schedule"
+     ],
+     "rda": {
+      "row": "쌀(논벼)",
+      "source": "통계청 농축산물생산비조사",
+      "years": [
+       2023,
+       2024,
+       2025
+      ],
+      "revenue": 1244832,
+      "cost": 590597,
+      "income": 654236,
+      "kg": 722,
+      "price": 1724,
+      "land_rent": 0
+     }
+    }
+   ]
+  },
+  {
+   "code": "soybean",
+   "name": "콩",
+   "emoji": "🫘",
+   "land_types": [
+    "paddy"
+   ],
+   "price_source": "survey",
+   "perennial_note": null,
+   "harvest_months": null,
+   "soil_ph_name": "콩",
+   "rda": {
+    "row": "콩",
+    "source": "통계청 농축산물생산비조사",
+    "years": [
+     2023,
+     2024,
+     2025
+    ],
+    "revenue": 997240,
+    "cost": 529160,
+    "income": 468080,
+    "kg": 210,
+    "price": 4756,
+    "land_rent": 0
+   },
+   "normal": null,
+   "survey_price": 4756,
+   "croppings": [
+    {
+     "name": "논콩(홑짓기)",
+     "land": "paddy",
+     "plant_from": [
+      6,
+      1
+     ],
+     "plant_to": [
+      6,
+      20
+     ],
+     "harvest_from": [
+      10,
+      11
+     ],
+     "harvest_to": [
+      10,
+      31
+     ],
+     "days_first": 132,
+     "days_last": 119,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 0.21,
+     "cost_per_10a": 529160,
+     "cost_survey_per_10a": 529160,
+     "land_rent_in_survey": 0,
+     "farm_ratio": null,
+     "farm_ratio_raw": null,
+     "storage_days": 365,
+     "source": {
+      "schedule": "농업기술길잡이 「콩 · 콩 홑짓기(단작)」 (남부)",
+      "econ": "통계청 농축산물생산비조사 「콩」 2023~2025 평균"
+     },
+     "estimated": [
+      "storage_days"
+     ],
+     "rda": {
+      "row": "콩",
+      "source": "통계청 농축산물생산비조사",
+      "years": [
+       2023,
+       2024,
+       2025
+      ],
+      "revenue": 997240,
+      "cost": 529160,
+      "income": 468080,
+      "kg": 210,
+      "price": 4756,
+      "land_rent": 0
+     }
+    }
+   ]
+  },
+  {
+   "code": "apple",
+   "name": "사과",
+   "emoji": "🍎",
+   "land_types": [
+    "orchard"
+   ],
+   "price_source": "forecast",
+   "perennial_note": "나무를 심고 몇 해 뒤부터 매년 7~11월에 수확해요 (수확 시기: 농사로 재배력 달력 「사과」)",
+   "harvest_months": [
+    7,
+    11
+   ],
+   "soil_ph_name": null,
+   "rda": {
+    "row": "사과",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 8246066,
+    "cost": 3744267,
+    "income": 4501799,
+    "kg": 2120,
+    "price": 3930,
+    "land_rent": 67989
+   },
+   "normal": {
+    "price": [
+     4224,
+     3830,
+     3506,
+     3616,
+     3642,
+     3727,
+     3184,
+     3844,
+     4057,
+     3829,
+     3169,
+     3353
+    ],
+    "low": [
+     2982,
+     2068,
+     2041,
+     2130,
+     2259,
+     2308,
+     1607,
+     2152,
+     2647,
+     2568,
+     2024,
+     2159
+    ],
+    "high": [
+     5729,
+     5698,
+     5403,
+     5749,
+     5491,
+     4857,
+     4247,
+     4964,
+     5689,
+     5338,
+     4363,
+     4246
+    ]
+   },
+   "survey_price": null,
+   "croppings": [],
+   "farm_ratio": 1.068
+  },
+  {
+   "code": "pear",
+   "name": "배",
+   "emoji": "🍐",
+   "land_types": [
+    "orchard"
+   ],
+   "price_source": "forecast",
+   "perennial_note": "나무를 심고 몇 해 뒤부터 매년 8~11월에 수확해요 (수확 시기: 농사로 재배력 「배」 조생~만생종)",
+   "harvest_months": [
+    8,
+    11
+   ],
+   "soil_ph_name": null,
+   "rda": {
+    "row": "배",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 7771100,
+    "cost": 3777667,
+    "income": 3993433,
+    "kg": 2765,
+    "price": 2841,
+    "land_rent": 118424
+   },
+   "normal": {
+    "price": [
+     4123,
+     3643,
+     3416,
+     3540,
+     3689,
+     4174,
+     3845,
+     2822,
+     3261,
+     2323,
+     2528,
+     2781
+    ],
+    "low": [
+     2412,
+     1844,
+     1785,
+     1753,
+     2009,
+     2466,
+     1662,
+     2255,
+     2809,
+     1657,
+     1659,
+     1790
+    ],
+    "high": [
+     5637,
+     4982,
+     5507,
+     5985,
+     6612,
+     7994,
+     8142,
+     3328,
+     3680,
+     2872,
+     3515,
+     3906
+    ]
+   },
+   "survey_price": null,
+   "croppings": [],
+   "farm_ratio": 0.943
+  },
+  {
+   "code": "peach",
+   "name": "복숭아",
+   "emoji": "🍑",
+   "land_types": [
+    "orchard"
+   ],
+   "price_source": "forecast",
+   "perennial_note": "나무를 심고 몇 해 뒤부터 매년 7~10월에 수확해요 (수확 시기: 농사로 재배력 달력 「복숭아」)",
+   "harvest_months": [
+    7,
+    10
+   ],
+   "soil_ph_name": null,
+   "rda": {
+    "row": "복숭아",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 5082425,
+    "cost": 2606744,
+    "income": 2475681,
+    "kg": 1103,
+    "price": 4638,
+    "land_rent": 82125
+   },
+   "normal": {
+    "price": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     4043,
+     3466,
+     4148,
+     4528,
+     5217,
+     null,
+     null
+    ],
+    "low": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     3718,
+     2920,
+     3274,
+     3363,
+     3630,
+     null,
+     null
+    ],
+    "high": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     4435,
+     4581,
+     5266,
+     5755,
+     6435,
+     null,
+     null
+    ]
+   },
+   "survey_price": null,
+   "croppings": [],
+   "farm_ratio": 1.23
+  },
+  {
+   "code": "grape",
+   "name": "포도",
+   "emoji": "🍇",
+   "land_types": [
+    "orchard"
+   ],
+   "price_source": "forecast",
+   "perennial_note": "나무를 심고 몇 해 뒤부터 매년 9~10월에 수확해요 (수확 시기: 농사로 재배력 달력 「포도(무가온)」)",
+   "harvest_months": [
+    9,
+    10
+   ],
+   "soil_ph_name": null,
+   "rda": {
+    "row": "노지포도",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 10531595,
+    "cost": 4261961,
+    "income": 6269634,
+    "kg": 1576,
+    "price": 6700,
+    "land_rent": 84518
+   },
+   "normal": {
+    "price": [
+     8158,
+     7712,
+     6085,
+     5369,
+     null,
+     9470,
+     9291,
+     6413,
+     5355,
+     4396,
+     5690,
+     5937
+    ],
+    "low": [
+     4289,
+     4554,
+     4538,
+     3716,
+     null,
+     8137,
+     8141,
+     5538,
+     3781,
+     2944,
+     2728,
+     3020
+    ],
+    "high": [
+     12251,
+     9994,
+     8944,
+     7511,
+     null,
+     10836,
+     11344,
+     7451,
+     6688,
+     6425,
+     9643,
+     10545
+    ]
+   },
+   "survey_price": null,
+   "croppings": [],
+   "farm_ratio": 1.3
+  },
+  {
+   "code": "mandarin",
+   "name": "감귤",
+   "emoji": "🍊",
+   "land_types": [
+    "orchard"
+   ],
+   "price_source": "forecast",
+   "perennial_note": "나무를 심고 몇 해 뒤부터 매년 11~12월에 수확해요 (수확 시기: 농사로 재배력 달력 「감귤(노지재배) · 보통재배(노지)」)",
+   "harvest_months": [
+    11,
+    12
+   ],
+   "soil_ph_name": null,
+   "rda": {
+    "row": "노지감귤",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 4374410,
+    "cost": 1702431,
+    "income": 2671979,
+    "kg": 2263,
+    "price": 1991,
+    "land_rent": 115572
+   },
+   "normal": {
+    "price": [
+     3018,
+     3649,
+     4491,
+     5329,
+     null,
+     6559,
+     5511,
+     6026,
+     4597,
+     1970,
+     2037,
+     2346
+    ],
+    "low": [
+     1806,
+     2336,
+     2530,
+     4776,
+     null,
+     6172,
+     5223,
+     5223,
+     3771,
+     1714,
+     1557,
+     1673
+    ],
+    "high": [
+     4327,
+     6112,
+     6683,
+     6389,
+     null,
+     6912,
+     5951,
+     7450,
+     5152,
+     2330,
+     2512,
+     2783
+    ]
+   },
+   "survey_price": null,
+   "croppings": [],
+   "farm_ratio": 0.87
+  },
+  {
+   "code": "sweet_persimmon",
+   "name": "단감",
+   "emoji": "🍏",
+   "land_types": [
+    "orchard"
+   ],
+   "price_source": "forecast",
+   "perennial_note": "나무를 심고 몇 해 뒤부터 매년 10~10월에 수확해요 (수확 시기: 농사로 재배력 달력 「단감」)",
+   "harvest_months": [
+    10,
+    10
+   ],
+   "soil_ph_name": null,
+   "rda": {
+    "row": "단감",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 3966227,
+    "cost": 1922928,
+    "income": 2043298,
+    "kg": 1526,
+    "price": 2613,
+    "land_rent": 76218
+   },
+   "normal": {
+    "price": [
+     3290,
+     3583,
+     3563,
+     null,
+     null,
+     null,
+     null,
+     null,
+     3605,
+     2447,
+     2167,
+     2870
+    ],
+    "low": [
+     1915,
+     2094,
+     2512,
+     null,
+     null,
+     null,
+     null,
+     null,
+     2918,
+     1967,
+     1575,
+     1815
+    ],
+    "high": [
+     5049,
+     5659,
+     5495,
+     null,
+     null,
+     null,
+     null,
+     null,
+     4147,
+     2818,
+     3086,
+     4436
+    ]
+   },
+   "survey_price": null,
+   "croppings": [],
+   "farm_ratio": 1.076
+  },
+  {
+   "code": "plum",
+   "name": "자두",
+   "emoji": "🍏",
+   "land_types": [
+    "orchard"
+   ],
+   "price_source": "forecast",
+   "perennial_note": "나무를 심고 몇 해 뒤부터 매년 7~9월에 수확해요 (수확 시기: 농사로 재배력 달력 「자두」)",
+   "harvest_months": [
+    7,
+    9
+   ],
+   "soil_ph_name": null,
+   "rda": {
+    "row": "자두",
+    "source": "농진청 농산물소득조사",
+    "years": [
+     2022,
+     2023,
+     2024
+    ],
+    "revenue": 4398182,
+    "cost": 1978988,
+    "income": 2419195,
+    "kg": 993,
+    "price": 4483,
+    "land_rent": 59768
+   },
+   "normal": {
+    "price": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     3914,
+     3661,
+     4376,
+     4247,
+     5179,
+     null,
+     null
+    ],
+    "low": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     3311,
+     3055,
+     3730,
+     3406,
+     3640,
+     null,
+     null
+    ],
+    "high": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     4487,
+     4515,
+     5256,
+     5579,
+     6700,
+     null,
+     null
+    ]
+   },
+   "survey_price": null,
+   "croppings": [],
+   "farm_ratio": 1.136
+  }
+ ]
+}

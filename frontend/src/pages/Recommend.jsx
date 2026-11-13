@@ -14,6 +14,8 @@ import "./recommend.css";
    - 입력: 시·도 · 심을 날짜(오늘~1년) · 면적 · 기존에 키우던 작물(흙 pH 어림) · 1년 임대료 · 재배 방식 (11-13 날짜와 재배 방식 자리 바꿈)
    - 결과: 순이익 TOP3 카드. 추천 이유는 API 응답 값으로 만든 틀 문장만 (직접 쓴 설명 없음)
    - 작물 정보: 작물 고르기(드롭다운 검색) · 추천 결과 · 재배 조건 · 재배 달력 · 앞으로 12개월 예상 도매가
+   - 11-13 실제 자료: 작물 34개 · 작형 = shared/crops.json (농사로 재배력 · 농진청 소득조사 · 통계청 생산비조사),
+     가격 = DB AI 예측 도매가 × 농가 수취 비율 (예측이 없는 날은 평년 도매가, 쌀·콩은 조사 수취가), 시장 계수 = DB
    ───────────────────────────────────────────── */
 
 const man = (v) => `${won(Math.round(v / 1e4))}만원`;
@@ -39,7 +41,19 @@ function reasonLines(o, region) {
     o.no_market ? `${region}에는 공영 도매시장이 없어 전국 평균 가격으로 계산했어요` : `${region} 안에서는 ${o.market.name}에 팔 때 순이익이 가장 커요`,
   ];
   if (o.ph) out.push(PH_LINE[o.ph.kind](o));
+  const pl = priceLine(o);
+  if (pl) out.push(pl);
   return out;
+}
+/** 가격 출처 (11-13): AI 예측 · 평년 도매가 · 조사 수취가 — 응답 price_basis 몫으로 */
+function priceLine(o) {
+  const b = o.price_basis ?? {};
+  const pct = (v) => Math.round((v ?? 0) * 100);
+  if (b.survey) return `가격은 ${o.rda?.source ?? "조사"} 농가 수취가(${won(o.price_per_kg)}원/kg)로 계산했어요 (도매시장 예측이 없는 작물)`;
+  const ratio = o.farm_ratio ? ` · 농가가 받는 값 = 도매가 × ${o.farm_ratio.toFixed(2)}` : "";
+  if (pct(b.forecast) >= 100) return `가격은 AI 예측 도매가(${o.forecast_base_date ? `${md(o.forecast_base_date)} 기준` : "최신"})로 계산했어요${ratio}`;
+  if (pct(b.normal) >= 100) return `수확이 AI 예측 기간(1년) 밖이라 평년(2021~2025) 도매가로 계산했어요${ratio}`;
+  return `가격은 AI 예측 ${pct(b.forecast)}% · 예측 기간 밖 평년 도매가 ${pct(b.normal)}%로 계산했어요${ratio}`;
 }
 // 참고용 안내는 예측이 덜 정확한 작물·기간만 (수확이 멀다는 이유로는 띄우지 않음, 11-12)
 const refLine = (o) => (o.reference === "baseline" ? "이 작물·기간은 예측이 덜 정확해 참고용이에요" : "");
@@ -144,7 +158,7 @@ function CropCard({ o, rank, topProfit, topRate, goInfo }) {
         {rate && <b className="rate">📊 마진율 1위</b>}
       </span>
       <span className={`rc-n ${rank === 0 ? "first" : ""}`}>{String(rank + 1).padStart(2, "0")}</span>
-      <div className="rc-nm">{o.crop_name}<small>{o.cropping} · {mo(o.harvest_start)}월 수확</small></div>
+      <div className="rc-nm">{o.crop_name}<small>{LAND_TYPES[o.land_type]} {o.cropping} · {mo(o.harvest_start)}월 수확</small></div>
       <div className="rc-money">
         <div className={profit ? "hi-profit" : ""}><span>예상 순수익</span><b>{man(o.margin)}</b></div>
         <div className={rate ? "hi-rate" : ""}><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div>
@@ -199,7 +213,8 @@ function CropPicker({ list, crop, ranks, onPick }) {
   }, []);
   const cur = list.find((c) => c.code === crop);
   const hits = list.filter((c) => !q.trim() || c.name.includes(q.trim()));
-  const groups = Object.entries(LAND_TYPES).map(([k, l]) => [l, hits.filter((c) => c.land_type === k)]).filter(([, cs]) => cs.length);
+  const lands = (c) => (c.land_types?.length ? c.land_types : [c.land_type]); // 수박처럼 노지·시설 둘 다면 두 묶음에 (11-13)
+  const groups = Object.entries(LAND_TYPES).map(([k, l]) => [l, hits.filter((c) => lands(c).includes(k))]).filter(([, cs]) => cs.length);
   const pick = (c) => { onPick(c); setOpen(false); setQ(""); };
   return (
     <section className="card rc-pick">
@@ -216,7 +231,7 @@ function CropPicker({ list, crop, ranks, onPick }) {
                 <h4>{g} · {cs.length}</h4>
                 <div className="its">
                   {cs.map((c) => (
-                    <button key={c.code} type="button" className={c.code === crop ? "on" : ""} onClick={() => pick(c.code)}>
+                    <button key={g + c.code} type="button" className={c.code === crop ? "on" : ""} onClick={() => pick(c.code)}>
                       {c.name}{ranks[c.code] && <span className="rk">추천 {ranks[c.code]}위</span>}
                     </button>
                   ))}
@@ -240,6 +255,9 @@ function CropPicker({ list, crop, ranks, onPick }) {
     </section>
   );
 }
+
+// 작물 정보 탭: 추천에 없는 이유 종류 → 배지 (11-13)
+const OUT_LABEL = { perennial: "여러 해 기르는 나무", land: "고른 토지에서 못 길러요", season: "지금은 심는 때가 아니에요", ph: "흙 pH 때문에 맨 아래", low: "추천 3위 밖" };
 
 function WhyCard({ crop, cropName, emoji, rec, form, info, goLand }) {
   const results = rec?.results ?? [];
@@ -270,7 +288,7 @@ function WhyCard({ crop, cropName, emoji, rec, form, info, goLand }) {
         </>
       ) : (
         <>
-          <span className="rc-badge out">추천 3위 밖</span>
+          <span className="rc-badge out">{OUT_LABEL[ex?.kind] ?? "추천 목록 밖"}</span>
           <p className="rc-txt">{ex ? ex.reason : rec ? "추천 목록에 없어요." : "추천 결과를 불러오는 중…"}</p>
         </>
       )}
@@ -287,7 +305,7 @@ function Conditions({ info }) {
       <h2>재배 조건</h2>
       <div className="rc-facts">
         <div><span>재배할 수 있는 토지</span>
-          <div className="land">{Object.entries(LAND_TYPES).map(([k, l]) => <em key={k} className={k === info.crop.land_type ? "on" : ""}>{l}</em>)}</div>
+          <div className="land">{Object.entries(LAND_TYPES).map(([k, l]) => <em key={k} className={(info.crop.land_types?.length ? info.crop.land_types : [info.crop.land_type]).includes(k) ? "on" : ""}>{l}</em>)}</div>
         </div>
         <div><span>알맞은 흙 pH</span>
           {ph?.min != null ? (
@@ -300,11 +318,11 @@ function Conditions({ info }) {
           ) : <b>자료 없음</b>}
         </div>
         {info.rda ? (
-          <div><span>농진청 조사표 「{info.rda.row}」<br />10a당</span>
-            <div><b>수량 {won(info.rda.kg)}kg · 경영비 {man(info.rda.cost)}</b><small>총수입 {man(info.rda.revenue)} · 소득 {man(info.rda.income)}</small></div>
+          <div><span>{info.rda.source || "조사표"} 「{info.rda.row}」<br />{info.rda.years?.length ? `${info.rda.years[0]}~${info.rda.years.at(-1)} 평균 · ` : ""}10a당</span>
+            <div><b>수량 {won(info.rda.kg)}kg · 경영비 {man(info.rda.cost)}</b><small>총수입 {man(info.rda.revenue)} · 소득 {man(info.rda.income)} · 농가 수취가 {won(info.rda.price)}원/kg</small></div>
           </div>
         ) : (
-          <div><span>10a당 수량·경영비</span><div><b>추정값</b><small>농진청 조사표에 없는 작물이에요</small></div></div>
+          <div><span>10a당 수량·경영비</span><div><b>자료 없음</b><small>조사표에 없는 작물이에요</small></div></div>
         )}
       </div>
     </section>
@@ -322,9 +340,10 @@ function Calendar({ info, plantDate }) {
   const LBL = { plant: "심기", grow: "자람", harv: "수확", store: "보관·출하" };
   const p = (v) => (v / 365) * 100;
   const today = plantDate ? doy([mo(plantDate), Number(plantDate.slice(8, 10))]) : null;
+  const multiLand = new Set(info.croppings.map((c) => c.land)).size > 1;
   return (
     <section className="card">
-      <div className="rc-ch"><h2>재배 달력</h2><small>작형별 · 심는 기간 첫날에 심었을 때</small></div>
+      <div className="rc-ch"><h2>재배 달력</h2><small>작형별 · 심는 기간 첫날에 심었을 때 · 농사로 재배력</small></div>
       <div className="rc-cal">
         <div className="mh"><span /><div className="months">{Array.from({ length: 12 }, (_, i) => <span key={i}>{i + 1}월</span>)}</div></div>
         {info.croppings.map((c) => {
@@ -333,7 +352,7 @@ function Calendar({ info, plantDate }) {
             ...(c.storage_days ? segs(a + c.days_to_harvest + c.harvest_days, Math.min(c.storage_days, 365 - c.days_to_harvest - c.harvest_days), "store") : [])];
           return (
             <div className="row" key={c.name}>
-              <span className="nm">{c.name}{c.source === "est" && <em>추정</em>}<small>심는 때 {c.plant_from.join("/")}~{c.plant_to.join("/")}</small></span>
+              <span className="nm" title={c.schedule_source || undefined}>{multiLand ? `${LAND_TYPES[c.land] ?? ""} ` : ""}{c.name}{c.source === "est" && <em>추정</em>}<small>심는 때 {c.plant_from.join("/")}~{c.plant_to.join("/")}</small></span>
               <div className="track">{list.filter(([, l]) => l > 0).map(([s, l, k], i) => <i key={i} className={`k-${k}`} style={{ left: `${p(s)}%`, width: `calc(${p(l)}% - 3px)` }}>{p(l) > 7 ? LBL[k] : ""}</i>)}</div>
             </div>
           );
@@ -350,7 +369,22 @@ function PriceYear({ crop, harvest }) {
   const narrow = useNarrow();
   const state = useAsync(() => getCropPricePath(crop), [crop]);
   const pts = state.data?.points ?? [];
+  if (state.error) return <section className="card state">가격을 불러오지 못했어요: {state.error.message}</section>;
   if (!pts.length) return state.data ? null : <section className="card state">불러오는 중…</section>;
+  if (pts.every((x) => x.basis === "survey")) return (
+    <section className="card">
+      <div className="rc-ch"><h2>앞으로 12개월 예상 가격</h2><small>원/kg · 농가 수취가</small></div>
+      <p className="rc-txt">도매시장 경매 가격이 없는 작물이라, 조사된 농가 수취가격 <b>{won(pts[0].price)}원/kg</b>(최근 3개 해 평균)으로 계산해요. 그래서 달마다 값이 바뀌지 않아요.</p>
+    </section>
+  );
+  const allNormal = pts.every((x) => x.basis === "normal");
+  // 11-13: 예측이 없는 날(평년 가격) · 출하철 밖(참고값) 알림
+  const nNormal = pts.filter((x) => x.basis === "normal").length, nOff = pts.filter((x) => x.off_season).length;
+  const note = [
+    state.data.forecast_base_date && `AI 예측 ${md(state.data.forecast_base_date)} 기준`,
+    nNormal > 0 && `${nNormal === pts.length ? "AI 예측이 없는 작물이라 모두" : "예측이 없는 날은"} 평년(2021~2025) 도매가`,
+    nOff > 0 && "출하철이 아닌 달의 예측은 정확도를 확인하지 못한 참고값",
+  ].filter(Boolean).join(" · ");
   // 휴대폰: 좁은 그림으로 다시 그려 글씨가 작아지지 않게 (달 이름표는 3달마다)
   const W = narrow ? 420 : 1300, H = narrow ? 320 : 300, L = narrow ? 54 : 70, R = narrow ? 14 : 24, T = 36, B = 34;
   const vals = pts.flatMap((x) => [x.lower, x.upper]);
@@ -380,7 +414,8 @@ function PriceYear({ crop, harvest }) {
         <text x={inX(X(mi), 130)} y={Y(pts[mi].price) + 26} textAnchor="middle" fontSize="16" fontWeight="700" fill="#1d5fd8">최저 {won(pts[mi].price)}원</text>
         <text x={inX(X(ma), 130)} y={Y(pts[ma].price) - 14} textAnchor="middle" fontSize="16" fontWeight="700" fill="#d92d20">최고 {won(pts[ma].price)}원</text>
       </svg>
-      <div className="rc-key"><span><i style={{ background: "#e08a00", height: 3 }} />AI 예상 가격</span><span><i style={{ background: "rgba(20,96,59,.25)" }} />예측 범위</span>{harvest && <span><i style={{ background: "var(--amber)" }} />내 수확 기간</span>}</div>
+      <div className="rc-key"><span><i style={{ background: "#e08a00", height: 3 }} />{allNormal ? "평년 가격" : "AI 예상 가격"}</span><span><i style={{ background: "rgba(20,96,59,.25)" }} />{allNormal ? "평년 최저~최고" : "예측 범위"}</span>{harvest && <span><i style={{ background: "var(--amber)" }} />내 수확 기간</span>}</div>
+      {note && <p className="rc-note">ⓘ {note}</p>}
     </section>
   );
 }
@@ -402,7 +437,7 @@ function CropInfo({ crop, setCrop, form, rec, goLand }) {
               <Conditions info={d} />
             </div>
             <Calendar info={d} plantDate={o ? form.date : null} />
-            {!d.note && <PriceYear crop={crop} harvest={o ? [o.harvest_start, o.harvest_end] : null} />}
+            {(!d.note || d.price_source === "forecast") && <PriceYear crop={crop} harvest={o ? [o.harvest_start, o.harvest_end] : null} />}
           </>
         )}
       </Async>

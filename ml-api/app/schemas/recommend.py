@@ -4,14 +4,16 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 LandType = Literal["open", "house", "paddy", "orchard"]
+PriceBasis = Literal["forecast", "normal", "survey"]
 
 
 class CropOut(BaseModel):
     code: str
     name: str
     emoji: str
-    land_type: LandType
+    land_type: LandType = Field(description="대표 토지 (여러 토지에서 기를 수 있으면 첫 번째)")
     land_type_name: str
+    land_types: list[LandType] = Field(default_factory=list, description="기를 수 있는 토지 모두 (11-13, 예: 수박 = 노지·시설)")
     perennial: bool = Field(description="여러 해 기르는 작물 (심는 날 비교를 하지 않음)")
 
 
@@ -46,7 +48,7 @@ class MarketResult(MarketRef):
     revenue: int
     margin: int
     margin_rate: float
-    factor: float = Field(description="시장 계수 (전국 평균 = 1)")
+    factor: float = Field(description="시장 계수 (전국 평균 = 1, 판매량 가중) — DB market_factor")
     best: bool = Field(False, description="그 시·도 안에서 순이익이 가장 높은 시장")
 
 
@@ -60,17 +62,20 @@ class PhInfo(BaseModel):
 class Shipment(BaseModel):
     month: str = Field(examples=["2027-01"])
     t: float = Field(description="그 달 판매량 (톤)")
-    price_per_kg: int
+    price_per_kg: int = Field(description="그 달 판 시장 농가 수취가 (원/kg)")
     revenue: int
 
 
 class RdaRef(BaseModel):
-    row: str = Field(description="농진청 2024 농산물소득조사 표의 행 이름")
+    row: str = Field(description="조사표 행 이름 (예: 시설토마토)")
+    source: str = Field("", description="조사 이름: 농진청 농산물소득조사 · 통계청 농축산물생산비조사")
+    years: list[int] = Field(default_factory=list, description="평균 낸 조사 해")
     revenue: int = Field(description="10a당 총수입 (원)")
-    cost: int = Field(description="10a당 경영비 (원)")
+    cost: int = Field(description="10a당 경영비 (원, 조사 그대로 — 토지임차료 포함)")
     income: int = Field(description="10a당 소득 (원)")
-    kg: int
-    price: int
+    kg: int = Field(description="10a당 수량 (kg)")
+    price: int = Field(description="조사 농가 수취가격 (원/kg)")
+    land_rent: int = Field(0, description="10a당 조사 평균 토지임차료 (원) — 추천 계산의 경영비에서는 뺌 (사용자 임대료를 따로 더함)")
 
 
 class Per10a(BaseModel):
@@ -83,7 +88,7 @@ class Option(BaseModel):
     crop: str
     crop_name: str
     emoji: str
-    land_type: LandType
+    land_type: LandType = Field(description="이 작형을 기르는 토지")
     area_pyeong: float
     cropping: str = Field(description="작형 (예: 촉성재배)")
     plant_date: date
@@ -101,31 +106,36 @@ class Option(BaseModel):
     soil_ph: float | None = Field(None, description="기존 작물로 어림한 흙 pH (범위 가운데)")
     ph: PhInfo | None = Field(None, description="흙 pH 비교 (기존 작물이 없으면 null)")
     demoted: bool = Field(False, description="pH 를 낮춰야 해서 순이익과 상관없이 맨 아래로 내림")
-    factor: float = Field(description="판 시장 계수 (전국 평균 = 1)")
-    price_per_kg: int = Field(description="판 시장의 출하량 가중 평균 예상가 (원/kg)")
-    national_price_per_kg: int = Field(description="전국 도매시장 평균 예상가 (원/kg)")
-    error_pct: int = Field(description="예상가 오차 범위 (±%) = 모델 검증 오차(WAPE), 작물·수확까지 남은 날 기준")
-    reference: Literal["far", "baseline"] | None = Field(None, description="참고용: far 6개월보다 먼 수확 · baseline 기준선보다 나쁜 품목·기간")
+    factor: float = Field(description="판 시장 계수 (전국 평균 = 1, 판매량 가중)")
+    price_per_kg: int = Field(description="판 시장의 판매량 가중 평균 농가 수취가 (원/kg)")
+    national_price_per_kg: int = Field(description="전국 평균으로 판 판매량 가중 평균 농가 수취가 (원/kg)")
+    farm_ratio: float | None = Field(None, description="도매가 → 농가 수취가 비율 (조사 수취가 ÷ 같은 해 수확 달 도매 평균). 쌀·콩은 null")
+    price_basis: dict[str, float] = Field(default_factory=dict, description="매출 가운데 가격 출처 몫: forecast(AI 예측) · normal(평년 도매가) · survey(조사 수취가)")
+    forecast_base_date: date | None = Field(None, description="쓴 AI 예측의 기준일 (예측을 안 썼으면 null)")
+    error_pct: int = Field(description="예상 매출 범위의 반폭 (±%) — 예측 표 하한·상한으로 판 매출")
+    reference: Literal["far", "baseline"] | None = Field(None, description="참고용: baseline 매출 절반 넘게가 출하철 밖(채점 안 해 본 달) 예측 · far 예측(1년) 밖이라 평년 가격이 절반 넘음")
     yield_t: float = Field(description="예상 수확량 (톤)")
-    sellable_t: float = Field(description="판매량 = 수확량 × 상품화율 (톤)")
-    marketable_rate: float = Field(description="상품화율. 조사표 작물은 1 (조사표 가격에 이미 반영)")
-    revenue: int = Field(description="예상 매출 = Σ 월별 판매량 × 월별 예상가 (원)")
-    base_cost: int = Field(description="전국 평균 경영비 × 면적 (원)")
+    sellable_t: float = Field(description="판매량 (톤) — 조사 수량이 판 주산물이라 수확량과 같음")
+    marketable_rate: float = Field(description="상품화율. 조사 수량이 판 주산물이라 1")
+    revenue: int = Field(description="예상 매출 = Σ 주별 판매량 × 그날 농가 수취가 (원)")
+    base_cost: int = Field(description="10a당 경영비(조사 평균, 토지임차료 뺌) × 면적 (원)")
     land_rent: int
     machine_rent: int
     cost: int = Field(description="총경영비 = base_cost + 임대료 (원)")
     margin: int = Field(description="예상 순이익 = 매출 − 총경영비 (원)")
     margin_rate: float = Field(description="마진률 (%) = 순이익 ÷ 매출")
     margin_per_pyeong: int
-    margin_low: int = Field(description="가격이 오차만큼 내렸을 때 순이익")
-    margin_high: int = Field(description="가격이 오차만큼 올랐을 때 순이익")
+    margin_low: int = Field(description="예측 하한 가격으로 팔았을 때 순이익")
+    margin_high: int = Field(description="예측 상한 가격으로 팔았을 때 순이익")
     national_margin: int = Field(description="전국 평균 가격으로 팔았을 때 순이익")
     yield_t_per_10a: float
-    cost_per_10a: int = Field(description="10a당 경영비 (원)")
-    source: Literal["rda", "est"] = Field(description="수량·경영비 출처: rda 농진청 조사표, est 추정")
-    rda: RdaRef | None = Field(description="비교용 농진청 조사표 10a당 값 (없으면 null)")
+    cost_per_10a: int = Field(description="10a당 경영비 (원, 토지임차료 뺌)")
+    source: Literal["rda", "est"] = Field(description="rda: 시기·수량·경영비 모두 조사 자료 · est: 심는 때·수확 때에 추정이 들어감")
+    schedule_source: str = Field("", description="심는 때·수확 때 출처 (농사로 재배력 등)")
+    econ_source: str = Field("", description="수량·경영비 출처 (조사 이름 · 행 · 해)")
+    rda: RdaRef | None = Field(description="비교용 조사표 10a당 값")
     per_10a: Per10a = Field(description="이 계획을 10a로 환산 (비교용)")
-    shipments: list[Shipment] = Field(description="달마다 판매량·예상가·매출")
+    shipments: list[Shipment] = Field(description="달마다 판매량·예상 수취가·매출")
     market_compare: list[MarketResult] = Field(default_factory=list, description="토지 위치(시·도) 안 도매시장마다 팔았을 때 (없으면 전국 평균 1개)")
 
 
@@ -162,6 +172,7 @@ class RecommendCropsResponse(BaseModel):
 class PlantingDatesRequest(WhereToSell):
     crop: str = Field(examples=["tomato"])
     area_pyeong: float = Field(gt=0, le=1_000_000, examples=[600])
+    land: LandType | None = Field(None, description="이 토지의 작형만 (없으면 작물이 자랄 수 있는 토지 모두)")
     land_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 토지 임차료 (만원)")
     machine_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 농기계·시설 임차료 (만원)")
 
@@ -185,25 +196,34 @@ class PricePathPoint(BaseModel):
     price: int
     lower: int
     upper: int
+    basis: PriceBasis = Field("forecast", description="forecast: AI 예측 · normal: 평년 (예측이 없는 날) · survey: 조사 수취가")
+    off_season: bool = Field(False, description="출하철 밖 예측 (참고값)")
 
 
 class PricePathResponse(BaseModel):
     crop: CropOut
-    points: list[PricePathPoint] = Field(description="오늘부터 12개월(53점), 주 단위 전국 공영도매 예상 경매 단가와 모델 검증 오차 범위 (원/kg). 시장별 값은 × 시장 계수")
+    points: list[PricePathPoint] = Field(description="오늘부터 12개월(53점), 주 단위 전국 공영도매 예상 경매 단가 (원/kg). 범위 = 예측 표 하한·상한 (평년이면 2021~2025 최저·최고)")
+    forecast_base_date: date | None = Field(None, description="쓴 AI 예측의 기준일")
     model_version: str
 
 
 class CroppingInfo(BaseModel):
     name: str
+    land: LandType = Field("open", description="이 작형을 기르는 토지")
     plant_from: tuple[int, int] = Field(description="심는 기간 시작 (월, 일)")
     plant_to: tuple[int, int]
+    harvest_from: tuple[int, int] | None = Field(None, description="수확 기간 시작 (월, 일) — 재배력")
+    harvest_to: tuple[int, int] | None = None
     days_to_harvest: int
     harvest_days: int
     storage_days: int
     multi_harvest: bool
     yield_t_per_10a: float
     cost_per_10a: int
+    farm_ratio: float | None = None
     source: Literal["rda", "est"]
+    schedule_source: str = ""
+    econ_source: str = ""
 
 
 class SoilPhOut(BaseModel):
@@ -216,6 +236,9 @@ class SoilPhOut(BaseModel):
 class CropInfoResponse(BaseModel):
     crop: CropOut
     note: str | None = Field(None, description="다년생 안내")
+    harvest_months: tuple[int, int] | None = Field(None, description="과수: 매년 수확하는 달 (시작, 끝)")
+    price_source: Literal["forecast", "survey"] = Field("forecast", description="forecast: AI 예측 도매가 × 농가 수취 비율 · survey: 조사 수취가 (쌀·콩)")
+    normal: dict[str, list[int | None]] | None = Field(None, description="평년 월별 전국 도매가 (2021~2025, 원/kg): price · low · high")
     marketable_rate: float
     rda: RdaRef | None
     soil_ph: SoilPhOut | None = Field(None, description="알맞은 흙 pH (팀 자료)")

@@ -61,5 +61,5 @@ export function NewsTrend({ rows, active, onPick }) {
   );
 }
 
-export const NewsUpdated = ({ at }) => <span className="news-updated">🔄 {hourMinute(at)} 업데이트 · 1시간마다</span>;
+export const NewsUpdated = ({ at }) => !at ? null : <span className="news-updated">🔄 {hourMinute(at)} 업데이트 · 1시간마다</span>;
 

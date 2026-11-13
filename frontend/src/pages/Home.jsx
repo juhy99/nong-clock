@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { predict, recommendCrops } from "../api/ml";
 import { NEWS_CATEGORIES, getNews } from "../api/news";
+import { getRegionalWeather } from "../api/market";
 import { getWeatherHistory, summarizeRegion } from "../api/weather";
 import { useAuth } from "../components/AuthContext";
 import { useAsync } from "../components/common";
@@ -239,13 +240,16 @@ function NewsCard() {
           </li>
         ))}
       </ul>
+      {state.error && <p className="hv-wait">뉴스를 불러오지 못했어요. 잠시 뒤 다시 확인해 주세요.</p>}
       {state.data && !state.data.rows.length && <p className="hv-wait">이 분류의 오늘 뉴스가 아직 없어요.</p>}
     </article>
   );
 }
 
-/* 날씨 카드 (11-11): 서버 날씨 수집기가 만든 시·도 일별 관측(/data/weather/regions-daily.json)으로 어제 날씨 + 최근 7일 평년 대비·주의 신호.
-   서버 연결이 없는 개발 화면은 예시 데이터 (출처 줄에 "예시 데이터"). 예보가 아니라 관측이라 "어제" 기준 */
+/* 날씨 카드 (11-11, 11-14 지금 날씨 추가): 위 = 지금(Spring /api/weather/regions: 기상청 초단기실황·오늘 예보·특보, 10분 캐시),
+   아래 문장 = 서버 날씨 수집기가 만든 시·도 일별 관측(/data/weather/regions-daily.json)의 최근 7일 평년 대비·주의 신호.
+   지금 날씨를 못 받으면 어제 관측을 크게 보여 줌.
+   11-14: 예시 데이터로 대신하지 않음 — 자료가 없으면 안내 문구. 예보가 아니라 관측이라 "어제" 기준 */
 const nz = (v, unit = "") => (v == null ? "–" : `${v}${unit}`);
 const skyOf = (d) => {
   if ((d.rain_mm ?? 0) >= 1) return d.temp_max != null && d.temp_max <= 1 ? ["🌨️", "눈·비"] : ["🌧️", "비"];
@@ -261,17 +265,21 @@ function weekLine(s) {
 
 function WeatherCard() {
   const { user } = useAuth();
-  const state = useAsync(getWeatherHistory);
+  const state = useAsync(getWeatherHistory); // 지난 날씨 (관측 기록 · 평년 대비)
+  const live = useAsync(getRegionalWeather); // 지금 날씨 (기상청 실황 · 오늘 예보 · 특보, 11-14)
   const [pick, setPick] = useState("");
   const h = state.data;
-  const regions = h ? SIDO.filter((r) => h.daily.regions?.[r]?.length) : [];
+  const nowOf = (r) => live.data?.regions?.find((x) => x.name === r) ?? null;
+  const regions = SIDO.filter((r) => h?.daily.regions?.[r]?.length || nowOf(r));
   const name = regions.includes(pick) ? pick : regions.includes(user?.region) ? user.region : regions.includes("경기") ? "경기" : regions[0];
-  const s = h && name ? summarizeRegion(h, name) : null;
+  const s = h && name && h.daily.regions?.[name]?.length ? summarizeRegion(h, name) : null;
   const d = s?.last;
-  const lastOf = (r) => h.daily.regions[r].at(-1);
+  const n = name ? nowOf(name) : null;
+  const lastOf = (r) => h?.daily.regions?.[r]?.at(-1);
   const others = regions.filter((r) => r !== name).slice(0, 8);
-  const [icon, sky] = d ? skyOf(d) : [];
+  const [icon, sky] = n ? [n.icon, n.sky] : d ? skyOf(d) : [];
   const sig = s?.signals[0];
+  const hh = live.data?.base_time?.slice(11, 13);
   return (
     <article className="hv-card">
       <div className="hv-card-head">
@@ -282,22 +290,44 @@ function WeatherCard() {
           </select>
         )}
       </div>
-      {state.error && <p className="hv-wait">날씨 자료를 아직 받지 못했어요. 잠시 뒤 다시 확인해 주세요.</p>}
-      {h && !d && <p className="hv-wait">날씨 자료가 아직 없어요.</p>}
-      {d && (
+      {state.error && live.error && <p className="hv-wait">날씨 자료를 아직 받지 못했어요. 잠시 뒤 다시 확인해 주세요.</p>}
+      {(h || live.data) && !d && !n && <p className="hv-wait">날씨 자료가 아직 없어요.</p>}
+      {n && (
         <>
+          {/* 지금: 기상청 초단기실황(매시) + 오늘 단기예보 */}
+          <div className="hv-wx-now"><span className="ic" aria-hidden>{icon}</span><div><b>{nz(n.temp, "°")}</b><p>지금({hh}시){sky ? ` · ${sky}` : ""} · 오늘 최저 {nz(n.min, "°")} / 최고 {nz(n.max, "°")}</p></div></div>
+          <div className="hv-wx-facts">
+            <span>☔ 강수확률<b>{nz(n.rain_prob, "%")}</b></span><span>💧 습도<b>{nz(n.humidity, "%")}</b></span>
+            <span>🍃 바람<b>{nz(n.wind, "m/s")}</b></span><span>🌧️ 어제 비<b>{d ? nz(d.rain_mm, "mm") : "–"}</b></span>
+          </div>
+          {n.warning ? <p className="hv-warn">⚠️ {name} {n.warning} 발효 중 — 시설물·작물 피해 대비</p>
+            : sig ? <p className="hv-warn">⚠️ {name} 최근 7일 {sig.text} — {sig.tip}</p>
+            : <p className="hv-note">🌱 {n.note}{s ? ` · ${weekLine(s)}` : ""}</p>}
+        </>
+      )}
+      {!n && d && (
+        <>
+          {/* 지금 날씨를 못 받으면 어제 관측 */}
           <div className="hv-wx-now"><span className="ic" aria-hidden>{icon}</span><div><b>{nz(d.temp_avg, "°")}</b><p>어제({md(d.date)}) 평균{sky ? ` · ${sky}` : ""} · 최저 {nz(d.temp_min, "°")} / 최고 {nz(d.temp_max, "°")}</p></div></div>
           <div className="hv-wx-facts">
             <span>☔ 강수량<b>{nz(d.rain_mm, "mm")}</b></span><span>💧 습도<b>{nz(d.humidity, "%")}</b></span>
             <span>🍃 순간풍속<b>{nz(d.gust, "m/s")}</b></span><span>☀️ 일조<b>{nz(d.sun_hours, "시간")}</b></span>
           </div>
           {sig ? <p className="hv-warn">⚠️ {name} 최근 7일 {sig.text} — {sig.tip}</p> : <p className="hv-note">🌱 {weekLine(s)}</p>}
-          <div className="hv-wx-grid">
-            {others.map((r) => <button key={r} type="button" onClick={() => setPick(r)}>{skyOf(lastOf(r))[0]} {r}<b>{nz(lastOf(r).temp_avg, "°")}</b></button>)}
-          </div>
         </>
       )}
-      <p className="hv-src">기상청 관측{d ? ` · ${md(d.date)}까지` : ""}{s?.stale_days > 0 ? ` (${s.stale_days}일 늦음)` : ""}{h?.sample ? " · 예시 데이터" : ""}</p>
+      {(n || d) && (
+        <div className="hv-wx-grid">
+          {others.map((r) => {
+            const o = nowOf(r), l = lastOf(r);
+            if (!o && !l) return null;
+            return <button key={r} type="button" onClick={() => setPick(r)}>{o ? o.icon : skyOf(l)[0]} {r}<b>{nz(o ? o.temp : l.temp_avg, "°")}</b></button>;
+          })}
+        </div>
+      )}
+      <p className="hv-src">
+        기상청{n ? ` 실황 ${hh}시 · 오늘 예보` : ""}{d ? ` · 지난 관측 ${md(d.date)}까지` : ""}{s?.stale_days > 0 ? ` (${s.stale_days}일 늦음)` : ""}
+      </p>
     </article>
   );
 }

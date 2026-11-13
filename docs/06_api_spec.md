@@ -574,7 +574,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | GET | `/api/prices/{item}/market-share?variety=` | 도매시장별 최근 12달 평균 경락가 · 물량 몫 (물량 많은 8곳) + 물량 가중 평균 (11-12) | 시세 › 도매시장별 가격 | `getMarketShare` |
 | GET | `/api/prices/{item}/auction-houses` | 산지공판장 최근 12달 · 23~25년 평균 경락가 · 물량 몫 (8곳, 품종 구분 없음) (11-12) | 시세 › 산지공판장 가격 | `getAuctionHouses` |
 | GET | `/api/prices/{item}/monthly?variety=` | 월별 평균 경락가·반입량: 평년(올해 빼고 5년) · 올해 실제 · 남은 달 예측(`price_forecast_daily` 그 달 평균). 물량이 가장 많은 달의 2% 미만인 달은 가격 비움 (11-13) | 가격 예측 › 계절 패턴 · 월별 반입량 | `getSeasonal` |
-| GET | `/api/weather/regions` | 시·도 17곳 오늘 날씨 + 특보 | 홈 날씨 지도 | `getRegionalWeather` |
+| GET | `/api/weather/regions` | 시·도 17곳 지금 날씨(초단기실황) · 오늘 최저·최고·강수확률 + 특보 (11-14 구현, 10분 캐시) | 홈 › 우리 지역 농업 날씨 | `getRegionalWeather` |
 | POST | `/api/uploads` (multipart, `files` 여러 개) | 사진 업로드 → 사진 주소 목록 | 경매 등록, 게시판 글쓰기 | `uploadImages` |
 | GET | `/api/posts?category=&q=&page=` | 게시글 목록 (숨김 제외, 15개씩) | 게시판 | `getPosts` |
 | GET | `/api/posts/{id}` | 게시글 보기 (조회수 +1) | 게시판 › 글 | `getPost` |
@@ -960,3 +960,4 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | 2026-11-13 | **시세·예측 실제 데이터로.** Spring `GET /api/prices/{item}/monthly` 추가(계절 패턴 · 월별 반입량), 11-12 의 market-share · auction-houses 표에 적음. 화면 시세 기본값을 db 로(`VITE_PRICE_SOURCE=mock` 일 때만 가짜), ml-api `PREDICTOR` 기본값 db, 가격 예측은 서버가 안 되면 가짜 값 대신 오류 | |
 | 2026-11-13 | **작물 추천 실제 자료로.** 작물 표 `shared/crops.json`(농사로 재배력 · 소득조사/생산비조사 3개 해 평균 · farm_ratio · 평년가, 34작물 66작형) 를 ml-api `crop_catalog.py` 가 읽음(`crop_calendar.py` 지움). 가격 = DB 예측 × farm_ratio, 시장 = DB market_factor. 응답에 `land_types`·`price_basis`·`forecast_base_date`·`schedule_source`·`econ_source`·`normal` 등 추가, `/prices` 에 `basis`·`off_season` | |
 | 2026-11-13 | **출하철 밖 표시·보정.** `POST /predict` 의 `forecast[]` 에 `off_season`(출하철 밖 = 참고값) 추가 — DB `price_forecast_daily.off_season`. `GET /predict/top-movers` 는 그날이 출하철 밖인 품목을 뺌. 15거래일~12달 v4 값에 금액÷물량 ↔ 일 단순평균 보정비(0.9~1.1) | |
+| 2026-11-14 | **지금 날씨 · 가짜 뉴스/날씨 뺌.** Spring `GET /api/weather/regions`(2-7) 구현 — 기상청 초단기실황·단기예보·기상특보를 시·도 17곳 대표 격자로, 10분 캐시, 키 `DATA_GO_KR_KEY`(없으면 503). 홈 날씨 카드 위쪽은 지금 날씨, 아래 문장은 지난 관측(수집기 파일). 뉴스·지난 날씨는 출처가 없으면 예시 대신 오류 안내 | |

@@ -77,7 +77,8 @@ export const worstHealth = (list) => {
  * @returns {Promise<{daily: object, monthly: object, meta: object, sample: boolean}>}
  */
 export async function getWeatherHistory() {
-  if (!WEATHER_BASE) return fake(sampleWeatherHistory());
+  // 11-14: 예시 날씨로 대신하지 않는다 — 날씨 파일 주소가 없으면 오류 (홈 날씨 카드가 안내 문구를 보여 줌)
+  if (!WEATHER_BASE) throw new Error("날씨 자료 주소가 설정되지 않았어요 (frontend/.env 의 VITE_NEWS_URL 또는 VITE_DATA_SOURCE=live)");
   const [daily, monthly, meta] = await Promise.all([getJson("regions-daily.json"), getJson("regions-monthly.json"), getJson("meta.json")]);
   return { daily, monthly, meta, sample: false };
 }

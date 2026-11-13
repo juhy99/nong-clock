@@ -54,7 +54,8 @@ export async function searchAll(q, { newsSize = 4 } = {}) {
   const [posts, notices, news] = await Promise.all([
     getPosts({ q: word }),
     getNotices(),
-    getNews({ q: word, qItem: code, size: newsSize }),
+    // 11-14: 뉴스 출처가 없으면(예시 기사 없앰) 검색 전체를 멈추지 않고 뉴스만 0건
+    getNews({ q: word, qItem: code, size: newsSize }).catch(() => ({ rows: [], total: 0, updated_at: null })),
   ]);
   const auctions = findAuctions(word, code);
   const crops = findCrops(word, code);

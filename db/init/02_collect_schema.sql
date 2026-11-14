@@ -151,10 +151,12 @@ CREATE TABLE IF NOT EXISTS price_forecast_daily (
     price_high   INT,
     model        VARCHAR(60),
     off_season   SMALLINT    NOT NULL DEFAULT 0,  -- 1 = 출하철 밖 날 (두 모델 다 채점해 본 적 없는 달 → 화면 '참고', 11-13)
+    crash_adj    SMALLINT    NOT NULL DEFAULT 0,  -- 1 = 폭락 보정이 섞인 날 (최근 7일 시세 ≤ 작년 같은 주 0.67배인 단위의 1~14거래일, 11-14)
     PRIMARY KEY (base_date, item_code, variety_id, target_date)
 );
 -- 11-13 전에 만든 DB 에도 열 추가 (이미 있으면 그대로)
 ALTER TABLE price_forecast_daily ADD COLUMN IF NOT EXISTS off_season SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE price_forecast_daily ADD COLUMN IF NOT EXISTS crash_adj SMALLINT NOT NULL DEFAULT 0;  -- 11-14
 
 CREATE TABLE IF NOT EXISTS price_index_daily (
     date       DATE         NOT NULL,

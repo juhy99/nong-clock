@@ -21,11 +21,16 @@
      달 전체가 2배가 됨 → 극단 달만 덜 움직이게). 정확도 규칙(비율)은 그대로. 팀원 검증: 차이 중앙 2.01 → 1.86%
   [11-13 팀원 제안] 출하철 밖: 그날 묶인 단위들의 무게 절반 넘게가 v4 출하철(01 파일 출하철 = 1) 밖 달이면 off_season = 1
      (두 모델 다 그 달은 채점해 본 적이 없어 정확도를 모름 → 화면에 '참고' 표시)
+  ⓖ [11-14 폭락 보정, 규칙은 시험 전에 정함 — 결정_폭락상태_보정시험_1114] 상태 = 기준일까지 7일 단위 금액합÷물량합 ÷ 364일 전 같은 7일.
+     상태가 0.67 이하인 단위만 ① 구간(1~14거래일) log 값에 ref/crash_adjust_1114.csv 의 곱을 더함
+     (≤0.5: 1~5거래일 ×0.71 · 6~14 ×0.79 / 0.5~0.67: ×0.84 · ×0.90 — 2023~24 줄 중앙 log(실제÷최종)로 정하고 2025~ 줄로 확인).
+     두 주 중 하나라도 거래가 없으면 상태를 모름 → 보정 안 함. ② 이후는 그대로(ⓑ 이음으로 14일 동안 0 까지 줄어듦).
+     지금 시세는 '폭락인지 아닌지' 판단에만 쓰고, 예측 값·모양은 여전히 원인 기반 (강사님 원칙 — 예외로 문서에 적음). 품목·품종 줄의 crash_adj = 보정 단위가 하나라도 섞임
 
 품종·품목으로 묶기: 단위 값의 가중 평균. 무게 = 그 단위의 작년 같은 달 물량 (기준일 앞 가장 최근 같은 달, DB price_unit_daily).
   그날 예측이 있는 단위만으로 무게를 다시 나눔. 무게가 전부 0 이면 같은 무게. 품목(variety_id = ALL) = 품목의 모든 품종 단위
 범위(하한·상한): 고르기 구간(목표 2023~24) 섞은 예측의 log(실제 ÷ 예측) 10%·90% 분위, 거리 묶음별 (ref/forecast_band.csv)
-가격은 출발점·계절 모양·정답에만 — 이 표 어디에도 '지금 시세'를 입력으로 쓰지 않음 (강사님 원칙)
+가격은 출발점·계절 모양·정답에만 — '지금 시세'는 ⓖ 폭락 판단(예외, 1~14거래일)에만 씀 (강사님 원칙)
 """
 
 import argparse
@@ -51,6 +56,23 @@ def band_of(days: int, seg: str, B: pd.DataFrame):
         m = min(12, max(1, round(days / 30.4)))
         r = B[(B.구간 == ("월" if seg == "월" else "원인")) & (B.거리 == m)]
     return float(r.q10.iloc[0]), float(r.q90.iloc[0])
+
+
+def crash_state(panel: Path, base: pd.Timestamp) -> pd.Series:
+    """ⓖ 단위 → 상태 (기준일까지 7일 금액÷물량 ÷ 364일 전 같은 7일). 두 주 중 하나라도 거래 없으면 빠짐"""
+    ud = pd.read_csv(panel / "unit_daily.csv.gz", parse_dates=["date"])
+    un = pd.read_csv(panel / "units.csv").set_index("unit_id").unit_name
+    ud = ud[ud.volume_kg > 0].assign(unit=lambda d: d.unit_id.map(un))
+    def wk(end):
+        g = ud[(ud.date > end - pd.Timedelta(days=7)) & (ud.date <= end)].groupby("unit")
+        return g.amount_won.sum() / g.volume_kg.sum()
+    return (wk(base) / wk(base - pd.Timedelta(days=364))).dropna()
+
+
+def crash_factor(state: float, h: int, T: pd.DataFrame) -> float:
+    """ⓖ 상태·거래일 거리 → log 곱 (해당 없으면 0)"""
+    r = T[(T.상태_이상 < state) & (state <= T.상태_미만) & (T.H_부터 <= h) & (h <= T.H_까지)]
+    return float(np.log(r.곱.iloc[0])) if len(r) else 0.0
 
 
 def unit_forecasts(a) -> pd.DataFrame:
@@ -132,6 +154,23 @@ def unit_forecasts(a) -> pd.DataFrame:
     # ① 값
     one = np.where(G.cause.notna(), W_DAY * lu + (1 - W_DAY) * lc, lu)
     one[G.u7c.isna().to_numpy()] = np.nan
+    # ⓖ 폭락 보정: 단위마다 ① 날을 거래일 순서(H=1..)로 세어 곱을 더함
+    crash = np.zeros(len(G), dtype=bool)
+    if a.crash and Path(a.crash).exists():
+        T = pd.read_csv(a.crash)
+        st = crash_state(Path(a.panel), base)
+        hit = {}
+        for u, ix in G.groupby("unit").indices.items():
+            s = st.get(u)
+            if s is None or s > T.상태_미만.max():
+                continue
+            k = ix[np.isfinite(one[ix])]
+            for h, j in enumerate(k, start=1):
+                f = crash_factor(float(s), h, T)
+                if f:
+                    one[j] += f; crash[j] = True
+            hit[u] = round(float(s), 2)
+        print(f"ⓖ 폭락 보정: 상태 잰 단위 {len(st)} · 보정 {len(hit)}단위 (≤0.5 {sum(v <= .5 for v in hit.values())})")
     out = b.copy()
     FADE = 14
     for u, ix in G.groupby("unit").indices.items():
@@ -144,13 +183,15 @@ def unit_forecasts(a) -> pd.DataFrame:
         out[ix[span]] = np.interp(span, k, o1[k])               # ⓐ 사이 날 직선
         r1 = np.where(np.isfinite(o1[span]), (f"u7c {W_DAY:g} + 원인 {1 - W_DAY:g}" if G.cause.notna().iloc[ix[a1]] else "u7c"), "u7c 사이 날")
         rule[ix[span]] = r1; seg[ix[span]] = "일"
+        if crash[ix[k]].any():                                  # ⓖ 사이 날·이음 날도 보정 표시
+            crash[ix[a0:min(len(ix), a1 + 1 + FADE)]] = True
         if np.isfinite(b[ix[a1]]):                              # ⓑ 이음
             delta = out[ix[a1]] - b[ix[a1]]
             for j in range(a1 + 1, min(len(ix), a1 + 1 + FADE)):
                 if np.isfinite(b[ix[j]]):
                     out[ix[j]] = b[ix[j]] + delta * (1 - (j - a1) / FADE)
                     rule[ix[j]] = rule[ix[j]] + " (이음)"
-    G["lp"], G["rule"], G["seg"] = out, rule, seg
+    G["lp"], G["rule"], G["seg"], G["crash"] = out, rule, seg, crash
     G = G[np.isfinite(G.lp)].copy()
     G["days"] = (G.date - base).dt.days
     G["in_season"] = [(u, m) in season for u, m in zip(G.unit, G.date.dt.month)]
@@ -180,6 +221,7 @@ def main():
         ap.add_argument(f"--{k}", required=True)
     ap.add_argument("--band", default=str(HERE / "ref" / "forecast_band.csv"))
     ap.add_argument("--adj", default=str(HERE / "ref" / "v4_보정표_1113.csv"), help="ⓕ v4 보정비 표 (빈 값이면 안 씀)")
+    ap.add_argument("--crash", default=str(HERE / "ref" / "crash_adjust_1114.csv"), help="ⓖ 폭락 보정 표 (빈 값이면 안 씀)")
     ap.add_argument("--base", default="", help="기준일 (기본: u7c 기준일)")
     a = ap.parse_args()
     G, base = unit_forecasts(a)
@@ -205,7 +247,8 @@ def main():
         # 그날 가장 무게가 큰 단위의 규칙·구간을 대표로
         top = g.sort_values("w").groupby("date").tail(1).set_index("date")
         on = (g.w * g.in_season).groupby(g.date).sum()   # 출하철인 단위의 무게 몫
-        r = pd.DataFrame({"price": p, "rule": top.rule, "seg": top.seg, "days": top.days, "off_season": (on < 0.5).astype(int)})
+        cr = (g.w * g.crash).groupby(g.date).sum()       # ⓖ 보정 단위의 무게 몫
+        r = pd.DataFrame({"price": p, "rule": top.rule, "seg": top.seg, "days": top.days, "off_season": (on < 0.5).astype(int), "crash_adj": (cr > 0).astype(int)})
         q = np.array([band_of(int(d), s, B) for d, s in zip(r.days, r.seg)])
         r["price_low"], r["price_high"] = r.price * np.exp(q[:, 0]), r.price * np.exp(q[:, 1])
         r = r.reset_index().rename(columns={"date": "target_date"})
@@ -216,8 +259,8 @@ def main():
     R["target_date"] = R.target_date.dt.date
     for c in ("price", "price_low", "price_high"):
         R[c] = R[c].round().astype(int)
-    R = R.rename(columns={"rule": "model"})[["base_date", "item_code", "variety_id", "target_date", "price", "price_low", "price_high", "model", "off_season"]]
-    print(f"출하철 밖 줄 (off_season): {int(R.off_season.sum()):,} / {len(R):,}")
+    R = R.rename(columns={"rule": "model"})[["base_date", "item_code", "variety_id", "target_date", "price", "price_low", "price_high", "model", "off_season", "crash_adj"]]
+    print(f"출하철 밖 줄 (off_season): {int(R.off_season.sum()):,} / {len(R):,} · 폭락 보정 섞인 줄 (crash_adj): {int(R.crash_adj.sum()):,}")
     o = Path(a.out); o.mkdir(parents=True, exist_ok=True)
     R.to_csv(o / "price_forecast_daily.csv", index=False, encoding="utf-8")
     print(f"→ {o / 'price_forecast_daily.csv'}: {len(R):,}줄 · 품목 {R.item_code.nunique()} · 품종 {(R.variety_id != 'ALL').groupby(R.item_code).size().size} 품목에 {R[R.variety_id != 'ALL'].variety_id.nunique()}개")

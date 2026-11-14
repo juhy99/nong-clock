@@ -118,8 +118,9 @@ class DbPredictor:
                  "WHERE item_code = %s AND variety_id = %s AND base_date <= %s) AND target_date > %s AND target_date <= %s ORDER BY target_date")
         args = (item, variety or "ALL", item, variety or "ALL", base_date, base_date, base_date + timedelta(days=horizon))
         rows = None
-        # 출하철 밖 표시(off_season, 11-13) 열이 있는 표부터. 없는 예전 판이면 그 열 없이, 표 자체가 없으면 월 표로
-        for cols in ("base_date, target_date, price, price_low, price_high, off_season", "base_date, target_date, price, price_low, price_high"):
+        # 폭락 보정(crash_adj, 11-14)·출하철 밖(off_season, 11-13) 열이 있는 표부터. 없는 예전 판이면 그 열 없이, 표 자체가 없으면 월 표로
+        for cols in ("base_date, target_date, price, price_low, price_high, off_season, crash_adj",
+                     "base_date, target_date, price, price_low, price_high, off_season", "base_date, target_date, price, price_low, price_high"):
             try:
                 rows = self._q(f"SELECT {cols} " + where, args)
                 break
@@ -131,7 +132,7 @@ class DbPredictor:
         for _, t, p, lo, hi, *rest in rows:
             f = fac.get(t.month, 1.0)
             pts.append(ForecastPoint(date=t, price=round(p * f), lower=round((lo if lo is not None else p) * f), upper=round((hi if hi is not None else p) * f),
-                                     off_season=bool(rest[0]) if rest else False))
+                                     off_season=bool(rest[0]) if rest else False, crash_adj=bool(rest[1]) if len(rest) > 1 else False))
         return (rows[0][0] if rows else None), pts
 
     def _monthly(self, item: str, variety: str, base_date: date):

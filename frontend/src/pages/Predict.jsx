@@ -253,6 +253,13 @@ function Result({ r }) {
               <ul className="pv-notes"><li><span className="ic">🔖</span>{md(off[0].date)}~{md(off.at(-1).date)} 중 출하철이 아닌 날은 정확도를 확인하지 못해 참고용이에요 (표의 ‘참고’)</li></ul>
             );
           })()}
+          {/* 11-14: 폭락 보정 — 최근 시세가 작년보다 크게 낮은 품종은 1~14거래일 예측을 낮춰 잡음 (예외 규칙이라 숨기지 않고 알림) */}
+          {(() => {
+            const adj = p.forecast.filter((f) => f.crash_adj);
+            return adj.length > 0 && (
+              <ul className="pv-notes"><li><span className="ic">📉</span>최근 시세가 작년 이맘때보다 크게 낮은 품종이 있어 {md(adj[0].date)}~{md(adj.at(-1).date)} 예측을 낮춰 잡았어요 (값이 떨어진 뒤엔 한동안 낮게 이어진 경우가 많았어요)</li></ul>
+            );
+          })()}
         </section>
       </div>
       {/* 계절 패턴 · 월별 반입량 (품목 단위, 전국) — 예시 데이터는 지금 시세 평균에 맞춰 크기 조정 */}

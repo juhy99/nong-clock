@@ -176,6 +176,40 @@ def test_off_season_flag_comes_through():
     assert [f.off_season for f in r.forecast] == [False, True]
 
 
+# ── 11-14 폭락 보정 표시 (crash_adj) ──
+class CrashDb(OffDb):
+    """crash_adj 열까지 있는 DB. no_crash=True 면 그 열만 없는 11-13 판"""
+
+    def __init__(self, rows, no_crash=False):
+        super().__init__(rows)
+        self.no_crash = no_crash
+
+    def _q(self, sql, params=()):
+        if "price_forecast_daily" in sql and "crash_adj" in sql:
+            if self.no_crash:
+                raise RuntimeError('column "crash_adj" does not exist')
+            item, vid, _, _, _, d0, d1 = params
+            return [r[1:] for r in self.daily if r[0] == (item, vid) and d0 < r[2] <= d1]
+        if "price_forecast_daily" in sql and "off_season" in sql:
+            item, vid, _, _, _, d0, d1 = params
+            return [r[1:7] for r in self.daily if r[0] == (item, vid) and d0 < r[2] <= d1]
+        return super()._q(sql, params)
+
+
+def _crash_rows():
+    return [(("onion", "ALL"), BASE, date(2026, 11, 12), 700, 600, 900, 0, 1), (("onion", "ALL"), BASE, date(2026, 11, 13), 710, 600, 900, 1, 0)]
+
+
+def test_crash_flag_comes_through():
+    r = CrashDb(_crash_rows()).predict("onion", "national", 2, BASE, 14)
+    assert [f.crash_adj for f in r.forecast] == [True, False] and [f.off_season for f in r.forecast] == [False, True]
+
+
+def test_table_without_crash_column_still_works():
+    r = CrashDb(_crash_rows(), no_crash=True).predict("onion", "national", 2, BASE, 14)
+    assert [f.price for f in r.forecast] == [700, 710] and [f.off_season for f in r.forecast] == [False, True] and not any(f.crash_adj for f in r.forecast)
+
+
 def test_old_table_without_off_season_column_still_works():
     r = OffDb(_off_rows(), old=True).predict("onion", "national", 2, BASE, 14)
     assert [f.price for f in r.forecast] == [1000, 1010] and not any(f.off_season for f in r.forecast)

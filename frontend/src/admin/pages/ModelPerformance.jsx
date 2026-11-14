@@ -8,8 +8,8 @@ const tone = (v) => (v == null ? "" : v >= 85 ? "#1f9d55" : v >= 75 ? "#7a9a1f" 
 const f1 = (v) => (v == null ? "-" : v.toFixed(1));
 
 const CARDS = [
-  { key: "H1-5", src: "day_total", label: "1~5거래일 뒤", sub: (t) => `u7d만 ${f1(t.u7d)} · 원인 모델만 ${f1(t.cause)}` },
-  { key: "H6-14", src: "day_total", label: "6~14거래일 뒤", sub: (t) => `u7d만 ${f1(t.u7d)} · 원인 모델만 ${f1(t.cause)}` },
+  { key: "H1-5", src: "day_total", label: "1~5거래일 뒤", sub: (t) => `폭락 보정 전 ${f1(t.no_crash_adj)} · u7d만 ${f1(t.u7d)} · 원인만 ${f1(t.cause)}` },
+  { key: "H6-14", src: "day_total", label: "6~14거래일 뒤", sub: (t) => `폭락 보정 전 ${f1(t.no_crash_adj)} · u7d만 ${f1(t.u7d)} · 원인만 ${f1(t.cause)}` },
   { key: "h1-3", src: "month_total", label: "1~3달 뒤 (달 평균)", sub: (t) => `원인 모델만 ${f1(t.cause)}` },
   { key: "h4-6", src: "month_total", label: "4~6달 뒤 (달 평균)", sub: (t) => `원인 모델만 ${f1(t.cause)}` },
   { key: "h7-12", src: "month_total", label: "7~12달 뒤 (달 평균)", sub: (t) => `원인 모델만 ${f1(t.cause)}` },
@@ -93,7 +93,7 @@ function Body({ perf, q, setQ, item, setItem, sortBy, setSortBy, onlyWorse, setO
         {CARDS.map((c) => <Kpi key={c.key} c={c} t={perf[c.src][c.key]} />)}
       </div>
 
-      <ByDistance title="거래일 뒤" unit="" rows={perf.day} cols={[["final", "최종"], ["u7d", "u7d만"], ["cause", "원인 모델만"], ["last_year", "작년 같은 주"]]} />
+      <ByDistance title="거래일 뒤" unit="" rows={perf.day} cols={[["final", "최종"], ["no_crash_adj", "폭락 보정 전"], ["u7d", "u7d만"], ["cause", "원인 모델만"], ["last_year", "작년 같은 주"]]} />
       <ByDistance title="달 뒤" unit="달" rows={perf.month} cols={[["final", "최종 (v4)"], ["cause", "원인 모델만"], ["last_year", "작년 같은 달"]]} />
 
       <h3 style={{ margin: "20px 0 8px" }}>예측 단위별 ({perf.units.length}단위)</h3>

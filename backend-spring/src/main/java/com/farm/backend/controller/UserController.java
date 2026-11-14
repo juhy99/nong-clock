@@ -95,14 +95,16 @@ public class UserController {
 
     /**
      * 로그인 상태 만들기: 예전 세션을 버리고 새 세션 번호를 받은 뒤(세션 고정 공격 막기) 로그인 정보를 세션에 저장.
-     * 권한은 지금 모두 ROLE_MEMBER (관리자 열이 DB 에 생기면 ROLE_ADMIN 추가)
+     * 권한: 모두 ROLE_MEMBER, 관리자(users.role = ADMIN)는 ROLE_ADMIN 도 (SecurityConfig 의 /api/admin/** 가 확인, 11-14)
      */
     private void startSession(User user, HttpServletRequest request, HttpServletResponse response) {
         HttpSession old = request.getSession(false);
         if (old != null) old.invalidate();
         request.getSession(true);
         UsernamePasswordAuthenticationToken auth = UsernamePasswordAuthenticationToken.authenticated(
-                new LoginUser(user.getId(), user.getEmail()), null, List.of(new SimpleGrantedAuthority("ROLE_MEMBER")));
+                new LoginUser(user.getId(), user.getEmail()), null, user.isAdmin()
+                        ? List.of(new SimpleGrantedAuthority("ROLE_MEMBER"), new SimpleGrantedAuthority("ROLE_ADMIN"))
+                        : List.of(new SimpleGrantedAuthority("ROLE_MEMBER")));
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);

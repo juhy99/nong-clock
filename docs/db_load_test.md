@@ -7,7 +7,7 @@
 
 ## 내 PC 시험
 `scripts\시세화면_시험실행.bat` 더블클릭 (Docker Desktop 켜 둔 상태). 데이터 폴더는 `D:\nong-clock-data`(학원 PC) · `C:\finalproject\nong-clock-data`(집 PC) 중 있는 곳을 bat 가 자동으로 씀. 다른 곳이면 환경 변수 `NC_DATA_ROOT` 에 맨 위 폴더를 넣음
-1. `docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d --build db backend`
+1. `docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build db backend` (11-14: backend 는 profile 없이 늘 켜짐)
 2. 수집기 표를 DB 에 넣기 (`load_db.py --init`, 파이썬은 도커 이미지로 실행)
 3. `frontend` 에서 `npm run dev` → http://localhost:5173/market (vite 가 /api 를 localhost:8080 Spring 으로 넘김)
 
@@ -31,7 +31,7 @@
 | `frontend/src/api/market.js` · `client.js` · `vite.config.js` · `Dockerfile` | `VITE_PRICE_SOURCE=db` 이면 실제 시세, 아니면 가짜 (서버 배포본 기본은 가짜) |
 
 ## 서버에서 켜려면
-서버 `.env` 에 `COMPOSE_PROFILES=spring`, `PRICE_SOURCE=db` + 서버 DB 에 수집기 표 적재
+서버 DB 에 수집기 표 적재 (11-14: backend 는 늘 켜지고 시세 기본값 db — `COMPOSE_PROFILES`·`PRICE_SOURCE` 줄 필요 없음)
 
 ## 11-09 추가분(팀원 추가분_1109) 반영
 - `D:\nong-clock-data\02_전처리` 에 풀어 넣음 (새 폴더 100~110번 12개, 갱신 파일은 덮어쓰기 전 `_백업_추가분1109_덮어쓰기전` 에 보관)

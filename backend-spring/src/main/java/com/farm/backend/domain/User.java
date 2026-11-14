@@ -44,6 +44,17 @@ public class User {
     @Column(name = "marketing_agree", nullable = false)
     private boolean marketingAgree;
 
+    /** 회원 구분 (11-14): MEMBER 일반회원 · ADMIN 관리자. 관리자는 서버 .env 의 ADMIN_EMAILS 로 지정 (AdminAccounts) */
+    @Column(nullable = false, length = 10)
+    private String role = ROLE_MEMBER;
+
+    public static final String ROLE_MEMBER = "MEMBER";
+    public static final String ROLE_ADMIN = "ADMIN";
+
+    public boolean isAdmin() {
+        return ROLE_ADMIN.equals(role);
+    }
+
     // DB 의 status 열(ACTIVE 기본값)은 쓰지 않음: 11-10 정지 기능 없앰, 탈퇴는 행을 지움
 
     @Column(name = "created_at", nullable = false, updatable = false)

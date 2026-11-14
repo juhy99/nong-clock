@@ -27,7 +27,7 @@ const MENU = [
 
 function AdminLogin() {
   const { user, login, logout } = useAuth();
-  const [email, setEmail] = useState("admin@farmbid.kr");
+  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [error, setError] = useState("");
 
@@ -49,7 +49,7 @@ function AdminLogin() {
           <div className="banner small">
             ⚠️
             <div>
-              <b>{user.name}</b>({user.email}) 계정은 관리자 권한이 없습니다.{" "}
+              <b>{user.name}</b>({user.email}) 계정은 관리자 권한이 없습니다 (관리자는 서버 .env 의 ADMIN_EMAILS 로 지정).{" "}
               <button type="button" className="link" onClick={logout}>로그아웃</button>
             </div>
           </div>
@@ -60,7 +60,7 @@ function AdminLogin() {
         </div>
         <div className="field">
           <label htmlFor="a-pw">비밀번호</label>
-          <input id="a-pw" className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="데모: admin1234" required />
+          <input id="a-pw" className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} required />
         </div>
         {error && <span className="hint error">{error}</span>}
         <button className="btn primary block">로그인</button>

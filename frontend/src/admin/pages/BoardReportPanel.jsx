@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { deleteComment, getPostComments, getPostForAdmin, setPostHidden } from "../../api/board";
+import { adminDeleteComment, getPostComments, getPostForAdmin, setPostHidden } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
 import { Async, useAsync } from "../../components/common";
 import { SITE_URL } from "../siteUrl";
@@ -52,7 +52,7 @@ export default function BoardReportPanel({ report }) {
                 <button className="btn sm danger" onClick={() => run(() => setPostHidden(post.id, true, reason), "글을 숨겼습니다")}>글 숨기기</button>
               )}
               {report.kind === "comment" && comment && !comment.deleted && (
-                <button className="btn sm danger" onClick={() => run(() => deleteComment(user, comment.id, reason), "댓글을 지웠습니다")}>댓글 삭제</button>
+                <button className="btn sm danger" onClick={() => run(() => adminDeleteComment(user, comment.id, reason), "댓글을 지웠습니다")}>댓글 삭제</button>
               )}
             </div>
             {report.target_user && <BanPanel userId={report.target_user} name={authorName ?? report.target_user} />}

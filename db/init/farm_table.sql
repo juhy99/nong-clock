@@ -9,6 +9,7 @@ CREATE TABLE users (
     farm_name        VARCHAR(50),
     marketing_agree  BOOLEAN       NOT NULL DEFAULT FALSE,
     status           VARCHAR(20)   NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','SUSPENDED','WITHDRAWN')),
+    role             VARCHAR(10)   NOT NULL DEFAULT 'MEMBER' CHECK (role IN ('MEMBER','ADMIN')),  -- 11-14 회원 구분 (관리자는 ADMIN_EMAILS)
     notify_settings  JSONB         NOT NULL DEFAULT '{}',
     board_banned_at  TIMESTAMP,
     board_ban_until  TIMESTAMP,

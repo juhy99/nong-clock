@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import { BOARD_CATEGORIES, adminDeletePost, banText, deleteComment, getAllPosts, getBannedUsers, getPostComments, liftBan, setPostHidden } from "../../api/board";
+import { BOARD_CATEGORIES, adminDeletePost, banText, adminDeleteComment, getAllPosts, getBannedUsers, getPostComments, liftBan, setPostHidden } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import Photo from "../../components/Photo";
@@ -42,7 +42,7 @@ function PostComments({ postId, onChange }) {
   async function remove(c) {
     const reason = prompt(NOTIFY_ENABLED ? "댓글을 지우는 사유 (작성자에게 전달됩니다)" : "댓글을 지우는 사유 (관리 기록용)", "운영 정책 위반");
     if (reason === null) return;
-    await deleteComment(user, c.id, reason);
+    await adminDeleteComment(user, c.id, reason);
     state.reload();
     onChange();
   }

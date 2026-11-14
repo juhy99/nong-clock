@@ -31,7 +31,7 @@ function Article({ badge, title, meta, body, images = [], actions }) {
 
 export function PostView() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const nav = useNavigate();
   const state = useAsync(() => getPost(id, { countView: true }), [id]);
   const showError = useErrorPopup();
@@ -60,12 +60,12 @@ export function PostView() {
               body={p.body}
               images={p.images}
               actions={
-                user?.id === p.author ? (
+                user?.id === p.author || isAdmin ? (
                   <div style={{ display: "flex", gap: 6 }}>
-                    <Link className="btn sm" to={`/board/${p.id}/edit`}>수정</Link>
-                    <button className="btn sm danger" onClick={() => remove(p)}>삭제</button>
+                    {user?.id === p.author && <Link className="btn sm" to={`/board/${p.id}/edit`}>수정</Link>}
+                    <button className="btn sm danger" onClick={() => remove(p)}>{user?.id === p.author ? "삭제" : "관리자 삭제"}</button>
                   </div>
-                ) : null /* 신고 기능은 없음 (11-11, Spring 에 없음) */
+                ) : null /* 신고 기능은 없음 (11-11, Spring 에 없음). 관리자는 남의 글도 지움 (11-14) */
               }
             />
             <Comments post={p} />

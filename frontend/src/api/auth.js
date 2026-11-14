@@ -1,39 +1,23 @@
-// 회원가입·로그인 (Spring 담당). 두 가지 방식 중 하나로 동작한다 (VITE_AUTH):
-//   mock (기본)  브라우저에 저장되는 가짜 계정 (화면 시연용, 비밀번호도 브라우저에 그대로 저장되므로 실제 서비스에 쓰면 안 됨)
-//   spring       백엔드(backend-spring)의 /api/auth/... 에 연결. 백엔드에 아직 없는 기능(내 정보 수정·비밀번호 변경·탈퇴)은 "준비 중" 오류
-// spring 방식 (11-10): 비밀번호는 서버가 BCrypt 로 암호화 저장. 로그인 상태는 서버 세션 + 브라우저의 세션 쿠키(HttpOnly, JS 로 못 읽음).
+// 회원가입·로그인 (Spring 담당, 11-14: 가짜 계정 없앰 — 언제나 백엔드 backend-spring 의 /api/auth/... 에 연결, 서버가 안 되면 오류 안내)
+// 비밀번호는 서버가 BCrypt 로 암호화 저장. 로그인 상태는 서버 세션 + 브라우저의 세션 쿠키(HttpOnly, JS 로 못 읽음) (11-10).
 //   아래 "session"(localStorage)은 화면 표시용 복사본일 뿐이고, 새로고침 때 GET /api/me 로 서버에 다시 확인한다 (refreshSession).
+// 회원 구분: 서버 users.role (MEMBER 일반회원 · ADMIN 관리자, 서버 .env 의 ADMIN_EMAILS 로 지정) → type "member" · "admin"
+// 백엔드에 아직 없는 기능(내 정보 수정·비밀번호 변경)은 "준비 중" 오류
 import axios from "axios";
 import { fake } from "./client";
-import { auctionsDb, usersDb } from "../mocks/auctions";
-import { commentsDb, postsDb } from "../mocks/board";
 import { load, save } from "../mocks/store";
-import { AUCTION_ENABLED } from "../features";
-
-export const AUTH_MODE = import.meta.env.VITE_AUTH === "spring" ? "spring" : "mock";
-const SPRING = AUTH_MODE === "spring";
-
-const publicUser = ({ password, ...u }) => u;
 
 export const getSession = () => load("session", null);
 
-export function login(email, password) {
-  if (SPRING) return springLogin(email, password);
-  const u = usersDb.all().find((x) => x.email === email.trim().toLowerCase());
-  if (!u || u.password !== password) return Promise.reject(new Error("이메일 또는 비밀번호가 맞지 않습니다"));
-  const session = publicUser(u);
-  save("session", session);
-  return fake(session);
-}
+export const login = (email, password) => springLogin(email, password);
 
 export function logout() {
-  if (SPRING) api.post("/api/auth/logout").catch(() => {}); // 서버 세션 끊기 (실패해도 화면은 로그아웃)
+  api.post("/api/auth/logout").catch(() => {}); // 서버 세션 끊기 (실패해도 화면은 로그아웃)
   save("session", null);
 }
 
-/** 새로고침·첫 화면에서 "지금 로그인돼 있나?"를 서버에 확인 (spring). 세션이 끝났으면 화면의 로그인 정보도 지움 */
+/** 새로고침·첫 화면에서 "지금 로그인돼 있나?"를 서버에 확인. 세션이 끝났으면 화면의 로그인 정보도 지움 */
 export async function refreshSession() {
-  if (!SPRING) return getSession();
   try {
     const res = await api.get("/api/me");
     const prev = getSession();
@@ -51,117 +35,37 @@ export async function refreshSession() {
   }
 }
 
-/** 가입 화면에서 입력하는 동안 확인. spring 은 확인 API 가 없어 가입 버튼을 누른 뒤 백엔드 오류로 알린다 */
-export function isEmailTaken(email) {
-  if (SPRING) return false;
-  return usersDb.all().some((x) => x.email === email.trim().toLowerCase());
-}
-
-/** [중복 확인] 버튼: 이메일·닉네임이 이미 쓰이는지. spring 은 확인 API(GET /api/auth/check?email=|nickname=)가 생기면 연결 */
+/** [중복 확인] 버튼: 이메일·닉네임이 이미 쓰이는지 (GET /api/auth/check?email=|nickname=) */
 export function checkDuplicate(kind, value) {
-  const v = value.trim().toLowerCase();
-  if (SPRING) return api.get("/api/auth/check", { params: { [kind]: value.trim() } }).then((r) => !!r.data?.taken, (e) => Promise.reject(springError(e, "중복 확인을 하지 못했습니다")));
-  const taken = usersDb.all().some((x) => (kind === "email" ? x.email : (x.name ?? "").toLowerCase()) === v);
-  return fake(taken, 200);
+  return api.get("/api/auth/check", { params: { [kind]: value.trim() } }).then((r) => !!r.data?.taken, (e) => Promise.reject(springError(e, "중복 확인을 하지 못했습니다")));
 }
 
-/** 회원 유형 선택 없음: 모든 회원이 입찰·판매 가능 (farm_name 은 선택, 경매 판매자 이름으로 표시)
+/** 회원 유형 선택 없음: 모든 회원이 같은 일반회원 (farm_name 은 선택)
  * @param {{email, password, name, phone, region, farm_name?}} form  (마케팅 동의는 받지 않음, 11-11) */
-export function signup(form) {
-  if (SPRING) return springSignup(form);
-  const rows = usersDb.all();
-  const email = form.email.trim().toLowerCase();
-  if (rows.some((x) => x.email === email)) return Promise.reject(new Error("이미 가입된 이메일입니다"));
-  const user = {
-    id: `u${Date.now()}`,
-    email,
-    password: form.password,
-    name: form.name.trim(),
-    phone: form.phone,
-    type: "member",
-    region: form.region,
-    farm_name: form.farm_name || "",
-    status: "정상",
-    joined: new Date().toISOString().slice(0, 10),
-  };
-  rows.push(user);
-  usersDb.saveAll(rows);
-  const session = publicUser(user);
-  save("session", session);
-  return fake(session);
-}
+export const signup = (form) => springSignup(form);
 
 // ── 내 정보 수정·탈퇴 ──
 
-function updateUser(id, fn) {
-  const rows = usersDb.all();
-  const u = rows.find((x) => x.id === id);
-  if (!u) throw new Error("회원 정보를 찾을 수 없습니다");
-  fn(u);
-  usersDb.saveAll(rows);
-  const session = publicUser(u);
-  save("session", session);
-  return session;
-}
+/** 이메일은 바꿀 수 없다. 지금은 관심 품목(favorites)만 이 브라우저에 저장 (PATCH /api/me 준비 중) */
+export const updateProfile = (id, patch) => springUpdateProfile(patch);
 
-/** 이메일·회원 유형은 바꿀 수 없다. favorites(관심 품목), notify(알림 종류별 받기) 포함 */
-export function updateProfile(id, patch) {
-  if (SPRING) return springUpdateProfile(patch);
-  const { name, phone, region, farm_name, favorites, notify } = patch;
-  const allowed = Object.fromEntries(Object.entries({ name, phone, region, farm_name, favorites, notify }).filter(([, v]) => v !== undefined));
-  return fake(updateUser(id, (u) => Object.assign(u, allowed)));
-}
+export const changePassword = () => notReady("비밀번호 변경");
 
-export function changePassword(id, current, next) {
-  if (SPRING) return notReady("비밀번호 변경");
-  const u = usersDb.all().find((x) => x.id === id);
-  if (!u || u.password !== current) return Promise.reject(new Error("현재 비밀번호가 맞지 않습니다"));
-  if (next.length < 8 || !/[A-Za-z]/.test(next) || !/\d/.test(next)) return Promise.reject(new Error("새 비밀번호는 영문과 숫자를 섞어 8자 이상이어야 합니다"));
-  updateUser(id, (x) => (x.password = next));
-  return fake(true);
-}
-
-/** 탈퇴를 막는 이유 목록. 비어 있으면 탈퇴 가능 */
-export function withdrawBlockers(id) {
-  if (!AUCTION_ENABLED) return []; // 경매 보류 중
-  if (SPRING) return []; // 경매가 아직 가짜 데이터라 확인할 수 없음 (백엔드 DELETE /api/me 가 409 로 알려줄 예정)
-  const now = new Date();
-  const live = (a) => (a.status === "진행중" && new Date(a.ends_at) > now) || a.status === "승인대기";
-  const rows = auctionsDb.all();
-  const reasons = [];
-  const selling = rows.filter((a) => a.seller === id && live(a)).length;
-  if (selling) reasons.push(`진행 중이거나 승인 대기 중인 내 경매 ${selling}건`);
-  const leading = rows.filter((a) => live(a) && a.bids.some((b) => !b.cancelled && b.user === id && b.amount === a.current_bid)).length;
-  if (leading) reasons.push(`최고가로 입찰 중인 경매 ${leading}건`);
-  return reasons;
-}
+/** 탈퇴를 막는 이유 목록. 경매가 보류 중이라 늘 비어 있음 (경매를 다시 켜면 서버 DELETE /api/me 가 409 로 알려줄 예정) */
+export const withdrawBlockers = () => [];
 
 /**
  * 회원 탈퇴 (11-10 결정): 회원 정보와 그 회원이 쓴 글·댓글을 지운다. 되돌릴 수 없음. 정지 기능은 없음.
- * spring: DELETE /api/me {password} → 서버가 비밀번호 확인 뒤 DB 에서 삭제하고 세션을 끊음
+ * DELETE /api/me {password} → 서버가 비밀번호 확인 뒤 DB 에서 삭제하고 세션을 끊음
  */
 export async function withdraw(id, password) {
-  if (SPRING) {
-    try {
-      await api.delete("/api/me", { data: { password } });
-    } catch (e) {
-      throw springError(e, "탈퇴하지 못했습니다");
-    }
-    save("session", null);
-    return true;
+  try {
+    await api.delete("/api/me", { data: { password } });
+  } catch (e) {
+    throw springError(e, "탈퇴하지 못했습니다");
   }
-  const u = usersDb.all().find((x) => x.id === id);
-  if (!u || u.password !== password) return Promise.reject(new Error("비밀번호가 맞지 않습니다"));
-  const blockers = withdrawBlockers(id);
-  if (blockers.length) return Promise.reject(new Error(`${blockers.join(", ")}이 있어 탈퇴할 수 없습니다`));
-  // 가짜 데이터에서도 같은 규칙: 내 글(과 그 글의 댓글), 내 댓글(과 그 답글), 회원 정보 삭제
-  const myPosts = new Set(postsDb.all().filter((p) => p.author === id).map((p) => p.id));
-  const myComments = new Set(commentsDb.all().filter((c) => c.author === id).map((c) => c.id));
-  commentsDb.saveAll(commentsDb.all().filter((c) => !myPosts.has(c.post_id) && !myComments.has(c.id) && !myComments.has(c.parent_id)));
-  postsDb.saveAll(postsDb.all().filter((p) => !myPosts.has(p.id)));
-  usersDb.saveAll(usersDb.all().filter((x) => x.id !== id));
   save("session", null);
-  return fake(true);
+  return true;
 }
 
 // ── spring: 백엔드 연결 (docs/06_api_spec.md 2장) ──
@@ -169,7 +73,7 @@ export async function withdraw(id, password) {
 
 const api = axios.create({ timeout: 8000 });
 
-// 백엔드 값 → 화면이 쓰는 값 (예전 가짜 계정과 같은 모양)
+// 백엔드 값 → 화면이 쓰는 값
 const USER_TYPE = { MEMBER: "member", ADMIN: "admin" };
 
 function fromSpring(u) {

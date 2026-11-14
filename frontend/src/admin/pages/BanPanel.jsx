@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BAN_DAYS, activeBan, banText, banUser, liftBan } from "../../api/board";
+import { BAN_DAYS, adminBanOf, banText, banUser, liftBan } from "../../api/board";
 
 /** 게시판 이용 제한 걸기/풀기 (게시판 관리·신고 처리 화면에서 사용) */
 export default function BanPanel({ userId, name, onDone }) {
@@ -7,7 +7,7 @@ export default function BanPanel({ userId, name, onDone }) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [, refresh] = useState(0);
-  const ban = activeBan(userId);
+  const ban = adminBanOf(userId);
 
   async function run(fn) {
     setError("");

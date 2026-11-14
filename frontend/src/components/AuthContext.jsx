@@ -6,9 +6,9 @@ const AuthCtx = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => auth.getSession());
-  // spring 로그인: 화면에 남은 로그인 정보가 아직 유효한지 서버(GET /api/me)에 확인 (세션이 끝났으면 로그아웃 상태로)
+  // 화면에 남은 로그인 정보가 아직 유효한지 서버(GET /api/me)에 확인 (세션이 끝났으면 로그아웃 상태로)
   useEffect(() => {
-    if (auth.AUTH_MODE === "spring") auth.refreshSession().then(setUser);
+    auth.refreshSession().then(setUser);
   }, []);
   const value = {
     user,

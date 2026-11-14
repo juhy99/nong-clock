@@ -137,12 +137,12 @@ public class PostService {
         return detail(p);
     }
 
-    /** DELETE /api/posts/{id}: 작성자 본인만. 댓글은 DB 가 같이 지움 */
+    /** DELETE /api/posts/{id}: 작성자 본인, 관리자는 누구 글이든 (11-14). 댓글은 DB 가 같이 지움 */
     @Transactional
     public void delete(Long userId, Long id) {
         Post p = id == null ? null : postRepository.findById(id).orElse(null);
         if (p == null) throw new ApiException(HttpStatus.NOT_FOUND, "이미 지워진 글입니다");
-        if (!p.getAuthorId().equals(userId)) throw new ApiException(HttpStatus.FORBIDDEN, "본인 글만 지울 수 있습니다");
+        if (!p.getAuthorId().equals(userId) && !userService.isAdmin(userId)) throw new ApiException(HttpStatus.FORBIDDEN, "본인 글만 지울 수 있습니다");
         postRepository.delete(p);
     }
 

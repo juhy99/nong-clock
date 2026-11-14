@@ -44,12 +44,13 @@ export const auctionsDb = {
   saveAll: (rows) => save("auctions", rows),
 };
 
+// 관리자 사이트 예시 화면(회원 관리·게시판 관리)용 예시 회원 — 로그인에는 쓰지 않음 (11-14: 회원은 언제나 Spring DB, 비밀번호 뺌)
 const INITIAL_USERS = [
-  { id: "admin", email: "admin@farmbid.kr", password: "admin1234", name: "관리자", phone: "010-0000-0000", type: "admin", region: "서울", status: "정상", joined: "2026-10-01" },
-  { id: "buyer1", email: "user@farmbid.kr", password: "user1234", name: "김구매", phone: "010-1111-2222", type: "member", region: "경기", status: "정상", joined: "2026-10-03", favorites: ["napa_cabbage", "tomato", "apple"] },
-  { id: "seller1", email: "farmer@farmbid.kr", password: "farmer1234", name: "박농부", phone: "010-3333-4444", type: "member", region: "충남", farm_name: "논산 햇살농장", status: "정상", joined: "2026-10-04", favorites: ["potato", "onion"] },
-  { id: "seller2", email: "farm2@farmbid.kr", password: "farm1234", name: "이농장", phone: "010-5555-6666", type: "member", region: "전남", farm_name: "무안 양파농원", status: "정상", joined: "2026-10-06" },
-  { id: "buyer2", email: "buyer2@farmbid.kr", password: "buyer1234", name: "정구매", phone: "010-7777-8888", type: "member", region: "부산", status: "정상", joined: "2026-10-08" },
+  { id: "admin", email: "admin@farmbid.kr", name: "관리자", phone: "010-0000-0000", type: "admin", region: "서울", status: "정상", joined: "2026-10-01" },
+  { id: "buyer1", email: "user@farmbid.kr", name: "김구매", phone: "010-1111-2222", type: "member", region: "경기", status: "정상", joined: "2026-10-03", favorites: ["napa_cabbage", "tomato", "apple"] },
+  { id: "seller1", email: "farmer@farmbid.kr", name: "박농부", phone: "010-3333-4444", type: "member", region: "충남", farm_name: "논산 햇살농장", status: "정상", joined: "2026-10-04", favorites: ["potato", "onion"] },
+  { id: "seller2", email: "farm2@farmbid.kr", name: "이농장", phone: "010-5555-6666", type: "member", region: "전남", farm_name: "무안 양파농원", status: "정상", joined: "2026-10-06" },
+  { id: "buyer2", email: "buyer2@farmbid.kr", name: "정구매", phone: "010-7777-8888", type: "member", region: "부산", status: "정상", joined: "2026-10-08" },
 ];
 
 export const usersDb = {

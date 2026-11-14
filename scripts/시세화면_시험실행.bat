@@ -27,7 +27,7 @@ for /f "tokens=1,* delims==" %%a in ('findstr /b "DB_PASSWORD=" .env') do set "D
 echo [1/3] DB · Spring · AI 예측^(ml-api^)을 켜는 중 ^(처음엔 빌드로 몇 분 걸려요^)...
 rem 예측기를 DB 예측기로 (가격 예측 = DB 의 price_forecast_monthly). 서버 기본은 dummy 그대로
 set "PREDICTOR=db"
-docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d --build db backend ml-api
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build db backend ml-api
 if errorlevel 1 ( echo [멈춤] docker compose 실패. 위 오류를 확인하세요. & pause & exit /b 1 )
 
 echo     DB 가 준비될 때까지 기다리는 중...
@@ -45,7 +45,7 @@ rem price_unit_daily 는 tables 에 전 기간이 있으니 DB 표를 비우고 
 call :load "%DATA%\tables" price_unit_daily || ( pause & exit /b 1 )
 rem 덧붙임 폴더 (11-12): tables_* (예: tables_1112 = 그 뒤 받은 시세 + 일 단위 예측 표) 가 있으면 이름 순서로 이어서 넣음 (같은 날짜는 덮어씀)
 for /d %%f in ("%DATA%\tables_*") do ( call :load "%%~ff" || ( pause & exit /b 1 ) )
-docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d backend >nul
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d backend >nul
 
 echo [3/3] 화면 켜기
 cd /d "%REPO%\frontend"

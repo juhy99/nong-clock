@@ -93,12 +93,12 @@ public class CommentService {
         return toResponse(c, Map.of(author.getId(), author.getName()), rootId == null ? List.of() : null);
     }
 
-    /** DELETE /api/comments/{id}: 본인 댓글만 */
+    /** DELETE /api/comments/{id}: 본인 댓글, 관리자는 누구 댓글이든 (11-14) */
     @Transactional
     public void delete(Long userId, Long commentId) {
         PostComment c = commentId == null ? null : comments.findById(commentId).orElse(null);
         if (c == null) throw new ApiException(HttpStatus.NOT_FOUND, "이미 지워진 댓글입니다");
-        if (!c.getAuthorId().equals(userId)) throw new ApiException(HttpStatus.FORBIDDEN, "본인 댓글만 지울 수 있습니다");
+        if (!c.getAuthorId().equals(userId) && !isAdmin(userId)) throw new ApiException(HttpStatus.FORBIDDEN, "본인 댓글만 지울 수 있습니다");
 
         if (comments.existsByParentIdAndDeletedFalse(c.getId())) {
             c.setDeleted(true); // 답글이 살아 있으면 자리만 남김
@@ -113,6 +113,10 @@ public class CommentService {
             if (parent != null && parent.isDeleted() && !comments.existsByParentIdAndDeletedFalse(parent.getId()))
                 comments.delete(parent); // 빈 "삭제된 댓글" 자리 정리
         }
+    }
+
+    private boolean isAdmin(Long userId) {
+        return userId != null && users.findById(userId).map(User::isAdmin).orElse(false);
     }
 
     private static CommentResponse toResponse(PostComment c, Map<Long, String> names, List<CommentResponse> replies) {

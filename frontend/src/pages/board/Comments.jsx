@@ -61,7 +61,7 @@ function Comment({ c, post, reply, actions }) {
 
 /** 글 아래 댓글·답글 (답글은 1단계까지, 답글에 답하면 같은 댓글 아래에 붙는다) */
 export default function Comments({ post }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const loc = useLocation();
   const nav = useNavigate();
   const state = useAsync(() => getComments(post.id), [post.id]);
@@ -93,7 +93,7 @@ export default function Comments({ post }) {
     user && (
       <>
         {!ban && <button className="link small" onClick={() => setReplyTo(replyTo === c.id ? null : c.id)}>답글</button>}
-        {c.author === user.id && <button className="link small muted" onClick={() => remove(c)}>삭제</button>}
+        {(c.author === user.id || isAdmin) && <button className="link small muted" onClick={() => remove(c)}>{c.author === user.id ? "삭제" : "관리자 삭제"}</button>}
       </>
     );
 

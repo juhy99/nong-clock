@@ -6,7 +6,8 @@ import { pingMl } from "./ml";
 import { notify } from "./notify";
 import { BUILD, getNewsCollection, newsHealth } from "./collection";
 import { collectorHealth, getWeatherStatus, worstHealth } from "./weather";
-import { DATA_SOURCES, INITIAL_REPORTS, MODEL_PERFORMANCE } from "../mocks/admin";
+import { DATA_SOURCES, INITIAL_REPORTS } from "../mocks/admin";
+import FINAL_MODEL_ACCURACY from "../../../shared/final_model_accuracy.json";
 import { auctionsDb, usersDb } from "../mocks/auctions";
 import { load, save } from "../mocks/store";
 import { dateTime, daysBetween, todayIso } from "../utils/format";
@@ -188,8 +189,8 @@ export function weatherRows({ meta, collect, preprocess, sample }, today = today
   };
 }
 
-// ── 모델 성능 ──
-export const getModelPerformance = () => fake(MODEL_PERFORMANCE);
+// ── 모델 성능 ── 최종 모델(76판) 시험 정확도 표 (실제 시험 결과 파일, 가짜 아님)
+export const getModelPerformance = () => Promise.resolve(FINAL_MODEL_ACCURACY);
 
 // ── 회원·경매 관리 ──
 export const getUsers = () => fake(usersDb.all().map(({ password, ...u }) => u));

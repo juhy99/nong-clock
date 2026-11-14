@@ -171,6 +171,49 @@ def drop_entry_errors(a):
     return a[ok & ~heavy_cheap].copy()
 
 
+# ── 날 단위 오류 (11-14, 팀원 76판과 같은 규칙) ──
+# 품목코드 × 품종코드마다 그날 국산 거래(줄 단위 오류를 뺀 뒤)를 묶어, 그날 단가가 앞뒤 거래일 61개(약 30일) 가운데 단가의 1/8 미만이면서
+# 그날 물량이 가운데 물량의 8배를 넘으면 그 코드-날을 품종 단위 가격(price_unit_daily)에서 뺀다 (물량이 적은 날도 셈 — 팀원 06 목록과 같게).
+# 예: 마늘 저장형 대서 2021-09-15 하루 495t × 339원/kg (평소 2천~3천 원). 줄 하나하나는 정상처럼 보여 줄 단위 규칙으로는 못 걸러짐
+# 앞뒤를 봐야 해서 기록(code_day_domestic.csv, 전체 표 폴더)을 같이 씀. 매일 갱신 때는 뒤쪽 날이 없어 앞쪽만 보고 판단
+DAY_ERR_WIN, DAY_ERR_MIN, DAY_ERR_MINKG = 61, 10, 0
+CODE_DAY_FILE = C.DATA / 'tables' / 'code_day_domestic.csv'
+
+
+def code_day(dom):
+    """국산 거래 줄 → 날 × 품목코드 × 품종코드 물량·금액"""
+    return dom.groupby(['date', 'code4', 'variety_code'], as_index=False).agg(volume_kg=('총물량', 'sum'), amount_won=('총금액', 'sum'))
+
+
+def day_errors(cd):
+    """코드-날 표 → 오류 날만 (date, code4, variety_code, volume_kg, price, med_price, med_kg)"""
+    cd = cd.sort_values(['code4', 'variety_code', 'date']).reset_index(drop=True)
+    cd['price'] = (cd.amount_won / cd.volume_kg).where(cd.volume_kg >= DAY_ERR_MINKG)
+    roll = lambda s: s.rolling(DAY_ERR_WIN, center=True, min_periods=DAY_ERR_MIN).median()
+    g = cd.groupby(['code4', 'variety_code'], sort=False)
+    cd['med_price'] = g.price.transform(roll)
+    cd['med_kg'] = g.volume_kg.transform(roll)
+    bad = (cd.price < cd.med_price / 8) & (cd.volume_kg > cd.med_kg * 8)
+    return cd[bad][['date', 'code4', 'variety_code', 'volume_kg', 'price', 'med_price', 'med_kg']]
+
+
+def drop_day_errors(dom):
+    """매일 갱신용: 이번 줄들의 코드-날을 기록에 이어 붙여 오류 날을 찾고 그 줄을 뺌. 기록 파일도 새 날로 갱신"""
+    new = code_day(dom)
+    old = pd.read_csv(CODE_DAY_FILE, dtype={'code4': str, 'variety_code': str}) if CODE_DAY_FILE.exists() else new.iloc[:0]
+    allcd = pd.concat([old[~old.date.isin(new.date.unique())], new], ignore_index=True)
+    bad = day_errors(allcd)
+    bad = bad[bad.date.isin(new.date.unique())]
+    if CODE_DAY_FILE.parent.exists():
+        allcd.sort_values(['date', 'code4', 'variety_code']).to_csv(CODE_DAY_FILE, index=False)
+    if bad.empty:
+        return dom
+    key = set(zip(bad.date, bad.code4, bad.variety_code))
+    hit = pd.Series([k in key for k in zip(dom.date, dom.code4, dom.variety_code)], index=dom.index)
+    print(f'    날 단위 오류로 뺀 코드-날 {len(key)}개 (물량 {dom.총물량[hit].sum() / 1000:,.1f}t)', flush=True)
+    return dom[~hit]
+
+
 def _prices_chunk(a, first, hist):
     it = ref('item')
     a = a[a.code4.isin(it.code4)]
@@ -223,6 +266,7 @@ def _prices_chunk(a, first, hist):
     uc['months'] = uc.months.map(lambda s: [int(x) for x in s.split(',')] if s else list(range(1, 13)))
     uc = uc.explode('months').rename(columns={'months': 'month'})
     dom = a[~a.is_import].copy()
+    dom = drop_day_errors(dom)  # 11-14 날 단위 오류 (품종 단위 가격에만 — 시세 표 price_daily 는 그대로)
     dom['month'] = pd.to_datetime(dom.date).dt.month
     j = dom.merge(uc, on=['code4', 'variety_code', 'month'], how='inner')
     pu = agg(j.assign(market_code='national'), ['date', 'unit_id'])

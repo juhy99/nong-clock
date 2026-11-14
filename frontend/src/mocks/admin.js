@@ -1,4 +1,3 @@
-import { ACCURACY } from "./accuracy";
 // 개발자(관리자) 페이지 가짜 데이터.
 const ago = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
 
@@ -61,6 +60,3 @@ export const DATA_SOURCES = [
   { key: "holiday", source: "명절·공휴일", provider: "천문연 특일 정보", schedule: "연 1회", mode: "file", rangeText: "2029년까지", note: "holidays.csv 695건 (모델 학습용)" },
 ];
 
-// 모델 성능: 팀원 모델 v1 결과(v1_화면용_예측.csv)의 과거적중% (7일·2주·1개월)
-// 모델 성능 = 107품목 가격 예측 모델(최종 앙상블) 검증 오차. 기준은 shared/model_accuracy.json (accuracy.js 가 읽음)
-export const MODEL_PERFORMANCE = ACCURACY;

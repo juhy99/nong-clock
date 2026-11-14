@@ -52,7 +52,9 @@ class PredictResponse(BaseModel):
     region: str
     horizon: Horizon
     base_date: date
-    base_price: int = Field(description="기준일 공영도매시장 경매 단가(원/kg)")
+    base_price: int = Field(description="기준가(원/kg) = 기준일 앞 마지막 거래일까지 7일 공영도매시장 금액 합 ÷ 물량 합 (11-14, DB 예측기)")
+    base_price_date: date | None = Field(None, description="기준가의 마지막 거래일 (11-14)")
+    base_stale: bool = Field(False, description="마지막 거래가 기준일보다 7일 넘게 앞 — '지금 가격'이 오래됨, 급등락 카드에서 뺌 (11-14)")
     history: list[PricePoint] = Field(description="최근 실제 시세")
     forecast: list[ForecastPoint] = Field(description="기준일 다음 날부터 horizon 일까지 일별 예측. lower·upper = 예측 ± 모델 검증 오차(WAPE)")
     predicted_price: int = Field(description="horizon 일 후 예상 도매가(원/kg)")

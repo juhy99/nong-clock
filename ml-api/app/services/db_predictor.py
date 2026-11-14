@@ -26,6 +26,8 @@ from app.schemas.prediction import ForecastPoint, Horizon, PredictResponse, Pric
 HISTORY_DAYS = 14
 LAST_YEAR_DAYS = 364
 BASE_LOOKBACK_DAYS = 30  # 기준일에 거래가 없으면 이만큼 앞까지 가장 최근 시세를 기준가로
+BASE_AVG_DAYS = 7        # 11-14: 기준가 = 마지막 거래일까지 7일(달력) 금액 합 ÷ 물량 합 (하루 얇은 거래 하나에 흔들리지 않게)
+STALE_DAYS = 7           # 11-14: 마지막 거래가 기준일보다 이만큼 넘게 앞이면 '지금 가격'이 오래됨 → base_stale (급등락 카드에서 뺌)
 CACHE_SECONDS = 600       # 같은 예측 질문을 기억하는 시간 (10분)
 CACHE_MAX = 5000          # 기억하는 답의 최대 개수 (넘으면 비우고 다시)
 
@@ -95,6 +97,23 @@ class DbPredictor:
         if market == NATIONAL:
             return {}
         return {m: float(f) for m, f in self._q("SELECT month, factor FROM market_factor WHERE item_code = %s AND market_code = %s AND factor IS NOT NULL", (item, market))}
+
+    def _base_avg(self, item: str, market: str, variety: str, last: date, fac: dict[int, float]) -> float | None:
+        """마지막 거래일까지 BASE_AVG_DAYS 일 금액 합 ÷ 물량 합. 금액·물량이 없으면 None (→ 마지막 날 값)"""
+        d0 = last - timedelta(days=BASE_AVG_DAYS - 1)
+        try:
+            if variety:
+                rows = self._q("SELECT sum(amount_won) / NULLIF(sum(volume_kg), 0) AS base_avg FROM price_unit_daily WHERE unit_id = ANY(%s) AND date BETWEEN %s AND %s",
+                               (self._units(item, variety), d0, last))
+                k = fac.get(last.month, 1.0) if market != NATIONAL else 1.0
+            else:
+                rows = self._q("SELECT sum(amount_won) / NULLIF(sum(volume_kg), 0) AS base_avg FROM price_daily WHERE item_code = %s AND market_code = %s AND grade = 'ALL' AND date BETWEEN %s AND %s",
+                               (item, market, d0, last))
+                k = 1.0
+        except Exception:
+            return None
+        v = rows[0][0] if rows and rows[0] else None
+        return float(v) * k if isinstance(v, (int, float)) or hasattr(v, "as_integer_ratio") else None
 
     def _prices(self, item: str, market: str, variety: str, d0: date, d1: date, fac: dict[int, float]) -> list[PricePoint]:
         if variety:
@@ -198,7 +217,10 @@ class DbPredictor:
         hist_all = self._prices(item, market, variety, base_date - timedelta(days=history_days + BASE_LOOKBACK_DAYS), base_date, fac)
         if not hist_all:
             raise NoForecast("기준일 앞 30일 동안 이 품목·시장의 거래가 없어요")
-        base_price = hist_all[-1].price
+        last_trade = hist_all[-1].date
+        avg = self._base_avg(item, market, variety, last_trade, fac)
+        base_price = round(avg) if avg else hist_all[-1].price
+        stale = (base_date - last_trade).days > STALE_DAYS
         history = [h for h in hist_all if h.date >= base_date - timedelta(days=history_days)] or hist_all[-1:]
         fb, forecast = self._daily_table(item, variety, base_date, horizon, fac)
         if forecast:
@@ -217,7 +239,8 @@ class DbPredictor:
                               base_date + timedelta(days=horizon - LAST_YEAR_DAYS), fac)
         return PredictResponse(
             item=item, item_name=info.name, code4=info.code4, unit=info.unit, market=market, market_name=market_name(market),
-            region=NATIONAL, horizon=horizon, base_date=base_date, base_price=base_price, history=history, forecast=forecast,
+            region=NATIONAL, horizon=horizon, base_date=base_date, base_price=base_price, base_price_date=last_trade, base_stale=stale,
+            history=history, forecast=forecast,
             predicted_price=last.price, change_pct=round((last.price - base_price) / base_price * 100, 1) if base_price else 0.0,
             error_pct=err, reference=None, confidence=max(0, min(100, round(100 - err))), alerts=[], last_year=ly,
             model_version=version, variety=variety,

@@ -18,7 +18,11 @@ class FakeDb(DbPredictor):
         self.monthly, self.prices, self.factors = monthly, prices or [(date(2026, 11, 3), 1000.0)], factors or []
         self.daily = daily  # None = 일 단위 표가 없는 DB (예전 판)
 
+    base_avg = None   # 11-14 기준가 7일 금액÷물량 (None = 금액·물량 없음)
+
     def _q(self, sql, params=()):
+        if "AS base_avg" in sql:
+            return [(self.base_avg,)]
         if sql.startswith("SELECT unit_id"):
             return [(1, "복숭아(백도)")]
         if sql.startswith("SELECT month, factor"):
@@ -213,3 +217,17 @@ def test_table_without_crash_column_still_works():
 def test_old_table_without_off_season_column_still_works():
     r = OffDb(_off_rows(), old=True).predict("onion", "national", 2, BASE, 14)
     assert [f.price for f in r.forecast] == [1000, 1010] and not any(f.off_season for f in r.forecast)
+
+
+# ── 11-14 기준가 7일 금액÷물량 · 오래된 기준가 ──
+def test_base_price_is_7day_volume_weighted():
+    P = FakeDb([row(2026, 11, 1000)], prices=[(date(2026, 11, 9), 1200.0), (date(2026, 11, 10), 200.0)])
+    P.base_avg = 1150.4
+    r = P.predict("onion", "national", 30, BASE, 14)
+    assert r.base_price == 1150 and r.base_price_date == date(2026, 11, 10) and not r.base_stale
+
+
+def test_base_price_falls_back_to_last_day_and_marks_stale():
+    P = FakeDb([row(2026, 11, 1000)], prices=[(date(2026, 11, 2), 900.0)])
+    r = P.predict("onion", "national", 30, BASE, 14)
+    assert r.base_price == 900 and r.base_stale   # 11-02 → 11-11 은 9일

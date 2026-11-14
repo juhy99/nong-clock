@@ -3,10 +3,10 @@
 import { PRICE_API_BASE, fake } from "./client";
 import { recalc } from "./auction";
 import { pingMl } from "./ml";
-import { notify, notifyAll } from "./notify";
+import { notify } from "./notify";
 import { BUILD, getNewsCollection, newsHealth } from "./collection";
 import { collectorHealth, getWeatherStatus, worstHealth } from "./weather";
-import { DATA_SOURCES, INITIAL_NOTICES, INITIAL_REPORTS, MODEL_PERFORMANCE } from "../mocks/admin";
+import { DATA_SOURCES, INITIAL_REPORTS, MODEL_PERFORMANCE } from "../mocks/admin";
 import { auctionsDb, usersDb } from "../mocks/auctions";
 import { load, save } from "../mocks/store";
 import { dateTime, daysBetween, todayIso } from "../utils/format";
@@ -67,31 +67,7 @@ export function cancelBids(auctionId, bidIndexes, reason) {
   return fake(a);
 }
 
-// ── 공지사항 (홈 배너에도 사용) ──
-const sortNotices = (rows) =>
-  [...rows].sort((a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.created_at) - new Date(a.created_at));
-
-export const getNotices = () => fake(sortNotices(load("notices", INITIAL_NOTICES)), 150);
-
-/** sendNotification 이면 새 공지를 모든 회원에게 알림으로도 보낸다 */
-export function saveNotice({ sendNotification, ...notice }) {
-  const rows = load("notices", INITIAL_NOTICES);
-  if (sendNotification) notifyAll({ type: "notice", title: `공지 · ${notice.category}`, body: notice.title, link: "/" });
-  if (notice.id) {
-    const i = rows.findIndex((n) => n.id === notice.id);
-    rows[i] = { ...rows[i], ...notice };
-  } else {
-    rows.push({ ...notice, id: Math.max(0, ...rows.map((n) => n.id)) + 1, created_at: new Date().toISOString() });
-  }
-  save("notices", rows);
-  return fake(sortNotices(rows));
-}
-
-export function deleteNotice(id) {
-  const rows = load("notices", INITIAL_NOTICES).filter((n) => n.id !== id);
-  save("notices", rows);
-  return fake(sortNotices(rows));
-}
+// 공지사항 (11-14): 관리자 게시판 관리에서 말머리 "공지"로 쓰는 글로 바뀜 → api/adminBoard.js getNotices (서버)
 
 // ── 서버·API 상태 ──
 export async function getSystemStatus() {

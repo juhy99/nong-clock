@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { getNotices } from "../../api/admin";
+import { getNotices } from "../../api/adminBoard";
 import { BOARD_CATEGORIES, getPosts } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
 import { useAsync } from "../../components/common";
@@ -72,9 +72,9 @@ export default function BoardList() {
             {(notices.data ?? []).map((n) => (
               <tr key={`n${n.id}`} className="notice-row">
                 <td className="col-no"><span className="badge red">공지</span></td>
-                <td className="col-cat small">{n.category}</td>
+                <td className="col-cat small">{n.category}</td>{/* 11-14: 공지 = 관리자가 쓴 글 (댓글도 달 수 있음) */}
                 <td>
-                  <Link className="post-title" to={`/board/notice/${n.id}`}>
+                  <Link className="post-title" to={`/board/${n.id}`}>
                     <span className="cat-inline badge red">공지</span>
                     <b>{n.title}</b>
                   </Link>

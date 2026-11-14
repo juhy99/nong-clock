@@ -29,7 +29,6 @@ services:
       TZ: Asia/Seoul   # 글·댓글 쓴 시간을 한국 시간으로 (없으면 컨테이너 기본 UTC 라 9시간 이르게 저장됨)
       ML_API_URL: http://ml-api:8000
       SHARED_DIR: /app/shared  # 시세 API 의 품종 목록 shared/items50.json
-      ADMIN_EMAILS: ${ADMIN_EMAILS:-}  # 관리자로 지정할 회원 이메일 (쉼표로 여러 개, 먼저 가입해 둘 것, 11-14)
       DATA_GO_KR_KEY: ${DATA_GO_KR_KEY:-}  # 지금 날씨 /api/weather/regions (11-14) — 기상청 단기예보·특보 (공공데이터포털 키)
     volumes:
       - ./shared:/app/shared:ro

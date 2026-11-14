@@ -97,14 +97,22 @@
 
 회원가입·로그인·게시판은 **언제나 실제 DB**(`backend-spring` → `users` · `post` · `post_comment`)를 씁니다. 가짜 계정 방식은 없앴습니다 (`AUTH_MODE` · `COMPOSE_PROFILES=spring` 줄은 이제 필요 없고, 남아 있어도 무시됨).
 
-- **표는 자동:** backend 가 켜질 때 `users` · `post` · `post_comment` 가 없으면 만들고, `users` 에 회원 구분 `role` 열(MEMBER · ADMIN)을 더합니다 (`backend-spring/src/main/resources/db/*.sql`, IF NOT EXISTS). 직접 SQL 을 돌릴 필요 없음.
+- **표는 자동:** backend 가 켜질 때 `users` · `post` · `post_comment` · `admin` 이 없으면 만들고, 글·댓글에 관리자 열(`admin_id`)과 공지 말머리를 더합니다 (`backend-spring/src/main/resources/db/*.sql`). 직접 SQL 을 돌릴 필요 없음.
   ⚠️ 표를 처음부터 다시 만들겠다고 `docker compose down -v` 를 쓰지 않습니다 (날씨·뉴스 볼륨까지 지워짐).
-- **관리자 지정:**
-  1. 관리자로 쓸 이메일로 사이트에서 먼저 회원가입
-  2. 서버 `.env` 에 `ADMIN_EMAILS=그이메일` (여러 명이면 쉼표)
-  3. `docker compose up -d backend` (다시 켜기) → 그 계정으로 **다시 로그인** → `http://서버주소/admin/`
-  - 목록에서 지운 이메일은 다음에 켤 때 일반회원으로 돌아감. `ADMIN_EMAILS` 를 비워 두면 아무것도 바꾸지 않음
-- 확인: `docker compose logs --tail 30 backend` 에 `Started BackendApplication` (관리자를 바꿨으면 `관리자 지정: … → ADMIN`)
+- **관리자 계정 = DB 표 `admin`** (일반 회원과 따로, 화면 없이 SQL 로 넣음). backend 를 한 번 켠 뒤:
+  ```powershell
+  docker compose exec db psql -U postgres -d farmdb
+  ```
+  psql 안에서 (비밀번호는 BCrypt 로 암호화돼 들어감):
+  ```sql
+  CREATE EXTENSION IF NOT EXISTS pgcrypto;
+  INSERT INTO admin (email, password_hash, name) VALUES ('admin@nongclock.kr', crypt('관리자비밀번호', gen_salt('bf', 10)), '운영자');
+  SELECT admin_id, email, name FROM admin;
+  ```
+  - 비밀번호 바꾸기: `UPDATE admin SET password_hash = crypt('새비밀번호', gen_salt('bf', 10)) WHERE email = 'admin@nongclock.kr';`
+  - 관리자 지우기: `DELETE FROM admin WHERE email = 'admin@nongclock.kr';` (그 관리자가 쓴 글·댓글은 작성자 칸만 비고 남음)
+- 로그인: `http://서버주소/admin/` → 위 이메일·비밀번호. 사용자 사이트 회원 계정으로는 못 들어감
+- 확인: `docker compose logs --tail 30 backend` 에 `Started BackendApplication`
 
 ## 2. 접속
 

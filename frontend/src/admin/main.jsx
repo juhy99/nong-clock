@@ -3,16 +3,16 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import AdminApp from "./AdminApp";
-import { AuthProvider } from "../components/AuthContext";
+import { AdminAuthProvider } from "./AdminAuth";
 import "../styles.css";
 import "./admin.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter basename="/admin">
-      <AuthProvider>
+      <AdminAuthProvider>
         <AdminApp />
-      </AuthProvider>
+      </AdminAuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

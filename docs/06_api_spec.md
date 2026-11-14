@@ -576,14 +576,18 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | GET | `/api/prices/{item}/monthly?variety=` | 월별 평균 경락가·반입량: 평년(올해 빼고 5년) · 올해 실제 · 남은 달 예측(`price_forecast_daily` 그 달 평균). 물량이 가장 많은 달의 2% 미만인 달은 가격 비움 (11-13) | 가격 예측 › 계절 패턴 · 월별 반입량 | `getSeasonal` |
 | GET | `/api/weather/regions` | 시·도 17곳 지금 날씨(초단기실황) · 오늘 최저·최고·강수확률 + 특보 (11-14 구현, 10분 캐시) | 홈 › 우리 지역 농업 날씨 | `getRegionalWeather` |
 | POST | `/api/uploads` (multipart, `files` 여러 개) | 사진 업로드 → 사진 주소 목록 | 경매 등록, 게시판 글쓰기 | `uploadImages` |
-| GET | `/api/posts?category=&q=&page=` | 게시글 목록 (숨김 제외, 15개씩) | 게시판 | `getPosts` |
+| GET | `/api/posts?category=&q=&page=` | 게시글 목록 (숨김·공지 제외, 15개씩) | 게시판 | `getPosts` |
 | GET | `/api/posts/{id}` | 게시글 보기 (조회수 +1) | 게시판 › 글 | `getPost` |
-| POST · PUT · DELETE | `/api/posts` · `/api/posts/{id}` | 글쓰기·수정·삭제 (작성자 본인만, 삭제는 관리자도 11-14). **로그인 필요, 작성자는 세션의 회원** — 요청에 작성자 번호를 넣지 않음. 글쓰기 응답 `201 {"id"}` (11-10) | 게시판 › 글쓰기 | `createPost` · `updatePost` · `deletePost` |
-| GET | `/api/admin/posts` | 전체 글 (숨김 포함) | 관리자 › 게시판 관리 | `getAllPosts` |
-| PATCH · DELETE | `/api/admin/posts/{id}` `{ "hidden", "reason" }` | 숨김·다시 보이기·삭제 (작성자에게 알림) | 관리자 › 게시판 관리 | `setPostHidden` · `adminDeletePost` |
+| POST · PUT · DELETE | `/api/posts` · `/api/posts/{id}` | 글쓰기·수정·삭제 (작성자 본인만, 말머리 "공지"는 회원이 못 씀 11-14). **회원 로그인 필요, 작성자는 세션의 회원** — 요청에 작성자 번호를 넣지 않음. 글쓰기 응답 `201 {"id"}` (11-10) | 게시판 › 글쓰기 | `createPost` · `updatePost` · `deletePost` |
+| POST | `/api/admin/auth/login` · `/api/admin/auth/logout` · GET `/api/admin/me` | **관리자 로그인 (11-14)** — DB 표 `admin` 계정만 (회원과 따로). 2-17 | 관리자 사이트 로그인 | `adminLogin` · `adminLogout` · `adminMe` |
+| GET | `/api/admin/posts?category=&q=&status=&page=` | 전체 글 (숨김·공지 포함, `status` · `hidden_reason`) **(11-14 구현)** | 관리자 › 게시판 관리 | `adminPosts` |
+| GET · POST · PUT | `/api/admin/posts/{id}` · `/api/admin/posts` | 관리자 글 보기(숨김도)·쓰기(말머리 "공지" 가능)·고치기(관리자 글만) **(11-14)** | 관리자 › 게시판 관리 · 공지 | `adminPost` · `adminWritePost` · `adminUpdatePost` |
+| PATCH · DELETE | `/api/admin/posts/{id}` `{ "hidden", "reason" }` | 숨김(사유 필수)·다시 보이기·삭제 (누구 글이든) **(11-14)** | 관리자 › 게시판 관리 | `adminHidePost` · `adminDeletePost` |
+| GET · POST | `/api/admin/posts/{id}/comments` `{ "body", "parent_id" }` | 댓글 보기(숨긴 글도)·관리자 댓글·답글 쓰기 **(11-14)** | 관리자 › 게시판 관리 | `adminComments` · `adminWriteComment` |
+| DELETE | `/api/admin/comments/{id}` | 누구 댓글이든 삭제 **(11-14)** | 관리자 › 게시판 관리 | `adminDeleteComment` |
 | GET | `/api/posts/{id}/comments` | 댓글·답글 (답글은 `replies` 안에) | 게시판 › 글 | `getComments` |
 | POST | `/api/posts/{id}/comments` `{ "body", "parent_id" }` | 댓글·답글 쓰기 (글쓴이·원댓글 작성자에게 알림) | 게시판 › 글 | `createComment` |
-| DELETE | `/api/comments/{id}` | 댓글 삭제 (작성자 본인, 관리자는 누구 댓글이든 11-14 — 사유 알림은 관리자 API 를 만들 때) | 게시판 › 글, 관리자 › 게시판 관리 | `deleteComment` |
+| DELETE | `/api/comments/{id}` | 댓글 삭제 (작성자 본인만. 관리자 삭제는 `/api/admin/comments/{id}`) | 게시판 › 글, 관리자 › 게시판 관리 | `deleteComment` |
 | GET | `/api/admin/board-bans` | 게시판 이용 제한 중인 회원 | 관리자 › 게시판 관리 | `getBannedUsers` |
 | POST · DELETE | `/api/admin/users/{id}/board-ban` `{ "days", "reason" }` | 게시판 이용 제한 걸기·풀기 (회원에게 알림) | 관리자 › 게시판 관리, 신고·분쟁 | `banUser` · `liftBan` |
 | GET | `/api/auctions?sort=popular\|ending\|price` | 진행 중 경매 목록 | 홈 인기 경매, 경매 마켓 | `getAuctions` |
@@ -596,7 +600,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | GET | `/api/search/suggest?q=` | 자동완성 (종류마다 2~3개) | 헤더 검색창 | `suggest` |
 | GET | `/api/news?category=&item=&items=&q=&page=&size=` | 농업 뉴스 (최신순, 저장된 기사만) | 홈 헤드라인, 농업 뉴스 (`/news`), 검색 › 뉴스 | `getNews` |
 | GET | `/api/news/trend?days=7&limit=5` | 최근 N일 기사에 많이 나온 품목 | 홈·농업 뉴스 › 많이 나온 품목 | `getNewsTrend` |
-| GET | `/api/notices` | 공지 목록 (`show_on_home` 이면 홈 배너) | 홈 배너, 개발자 › 공지 | `getNotices` |
+| GET | `/api/notices` | 공지 목록 — 관리자가 말머리 "공지"로 쓴 글, 최신 20개, 본문 포함 **(11-14 구현)**. 보기는 `/api/posts/{id}` | 게시판 맨 위, 통합 검색 | `getNotices` |
 | GET · PATCH | `/api/me` | 내 정보 조회·수정 (이름·연락처·지역·농장명·관심 품목·알림 설정) | 마이페이지 › 내 정보 | `updateProfile` |
 | POST | `/api/me/password` `{ "current", "next" }` | 비밀번호 변경 | 마이페이지 › 내 정보 | `changePassword` |
 | DELETE | `/api/me` `{ "password" }` | 회원 탈퇴: 회원 정보와 쓴 글을 DB 에서 삭제 후 로그아웃 `204`, 비밀번호 틀림 `403` (진행 중 경매·최고가 입찰 있으면 `409`, 경매 재개 때) | 마이페이지 › 내 정보 | `withdraw` |
@@ -662,8 +666,8 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | `DELETE /api/me` `{ "password" }` | `204` 회원·쓴 글 삭제 + 로그아웃 (화면은 로그인 화면으로) | `403` 비밀번호 틀림 |
 
 - **로그인 방식: 서버 세션.** 응답에 `JSESSIONID` 쿠키(HttpOnly, SameSite=Lax, 12시간)가 오고, 브라우저가 같은 주소의 다음 요청에 자동으로 붙인다. 화면은 토큰을 따로 저장하지 않는다.
-- **회원 정보 응답:** `{ "id", "email", "name", "nickname", "phone", "region", "farmName", "type" }`. `type` = DB `users.role` (`MEMBER` 일반회원 · `ADMIN` 관리자, 11-14). 비밀번호(해시)는 절대 없음.
-- **관리자 (11-14):** 서버 `.env` 의 `ADMIN_EMAILS`(쉼표로 여러 이메일)에 있는 회원을 backend 가 켜질 때 `ADMIN` 으로, 목록에서 빠진 회원은 `MEMBER` 로 (`config/AdminAccounts.java`). 관리자는 로그인 때 `ROLE_ADMIN` 권한을 받아 `/api/admin/**` 에 들어가고, 누구 글·댓글이든 지울 수 있다. 바꾼 뒤에는 다시 로그인해야 권한이 반영됨
+- **회원 정보 응답:** `{ "id", "email", "name", "nickname", "phone", "region", "farmName", "type": "MEMBER" }`. 비밀번호(해시)는 절대 없음.
+- **관리자는 회원이 아님 (11-14):** 관리자 계정은 DB 표 `admin` 에 따로 (2-17). 회원 API(`/api/me`, 글·댓글 쓰기)는 회원 로그인(`ROLE_MEMBER`)만 — 관리자 세션으로 부르면 `403`
 - **화면은 언제나 이 API 를 씀 (11-14):** 가짜 계정(`VITE_AUTH=mock`)을 없앰. 서버가 안 되면 오류 안내
 - **오류 응답:** 회원 API 는 `{ "message": "화면에 보여줄 문장" }` (422 는 `detail` 에 칸별 오류도). 서버 내부 오류는 문장을 숨김.
 - **비밀번호:** BCrypt 저장. 규칙은 영문+숫자 8~64자(키보드 문자만, 한글·띄어쓰기 안 됨).
@@ -911,6 +915,14 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 - `points` 는 최근 `days` 거래일, 오래된 날 → 최근. 수입 위주 품목도 포함 (지금은 107품목 전부)
 - 카드 아래 "AI 30일 뒤 ▲ n% 상승" 은 이 API 가 아니라 화면에서 `GET /predict/top-movers?horizon=30&limit=107` 의 묶음 품목 `change_pct` 평균으로 계산
 
+### 2-17. 관리자 로그인 · 게시판 관리 (11-14)
+- **관리자 계정 = DB 표 `admin`** (`admin_id, email, password_hash, name, created_at`), 일반 회원(`users`)과 따로. 화면 없이 SQL 로 넣는다 (`deploy/README.md` 1-2). 비밀번호는 BCrypt — PostgreSQL `crypt('비밀번호', gen_salt('bf', 10))`(pgcrypto) 값을 Spring 이 그대로 확인
+- `POST /api/admin/auth/login {email, password}` → `200 {id, email, name}` + 세션(`ROLE_ADMIN`) · 틀리면 `401` "이메일 또는 비밀번호가 맞지 않습니다". 같은 브라우저의 회원 로그인은 풀림(세션 하나)
+- 관리자 글·댓글: `post.admin_id` · `post_comment.admin_id` (회원 글은 `author_id`). 응답에 `"by_admin": true`, `author_name` 은 "관리자". 회원은 관리자 글·댓글을 고치거나 지울 수 없고, 댓글·답글은 달 수 있음
+- 말머리 `공지`(`NOTICE`)는 관리자만. 회원 목록 `GET /api/posts` 에서 빠지고 `GET /api/notices` 로 게시판 맨 위에
+- 숨기기: `PATCH /api/admin/posts/{id} {"hidden": true, "reason": "광고"}` → `status: "HIDDEN"`, 회원에게는 `404`(없는 글처럼). 다시 보이기 `{"hidden": false}`
+- 표는 backend 가 켜질 때 `resources/db/admin_tables.sql` 이 만듦 (예전 DB 에도: `admin` 표, `post`·`post_comment` 의 `admin_id`, 공지 말머리)
+
 ## 3. 정해야 할 것
 
 - [ ] 프론트가 ML API를 **직접 호출**할지, **Spring을 거쳐** 호출할지
@@ -962,5 +974,5 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | 2026-11-13 | **시세·예측 실제 데이터로.** Spring `GET /api/prices/{item}/monthly` 추가(계절 패턴 · 월별 반입량), 11-12 의 market-share · auction-houses 표에 적음. 화면 시세 기본값을 db 로(`VITE_PRICE_SOURCE=mock` 일 때만 가짜), ml-api `PREDICTOR` 기본값 db, 가격 예측은 서버가 안 되면 가짜 값 대신 오류 | |
 | 2026-11-13 | **작물 추천 실제 자료로.** 작물 표 `shared/crops.json`(농사로 재배력 · 소득조사/생산비조사 3개 해 평균 · farm_ratio · 평년가, 34작물 66작형) 를 ml-api `crop_catalog.py` 가 읽음(`crop_calendar.py` 지움). 가격 = DB 예측 × farm_ratio, 시장 = DB market_factor. 응답에 `land_types`·`price_basis`·`forecast_base_date`·`schedule_source`·`econ_source`·`normal` 등 추가, `/prices` 에 `basis`·`off_season` | |
 | 2026-11-13 | **출하철 밖 표시·보정.** `POST /predict` 의 `forecast[]` 에 `off_season`(출하철 밖 = 참고값) 추가 — DB `price_forecast_daily.off_season`. `GET /predict/top-movers` 는 그날이 출하철 밖인 품목을 뺌. 15거래일~12달 v4 값에 금액÷물량 ↔ 일 단순평균 보정비(0.9~1.1) | |
-| 2026-11-14 | **가짜 계정 · 가짜 게시판 없앰, 관리자 구분.** 화면 회원·게시판은 언제나 Spring (`VITE_AUTH`/`AUTH_MODE` 없앰, backend 는 늘 켬). DB `users.role`(MEMBER · ADMIN) — backend 가 켜질 때 열을 더하고 `ADMIN_EMAILS` 로 관리자 지정, 응답 `type` 에 반영, 관리자는 `ROLE_ADMIN` · 남의 글·댓글 삭제. 관리자 사이트의 게시판 관리·이용 제한·회원 관리는 아직 가짜 데이터 (관리자 API 만들 때) | |
+| 2026-11-14 | **가짜 계정 · 가짜 게시판 없앰, 관리자 따로.** 화면 회원·게시판은 언제나 Spring (`VITE_AUTH`/`AUTH_MODE` 없앰, backend 는 늘 켬). 관리자 = DB 표 `admin`(SQL 로 넣음), `/api/admin/auth/*` 로그인, 게시판 관리 API(목록·숨기기·삭제·관리자 글·공지·댓글, 2-17), `GET /api/notices` 구현. 회원 API 는 `ROLE_MEMBER` 만. 관리자 사이트 "공지사항" 메뉴는 게시판 관리로 합침. 회원 관리·이용 제한은 아직 예시 데이터 | |
 | 2026-11-14 | **지금 날씨 · 가짜 뉴스/날씨 뺌.** Spring `GET /api/weather/regions`(2-7) 구현 — 기상청 초단기실황·단기예보·기상특보를 시·도 17곳 대표 격자로, 10분 캐시, 키 `DATA_GO_KR_KEY`(없으면 503). 홈 날씨 카드 위쪽은 지금 날씨, 아래 문장은 지난 관측(수집기 파일). 뉴스·지난 날씨는 출처가 없으면 예시 대신 오류 안내 | |

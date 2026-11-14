@@ -1,7 +1,7 @@
-// 게시판 (Spring 담당). 맨 위 공지는 관리자 공지사항(api/admin.js getNotices)을 그대로 보여준다.
+// 게시판 (Spring 담당). 맨 위 공지는 관리자가 게시판 관리에서 쓴 "공지" 글 (api/adminBoard.js getNotices, 11-14).
 // 글·댓글은 언제나 Spring 서버(/api/posts…, /api/comments…, 명세서 2-9·2-10)로 (11-14: 가짜 게시판 없앰 — 서버가 안 되면 오류 안내).
-//   작성자는 서버가 로그인 세션으로 정한다. 관리자는 누구 글·댓글이든 지울 수 있다 (서버가 users.role 로 확인).
-// 아래 "관리자 사이트" 부분(게시판 관리·이용 제한)은 아직 서버 API 가 없어 브라우저 가짜 데이터 — 관리자 기능을 만들 때 바꿈
+//   작성자는 서버가 로그인 세션으로 정한다. 관리자 글(공지)·댓글은 "관리자"(by_admin)로 오고, 숨기기·삭제는 관리자 사이트(api/adminBoard.js)에서.
+// 아래 "신고 처리·이용 제한" 부분은 숨긴 메뉴용 예시 데이터 (서버 API 없음). 실제 게시판 관리는 api/adminBoard.js
 import axios from "axios";
 import { fake } from "./client";
 import { notify } from "./notify";
@@ -13,9 +13,6 @@ export const PAGE_SIZE = 15;
 
 const nameOf = (users, id) => users.find((u) => u.id === id)?.name ?? "알 수 없음";
 const withAuthor = (users) => (p) => ({ ...p, author_name: nameOf(users, p.author) });
-const newestFirst = (a, b) => b.id - a.id;
-const commentCounts = () =>
-  commentsDb.all().reduce((m, c) => (c.deleted ? m : { ...m, [c.post_id]: (m[c.post_id] ?? 0) + 1 }), {});
 
 // ── 게시판 이용 제한 ──
 
@@ -85,14 +82,7 @@ export function deletePost(user, id) {
   return call(api.delete(`/api/posts/${id}`), "글을 지우지 못했습니다");
 }
 
-// ── 관리자: 게시판 관리 ──
-
-/** 숨김 글 포함 전체 (관리자) */
-export function getAllPosts() {
-  const users = usersDb.all();
-  const counts = commentCounts();
-  return fake(postsDb.all().sort(newestFirst).map((p) => ({ ...withAuthor(users)(p), comment_count: counts[p.id] ?? 0, author_ban: adminBanOf(p.author) })));
-}
+// ── 관리자 사이트 "신고 처리"(숨긴 메뉴)용 예시 데이터 — 실제 게시판 관리는 api/adminBoard.js (11-14) ──
 
 /** 글 숨기기/다시 보이기. 숨길 때는 사유를 작성자에게 알림으로 보낸다. */
 export function setPostHidden(id, hidden, reason = "") {
@@ -103,16 +93,6 @@ export function setPostHidden(id, hidden, reason = "") {
   postsDb.saveAll(rows);
   if (hidden) notify(p.author, { type: "notice", title: "게시글 숨김", body: `'${p.title}' 글이 운영 정책에 따라 숨김 처리되었어요. 사유: ${reason.trim()}`, link: "/board" });
   return fake(p);
-}
-
-/** 관리자 삭제 (작성자에게 알림) */
-export function adminDeletePost(id, reason = "") {
-  const rows = postsDb.all();
-  const p = rows.find((x) => x.id === id);
-  postsDb.saveAll(rows.filter((x) => x.id !== id));
-  commentsDb.saveAll(commentsDb.all().filter((c) => c.post_id !== id));
-  notify(p.author, { type: "notice", title: "게시글 삭제", body: `'${p.title}' 글이 관리자에 의해 삭제되었어요.${reason.trim() ? ` 사유: ${reason.trim()}` : ""}`, link: "/board" });
-  return fake(true);
 }
 
 // ── 댓글·답글 ──
@@ -180,10 +160,6 @@ export function liftBan(userId) {
   notify(userId, { type: "notice", title: "게시판 이용 제한 해제", body: "다시 게시판에 글과 댓글을 쓸 수 있어요.", link: "/board" });
   return fake(true);
 }
-
-/** 이용 제한 중인 회원 목록 */
-export const getBannedUsers = () =>
-  fake(usersDb.all().filter((u) => adminBanOf(u.id)).map((u) => ({ id: u.id, name: u.name, email: u.email, ban: u.board_ban })));
 
 /** 관리자: 글의 모든 댓글 (평평한 목록) */
 export const getPostComments = (postId) => {

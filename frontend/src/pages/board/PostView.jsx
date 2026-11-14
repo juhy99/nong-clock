@@ -1,5 +1,4 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { getNotices } from "../../api/admin";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { deletePost, getPost } from "../../api/board";
 import { useAuth } from "../../components/AuthContext";
 import { Async, useAsync } from "../../components/common";
@@ -31,7 +30,7 @@ function Article({ badge, title, meta, body, images = [], actions }) {
 
 export function PostView() {
   const { id } = useParams();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const nav = useNavigate();
   const state = useAsync(() => getPost(id, { countView: true }), [id]);
   const showError = useErrorPopup();
@@ -54,18 +53,18 @@ export function PostView() {
         {(p) => (
           <>
             <Article
-              badge={<span className="badge">{p.category}</span>}
+              badge={p.category === "공지" ? <span className="badge red">공지</span> : <span className="badge">{p.category}</span>}
               title={p.title}
               meta={`${p.author_name} · ${dateTime(p.created_at)}${p.updated_at ? " (수정됨)" : ""} · 조회 ${p.views}`}
               body={p.body}
               images={p.images}
               actions={
-                user?.id === p.author || isAdmin ? (
+                user && p.author != null && user.id === p.author ? (
                   <div style={{ display: "flex", gap: 6 }}>
-                    {user?.id === p.author && <Link className="btn sm" to={`/board/${p.id}/edit`}>수정</Link>}
-                    <button className="btn sm danger" onClick={() => remove(p)}>{user?.id === p.author ? "삭제" : "관리자 삭제"}</button>
+                    <Link className="btn sm" to={`/board/${p.id}/edit`}>수정</Link>
+                    <button className="btn sm danger" onClick={() => remove(p)}>삭제</button>
                   </div>
-                ) : null /* 신고 기능은 없음 (11-11, Spring 에 없음). 관리자는 남의 글도 지움 (11-14) */
+                ) : null /* 신고 기능은 없음 (11-11). 관리자 글(공지)·숨기기·삭제는 관리자 사이트에서 (11-14) */
               }
             />
             <Comments post={p} />
@@ -76,26 +75,8 @@ export function PostView() {
   );
 }
 
+/** 예전 공지 주소(/board/notice/:id) → 공지도 게시판 글이 됨 (11-14) */
 export function NoticeView() {
   const { id } = useParams();
-  const state = useAsync(async () => {
-    const n = (await getNotices()).find((x) => x.id === Number(id));
-    if (!n) throw new Error("삭제된 공지입니다");
-    return n;
-  }, [id]);
-  return (
-    <div className="page" style={{ maxWidth: 900 }}>
-      <Link to="/board" className="link">← 게시판</Link>
-      <Async state={state}>
-        {(n) => (
-          <Article
-            badge={<><span className="badge red">공지</span> <span className="badge">{n.category}</span></>}
-            title={n.title}
-            meta={`관리자 · ${dateTime(n.created_at)}`}
-            body={n.body}
-          />
-        )}
-      </Async>
-    </div>
-  );
+  return <Navigate to={`/board/${id}`} replace />;
 }

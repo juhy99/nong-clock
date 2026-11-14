@@ -1,7 +1,7 @@
 // 회원가입·로그인 (Spring 담당, 11-14: 가짜 계정 없앰 — 언제나 백엔드 backend-spring 의 /api/auth/... 에 연결, 서버가 안 되면 오류 안내)
 // 비밀번호는 서버가 BCrypt 로 암호화 저장. 로그인 상태는 서버 세션 + 브라우저의 세션 쿠키(HttpOnly, JS 로 못 읽음) (11-10).
 //   아래 "session"(localStorage)은 화면 표시용 복사본일 뿐이고, 새로고침 때 GET /api/me 로 서버에 다시 확인한다 (refreshSession).
-// 회원 구분: 서버 users.role (MEMBER 일반회원 · ADMIN 관리자, 서버 .env 의 ADMIN_EMAILS 로 지정) → type "member" · "admin"
+// 관리자는 회원이 아님: DB 표 admin 의 따로 된 계정으로 관리자 사이트에서만 로그인 (api/adminBoard.js, 11-14)
 // 백엔드에 아직 없는 기능(내 정보 수정·비밀번호 변경)은 "준비 중" 오류
 import axios from "axios";
 import { fake } from "./client";
@@ -27,7 +27,7 @@ export async function refreshSession() {
     save("session", session);
     return session;
   } catch (e) {
-    if (e.response?.status === 401) {
+    if (e.response?.status === 401 || e.response?.status === 403) { // 403: 같은 브라우저에서 관리자로 로그인한 세션 (11-14)
       save("session", null);
       return null;
     }

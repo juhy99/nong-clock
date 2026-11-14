@@ -12,7 +12,6 @@ export function AuthProvider({ children }) {
   }, []);
   const value = {
     user,
-    isAdmin: user?.type === "admin",
     login: async (email, pw) => setUser(await auth.login(email, pw)),
     signup: async (form) => setUser(await auth.signup(form)),
     updateProfile: async (patch) => setUser(await auth.updateProfile(user.id, patch)),

@@ -139,7 +139,7 @@ function NoticeList({ rows, q }) {
   return (
     <div className="search-list">
       {rows.map((n) => (
-        <Link key={n.id} to={`/board/notice/${n.id}`} className="search-post">
+        <Link key={n.id} to={`/board/${n.id}`} className="search-post">
           <span className="tt"><span className="badge amber">공지</span> <Highlight text={n.title} q={q} /></span>
           <span className="sn"><Highlight text={n.body} q={q} /></span>
         </Link>

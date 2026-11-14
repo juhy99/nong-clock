@@ -42,7 +42,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     static Rule ruleOf(String method, String path) {
         if (path == null) return null;
-        if (path.equals("/api/auth/login") || path.equals("/api/auth/signup") || path.equals("/api/auth/check")) return AUTH;
+        if (path.equals("/api/auth/login") || path.equals("/api/auth/signup") || path.equals("/api/auth/check") || path.equals("/api/admin/auth/login")) return AUTH;
         boolean read = method.equals("GET") || method.equals("HEAD") || method.equals("OPTIONS");
         if (!read && (path.startsWith("/api/posts") || path.startsWith("/api/comments") || path.equals("/api/me"))) return WRITE;
         return null;

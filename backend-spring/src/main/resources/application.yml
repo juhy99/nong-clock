@@ -22,7 +22,7 @@ spring:
   sql:
     init:
       mode: always
-      schema-locations: classpath:db/base_tables.sql, classpath:db/post_comment.sql  # 회원·글(+ 11-14 회원 구분 role) → 댓글 순서
+      schema-locations: classpath:db/base_tables.sql, classpath:db/post_comment.sql, classpath:db/admin_tables.sql  # 회원·글 → 댓글 → 관리자(11-14) 순서
 
   jpa:
     hibernate:
@@ -41,10 +41,6 @@ shared:
 ml:
   api:
     url: http://localhost:8000  # FastAPI 서버 주소
-
-# 관리자 지정 (11-14): 쉼표로 여러 이메일. 서버가 켜질 때 이 회원들을 관리자로 (먼저 가입해 둘 것). 저장소 .env 의 ADMIN_EMAILS
-admin:
-  emails: ${ADMIN_EMAILS:}
 
 # 지금 날씨 (11-14, /api/weather/regions): 공공데이터포털 일반 인증키. 저장소 .env 의 DATA_GO_KR_KEY (도커는 docker-compose 가 넘김)
 weather:

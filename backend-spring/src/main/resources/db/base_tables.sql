@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS users (
     farm_name        VARCHAR(50),
     marketing_agree  BOOLEAN       NOT NULL DEFAULT FALSE,
     status           VARCHAR(20)   NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','SUSPENDED','WITHDRAWN')),
-    role             VARCHAR(10)   NOT NULL DEFAULT 'MEMBER' CHECK (role IN ('MEMBER','ADMIN')),
     notify_settings  JSONB         NOT NULL DEFAULT '{}',
     board_banned_at  TIMESTAMP,
     board_ban_until  TIMESTAMP,
@@ -18,9 +17,6 @@ CREATE TABLE IF NOT EXISTS users (
     board_ban_by     INT,
     created_at       TIMESTAMP     NOT NULL DEFAULT NOW()
 );
-
--- 회원 구분 열 (11-14): 이미 있던 users 표에도 더함. 관리자는 서버 .env 의 ADMIN_EMAILS 로 지정 (config/AdminAccounts.java)
-ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(10) NOT NULL DEFAULT 'MEMBER' CHECK (role IN ('MEMBER','ADMIN'));
 
 CREATE TABLE IF NOT EXISTS post (
     post_id        BIGSERIAL     PRIMARY KEY,

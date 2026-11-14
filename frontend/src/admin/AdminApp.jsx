@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes } from "react-router-dom";
-import { useAuth } from "../components/AuthContext";
+import { useAdminAuth } from "./AdminAuth";
 import { clearImages } from "../mocks/images";
 import { resetAll } from "../mocks/store";
 import { SITE_URL } from "./siteUrl";
@@ -10,23 +10,22 @@ import Dashboard from "./pages/Dashboard";
 import DataStatus from "./pages/DataStatus";
 import Members from "./pages/Members";
 import ModelPerformance from "./pages/ModelPerformance";
-import Notices from "./pages/Notices";
 import { buildText } from "../api/admin";
 import { BUILD } from "../api/collection";
 import { AUCTION_ENABLED } from "../features";
 
 const MENU = [
   ["", "📊 대시보드"],
-  ["board", "📝 게시판 관리"],
-  ["notices", "📢 공지사항"],
+  ["board", "📝 게시판 관리 · 공지"],
   ["members", "👥 회원 관리"],
   ...(AUCTION_ENABLED ? [["auctions", "🔨 경매 관리"]] : []),
   ["data", "📥 데이터 수집"],
   ["model", "📈 모델 성능"],
 ];
 
+/** 관리자 로그인 (11-14): DB 표 admin 의 계정만 — 사용자 사이트 회원 계정으로는 못 들어옴 */
 function AdminLogin() {
-  const { user, login, logout } = useAuth();
+  const { login, checkError } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [error, setError] = useState("");
@@ -45,15 +44,7 @@ function AdminLogin() {
     <div className="admin-login">
       <form className="card" onSubmit={submit}>
         <div className="admin-brand"><img src="/logo-icon.png" alt="" /> NongClock <small>관리자</small></div>
-        {user && (
-          <div className="banner small">
-            ⚠️
-            <div>
-              <b>{user.name}</b>({user.email}) 계정은 관리자 권한이 없습니다 (관리자는 서버 .env 의 ADMIN_EMAILS 로 지정).{" "}
-              <button type="button" className="link" onClick={logout}>로그아웃</button>
-            </div>
-          </div>
-        )}
+        {checkError && <div className="banner small">⚠️ {checkError}</div>}
         <div className="field">
           <label htmlFor="a-email">관리자 이메일</label>
           <input id="a-email" className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -71,7 +62,7 @@ function AdminLogin() {
 }
 
 function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { admin, logout } = useAdminAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="admin-shell">
@@ -85,13 +76,13 @@ function AdminLayout() {
         <button
           className="btn sm danger"
           onClick={async () => {
-            if (!confirm(`가짜 데이터(회원가입·${AUCTION_ENABLED ? "입찰·" : ""}게시글·사진·이용 제한 기록)를 처음 상태로 되돌릴까요?`)) return;
+            if (!confirm(`이 브라우저의 예시 데이터(회원 관리 예시·${AUCTION_ENABLED ? "입찰·" : ""}사진)를 처음 상태로 되돌릴까요? 실제 DB(게시판·공지·회원)는 바뀌지 않아요`)) return;
             resetAll();
             await clearImages().catch(() => {});
             location.href = "/admin/";
           }}
         >
-          데모 데이터 초기화
+          예시 데이터 초기화
         </button>
       </aside>
       <div className="admin-main">
@@ -100,7 +91,7 @@ function AdminLayout() {
           <a className="link small" href={`${SITE_URL}/`} target="_blank" rel="noreferrer">사용자 사이트 열기 ↗</a>
           <span style={{ flex: 1 }} />
           {BUILD.sha && <span className="admin-version num" title={buildText()}>배포 {BUILD.sha}</span>}
-          <span className="small">🛠️ <b>{user.name}</b></span>
+          <span className="small">🛠️ <b>{admin.name}</b></span>
           <button className="btn sm" onClick={logout}>로그아웃</button>
         </header>
         <main className="admin-content">
@@ -111,10 +102,11 @@ function AdminLayout() {
   );
 }
 
-/** 관리자만 들어올 수 있다. 실제로는 Spring 이 모든 /api/admin 요청에서 권한을 다시 확인해야 한다. */
+/** 관리자만 들어올 수 있다 (admin 표 계정으로 로그인). Spring 이 모든 /api/admin 요청에서 권한을 다시 확인한다 */
 export default function AdminApp() {
-  const { user, isAdmin } = useAuth();
-  if (!user || !isAdmin) return <AdminLogin />;
+  const { admin } = useAdminAuth();
+  if (admin === undefined) return <div className="admin-login"><div className="card state">관리자 로그인 확인 중…</div></div>;
+  if (!admin) return <AdminLogin />;
   return (
     <Routes>
       <Route element={<AdminLayout />}>
@@ -122,7 +114,7 @@ export default function AdminApp() {
         {/* 신고·분쟁: 사용자 사이트에서 신고 기능을 뺐으므로 메뉴도 숨김 (코드는 남김) */}
         <Route path="reports" element={<Navigate to="/" replace />} />
         <Route path="board" element={<BoardAdmin />} />
-        <Route path="notices" element={<Notices />} />
+        <Route path="notices" element={<Navigate to="/board" replace />} /> {/* 11-14: 공지는 게시판 관리에서 (말머리 "공지") */}
         <Route path="members" element={<Members />} />
         <Route path="auctions" element={AUCTION_ENABLED ? <AuctionsAdmin /> : <Navigate to="/" replace />} />
         <Route path="data" element={<DataStatus />} />

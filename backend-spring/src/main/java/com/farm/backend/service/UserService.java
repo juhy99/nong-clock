@@ -126,12 +126,6 @@ public class UserService {
         userRepository.delete(user);
     }
 
-    /** 이 회원이 관리자인지 (DB role 을 그때그때 확인 — 관리자에서 빠지면 바로 반영) */
-    public boolean isAdmin(Long id) {
-        User u = findUser(id);
-        return u != null && u.isAdmin();
-    }
-
     /** 세션의 회원 번호로 지금 정보 읽기. 다른 기기에서 탈퇴해 이미 지워졌으면 null → 컨트롤러가 세션을 끊음 */
     public User findUser(Long id) {
         if (id == null) return null;
@@ -140,6 +134,6 @@ public class UserService {
 
     public static UserResponse toResponse(User u) {
         return new UserResponse(u.getId(), u.getEmail(), u.getName(), u.getName(), u.getPhone(), regionName(u.getRegionId()),
-                u.getFarmName() == null ? "" : u.getFarmName(), u.isAdmin() ? User.ROLE_ADMIN : User.ROLE_MEMBER);
+                u.getFarmName() == null ? "" : u.getFarmName(), "MEMBER");
     }
 }

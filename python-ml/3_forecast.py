@@ -27,6 +27,9 @@
      두 주 중 하나라도 거래가 없으면 상태를 모름 → 보정 안 함. ② 이후는 그대로(ⓑ 이음으로 14일 동안 0 까지 줄어듦).
      지금 시세는 '폭락인지 아닌지' 판단에만 쓰고, 예측 값·모양은 여전히 원인 기반 (강사님 원칙 — 예외로 문서에 적음). 품목·품종 줄의 crash_adj = 보정 단위가 하나라도 섞임
 
+  ⓗ [사후 추가 11-14 — 홈 급등락 카드 '자두 30일 +280%'를 보고 넣음] 그날 묶인 단위들의 작년 같은 달 물량 합이 THIN_KG(1t) 미만이면
+     off_season = 1 (거래가 얇아 몇 kg 값이 품목 값이 됨 → '참고'). 예: 자두 12월 = '자두(기타·그 외 철)' 10~30kg 뿐, 작년 12월 0kg
+
 품종·품목으로 묶기: 단위 값의 가중 평균. 무게 = 그 단위의 작년 같은 달 물량 (기준일 앞 가장 최근 같은 달, DB price_unit_daily).
   그날 예측이 있는 단위만으로 무게를 다시 나눔. 무게가 전부 0 이면 같은 무게. 품목(variety_id = ALL) = 품목의 모든 품종 단위
 범위(하한·상한): 고르기 구간(목표 2023~24) 섞은 예측의 log(실제 ÷ 예측) 10%·90% 분위, 거리 묶음별 (ref/forecast_band.csv)
@@ -45,6 +48,7 @@ W_DAY = 0.7     # 1~14거래일: u7c(u7d) 비중 — 11-12 저녁 재비교(팀�
 W_MONTH = 1.0   # 15거래일~12달: v4 비중 (달 평균 수준) — 재비교에서 v4 단독이 뽑힘
 MAX_DAYS = 365
 ADJ_LO, ADJ_HI = 0.9, 1.1   # ⓕ 보정비를 자르는 범위
+THIN_KG = 1000              # ⓗ 작년 같은 달 물량 합이 이보다 적으면 '참고'
 
 
 def band_of(days: int, seg: str, B: pd.DataFrame):
@@ -242,13 +246,14 @@ def main():
         g = G[G.unit.isin(us)]
         if g.empty:
             continue
+        kg = g.groupby("date").w.sum()                   # ⓗ 그날 묶인 단위의 작년 같은 달 물량 합
         g = g.assign(w=g.groupby("date").w.transform(lambda s: s / s.sum() if s.sum() > 0 else 1.0 / len(s)))
         p = (g.w * np.exp(g.lp)).groupby(g.date).sum()
         # 그날 가장 무게가 큰 단위의 규칙·구간을 대표로
         top = g.sort_values("w").groupby("date").tail(1).set_index("date")
         on = (g.w * g.in_season).groupby(g.date).sum()   # 출하철인 단위의 무게 몫
         cr = (g.w * g.crash).groupby(g.date).sum()       # ⓖ 보정 단위의 무게 몫
-        r = pd.DataFrame({"price": p, "rule": top.rule, "seg": top.seg, "days": top.days, "off_season": (on < 0.5).astype(int), "crash_adj": (cr > 0).astype(int)})
+        r = pd.DataFrame({"price": p, "rule": top.rule, "seg": top.seg, "days": top.days, "off_season": ((on < 0.5) | (kg < THIN_KG)).astype(int), "crash_adj": (cr > 0).astype(int)})
         q = np.array([band_of(int(d), s, B) for d, s in zip(r.days, r.seg)])
         r["price_low"], r["price_high"] = r.price * np.exp(q[:, 0]), r.price * np.exp(q[:, 1])
         r = r.reset_index().rename(columns={"date": "target_date"})
@@ -260,6 +265,7 @@ def main():
     for c in ("price", "price_low", "price_high"):
         R[c] = R[c].round().astype(int)
     R = R.rename(columns={"rule": "model"})[["base_date", "item_code", "variety_id", "target_date", "price", "price_low", "price_high", "model", "off_season", "crash_adj"]]
+    print(f"ⓗ 얇은 달(작년 같은 달 {THIN_KG}kg 미만)도 참고로 셈")
     print(f"출하철 밖 줄 (off_season): {int(R.off_season.sum()):,} / {len(R):,} · 폭락 보정 섞인 줄 (crash_adj): {int(R.crash_adj.sum()):,}")
     o = Path(a.out); o.mkdir(parents=True, exist_ok=True)
     R.to_csv(o / "price_forecast_daily.csv", index=False, encoding="utf-8")

@@ -197,3 +197,22 @@ def test_off_season_forecast_marks_reference(fake_db):
     assert path["forecast_base_date"] == TODAY.isoformat()
     assert {p["basis"] for p in path["points"]} == {"forecast"}
     assert any(p["off_season"] for p in path["points"]) and path["points"][0]["price"] == 1000
+
+
+# ── 11-14 품종 작형: 양파 조생종은 조생(onion-3) 가격, 중만생종은 품목 전체 ──
+def test_variety_cropping_uses_its_variety_price(monkeypatch):
+    def q(sql, params):
+        if "price_forecast_daily" in sql and params[0] == "onion":
+            p = 2000.0 if params[1] == "onion-3" else 1000.0
+            rows = [(TODAY, TODAY + timedelta(days=k), p, p * 0.8, p * 1.3, 0) for k in range(1, 366)]
+            return rows if "off_season" in sql else [r[:5] for r in rows]
+        return []
+    monkeypatch.setattr(crop_prices._Store, "_q", staticmethod(q))
+    monkeypatch.setattr(crop_prices, "STORE", crop_prices._Store())
+    crop = CROPS["onion"]
+    early, late = (next(c for c in crop.croppings if c.name.startswith(n)) for n in ("조생", "중만생"))
+    assert early.price_variety == "onion-3" and early.normal_price and not late.price_variety
+    d = TODAY + timedelta(days=10)
+    assert crop_prices.farm_price(crop, early, d, TODAY).wholesale == pytest.approx(2000 * early.farm_ratio)
+    assert crop_prices.farm_price(crop, late, d, TODAY).wholesale == pytest.approx(1000 * late.farm_ratio)
+    assert early.harvest_from == (4, 1) and late.harvest_from == (6, 1)

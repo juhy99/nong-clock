@@ -82,6 +82,10 @@ class Cropping:
     econ_source: str
     estimated: tuple[str, ...]
     survey: Survey
+    price_variety: str = ""           # 11-14: 이 작형만 품종 가격을 씀 (예: 양파 조생종 = onion-3). 빈 값 = 품목 전체
+    normal_price: tuple[int | None, ...] = ()   # 품종 작형의 평년 도매가 (빈 값 = 작물 평년)
+    normal_low: tuple[int | None, ...] = ()
+    normal_high: tuple[int | None, ...] = ()
 
     @property
     def window_days(self) -> int:
@@ -158,6 +162,8 @@ def _cropping(x: dict) -> Cropping:
         harvest_days_single=x["harvest_days"], multi_harvest=bool(x["multi_harvest"]), yield_t_per_10a=float(x["yield_t_per_10a"]),
         cost_per_10a=int(x["cost_per_10a"]), farm_ratio=x.get("farm_ratio"), storage_days=int(x.get("storage_days") or 0),
         schedule_source=x["source"]["schedule"], econ_source=x["source"]["econ"], estimated=tuple(x.get("estimated") or ()), survey=_survey(x["rda"]),
+        price_variety=x.get("price_variety") or "", normal_price=tuple((x.get("normal") or {}).get("price") or ()),
+        normal_low=tuple((x.get("normal") or {}).get("low") or ()), normal_high=tuple((x.get("normal") or {}).get("high") or ()),
     )
 
 

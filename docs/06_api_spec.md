@@ -667,7 +667,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 
 - **로그인 방식: 서버 세션.** 응답에 `JSESSIONID` 쿠키(HttpOnly, SameSite=Lax, 12시간)가 오고, 브라우저가 같은 주소의 다음 요청에 자동으로 붙인다. 화면은 토큰을 따로 저장하지 않는다.
 - **회원 정보 응답:** `{ "id", "email", "name", "nickname", "phone", "region", "farmName", "type": "MEMBER" }`. 비밀번호(해시)는 절대 없음.
-- **관리자는 회원이 아님 (11-14):** 관리자 계정은 DB 표 `admin` 에 따로 (2-17). 회원 API(`/api/me`, 글·댓글 쓰기)는 회원 로그인(`ROLE_MEMBER`)만 — 관리자 세션으로 부르면 `403`
+- **관리자는 회원이 아님 (11-14):** 관리자 계정은 DB 표 `admin` 에 따로 (2-17). 회원 API(`/api/me`, 글·댓글 쓰기)는 회원 로그인(`ROLE_MEMBER`)만 — 관리자 로그인만 있으면 `401`
 - **화면은 언제나 이 API 를 씀 (11-14):** 가짜 계정(`VITE_AUTH=mock`)을 없앰. 서버가 안 되면 오류 안내
 - **오류 응답:** 회원 API 는 `{ "message": "화면에 보여줄 문장" }` (422 는 `detail` 에 칸별 오류도). 서버 내부 오류는 문장을 숨김.
 - **비밀번호:** BCrypt 저장. 규칙은 영문+숫자 8~64자(키보드 문자만, 한글·띄어쓰기 안 됨).
@@ -917,7 +917,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 
 ### 2-17. 관리자 로그인 · 게시판 관리 (11-14)
 - **관리자 계정 = DB 표 `admin`** (`admin_id, email, password_hash, name, created_at`), 일반 회원(`users`)과 따로. 화면 없이 SQL 로 넣는다 (`deploy/README.md` 1-2). 비밀번호는 BCrypt — PostgreSQL `crypt('비밀번호', gen_salt('bf', 10))`(pgcrypto) 값을 Spring 이 그대로 확인
-- `POST /api/admin/auth/login {email, password}` → `200 {id, email, name}` + 세션(`ROLE_ADMIN`) · 틀리면 `401` "이메일 또는 비밀번호가 맞지 않습니다". 같은 브라우저의 회원 로그인은 풀림(세션 하나)
+- `POST /api/admin/auth/login {email, password}` → `200 {id, email, name}` + 세션(`ROLE_ADMIN`) · 틀리면 `401` "이메일 또는 비밀번호가 맞지 않습니다". **같은 브라우저에서 회원 로그인과 따로 유지** — 세션 하나 안에 회원 칸·관리자 칸을 나눠 저장(`SplitSecurityContextRepository`, `/api/admin/**` 은 관리자 칸), 로그아웃도 자기 칸만
 - 관리자 글·댓글: `post.admin_id` · `post_comment.admin_id` (회원 글은 `author_id`). 응답에 `"by_admin": true`, `author_name` 은 "관리자". 회원은 관리자 글·댓글을 고치거나 지울 수 없고, 댓글·답글은 달 수 있음
 - 말머리 `공지`(`NOTICE`)는 관리자만. 회원 목록 `GET /api/posts` 에서 빠지고 `GET /api/notices` 로 게시판 맨 위에
 - 숨기기: `PATCH /api/admin/posts/{id} {"hidden": true, "reason": "광고"}` → `status: "HIDDEN"`, 회원에게는 `404`(없는 글처럼). 다시 보이기 `{"hidden": false}`

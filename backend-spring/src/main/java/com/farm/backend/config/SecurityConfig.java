@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -44,8 +43,8 @@ public class SecurityConfig {
 
     /** 로그인 성공 때 컨트롤러가 직접 세션에 로그인 정보를 저장할 때 씀 (UserController) */
     @Bean
-    public SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
+    public SplitSecurityContextRepository securityContextRepository() {
+        return new SplitSecurityContextRepository(); // 회원·관리자 로그인을 세션 안 두 칸에 따로 (11-14)
     }
 
     @Bean

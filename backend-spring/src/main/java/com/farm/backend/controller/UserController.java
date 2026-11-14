@@ -10,7 +10,6 @@ import com.farm.backend.dto.WithdrawRequest;
 import com.farm.backend.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.SecurityContextRepository;
+import com.farm.backend.config.SplitSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,9 +39,9 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final SecurityContextRepository contextRepository;
+    private final SplitSecurityContextRepository contextRepository;
 
-    public UserController(UserService userService, SecurityContextRepository contextRepository) {
+    public UserController(UserService userService, SplitSecurityContextRepository contextRepository) {
         this.userService = userService;
         this.contextRepository = contextRepository;
     }
@@ -98,20 +97,15 @@ public class UserController {
      * 권한은 지금 모두 ROLE_MEMBER (관리자 열이 DB 에 생기면 ROLE_ADMIN 추가)
      */
     private void startSession(User user, HttpServletRequest request, HttpServletResponse response) {
-        HttpSession old = request.getSession(false);
-        if (old != null) old.invalidate();
-        request.getSession(true);
         UsernamePasswordAuthenticationToken auth = UsernamePasswordAuthenticationToken.authenticated(
                 new LoginUser(user.getId(), user.getEmail()), null, List.of(new SimpleGrantedAuthority("ROLE_MEMBER")));
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
-        SecurityContextHolder.setContext(context);
-        contextRepository.saveContext(context, request, response);
+        contextRepository.login(context, request, response); // 세션 번호를 새로 받고 회원 칸에 저장 — 관리자 로그인은 그대로 (11-14)
     }
 
+    /** 회원 로그아웃: 회원 칸만 지움 (같은 브라우저의 관리자 로그인은 그대로, 11-14) */
     private void endSession(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) session.invalidate();
-        SecurityContextHolder.clearContext();
+        SplitSecurityContextRepository.logout(request, SplitSecurityContextRepository.MEMBER_KEY);
     }
 }

@@ -7,7 +7,6 @@ import com.farm.backend.dto.LoginRequest;
 import com.farm.backend.service.AdminService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.SecurityContextRepository;
+import com.farm.backend.config.SplitSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,15 +26,15 @@ import java.util.Map;
  *   POST /api/admin/auth/login  {"email","password"}  200 {id,email,name} · 401
  *   POST /api/admin/auth/logout                        204
  *   GET  /api/admin/me                                 200 · 401(로그인 안 함) · 403(회원으로 로그인)
- * 로그인하면 세션에 AdminUser + ROLE_ADMIN. 같은 브라우저의 회원 로그인은 풀린다 (세션 하나)
+ * 로그인하면 세션의 관리자 칸에 AdminUser + ROLE_ADMIN. 같은 브라우저의 회원 로그인과 따로 유지됨 (SplitSecurityContextRepository)
  */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminAuthController {
     private final AdminService adminService;
-    private final SecurityContextRepository contextRepository;
+    private final SplitSecurityContextRepository contextRepository;
 
-    public AdminAuthController(AdminService adminService, SecurityContextRepository contextRepository) {
+    public AdminAuthController(AdminService adminService, SplitSecurityContextRepository contextRepository) {
         this.adminService = adminService;
         this.contextRepository = contextRepository;
     }
@@ -43,23 +42,17 @@ public class AdminAuthController {
     @PostMapping("/auth/login")
     public Map<String, Object> login(@Valid @RequestBody LoginRequest body, HttpServletRequest request, HttpServletResponse response) {
         Admin a = adminService.login(body.email(), body.password());
-        HttpSession old = request.getSession(false);
-        if (old != null) old.invalidate();
-        request.getSession(true);
         UsernamePasswordAuthenticationToken auth = UsernamePasswordAuthenticationToken.authenticated(
                 new AdminUser(a.getId(), a.getEmail(), a.getName()), null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
-        SecurityContextHolder.setContext(context);
-        contextRepository.saveContext(context, request, response);
+        contextRepository.login(context, request, response); // 관리자 칸에 저장 — 같은 브라우저의 회원 로그인은 그대로 (11-14)
         return view(a);
     }
 
     @PostMapping("/auth/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) session.invalidate();
-        SecurityContextHolder.clearContext();
+        SplitSecurityContextRepository.logout(request, SplitSecurityContextRepository.ADMIN_KEY); // 관리자 칸만
         return ResponseEntity.noContent().build();
     }
 

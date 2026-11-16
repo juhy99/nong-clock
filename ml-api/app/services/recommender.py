@@ -7,7 +7,10 @@
   농가 수취가 = 전국 도매 예측가(DB price_forecast_daily, 없는 날은 평년) × farm_ratio (crop_prices.py) · 쌀·콩은 조사 수취가격
 - 팔 시장: 토지 위치(시·도) 안 공영 도매시장 중 순이익이 가장 큰 곳. 시장 값 = 전국 × 그 시장 계수(DB market_factor, 달마다)
   (11/4 팀 결정: 수확한 지역 안의 도매시장에서 판다고 가정, 운송비·유통 마진은 계산하지 않음. 시장이 없는 시·도는 전국 평균)
-- 총경영비 = 10a당 경영비(조사 평균, 토지임차료 뺌) × 면적 + 사용자가 넣은 임대료
+- 총경영비 = 10a당 경영비(조사 평균, 토지임차료 뺌) × 면적 + 사용자가 넣은 1년 임대료 × 재배 기간(심는 날~마지막 수확, 최대 1년)/365 (11-16)
+  · 농기계 임대료(machine_rent, 화면에는 없음)는 이번 작기 값 그대로
+- 수확 철 농가 수취가(전국)가 조사 가격의 2배를 넘으면 peak_ratio — 수량은 1년 평균 조사값이라 그 철엔 실제 수량이 적을 수 있어 화면에 참고 표시 (11-16)
+- 저장 일수(storage_days)는 안내만. 매출은 수확 때 가격 (11-16 결정)
 - 순이익 범위 = 예측 하한·상한으로 판 매출 − 경영비
 - 기존 작물(토지마다) → 흙 pH 어림. 후보 작물 최고값보다 0.5 이상 높으면 순이익과 상관없이 맨 아래로 (soil_ph.py)
 - 한 작물에 작형이 여럿이면 고른 날 심을 수 있는 작형 중 순이익이 가장 큰 것 하나만 결과에 넣음
@@ -27,6 +30,7 @@ WEEKS_AHEAD = 53  # 심는 날 비교 범위: 앞으로 1년(주 단위)
 TIE_PCT = 0.5     # 마진률이 이만큼 안쪽으로 비슷하면 더 가까운 날을 고른다
 TOP_N = 3         # 작물 정보 탭 "추천 상위" 기준
 OFF_SEASON_REF = 0.5  # 매출의 절반 넘게가 출하철 밖(참고값) 날이면 화면에 '참고용'
+PEAK_RATIO = 2.0      # 수확 철 값이 조사 가격의 이만큼 넘으면 '수량 참고' (11-16: 여름 시금치 8월 = 조사의 3배 × 1년 평균 수량 → 마진율 90%대)
 
 
 @dataclass
@@ -56,6 +60,8 @@ class Option:
     land_rent: float
     machine_rent: float
     today: date
+    land_rent_year: float = 0.0   # 사용자가 넣은 1년 임대료 (원)
+    rent_days: int = 0            # 임대료를 나눈 재배 일수
     market: str = NATIONAL
     prev_crop: str | None = None
     soil_ph: float | None = None
@@ -155,6 +161,14 @@ class Option:
         return [(k, v[0], v[1]) for k, v in out.items()]
 
     @property
+    def peak_ratio(self) -> float | None:
+        """수확 철 농가 수취가(전국, 판매량 가중) ÷ 조사 가격 — PEAK_RATIO 를 넘을 때만 값 (쌀·콩 같은 조사가 작물은 None)"""
+        if self.crop.price_source == "survey" or not self.cropping.survey.price or not self.sell_t:
+            return None
+        r = self.national_revenue / (self.sell_t * 1000) / self.cropping.survey.price
+        return round(r, 2) if r > PEAK_RATIO else None
+
+    @property
     def demoted(self) -> bool:
         return bool(self.ph and self.ph[0] == "lower")
 
@@ -192,8 +206,10 @@ def evaluate(crop: Crop, c: Cropping, plant: date, area_pyeong: float, today: da
     got = sum(w.t for w in weeks)
     if got < total_t:  # 가격이 없는 주가 있으면 판매량을 남은 주에 나눔
         weeks = [Week(w.day, w.t * total_t / got, w.price) for w in weeks]
+    rent_days = min(365, (h1 - plant).days + 1)  # 11-16: 1년 임대료를 재배 기간만큼만 (예전엔 작기마다 1년치 전부)
     o = Option(crop=crop, cropping=c, plant=plant, harvest_start=h0, harvest_end=h1, area_pyeong=area_pyeong, total_t=total_t, weeks=weeks,
-               base_cost=c.cost_per_10a * a10, land_rent=rent.land * 10_000, machine_rent=rent.machine * 10_000, today=today)
+               base_cost=c.cost_per_10a * a10, land_rent=rent.land * 10_000 * rent_days / 365, machine_rent=rent.machine * 10_000, today=today,
+               land_rent_year=rent.land * 10_000, rent_days=rent_days)
     return o.at(market) if market else o
 
 

@@ -80,7 +80,10 @@ def test_cost_uses_survey_cost_without_rent_plus_user_rent():
     d = _first_window("onion")
     o = next(x for x in _post([{"type": "open", "area_pyeong": 302.5, "land_rent": 50}], start=d).json()["results"] if x["crop"] == "onion")
     c = CROPS["onion"].croppings[0]
-    assert o["base_cost"] == pytest.approx(c.cost_per_10a, abs=1) and o["land_rent"] == 500_000
+    # 11-16: 1년 임대료 50만원을 재배 기간만큼 (예전엔 작기마다 1년치 전부)
+    assert o["land_rent_year"] == 500_000 and 0 < o["rent_days"] <= 365
+    assert o["base_cost"] == pytest.approx(c.cost_per_10a, abs=1) and o["land_rent"] == pytest.approx(500_000 * o["rent_days"] / 365, abs=1)
+    assert o["cost"] == pytest.approx(o["base_cost"] + o["land_rent"], abs=1)
     assert o["yield_t"] == pytest.approx(c.yield_t_per_10a, abs=0.01)
 
 
@@ -253,3 +256,37 @@ def test_window_text_collapses_same_ten_day_and_month():
     assert _same_month_range("매년 10~10월에 수확해요") == "매년 10월에 수확해요"
     assert _same_month_range("매년 7~11월에 수확해요") == "매년 7~11월에 수확해요"
     assert "10~10월" not in (CROPS["sweet_persimmon"].perennial_note or "")
+
+
+def test_market_factor_outliers_are_clipped_for_recommend(monkeypatch):
+    """11-16: 계수 표 이상값(×6.1 등)이 '가장 비싼 시장'으로 뽑혀 순이익이 부풀던 것 → 0.67~1.5 로 자름"""
+    monkeypatch.setattr(crop_prices.STORE, "factors", lambda item: {("380101", 4): 6.1, ("310101", 4): 0.2, ("110001", 4): 1.2})
+    crop = CROPS["green_chili"]
+    assert crop_prices.market_factor(crop, "380101", 4) == crop_prices.FACTOR_MAX == 1.5
+    assert crop_prices.market_factor(crop, "310101", 4) == crop_prices.FACTOR_MIN == 0.67
+    assert crop_prices.market_factor(crop, "110001", 4) == 1.2
+    assert crop_prices.market_factor(crop, "national", 4) == 1.0
+
+
+# ── 11-16 대량 시험 뒤 결정: 임대료는 재배 기간만큼 · 수확 철 값이 조사 가격의 2배 넘으면 '수량 참고' 표시 ──
+def test_land_rent_is_prorated_by_growing_days():
+    crop = CROPS["spinach"]
+    c = next(x for x in crop.croppings if x.name == "가을재배")
+    d = _first_window("spinach")
+    o = recommender.evaluate(crop, c, d, 600, TODAY, recommender.Rent(land=365))   # 1년 365만원 = 하루 1만원
+    days = (o.harvest_end - o.plant).days + 1
+    assert o.land_rent == pytest.approx(10_000 * days)
+    assert o.rent_days == days and o.land_rent_year == 3_650_000
+    long = recommender.evaluate(CROPS["garlic"], CROPS["garlic"].croppings[0], _first_window("garlic"), 600, TODAY, recommender.Rent(land=365))
+    assert long.land_rent <= 3_650_000  # 1년을 넘게 차지해도 1년치까지만
+
+
+def test_peak_price_flag_when_price_far_above_survey(monkeypatch):
+    crop = CROPS["spinach"]
+    c = next(x for x in crop.croppings if x.name == "여름재배")
+    d = next(TODAY + timedelta(days=k) for k in range(366) if c.in_window(TODAY + timedelta(days=k)))
+    monkeypatch.setattr(crop_prices, "farm_price", lambda crop, c, day, today: crop_prices.Price(c.survey.price * 3, 1, 1, "normal"))
+    o = recommender.evaluate(crop, c, d, 600, TODAY)
+    assert o.peak_ratio == pytest.approx(3.0, rel=0.01)
+    monkeypatch.setattr(crop_prices, "farm_price", lambda crop, c, day, today: crop_prices.Price(c.survey.price * 1.5, 1, 1, "normal"))
+    assert recommender.evaluate(crop, c, d, 600, TODAY).peak_ratio is None

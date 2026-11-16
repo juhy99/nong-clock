@@ -216,7 +216,7 @@ function Results({ d, tab, setTab }) {
             <section className="card rc-search">
               <div>
                 <b>🌱 작물 추천</b>
-                <p className="muted small" style={{ margin: "2px 0 0" }}>언제 심어야 수확할 때 가장 많이 남는지, 앞으로 1년 중 가장 좋은 심는 날을 알려 드려요 ({won(600)}평 기준, 화면에서 바꿀 수 있어요)</p>
+                <p className="muted small" style={{ margin: "2px 0 0" }}>심는 때·수확 때·10a당 수량·경영비를 보고, 내 땅 조건으로 순수익이 높은 작물을 골라 보세요</p>
               </div>
               <div className="pills">
                 {d.crops.slice(0, 4).map((c) => (

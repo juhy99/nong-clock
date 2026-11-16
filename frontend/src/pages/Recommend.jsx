@@ -36,10 +36,11 @@ const PH_LINE = {
 function reasonLines(o, region) {
   const b = bestMonth(o);
   const out = [
-    `${md(o.harvest_start)}~${md(o.harvest_end)} 수확${o.storage_days > 0 ? `, 저장하면 ${md(o.storage_end)}까지 팔 수 있어요` : ", 저장 없이 바로 출하해요"}`,
+    `${md(o.harvest_start)}~${md(o.harvest_end)} 수확${o.storage_days > 0 ? `, 저장하면 ${md(o.storage_end)}까지 팔 수 있어요 (순수익은 수확 때 가격으로 계산)` : ", 저장 없이 바로 출하해요"}`,
     `가장 비싸게 팔리는 달은 ${mo(b.month + "-01")}월 (${won(b.price_per_kg)}원/kg)이에요`,
     o.no_market ? `${region}에는 공영 도매시장이 없어 전국 평균 가격으로 계산했어요` : `${region} 안에서는 ${o.market.name}에 팔 때 순이익이 가장 커요`,
   ];
+  if (o.land_rent_year > 0) out.push(`임대료는 1년 ${man(o.land_rent_year)} 중 재배 기간 ${o.rent_days}일치 ${man(o.land_rent)}을 뺐어요`);
   if (o.ph) out.push(PH_LINE[o.ph.kind](o));
   const pl = priceLine(o);
   if (pl) out.push(pl);
@@ -52,11 +53,15 @@ function priceLine(o) {
   if (b.survey) return `가격은 ${o.rda?.source ?? "조사"} 농가 수취가(${won(o.price_per_kg)}원/kg)로 계산했어요 (도매시장 예측이 없는 작물)`;
   const ratio = o.farm_ratio ? ` · 농가가 받는 값 = 도매가 × ${o.farm_ratio.toFixed(2)}` : "";
   if (pct(b.forecast) >= 100) return `가격은 AI 예측 도매가(${o.forecast_base_date ? `${md(o.forecast_base_date)} 기준` : "최신"})로 계산했어요${ratio}`;
-  if (pct(b.normal) >= 100) return `수확이 AI 예측 기간(1년) 밖이라 평년(2021~2025) 도매가로 계산했어요${ratio}`;
-  return `가격은 AI 예측 ${pct(b.forecast)}% · 예측 기간 밖 평년 도매가 ${pct(b.normal)}%로 계산했어요${ratio}`;
+  if (pct(b.normal) >= 100) return `수확 때가 AI 예측이 없는 때(출하철 밖이거나 1년 뒤)라 평년(2021~2025) 도매가로 계산했어요${ratio}`;
+  return `가격은 AI 예측 ${pct(b.forecast)}% · 예측이 없는 때(출하철 밖이거나 1년 뒤) 평년 도매가 ${pct(b.normal)}%로 계산했어요${ratio}`;
 }
 // 참고용 안내는 예측이 덜 정확한 작물·기간만 (수확이 멀다는 이유로는 띄우지 않음, 11-12)
-const refLine = (o) => (o.reference === "baseline" ? "이 작물·기간은 예측이 덜 정확해 참고용이에요" : "");
+// 11-16: 수확 철 값이 조사 가격의 2배를 넘으면 — 수량은 1년 평균 조사값이라 그 철엔 실제 수량이 적을 수 있음 (여름 시금치 등)
+const refLine = (o) =>
+  o.reference === "baseline" ? "이 작물·기간은 예측이 덜 정확해 참고용이에요"
+  : o.peak_ratio ? `수확 철 값이 조사 평균의 ${o.peak_ratio.toFixed(1)}배예요. 수량은 1년 평균 조사값이라 이 철엔 실제 수확량이 적을 수 있어 참고용이에요`
+  : "";
 
 const request = (f) => ({
   region: f.region,
@@ -86,7 +91,7 @@ function LandForm({ form, onApply }) {
           {SOIL_PH.map((p) => <option key={p.name}>{p.name}</option>)}
         </select>
       </label>
-      <label className="rc-f"><span>임대료 (1년, 만원) <Info>임대료는 경영비에 더해 순수익에서 빼요. 내 땅이면 0을 넣으세요.</Info></span>
+      <label className="rc-f"><span>임대료 (1년, 만원) <Info>1년 임대료를 넣으면 심는 날부터 마지막 수확까지 기간만큼만 순수익에서 빼요 (예: 3개월이면 1/4). 내 땅이면 0을 넣으세요.</Info></span>
         <input className="input" type="number" min="0" inputMode="numeric" value={d.rent} onChange={(e) => set({ rent: e.target.value })} />
       </label>
       <div className="rc-f"><span>재배 방식</span>
@@ -141,7 +146,7 @@ function MiniCalendar({ o }) {
       <div className="when">
         <div>심기<b>{md(o.plant_date)}</b></div>
         <div>수확<b>{md(o.harvest_start)}~{md(o.harvest_end)}</b></div>
-        {store ? <div>저장해 팔기<b>~{md(o.storage_end)}</b></div> : <div>재배 기간<b>{daysBetween(o.plant_date, o.harvest_end)}일</b></div>}
+        {store ? <div title="순수익은 수확 때 가격으로 계산했어요">저장 가능<b>~{md(o.storage_end)}</b></div> : <div>재배 기간<b>{daysBetween(o.plant_date, o.harvest_end)}일</b></div>}
       </div>
     </div>
   );

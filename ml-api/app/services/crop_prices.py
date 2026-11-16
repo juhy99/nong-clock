@@ -129,10 +129,17 @@ def farm_price(crop: Crop, c: Cropping, d: date, today: date) -> Price | None:
     return Price(w.wholesale * k, w.low * k, w.high * k, w.basis, w.off_season)
 
 
+# 11-16: 작물 추천은 시·도 안 시장 중 순이익이 가장 큰 곳을 고르므로, 계수 표의 이상값(창원팔용 피망 ×6.1, 마늘 ×3.1 등
+#   — 그 시장만 다른 규격·품종이 섞인 것으로 보임)이 늘 뽑혀 순이익이 부풀었다. 추천에서는 0.67~1.5배로 자름 (계수 95% 가 이 안).
+#   가격 예측 화면의 시장별 값은 그 시장 실제 시세와 맞춰 보이므로 그대로 둠
+FACTOR_MIN, FACTOR_MAX = 0.67, 1.5
+
+
 def market_factor(crop: Crop, market: str | None, month: int) -> float:
     if not market or market == "national" or crop.price_source == "survey":
         return 1.0
-    return STORE.factors(crop.code).get((market, month), 1.0)
+    f = STORE.factors(crop.code).get((market, month), 1.0)
+    return min(FACTOR_MAX, max(FACTOR_MIN, f))
 
 
 def forecast_base(crop: Crop, today: date) -> date | None:

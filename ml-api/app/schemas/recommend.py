@@ -23,7 +23,7 @@ Sido = Literal["서울", "부산", "대구", "인천", "광주", "대전", "울�
 class Land(BaseModel):
     type: LandType = Field(examples=["house"], description="open 노지 · house 시설 · paddy 논 · orchard 과수원")
     area_pyeong: float = Field(gt=0, le=1_000_000, examples=[600], description="평수")
-    land_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 토지 임차료 (만원) — 경영비에 그대로 더함")
+    land_rent: float = Field(0, ge=0, le=1_000_000, description="1년 토지 임차료 (만원) — 재배 기간(심는 날~마지막 수확, 최대 1년)만큼 나눠 경영비에 더함 (11-16)")
     machine_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 농기계·시설 임차료 (만원) — 경영비에 그대로 더함")
     prev_crop: str | None = Field(None, examples=["상추"], description="이 토지에서 기존에 키우던 작물 (shared/soil_ph.json 의 작물 이름). 없으면 pH 비교 안 함")
 
@@ -113,13 +113,16 @@ class Option(BaseModel):
     price_basis: dict[str, float] = Field(default_factory=dict, description="매출 가운데 가격 출처 몫: forecast(AI 예측) · normal(평년 도매가) · survey(조사 수취가)")
     forecast_base_date: date | None = Field(None, description="쓴 AI 예측의 기준일 (예측을 안 썼으면 null)")
     error_pct: int = Field(description="예상 매출 범위의 반폭 (±%) — 예측 표 하한·상한으로 판 매출")
+    peak_ratio: float | None = Field(None, description="수확 철 농가 수취가(전국) ÷ 조사 가격이 2배를 넘을 때 그 배수 — 수량은 1년 평균 조사값이라 이 철엔 실제 수량이 적을 수 있음 (화면 참고 표시)")
     reference: Literal["far", "baseline"] | None = Field(None, description="참고용: baseline 매출 절반 넘게가 출하철 밖(채점 안 해 본 달) 예측 · far 예측(1년) 밖이라 평년 가격이 절반 넘음")
     yield_t: float = Field(description="예상 수확량 (톤)")
     sellable_t: float = Field(description="판매량 (톤) — 조사 수량이 판 주산물이라 수확량과 같음")
     marketable_rate: float = Field(description="상품화율. 조사 수량이 판 주산물이라 1")
     revenue: int = Field(description="예상 매출 = Σ 주별 판매량 × 그날 농가 수취가 (원)")
     base_cost: int = Field(description="10a당 경영비(조사 평균, 토지임차료 뺌) × 면적 (원)")
-    land_rent: int
+    land_rent: int = Field(description="이번 작기에 뺀 토지 임대료 (원) = 1년 임대료 × rent_days / 365")
+    land_rent_year: int = Field(0, description="입력한 1년 토지 임대료 (원)")
+    rent_days: int = Field(0, description="임대료를 나눈 재배 일수 (심는 날~마지막 수확, 최대 365)")
     machine_rent: int
     cost: int = Field(description="총경영비 = base_cost + 임대료 (원)")
     margin: int = Field(description="예상 순이익 = 매출 − 총경영비 (원)")
@@ -173,7 +176,7 @@ class PlantingDatesRequest(WhereToSell):
     crop: str = Field(examples=["tomato"])
     area_pyeong: float = Field(gt=0, le=1_000_000, examples=[600])
     land: LandType | None = Field(None, description="이 토지의 작형만 (없으면 작물이 자랄 수 있는 토지 모두)")
-    land_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 토지 임차료 (만원)")
+    land_rent: float = Field(0, ge=0, le=1_000_000, description="1년 토지 임차료 (만원) — 재배 기간만큼 나눠 뺌 (11-16)")
     machine_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 농기계·시설 임차료 (만원)")
 
 

@@ -419,6 +419,15 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 
 **에러**: 없는 `item`(50품목 밖 포함)·`market`·`region` → `404`, `horizon`이 1~365 밖 · `base_date` 가 오늘 뒤이거나 1년보다 전 · `history_days` 가 1~400 밖 → `422`
 
+**고른 기간이 모두 출하철 밖 (11-16)**: `404` + 안내 — 화면은 오류 대신 "언제 주로 거래되는지 + 다음 철 예측 보기" 버튼
+```json
+{"detail": {"message": "복숭아 황도 거래는 주로 7~10월이에요 (1년 거래량의 97%). 11/17~5/17은 거래가 거의 없는 철이라 예측하지 않아요",
+            "season": {"months": [7, 8, 9, 10], "label": "7~10월", "share": 97, "next_start": "2027-07-01", "next_end": "2027-10-30"}}}
+```
+- `months` = 예측 표에 값이 있는 달 중 지난 3년 거래량이 1년의 1% 넘는 달, `share` = 그 달들의 거래량 비중(%). 80% 미만이면 문구가 "예측은 ○월에만 있어요 (팀 모델의 출하철 …)"
+- `next_start`·`next_end` = 고른 기간 뒤 첫 철의 첫날·끝날 (기준일 + 365일 안, 없으면 `null`)
+- 최근 30일 거래가 없는 품종(철이 끝난 품종)은 1년 남짓 앞의 마지막 거래를 `base_price` 로 쓰고 `base_stale: true` (예전: `404` "기준일 앞 30일 동안 거래가 없어요")
+
 > 지금 ml-api 는 더미 예측기라 `history`·`last_year` 도 가짜 값이다. 실제 모델이 붙으면 둘 다 DB 의 실제 경매 단가(같은 품목·시장, 등급 구분 없음)로 채운다.
 
 ---
@@ -988,6 +997,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | 2026-11-07 | 회원가입: 약관 동의(`marketing`) 삭제, `name` → `nickname`, 중복 확인 `GET /api/auth/check` 제안 추가(2-3). 가격 예측 도매시장 고르기는 `GET /api/markets`(전국 평균 + 32곳, 시장별 `items` = 최근 1년 거래 품목)를 씀 | |
 | 2026-11-11 | **새 디자인(v17) 반영.** ML API: `GET /items`·`POST /predict`·`top-movers` 를 **예측 품목 50개**(`shared/items50.json`)로 — 50개 밖은 `404`(양송이 `button_mushroom` 빠짐). `POST /predict` 에 `base_date`(기준일, 오늘~1년 전)·`history_days`(1~400, 기본 14)·`last_year`(작년 같은 시기 실제 시세, 52주 전 같은 요일) 추가. 작물 추천 `start_date` 를 오늘~30일 → **오늘~1년**, `/recommend/crops/{code}/prices` 를 13개월 57점 → **12개월 53점**. 뉴스 수집: 같은 소식을 실은 언론사 수 `press_count`·`presses`(많이 다룬 뉴스). 신고 기능 삭제(2-5, 한눈에 보기·알림 종류에서 뺌). 마이페이지 내가 쓴 글·댓글 API 제안(2-9). 프론트 가짜 데이터(`frontend/src/mocks`)도 같이: 예측 `last_year`·`base_date`, 가격 경로 53점, 뉴스 `press_count`, 알림 종류에서 신고 뺌. 회원가입 요청에서 `marketing` 을 보내지 않음(마케팅 동의는 넣지 않기로 함 — Spring 의 `marketing` 칸은 비어 들어감) | |
 | 2026-11-11 | **품종 기준 변경 (1-2-1).** 팀 자료 `50품목_화면묶음140_예측단위322` 로 `shared/items50.json` 품종을 다시 만듦: 화면묶음 이름 = 품목 이름이면 예측단위마다, 그 밖은 화면묶음째 → 품종 322 → **196** (예측단위 312, 뺌 10). 품종에 `units`(예측 단위 이름 목록) 추가, `unit` 은 뺌, `type` 종류 없앰, id 새로 매김. Spring 시세(2-15 `?variety=`)는 단위 여럿을 금액 합 ÷ 물량 합으로 | |
+| 2026-11-16 | **출하철 밖 안내 (1-4).** `POST /predict` 가 출하철 밖이면 `404` `detail` 에 `season`(주로 거래되는 달·비중·다음 철). 최근 30일 거래 없는 품종도 예측(마지막 거래를 기준가로, `base_stale`) | |
 | 2026-11-16 | **마이페이지 구현 (2-18).** `PATCH /api/me` · `PUT /api/me/password`(예전 제안 POST → PUT) · `GET /api/me/posts`·`/comments` · `GET·PUT /api/me/favorites`, 새 표 `user_favorite` | |
 | 2026-11-13 | **알림 숨김(팀 결정).** 알림 API(`/api/me/notifications` 3개)·알림 표는 만들지 않음, 2-4 에 안내. 정해야 할 것의 새 DB 테이블에서 알림 뺌. 회원 표 `notify_settings` 열은 다시 켤 때를 위해 그대로 | |
 | 2026-11-13 | **시세·예측 실제 데이터로.** Spring `GET /api/prices/{item}/monthly` 추가(계절 패턴 · 월별 반입량), 11-12 의 market-share · auction-houses 표에 적음. 화면 시세 기본값을 db 로(`VITE_PRICE_SOURCE=mock` 일 때만 가짜), ml-api `PREDICTOR` 기본값 db, 가격 예측은 서버가 안 되면 가짜 값 대신 오류 | |

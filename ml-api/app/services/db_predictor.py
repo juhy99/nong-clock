@@ -26,6 +26,7 @@ from app.schemas.prediction import ForecastPoint, Horizon, PredictResponse, Pric
 HISTORY_DAYS = 14
 LAST_YEAR_DAYS = 364
 BASE_LOOKBACK_DAYS = 30  # 기준일에 거래가 없으면 이만큼 앞까지 가장 최근 시세를 기준가로
+OLD_LOOKBACK_DAYS = 400  # 11-16: 30일 안에 거래가 없으면(철이 끝난 품종) 1년 남짓 앞까지 찾아 마지막 거래를 기준가로 (base_stale)
 BASE_AVG_DAYS = 7        # 11-14: 기준가 = 마지막 거래일까지 7일(달력) 금액 합 ÷ 물량 합 (하루 얇은 거래 하나에 흔들리지 않게)
 STALE_DAYS = 7           # 11-14: 마지막 거래가 기준일보다 이만큼 넘게 앞이면 '지금 가격'이 오래됨 → base_stale (급등락 카드에서 뺌)
 CACHE_SECONDS = 600       # 같은 예측 질문을 기억하는 시간 (10분)
@@ -33,7 +34,39 @@ CACHE_MAX = 5000          # 기억하는 답의 최대 개수 (넘으면 비우�
 
 
 class NoForecast(Exception):
-    """고른 품목·품종·기간에 예측이 없음 (출하철 밖 등)"""
+    """고른 품목·품종·기간에 예측이 없음 (출하철 밖 등). season = 출하철 안내 (11-16, _season) — 화면이 '다음 철 예측 보기' 버튼을 만듦"""
+
+    def __init__(self, message: str, season: dict | None = None):
+        super().__init__(message)
+        self.season = season
+
+
+SEASON_YEARS = 3      # 출하철 안내의 거래량 비중: 기준일 앞 다 찬 3개 해
+SEASON_GAP_DAYS = 10  # 예측 표에서 이보다 오래 비면 철이 끝난 것으로 봄 (일요일·공휴일은 이어짐)
+
+
+def month_label(months: list[int]) -> str:
+    """[7, 8, 9, 10] → "7~10월", [11, 12, 1, 2] → "11~2월", [3, 4, 9, 10] → "3~4월 · 9~10월" (달이 이어진 묶음)"""
+    ms = sorted(set(months))
+    if not ms:
+        return ""
+    if len(ms) == 12:
+        return "1년 내내"
+    runs, cur = [], [ms[0]]
+    for m in ms[1:]:
+        if m == cur[-1] + 1:
+            cur.append(m)
+        else:
+            runs.append(cur); cur = [m]
+    runs.append(cur)
+    if len(runs) > 1 and runs[0][0] == 1 and runs[-1][-1] == 12:   # 12월 → 1월로 넘어가는 철은 한 묶음
+        runs[0] = runs.pop() + runs[0]
+    return " · ".join(f"{r[0]}월" if len(r) == 1 else f"{r[0]}~{r[-1]}월" for r in runs)
+
+
+def _labels() -> dict[tuple[str, str], str]:
+    """(품목 코드, 품종 id) → 품종 이름 (화면 안내 문구용)"""
+    return {(it["code"], v["id"]): v["label"] for it in load("items50.json")["items"] for v in it.get("varieties", [])}
 
 
 def _varieties() -> dict[tuple[str, str], list[str]]:
@@ -50,6 +83,7 @@ class DbPredictor:
         self._connect = connect or self._pg
         self._con = None
         self._vars = _varieties()
+        self._labels = _labels()
         self._unit_ids: dict[str, int] | None = None
         self._lock = threading.Lock()
         self._cache: dict[tuple, tuple[float, object]] = {}
@@ -154,6 +188,55 @@ class DbPredictor:
                                      off_season=bool(rest[0]) if rest else False, crash_adj=bool(rest[1]) if len(rest) > 1 else False))
         return (rows[0][0] if rows else None), pts
 
+    def _season(self, item: str, variety: str, base_date: date, horizon: int) -> dict | None:
+        """11-16: 고른 기간에 예측이 없을 때 안내 — 주로 거래되는 달(예측 표에 값이 있는 달), 그 달들의 지난 3년 거래량 비중,
+        다음 철 첫날·끝날 (기준일 + 365일 안). 예: "황도 거래는 주로 7~10월이에요 (1년 거래량의 97%)" """
+        try:
+            rows = self._q(
+                "SELECT target_date FROM price_forecast_daily WHERE item_code = %s AND variety_id = %s AND base_date = (SELECT max(base_date) "
+                "FROM price_forecast_daily WHERE item_code = %s AND variety_id = %s AND base_date <= %s) AND target_date > %s AND off_season = 0 "
+                "ORDER BY target_date", (item, variety or "ALL", item, variety or "ALL", base_date, base_date))
+            days = [r[0] for r in rows]
+            months = sorted({d.month for d in days})
+            share = None
+            if months:
+                units = self._units(item, variety) if variety else sorted({u for (it, v) in self._vars if it == item for u in self._units(item, v)})
+                y0 = date(base_date.year - SEASON_YEARS, 1, 1)
+                vol = {int(m): float(v or 0) for m, v in self._q(
+                    "SELECT extract(month FROM date)::int AS season_m, sum(volume_kg) FROM price_unit_daily "
+                    "WHERE unit_id = ANY(%s) AND date >= %s AND date < %s GROUP BY 1", (units, y0, date(base_date.year, 1, 1)))}
+                total = sum(vol.values())
+                if total:   # 안내의 '주로 ○월'에는 거래량이 1년의 1% 넘는 달만 (예측은 있어도 몇 상자뿐인 달은 빼서 읽기 쉽게)
+                    months = [m for m in months if vol.get(m, 0.0) / total >= 0.01] or months
+                share = round(sum(vol.get(m, 0.0) for m in months) / total * 100) if total else None
+        except Exception:
+            return None
+        name = ITEMS[item].name + (f" {self._labels.get((item, variety), '')}" if variety else "")
+        end_pick = base_date + timedelta(days=horizon)
+        nxt = [d for d in days if d > end_pick and d.month in months]   # 다음 철 = 안내한 달 (몇 상자뿐인 달은 건너뜀)
+        start = nxt[0] if nxt else None
+        end = None
+        if start:
+            end = start
+            for d in nxt[1:]:
+                if (d - end).days > SEASON_GAP_DAYS:
+                    break
+                end = d
+        label = month_label(months)
+        md = lambda d: f"{d.month}/{d.day}"
+        main = share is None or share >= 80   # 그 달들에 거래가 몰렸을 때만 '주로' (양파 중만생처럼 저장해 1년 내내 팔면 비중이 낮음)
+        if not label:
+            head = ""
+        elif main:
+            head = f"{name} 거래는 주로 {label}이에요" + (f" (1년 거래량의 {share}%)" if share is not None else "") + ". "
+        else:
+            head = f"{name} 예측은 {label}에만 있어요 (팀 모델의 출하철, 그 달 거래량 = 1년의 {share}%). "
+        tail = f"{md(base_date + timedelta(days=1))}~{md(end_pick)}은 " + ("거래가 거의 없는 철이라 예측하지 않아요" if main else "출하철 밖이라 예측하지 않아요")
+        if not start:
+            tail += " (앞으로 1년 안에는 예측이 없어요)"
+        return {"months": months, "label": label, "share": share, "next_start": start.isoformat() if start else None,
+                "next_end": end.isoformat() if end else None, "message": head + tail}
+
     def _monthly(self, item: str, variety: str, base_date: date):
         first = base_date.replace(day=1)
         rows = self._q(
@@ -207,7 +290,7 @@ class DbPredictor:
                 self._cache.clear()
             hit = self._cache[key] = (now, value)
         if isinstance(hit[1], NoForecast):
-            raise NoForecast(str(hit[1]))
+            raise NoForecast(str(hit[1]), hit[1].season)
         return hit[1].model_copy()
 
     def _predict(self, item: str, market: str, horizon: Horizon, base_date: date, history_days: int,
@@ -215,8 +298,11 @@ class DbPredictor:
         info = ITEMS[item]
         fac = self._factors(item, market)
         hist_all = self._prices(item, market, variety, base_date - timedelta(days=history_days + BASE_LOOKBACK_DAYS), base_date, fac)
+        if not hist_all:   # 11-16: 철이 끝나 최근 30일 거래가 없으면 1년 남짓 앞의 마지막 거래 (화면에 🕒 '오래된 지금 가격'), 그것도 없으면 안내
+            hist_all = self._prices(item, market, variety, base_date - timedelta(days=OLD_LOOKBACK_DAYS), base_date, fac)[-8:]
         if not hist_all:
-            raise NoForecast("기준일 앞 30일 동안 이 품목·시장의 거래가 없어요")
+            season = self._season(item, variety, base_date, horizon)
+            raise NoForecast((season["message"].split(". ")[0] + ". " if season and season["label"] else "") + "최근 1년 동안 이 품목·시장의 거래가 없어요", season)
         last_trade = hist_all[-1].date
         avg = self._base_avg(item, market, variety, last_trade, fac)
         base_price = round(avg) if avg else hist_all[-1].price
@@ -230,7 +316,8 @@ class DbPredictor:
             forecast = self._daily(monthly, base_date, horizon, fac)
             version = f"{monthly[0][5]} · 기준월 {monthly[0][0]:%Y-%m}" if monthly else ""
         if not forecast:
-            raise NoForecast("고른 기간에는 예측이 없어요 (출하철이 아니거나 아직 예측을 만들지 않은 기간)")
+            season = self._season(item, variety, base_date, horizon)
+            raise NoForecast(season["message"] if season else "고른 기간에는 예측이 없어요 (출하철이 아니거나 아직 예측을 만들지 않은 기간)", season)
         last = forecast[-1]
         err = round((last.upper - last.lower) / 2 / last.price * 100, 1) if last.price else 0.0
         ly = []

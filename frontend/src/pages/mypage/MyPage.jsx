@@ -48,8 +48,8 @@ function FavCards({ onAdd }) {
     const today = await getTodayPrices();
     const rows = today.items.filter((p) => favorites.includes(p.item)).slice(0, 3);
     return Promise.all(rows.map(async (p) => {
-      const [hist, pred] = await Promise.all([getPriceHistory(p.item, { days: 8 }).catch(() => null), predict({ item: p.item, horizon: 7 }).catch(() => null)]);
-      return { ...p, compared_date: today.compared_date, spark: (hist?.points ?? []).map((x) => x.price).filter((v) => v != null), pred };
+      const [hist, pred] = await Promise.all([getPriceHistory(p.item, { days: 8 }).catch(() => null), predict({ item: p.item, horizon: 7 }).catch((e) => ({ season: e.detail?.season ?? null }))]);
+      return { ...p, compared_date: today.compared_date, spark: (hist?.points ?? []).map((x) => x.price).filter((v) => v != null), pred: pred?.season !== undefined ? null : pred, season: pred?.season ?? null };
     }));
   }, [favorites.join()]);
   return (
@@ -64,6 +64,9 @@ function FavCards({ onAdd }) {
             <Spark values={p.spark} />
             {p.pred && (
               <div className="ai"><span>AI 1주 뒤 예측</span><b>{won(p.pred.predicted_price)}원 {p.pred.change_pct >= 0 ? "▲" : "▼"} {Math.abs(p.pred.change_pct).toFixed(1)}%</b></div>
+            )}
+            {!p.pred && p.season?.label && (
+              <div className="ai"><span>AI 예측</span><b>출하철 아님 · 주로 {p.season.label}</b></div>
             )}
           </Link>
         );

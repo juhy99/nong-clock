@@ -35,7 +35,8 @@ def predict(req: PredictRequest, predictor: PredictorDep) -> PredictResponse:
     except KeyError:
         raise HTTPException(status_code=404, detail=f"unknown variety: {req.variety}")
     except NoForecast as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        # 11-16: 출하철 안내가 있으면 {"message", "season": {months, label, share, next_start, next_end}} — 화면이 '다음 철 예측 보기'
+        raise HTTPException(status_code=404, detail={"message": str(e), "season": e.season} if e.season else str(e))
     res.region = req.region  # (예전 방식) 지역은 그대로 돌려줌
     return res
 

@@ -212,6 +212,29 @@ function MarketCards({ series, horizon }) {
   );
 }
 
+/** 받침이 있으면 "은", 없으면 "는" (황도는 · 사과 아오리는 · 감귤은) */
+const eunNeun = (w) => { const c = (w ?? "").trim().slice(-1).charCodeAt(0) - 0xac00; return c >= 0 && c <= 11171 && c % 28 ? "은" : "는"; };
+
+/** 11-16: 고른 기간이 모두 출하철 밖(거래가 거의 없는 철)일 때 — 언제 주로 거래되는지 + 다음 철 예측으로 가는 버튼 */
+function OffSeason({ s, itemName, today, onGo }) {
+  const start = s.next_start, end = s.next_end;
+  const lastDay = addDays(today, 365);
+  const to = end ? (end > lastDay ? lastDay : end) : null;
+  return (
+    <section className="card pv-offseason">
+      <div className="pv-off-ic" aria-hidden>🗓️</div>
+      <h2>{itemName}{eunNeun(itemName)} 지금 출하철이 아니에요</h2>
+      <p>{s.message}</p>
+      {s.label && <p className="muted small">출하철 = 예측 모델이 값을 내는 달 (팀 기준: 1년 거래량의 대부분이 몰린 달). 그 밖의 달은 몇 상자만 거래돼 값이 들쭉날쭉해서 예측하지 않아요.</p>}
+      {start && to && (
+        <button type="button" className="btn primary" onClick={() => onGo(to)}>
+          다음 철({Number(start.slice(5, 7))}월~) 예측 보기 →
+        </button>
+      )}
+    </section>
+  );
+}
+
 function Result({ r }) {
   const { series, horizon, regionName, itemName, item, baseName } = r;
   if (!series.length) return <div className="card state">이 지역 도매시장에서는 이 품목을 거래하지 않아요. 다른 지역을 골라 주세요.</div>;
@@ -327,7 +350,14 @@ export default function Predict() {
     if (!opts) return null;
     const ms = marketsIn(opts.markets, q.region, q.item);
     // 품종: DB 예측기는 품종 예측을 그대로 돌려줌(raw.variety). 더미(raw.variety 빈 값)면 [샘플] 품목 예측 × 품종 계수
-    const res = await Promise.all(ms.map((m) => predict({ item: q.item, market: m.code, horizon, history_days: 56, ...(q.variety ? { variety: q.variety } : {}) })));
+    let res;
+    try {
+      res = await Promise.all(ms.map((m) => predict({ item: q.item, market: m.code, horizon, history_days: 56, ...(q.variety ? { variety: q.variety } : {}) })));
+    } catch (e) {
+      // 11-16: 출하철 밖이라 예측이 없으면 오류 대신 '언제 거래되는지 + 다음 철 보기' 안내
+      if (e.status === 404 && e.detail?.season) return { offSeason: e.detail.season, itemName: (itemOf(q.item)?.name ?? q.item) + (variety ? ` ${variety.label}` : "") };
+      throw e;
+    }
     const series = res.map((raw, i) => {
       const f = (raw.variety ?? "") === q.variety ? 1 : varietyFactor(q.variety || null);
       const k = (v) => Math.round(v * f);
@@ -358,7 +388,9 @@ export default function Predict() {
         {(o) => (
           <>
             <PredictSearch key={JSON.stringify(q)} value={q} markets={o.markets} today={today} onSearch={search} />
-            <Async state={result} minHeight={420}>{(r) => <Result r={r} />}</Async>
+            <Async state={result} minHeight={420}>
+              {(r) => (r.offSeason ? <OffSeason s={r.offSeason} itemName={r.itemName} today={today} onGo={(to) => search({ ...q, to })} /> : <Result r={r} />)}
+            </Async>
           </>
         )}
       </Async>

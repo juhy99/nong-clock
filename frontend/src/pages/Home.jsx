@@ -71,7 +71,9 @@ function AiPane({ on }) {
 
   const d = state.data;
   const past = d ? weekly(d.history, 8).map((p) => p.price) : [];
-  const futW = d ? [7, 14, 21, 28].map((t) => d.forecast.find((f) => f.date === addDays(d.base_date, t))?.price ?? null) : []; // 날짜로 찾음 (DB 예측기는 예측 없는 날을 뺌, 11-11)
+  // 날짜로 찾음 (DB 예측기는 예측 없는 날을 뺌, 11-11). 11-16: 일요일(휴장)은 표에 없으니 앞 3일 안 가장 가까운 날
+  const near = (t) => [0, -1, -2, -3].map((x) => d.forecast.find((f) => f.date === addDays(d.base_date, t + x))).find(Boolean);
+  const futW = d ? [7, 14, 21, 28].map((t) => near(t)?.price ?? null) : [];
   const fut = futW.filter((v) => v != null);
   const now = d?.base_price ?? 0;
   const top = fut.length ? Math.max(...fut) : 0;

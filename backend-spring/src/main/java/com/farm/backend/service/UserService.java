@@ -133,7 +133,12 @@ public class UserService {
     }
 
     public static UserResponse toResponse(User u) {
+        return toResponse(u, List.of());
+    }
+
+    /** favorites = 관심 품목 코드 (11-16, MyPageService.favorites) */
+    public static UserResponse toResponse(User u, List<String> favorites) {
         return new UserResponse(u.getId(), u.getEmail(), u.getName(), u.getName(), u.getPhone(), regionName(u.getRegionId()),
-                u.getFarmName() == null ? "" : u.getFarmName(), "MEMBER");
+                u.getFarmName() == null ? "" : u.getFarmName(), "MEMBER", favorites);
     }
 }

@@ -2,9 +2,8 @@
 // 비밀번호는 서버가 BCrypt 로 암호화 저장. 로그인 상태는 서버 세션 + 브라우저의 세션 쿠키(HttpOnly, JS 로 못 읽음) (11-10).
 //   아래 "session"(localStorage)은 화면 표시용 복사본일 뿐이고, 새로고침 때 GET /api/me 로 서버에 다시 확인한다 (refreshSession).
 // 관리자는 회원이 아님: DB 표 admin 의 따로 된 계정으로 관리자 사이트에서만 로그인 (api/adminBoard.js, 11-14)
-// 백엔드에 아직 없는 기능(내 정보 수정·비밀번호 변경)은 "준비 중" 오류
+// 마이페이지(11-16): 내 정보 수정 PATCH /api/me · 비밀번호 PUT /api/me/password · 관심 품목 PUT /api/me/favorites (DB user_favorite)
 import axios from "axios";
-import { fake } from "./client";
 import { load, save } from "../mocks/store";
 
 export const getSession = () => load("session", null);
@@ -21,11 +20,13 @@ export async function refreshSession() {
   try {
     const res = await api.get("/api/me");
     const prev = getSession();
-    const user = fromSpring(res.data);
-    // 관심 품목은 아직 서버에 저장하지 않아(PATCH /api/me 준비 중) 이 브라우저에 둔 값을 이어서 씀
-    const session = prev?.id === user.id && prev.favorites ? { ...user, favorites: prev.favorites } : user;
-    save("session", session);
-    return session;
+    let user = fromSpring(res.data);
+    // 11-16: 관심 품목은 서버(DB)에 저장. 예전에 이 브라우저에만 저장해 둔 관심 품목이 있고 서버에는 없으면 한 번 옮김
+    if (!user.favorites.length && prev?.id === user.id && prev.favorites?.length) {
+      user = { ...user, favorites: await putFavorites(prev.favorites).catch(() => prev.favorites) };
+    }
+    save("session", user);
+    return user;
   } catch (e) {
     if (e.response?.status === 401 || e.response?.status === 403) { // 403: 같은 브라우저에서 관리자로 로그인한 세션 (11-14)
       save("session", null);
@@ -46,10 +47,18 @@ export const signup = (form) => springSignup(form);
 
 // ── 내 정보 수정·탈퇴 ──
 
-/** 이메일은 바꿀 수 없다. 지금은 관심 품목(favorites)만 이 브라우저에 저장 (PATCH /api/me 준비 중) */
+/** 내 정보 수정 (11-16). patch 가 관심 품목(favorites)만이면 PUT /api/me/favorites, 아니면 PATCH /api/me (이메일은 못 바꿈) */
 export const updateProfile = (id, patch) => springUpdateProfile(patch);
 
-export const changePassword = () => notReady("비밀번호 변경");
+/** 비밀번호 변경 (11-16): PUT /api/me/password {current, next}. 지금 비밀번호가 틀리면 403 */
+export async function changePassword(id, current, next) {
+  try {
+    await api.put("/api/me/password", { current, next });
+  } catch (e) {
+    throw springError(e, "비밀번호를 바꾸지 못했습니다");
+  }
+  return true;
+}
 
 /** 탈퇴를 막는 이유 목록. 경매가 보류 중이라 늘 비어 있음 (경매를 다시 켜면 서버 DELETE /api/me 가 409 로 알려줄 예정) */
 export const withdrawBlockers = () => [];
@@ -81,6 +90,7 @@ function fromSpring(u) {
   const { password, passwordHash, farmName, type, ...rest } = u; // 비밀번호(해시)는 브라우저에 남기지 않는다
   return {
     ...rest,
+    favorites: Array.isArray(rest.favorites) ? rest.favorites : [],
     farm_name: farmName ?? rest.farm_name ?? "",
     type: USER_TYPE[String(type ?? "MEMBER").toUpperCase()] ?? "member",
   };
@@ -133,13 +143,30 @@ async function springSignup(form) {
   return springLogin(email, form.password);
 }
 
-// 백엔드에 PATCH /api/me 가 생기기 전: 관심 품목만 이 브라우저의 로그인 정보에 저장 (내 화면에만 쓰임). 나머지는 준비 중
-function springUpdateProfile(patch) {
-  const keys = Object.keys(patch).filter((k) => patch[k] !== undefined);
-  if (!keys.length || keys.some((k) => k !== "favorites")) return notReady("내 정보 수정");
-  const session = { ...getSession(), favorites: patch.favorites };
-  save("session", session);
-  return fake(session, 0);
+/** 관심 품목 전체 저장 → 서버에 저장된 목록 */
+async function putFavorites(items) {
+  try {
+    return (await api.put("/api/me/favorites", { items })).data;
+  } catch (e) {
+    throw springError(e, "관심 품목을 저장하지 못했습니다");
+  }
 }
 
-const notReady = (what) => Promise.reject(new Error(`${what} 기능은 아직 준비 중이에요 (회원 백엔드 연결 중)`));
+// 11-16: 내 정보 수정은 PATCH /api/me, 관심 품목만 바꿀 때는 PUT /api/me/favorites. 결과를 화면 로그인 정보에도 반영
+async function springUpdateProfile(patch) {
+  const keys = Object.keys(patch).filter((k) => patch[k] !== undefined && k !== "notify"); // 알림 설정은 숨긴 기능 (서버에 안 보냄)
+  if (keys.length === 1 && keys[0] === "favorites") {
+    const session = { ...getSession(), favorites: await putFavorites(patch.favorites) };
+    save("session", session);
+    return session;
+  }
+  let user;
+  try {
+    const res = await api.patch("/api/me", { nickname: patch.name?.trim(), phone: patch.phone, region: patch.region, farmName: patch.farm_name ?? "" });
+    user = fromSpring(res.data);
+  } catch (e) {
+    throw springError(e, "내 정보를 저장하지 못했습니다");
+  }
+  save("session", user);
+  return user;
+}

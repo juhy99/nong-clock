@@ -17,7 +17,7 @@ function InfoForm() {
 
   async function submit(e) {
     e.preventDefault();
-    if (f.name.trim().length < 2) return setMsg({ ok: false, text: "이름을 2자 이상 입력하세요" });
+    if (f.name.trim().length < 2 || f.name.trim().length > 20) return setMsg({ ok: false, text: "닉네임은 2~20자로 입력하세요" });
     if (!/^01\d-\d{3,4}-\d{4}$/.test(f.phone)) return setMsg({ ok: false, text: "휴대폰 번호를 확인하세요 (예: 010-1234-5678)" });
     try {
       await updateProfile({ ...f, name: f.name.trim(), notify });
@@ -29,10 +29,10 @@ function InfoForm() {
 
   return (
     <form className="card" style={{ display: "grid", gap: 14 }} onSubmit={submit}>
-      <SectionHead title="내 정보 수정" desc="이메일과 회원 유형은 바꿀 수 없어요" />
+      <SectionHead title="내 정보 수정" desc="이메일은 바꿀 수 없어요" />
       <div className="two-col">
         <div className="field">
-          <label htmlFor="p-name">이름</label>
+          <label htmlFor="p-name">닉네임</label>
           <input id="p-name" className="input" value={f.name} onChange={set("name")} />
         </div>
         <div className="field">
@@ -84,6 +84,7 @@ function PasswordForm() {
   async function submit(e) {
     e.preventDefault();
     if (f.next !== f.next2) return setMsg({ ok: false, text: "새 비밀번호가 서로 다릅니다" });
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[\x21-\x7E]{8,64}$/.test(f.next)) return setMsg({ ok: false, text: "새 비밀번호는 영문과 숫자를 섞어 8~64자로 입력하세요" });
     try {
       await changePassword(user.id, f.current, f.next);
       setF({ current: "", next: "", next2: "" });

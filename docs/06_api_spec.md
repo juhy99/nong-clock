@@ -601,8 +601,10 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | GET | `/api/news?category=&item=&items=&q=&page=&size=` | 농업 뉴스 (최신순, 저장된 기사만) | 홈 헤드라인, 농업 뉴스 (`/news`), 검색 › 뉴스 | `getNews` |
 | GET | `/api/news/trend?days=7&limit=5` | 최근 N일 기사에 많이 나온 품목 | 홈·농업 뉴스 › 많이 나온 품목 | `getNewsTrend` |
 | GET | `/api/notices` | 공지 목록 — 관리자가 말머리 "공지"로 쓴 글, 최신 20개, 본문 포함 **(11-14 구현)**. 보기는 `/api/posts/{id}` | 게시판 맨 위, 통합 검색 | `getNotices` |
-| GET · PATCH | `/api/me` | 내 정보 조회·수정 (이름·연락처·지역·농장명·관심 품목·알림 설정) | 마이페이지 › 내 정보 | `updateProfile` |
-| POST | `/api/me/password` `{ "current", "next" }` | 비밀번호 변경 | 마이페이지 › 내 정보 | `changePassword` |
+| GET · PATCH | `/api/me` | 내 정보 조회·수정 (닉네임·연락처·지역·농장명) **(11-16 구현, 2-18)** | 마이페이지 › 내 정보 | `updateProfile` |
+| PUT | `/api/me/password` `{ "current", "next" }` | 비밀번호 변경 **(11-16 구현, 2-18)** | 마이페이지 › 내 정보 | `changePassword` |
+| GET | `/api/me/posts` · `/api/me/comments` | 내가 쓴 글·댓글 **(11-16 구현, 2-18)** | 마이페이지 › 내가 쓴 글·댓글 | `getMyActivity` |
+| GET · PUT | `/api/me/favorites` `{ "items": [...] }` | 관심 품목 **(11-16 구현, 2-18)** | 마이페이지 › 관심 품목 | `updateProfile({favorites})` |
 | DELETE | `/api/me` `{ "password" }` | 회원 탈퇴: 회원 정보와 쓴 글을 DB 에서 삭제 후 로그아웃 `204`, 비밀번호 틀림 `403` (진행 중 경매·최고가 입찰 있으면 `409`, 경매 재개 때) | 마이페이지 › 내 정보 | `withdraw` |
 | GET | `/api/me/auctions` | 내가 등록한 경매 | 마이페이지 › 내 경매 | `getMyAuctions` |
 | POST | `/api/auctions` | 경매 등록 (판매자만, `승인대기`로 생성) | 마이페이지 › 새 경매 등록 | `createAuction` |
@@ -719,7 +721,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 
 ### 2-9. 게시글 예시 (`GET /api/posts`)
 
-> **11-11 제안 (마이페이지 "내가 쓴 글·댓글" 탭):** `GET /api/posts?mine=true` (로그인한 회원 글만, 다른 조건과 같이 씀), `GET /api/me/comments?page=` (내 댓글 + 그 글 제목·번호). 지금 Spring 에 없어 화면은 가짜 데이터로 보여 준다
+> **마이페이지 "내가 쓴 글·댓글" 탭:** 11-16 에 `GET /api/me/posts` · `GET /api/me/comments` 로 구현 (2-18)
 
 
 ```json
@@ -923,6 +925,22 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 - 숨기기: `PATCH /api/admin/posts/{id} {"hidden": true, "reason": "광고"}` → `status: "HIDDEN"`, 회원에게는 `404`(없는 글처럼). 다시 보이기 `{"hidden": false}`
 - 표는 backend 가 켜질 때 `resources/db/admin_tables.sql` 이 만듦 (예전 DB 에도: `admin` 표, `post`·`post_comment` 의 `admin_id`, 공지 말머리)
 
+### 2-18. 마이페이지 (11-16)
+모두 회원 로그인(`ROLE_MEMBER`) 필요 — 없으면 `401`. 회원 번호는 세션에서 정함 (요청에 id 를 받지 않음)
+
+| 요청 | 성공 | 오류 |
+|---|---|---|
+| `PATCH /api/me` `{ "nickname", "phone", "region", "farmName" }` | `200` 회원 정보 (`/api/me` 와 같은 모양) | `409` 남이 쓰는 닉네임 · `422` 닉네임 2~20자·전화 `010-1234-5678`·없는 시·도·농장명 50자 넘음 |
+| `PUT /api/me/password` `{ "current", "next" }` | `204` (세션 번호 새로 받음, 로그인 유지) | `403` 지금 비밀번호 틀림 · `422` 새 비밀번호 규칙(영문+숫자 8~64자)·지금과 같음 · 1분 20번 넘으면 `429` |
+| `GET /api/me/posts` | `200` `[{id, category, title, created_at, views, comment_count, status?}]` 최근 100개. 관리자가 숨긴 글은 `"status": "HIDDEN"` | |
+| `GET /api/me/comments` | `200` `[{id, post_id, post_title, body, created_at}]` 최근 100개 (지운 댓글·숨긴 글의 댓글 빼고) | |
+| `GET /api/me/favorites` | `200` `["onion", "apple"]` (고른 순서) | |
+| `PUT /api/me/favorites` `{ "items": [...] }` | `200` 저장된 목록 (전체를 바꿈, 최대 50개) | `422` 없는 품목(DB `item` 표에 없음)·이상한 코드 — 이때 예전 목록 그대로 |
+
+- `GET /api/me` · 로그인 응답에 `favorites` 가 같이 옴 (가입 직후는 `[]`)
+- 관심 품목은 DB 표 `user_favorite (user_id, item_code, created_at)` — backend 가 켜질 때 `resources/db/mypage_tables.sql` 이 만듦. 탈퇴하면 같이 지워짐 (`ON DELETE CASCADE`)
+- 화면은 예전에 브라우저에만 저장했던 관심 품목이 있고 서버에 없으면 첫 로그인 확인 때 한 번 서버로 옮김 (`auth.js refreshSession`)
+
 ## 3. 정해야 할 것
 
 - [ ] 프론트가 ML API를 **직접 호출**할지, **Spring을 거쳐** 호출할지
@@ -970,6 +988,7 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | 2026-11-07 | 회원가입: 약관 동의(`marketing`) 삭제, `name` → `nickname`, 중복 확인 `GET /api/auth/check` 제안 추가(2-3). 가격 예측 도매시장 고르기는 `GET /api/markets`(전국 평균 + 32곳, 시장별 `items` = 최근 1년 거래 품목)를 씀 | |
 | 2026-11-11 | **새 디자인(v17) 반영.** ML API: `GET /items`·`POST /predict`·`top-movers` 를 **예측 품목 50개**(`shared/items50.json`)로 — 50개 밖은 `404`(양송이 `button_mushroom` 빠짐). `POST /predict` 에 `base_date`(기준일, 오늘~1년 전)·`history_days`(1~400, 기본 14)·`last_year`(작년 같은 시기 실제 시세, 52주 전 같은 요일) 추가. 작물 추천 `start_date` 를 오늘~30일 → **오늘~1년**, `/recommend/crops/{code}/prices` 를 13개월 57점 → **12개월 53점**. 뉴스 수집: 같은 소식을 실은 언론사 수 `press_count`·`presses`(많이 다룬 뉴스). 신고 기능 삭제(2-5, 한눈에 보기·알림 종류에서 뺌). 마이페이지 내가 쓴 글·댓글 API 제안(2-9). 프론트 가짜 데이터(`frontend/src/mocks`)도 같이: 예측 `last_year`·`base_date`, 가격 경로 53점, 뉴스 `press_count`, 알림 종류에서 신고 뺌. 회원가입 요청에서 `marketing` 을 보내지 않음(마케팅 동의는 넣지 않기로 함 — Spring 의 `marketing` 칸은 비어 들어감) | |
 | 2026-11-11 | **품종 기준 변경 (1-2-1).** 팀 자료 `50품목_화면묶음140_예측단위322` 로 `shared/items50.json` 품종을 다시 만듦: 화면묶음 이름 = 품목 이름이면 예측단위마다, 그 밖은 화면묶음째 → 품종 322 → **196** (예측단위 312, 뺌 10). 품종에 `units`(예측 단위 이름 목록) 추가, `unit` 은 뺌, `type` 종류 없앰, id 새로 매김. Spring 시세(2-15 `?variety=`)는 단위 여럿을 금액 합 ÷ 물량 합으로 | |
+| 2026-11-16 | **마이페이지 구현 (2-18).** `PATCH /api/me` · `PUT /api/me/password`(예전 제안 POST → PUT) · `GET /api/me/posts`·`/comments` · `GET·PUT /api/me/favorites`, 새 표 `user_favorite` | |
 | 2026-11-13 | **알림 숨김(팀 결정).** 알림 API(`/api/me/notifications` 3개)·알림 표는 만들지 않음, 2-4 에 안내. 정해야 할 것의 새 DB 테이블에서 알림 뺌. 회원 표 `notify_settings` 열은 다시 켤 때를 위해 그대로 | |
 | 2026-11-13 | **시세·예측 실제 데이터로.** Spring `GET /api/prices/{item}/monthly` 추가(계절 패턴 · 월별 반입량), 11-12 의 market-share · auction-houses 표에 적음. 화면 시세 기본값을 db 로(`VITE_PRICE_SOURCE=mock` 일 때만 가짜), ml-api `PREDICTOR` 기본값 db, 가격 예측은 서버가 안 되면 가짜 값 대신 오류 | |
 | 2026-11-13 | **작물 추천 실제 자료로.** 작물 표 `shared/crops.json`(농사로 재배력 · 소득조사/생산비조사 3개 해 평균 · farm_ratio · 평년가, 34작물 66작형) 를 ml-api `crop_catalog.py` 가 읽음(`crop_calendar.py` 지움). 가격 = DB 예측 × farm_ratio, 시장 = DB market_factor. 응답에 `land_types`·`price_basis`·`forecast_base_date`·`schedule_source`·`econ_source`·`normal` 등 추가, `/prices` 에 `basis`·`off_season` | |

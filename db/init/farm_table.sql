@@ -26,6 +26,14 @@ CREATE TABLE admin (
     created_at     TIMESTAMP     NOT NULL DEFAULT NOW()
 );
 
+-- 1-3. 관심 품목 (11-16, 마이페이지): 회원 × 품목 코드. 탈퇴하면 같이 지워짐. 이미 만든 DB 에는 Spring 이 켜질 때 resources/db/mypage_tables.sql 로 만든다 (내용 같음)
+CREATE TABLE IF NOT EXISTS user_favorite (
+    user_id     BIGINT       NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    item_code   VARCHAR(30)  NOT NULL,
+    created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, item_code)
+);
+
 -- 2. 게시글 테이블 생성 (users 생성 후 생성). 회원 글은 author_id, 관리자 글(공지 등)은 admin_id (11-14)
 CREATE TABLE post (
     post_id        BIGSERIAL     PRIMARY KEY,

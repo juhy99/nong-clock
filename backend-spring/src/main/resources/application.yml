@@ -22,7 +22,7 @@ spring:
   sql:
     init:
       mode: always
-      schema-locations: classpath:db/base_tables.sql, classpath:db/post_comment.sql, classpath:db/admin_tables.sql  # 회원·글 → 댓글 → 관리자(11-14) 순서
+      schema-locations: classpath:db/base_tables.sql, classpath:db/post_comment.sql, classpath:db/admin_tables.sql, classpath:db/mypage_tables.sql  # 회원·글 → 댓글 → 관리자(11-14) → 마이페이지 관심 품목(11-16) 순서
 
   jpa:
     hibernate:

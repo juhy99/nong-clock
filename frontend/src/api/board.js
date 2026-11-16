@@ -59,8 +59,13 @@ export function getPosts({ category = "", q = "", page = 1 } = {}) {
  * Spring 에는 아직 API 가 없어(명세서 2-9 제안: GET /api/posts?mine=true, GET /api/me/comments) null 을 돌려주고 화면은 "준비 중"으로 보여 준다.
  * @returns {Promise<{posts: object[] | null, comments: object[] | null}>}
  */
-export function getMyActivity() {
-  return Promise.resolve({ posts: null, comments: null });
+export async function getMyActivity() {
+  // 11-16: 마이페이지 '내가 쓴 글·댓글' = GET /api/me/posts · /api/me/comments (최근 100개). 못 불러오면 null → 화면이 안내
+  const [posts, comments] = await Promise.all([
+    call(api.get("/api/me/posts"), "내 글을 불러오지 못했습니다").catch(() => null),
+    call(api.get("/api/me/comments"), "내 댓글을 불러오지 못했습니다").catch(() => null),
+  ]);
+  return { posts, comments };
 }
 
 /** 글 보기. countView 면 조회수 +1 (같은 브라우저 탭에서는 한 번만) */

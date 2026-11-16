@@ -197,7 +197,7 @@ class PricePathPoint(BaseModel):
     lower: int
     upper: int
     basis: PriceBasis = Field("forecast", description="forecast: AI 예측 · normal: 평년 (예측이 없는 날) · survey: 조사 수취가")
-    off_season: bool = Field(False, description="출하철 밖 예측 (참고값)")
+    off_season: bool = Field(False, description="참고값 — 월 예측(12달)이 끝난 뒤 평년 × 비율로 낸 값 (11-16)")
 
 
 class PricePathResponse(BaseModel):

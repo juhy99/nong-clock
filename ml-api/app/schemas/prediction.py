@@ -28,7 +28,7 @@ class PricePoint(BaseModel):
 class ForecastPoint(PricePoint):
     lower: int = Field(description="예측 오차범위 하단")
     upper: int = Field(description="예측 오차범위 상단")
-    off_season: bool = Field(False, description="출하철 밖 날 — 두 모델 다 채점해 본 적 없는 달이라 참고용 (11-13, DB 예측 표 off_season)")
+    off_season: bool = Field(False, description="참고값 — 월 예측(12달)이 끝난 뒤 평년 × 비율로 낸 값 (11-16 팀 최종 규칙, DB 예측 표 off_season). 출하철 밖 날은 예측 자체가 없음")
     crash_adj: bool = Field(False, description="폭락 보정이 섞인 날 — 최근 7일 시세가 작년 같은 주의 0.67배 이하인 단위의 1~14거래일 예측을 낮춤 (11-14, DB 예측 표 crash_adj)")
 
 

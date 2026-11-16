@@ -383,7 +383,7 @@ function PriceYear({ crop, harvest }) {
   const note = [
     state.data.forecast_base_date && `AI 예측 ${md(state.data.forecast_base_date)} 기준`,
     nNormal > 0 && `${nNormal === pts.length ? "AI 예측이 없는 작물이라 모두" : "예측이 없는 날은"} 평년(2021~2025) 도매가`,
-    nOff > 0 && "출하철이 아닌 달의 예측은 정확도를 확인하지 못한 참고값",
+    nOff > 0 && "월 예측(12달)이 끝난 뒤의 값은 평년 × 비율로 낸 참고값",
   ].filter(Boolean).join(" · ");
   // 휴대폰: 좁은 그림으로 다시 그려 글씨가 작아지지 않게 (달 이름표는 3달마다)
   const W = narrow ? 420 : 1300, H = narrow ? 320 : 300, L = narrow ? 54 : 70, R = narrow ? 14 : 24, T = 36, B = 34;

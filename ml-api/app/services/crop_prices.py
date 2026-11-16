@@ -1,7 +1,8 @@
 """작물 추천에 쓰는 가격 (11-13) — 가격 예측 화면과 같은 DB 예측 표를 읽는다.
 
 - 도매가(전국 · 품목 전체): DB price_forecast_daily 의 그 품목(variety_id = ALL), 오늘 이전에 만든 가장 최근 기준일 예측.
-  하한·상한도 그 표 값 그대로 (예측 화면의 범위와 같음). off_season = 출하철 밖(참고값)
+  하한·상한도 그 표 값 그대로 (예측 화면의 범위와 같음). off_season = 월 예측(12달)이 끝난 뒤 평년 × 비율로 낸 참고값 (11-16)
+  11-16: 예측 표에 일요일·출하철 밖 날이 없음 → 그날 값이 없으면 앞 3일 → 뒤 3일 안 가장 가까운 날 (가격 예측 화면 fcAt 과 같음), 그래도 없으면 평년
 - 예측이 없는 날(예측 표 365일 밖 · 표에 없는 품목 · DB 없이 실행): crops.json 의 평년 도매가(2021~2025 같은 달 평균, 범위 = 그 5해 최저·최고)
 - 농가가 받는 값 = 도매가 × farm_ratio (작형마다, crops.json) · 쌀·콩(price_source = survey)은 조사 수취가격 그대로 (예측 없음)
 - 시장 계수: DB market_factor (품목 × 시장 × 달) — 가격 예측 화면이 시장별 값을 낼 때 쓰는 것과 같음. 없으면 1
@@ -11,7 +12,7 @@ DB 를 쓰는 조건은 가격 예측과 같다: 환경 변수 PREDICTOR=db (+ P
 import threading
 import time
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from app.core.config import PREDICTOR
 from app.core.crop_catalog import Crop, Cropping
@@ -108,8 +109,9 @@ def wholesale(crop: Crop, d: date, today: date, c: Cropping | None = None) -> Pr
     if crop.price_source == "survey":
         return None
     fc, _ = STORE.forecast(crop.code, today, c.price_variety if c is not None and c.price_variety else "ALL")
-    if d in fc:
-        p, lo, hi, off = fc[d]
+    hit = next((x for x in [d] + [d - timedelta(days=i) for i in (1, 2, 3)] + [d + timedelta(days=i) for i in (1, 2, 3)] if x in fc), None)
+    if hit is not None:
+        p, lo, hi, off = fc[hit]
         return Price(p, lo, hi, "forecast", off)
     n = _normal(crop, d, c)
     return Price(n[0], n[1], n[2], "normal") if n else None

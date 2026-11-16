@@ -62,7 +62,7 @@ function ItemSummary({ item, crops }) {
             <div>
               <div className="muted small">소매가</div>
               <div className="v num">{won(row.retail_price)}원<small>/kg</small></div>
-              <span className="muted small">도매가보다 {row.margin_pct}% 비싸요</span>
+              <span className="muted small">도매가보다 {Math.abs(row.margin_pct)}% {row.margin_pct >= 0 ? "비싸요" : "싸요"}</span>
             </div>
           </div>
         )}

@@ -245,7 +245,7 @@ def main():
         if r["land"] == "orchard":  # 다년생: 추천 계산은 안 하고 정보만
             c["land_types"] = ["orchard"]
             c["harvest_months"] = [months[0], months[-1]]
-            c["perennial_note"] = f"나무를 심고 몇 해 뒤부터 매년 {months[0]}~{months[-1]}월에 수확해요 (수확 시기: {where})"
+            c["perennial_note"] = f"나무를 심고 몇 해 뒤부터 매년 {months[0] if months[0] == months[-1] else f'{months[0]}~{months[-1]}'}월에 수확해요 (수확 시기: {where})"
             c["farm_ratio"] = k
             report.append((r["name"], "과수", "-", "-", "-", rda["kg"], round(rda["cost"] / 1e4), rda["price"], k, kraw))
             continue

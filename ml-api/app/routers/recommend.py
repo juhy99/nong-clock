@@ -125,7 +125,7 @@ def recommend_crops(req: RecommendCropsRequest) -> RecommendCropsResponse:
         start_date=req.start_date, region=req.region, markets=[_market_ref(c) for c in codes], no_market=none,
         results=[_option(o, req.region, today) for o in ok],
         excluded=[Excluded(crop=c.code, crop_name=c.name, emoji=c.emoji, land_type=c.land_type, kind=k, reason=why)
-                  for c, k, why in recommender.excluded(ok, lands, req.start_date)],
+                  for c, k, why in recommender.excluded(ok, lands, req.start_date, req.region)],
         unavailable=[
             Unavailable(crop=c.code, crop_name=c.name, emoji=c.emoji, land_type=c.land_type, reason=why,
                         next_plant_date=nxt[0] if nxt else None, next_cropping=nxt[1].name if nxt else None)

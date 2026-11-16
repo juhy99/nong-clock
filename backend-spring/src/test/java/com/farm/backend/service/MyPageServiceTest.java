@@ -61,4 +61,12 @@ class MyPageServiceTest {
         assertThatThrownBy(() -> s.setFavorites(7L, List.of("onion", "nothing"))).hasMessageContaining("없는 품목");
         verify(jdbc, never()).update(startsWith("DELETE"), anyMap());
     }
+
+    @Test
+    void favorites_save_locks_user_row_and_ignores_duplicate_insert() {
+        when(jdbc.queryForList(startsWith("SELECT item_code FROM item"), anyMap(), eq(String.class))).thenReturn(List.of("onion"));
+        s.setFavorites(7L, List.of("onion"));
+        verify(jdbc).queryForList(contains("FOR UPDATE"), anyMap(), eq(Long.class));
+        verify(jdbc).update(contains("ON CONFLICT (user_id, item_code) DO NOTHING"), anyMap());
+    }
 }

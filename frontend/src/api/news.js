@@ -5,19 +5,12 @@
 import { ApiError, DATA_SOURCE, NEWS_URL, fake } from "./client";
 import { liveNewsPool } from "./live/naverNews";
 import { ITEMS } from "../mocks/catalog";
-import { NEWS_CATEGORIES, labelNews } from "../mocks/news";
+import { NEWS_CATEGORIES } from "../mocks/news";
 import { OTHER_CROPS, cropOfQuery } from "../utils/itemMatch";
 
 export { NEWS_CATEGORIES };
 export const NEWS_REFRESH_MINUTES = 60;
 export const NEWS_PAGE_SIZE = 15;
-
-/** 가장 최근 수집 시각 (가짜: 매시 정각에 모았다고 본다) */
-function lastFetchedAt(now = new Date()) {
-  const d = new Date(now);
-  d.setMinutes(0, 0, 0);
-  return d;
-}
 
 const SERVER_TTL_MS = 60000;
 let serverCache = null; // { at, promise }
@@ -38,12 +31,12 @@ function serverNewsPool() {
   return promise;
 }
 
-/** 기사 묶음과 수집 시각. real: 실제 기사(서버 수집·테스트 모드) / 아니면 예시 기사(매시 정각 수집으로 가정) */
+/** 기사 묶음과 수집 시각. 서버 수집 기사(VITE_NEWS_URL) 또는 테스트 모드(VITE_DATA_SOURCE=live: 내 PC 수집 파일 → 네이버 직접).
+ *  11-14: 예시(가짜) 기사로 대신하지 않는다 — 기사 출처가 없으면 오류를 보여 줌 (가격 예측·작물 추천 11-13 과 같은 원칙) */
 async function newsPool() {
   if (NEWS_URL) return serverNewsPool();
   if (DATA_SOURCE === "live") return { ...(await liveNewsPool()), real: true };
-  const fetchedAt = lastFetchedAt();
-  return { rows: labelNews(fetchedAt.getTime()), fetchedAt, real: false };
+  throw new ApiError("뉴스 출처가 설정되지 않았어요 (frontend/.env 의 VITE_NEWS_URL 또는 VITE_DATA_SOURCE=live)", 0);
 }
 
 const newestFirst = (a, b) => new Date(b.published_at) - new Date(a.published_at);

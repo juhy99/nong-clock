@@ -30,19 +30,38 @@ const afterLabel = (t) => (t < 60 ? `${Math.round(t / 7)}주 뒤` : `${Math.roun
 /** 예측에서 기준일 t일 뒤 값. DB 예측기는 출하철 밖 날을 빼고 주므로(11-11) 순서가 아니라 날짜로 찾는다 */
 function fcAt(p, t) {
   p._fc ??= new Map(p.forecast.map((f) => [f.date, f]));
-  const f = p._fc.get(addDays(p.base_date, t));
-  return f ? { ...f, t } : null;
+  // 11-16: 예측 표에 일요일(휴장)이 없음 → 그날이 없으면 앞 3일, 그다음 뒤 3일 안 가장 가까운 날. 그래도 없으면 예측 안 하는 철
+  for (const d of [0, -1, -2, -3, 1, 2, 3]) {
+    if (t + d < 1) continue;
+    const f = p._fc.get(addDays(p.base_date, t + d));
+    if (f) return { ...f, t: t + d };
+  }
+  return null;
+}
+/** 11-16: 점 사이가 GAP_DAYS 넘게 비면(출하철 밖이라 예측 안 하는 달) 선을 끊음 */
+const GAP_DAYS = 10;
+function splitGaps(arr) {
+  const out = [];
+  for (const x of arr) {
+    const cur = out.at(-1);
+    if (cur && daysBetween(cur.at(-1).date, x.date) <= GAP_DAYS) cur.push(x);
+    else out.push([x]);
+  }
+  return out;
 }
 /** 고른 날들에 예측이 하나도 없으면 마지막 예측 하나라도 (기간 중간에 예측 없는 달이 있을 때) */
 const orLast = (rows, p) => (rows.length || !p.forecast.length ? rows : [{ ...p.forecast.at(-1), t: daysBetween(p.base_date, p.forecast.at(-1).date) }]);
 
 /** 한 시장 응답 → 주 단위 점: 지난 8주(기준일 포함) · 예측(7일마다, 마지막 날 포함) */
 function weekly(p, horizon) {
-  const byDate = new Map(p.history.map((h) => [h.date, h.price]));
-  const past = Array.from({ length: WEEKS_BACK }, (_, i) => {
-    const d = addDays(p.base_date, -7 * (WEEKS_BACK - 1 - i));
-    return { date: d, price: byDate.get(d) ?? null };
-  }).filter((x) => x.price != null);
+  // 11-15: 그 날짜에 거래가 없으면(일요일·공휴일, 아직 안 올라온 최근 날) 그 앞 가장 가까운 거래일 값.
+  //   예전엔 같은 날짜만 찾아서, 기준일이 일요일이면 8주 모두 일요일이라 점이 0개 → 그래프가 멈춤(화면 전체 오류)
+  const hist = [...p.history].sort((x, y) => (x.date < y.date ? -1 : 1));
+  const onOrBefore = (d) => { let r = null; for (const h of hist) { if (h.date <= d) r = h; else break; } return r; };
+  const seen = new Set();
+  const past = Array.from({ length: WEEKS_BACK }, (_, i) => onOrBefore(addDays(p.base_date, -7 * (WEEKS_BACK - 1 - i))))
+    .filter((h) => h && h.price != null && !seen.has(h.date) && seen.add(h.date))
+    .map((h) => ({ date: h.date, price: h.price }));
   const ts = [];
   for (let t = 7; t < horizon; t += 7) ts.push(t);
   ts.push(horizon);
@@ -122,14 +141,16 @@ function Chart({ series, horizon }) {
       ))}
       <rect x={X(now)} y={T - 14} width={W - R - X(now)} height={H - T - B + 14} fill="rgba(217,138,0,.05)" rx="8" />
       <line x1={X(now)} x2={X(now)} y1={T - 14} y2={H - B} stroke="rgba(19,38,26,.35)" strokeDasharray="4 4" />
-      {one && (
-        <polygon fill="rgba(20,96,59,.12)" points={[...[one.past[k], ...one.fut].map((f, i) => `${X(f.date)},${Y(i ? f.upper : f.price)}`),
-          ...[one.past[k], ...one.fut].map((f, i) => `${X(f.date)},${Y(i ? f.lower : f.price)}`).reverse()].join(" ")} />
-      )}
+      {one && splitGaps([{ ...one.past[k], upper: one.past[k].price, lower: one.past[k].price }, ...one.fut]).map((g, gi) => (
+        <polygon key={gi} fill="rgba(20,96,59,.12)" points={[...g.map((f) => `${X(f.date)},${Y(f.upper)}`), ...g.map((f) => `${X(f.date)},${Y(f.lower)}`).reverse()].join(" ")} />
+      ))}
       {series.map((s) => (
         <g key={s.code}>
           <polyline className="pv-path" points={pts(s.past)} fill="none" stroke={s.color} strokeOpacity=".55" strokeWidth="2.5" strokeLinejoin="round" />
-          <polyline className="pv-path" points={pts([s.past[s.past.length - 1], ...s.fut])} fill="none" stroke={s.color} strokeWidth="4" strokeLinejoin="round" />
+          {splitGaps([s.past[s.past.length - 1], ...s.fut]).map((g, gi) => (
+            g.length > 1 ? <polyline key={gi} className="pv-path" points={pts(g)} fill="none" stroke={s.color} strokeWidth="4" strokeLinejoin="round" />
+              : <circle key={gi} cx={X(g[0].date)} cy={Y(g[0].price)} r="3" fill={s.color} />
+          ))}
           <circle cx={X(s.best.date)} cy={Y(s.best.price)} r="6.5" fill={s.color} stroke="#fff" strokeWidth="2.5" />
         </g>
       ))}
@@ -172,7 +193,7 @@ function MarketCards({ series, horizon }) {
               const c = pct(f.price, m.base), best = f.t === m.bestRow.t && f.price > m.base; // 지금보다 비쌀 때만 출하 추천
               return (
                 <li key={f.t} className={best ? "best" : ""}>
-                  <span className="w"><b>{horizon <= 60 ? afterLabel(f.t) : `${Math.max(1, Math.round(f.t / 30.4))}개월 뒤`}{best && <em>출하 추천</em>}{f.off_season && <em className="ref" title="출하철이 아닌 시기라 정확도를 확인하지 못한 값">참고</em>}</b>{md(f.from)}~{md(f.date)}</span>
+                  <span className="w"><b>{horizon <= 60 ? afterLabel(f.t) : `${Math.max(1, Math.round(f.t / 30.4))}개월 뒤`}{best && <em>출하 추천</em>}{f.off_season && <em className="ref" title="월 예측이 끝난 뒤라 평년 × 비율로 낸 값 (정확도를 확인하지 못함)">참고</em>}</b>{md(f.from)}~{md(f.date)}</span>
                   <span className="rg">범위 {won(f.lower)} ~ {won(f.upper)}원</span>
                   <span className="pr">{won(f.price)}원<small className={c >= 0 ? "up" : "down"}>{signPct(c)}</small></span>
                 </li>
@@ -186,6 +207,29 @@ function MarketCards({ series, horizon }) {
           {series.map((m, i) => <button key={m.code} type="button" aria-label={`${m.name} 보기`} className={i === at ? "on" : ""} style={{ "--c": m.color }} onClick={() => go(i)} />)}
           <span>옆으로 밀어서 시장을 바꿔 보세요</span>
         </div>
+      )}
+    </section>
+  );
+}
+
+/** 받침이 있으면 "은", 없으면 "는" (황도는 · 사과 아오리는 · 감귤은) */
+const eunNeun = (w) => { const c = (w ?? "").trim().slice(-1).charCodeAt(0) - 0xac00; return c >= 0 && c <= 11171 && c % 28 ? "은" : "는"; };
+
+/** 11-16: 고른 기간이 모두 출하철 밖(거래가 거의 없는 철)일 때 — 언제 주로 거래되는지 + 다음 철 예측으로 가는 버튼 */
+function OffSeason({ s, itemName, today, onGo }) {
+  const start = s.next_start, end = s.next_end;
+  const lastDay = addDays(today, 365);
+  const to = end ? (end > lastDay ? lastDay : end) : null;
+  return (
+    <section className="card pv-offseason">
+      <div className="pv-off-ic" aria-hidden>🗓️</div>
+      <h2>{itemName}{eunNeun(itemName)} 지금 출하철이 아니에요</h2>
+      <p>{s.message}</p>
+      {s.label && <p className="muted small">출하철 = 예측 모델이 값을 내는 달 (팀 기준: 1년 거래량의 대부분이 몰린 달). 그 밖의 달은 몇 상자만 거래돼 값이 들쭉날쭉해서 예측하지 않아요.</p>}
+      {start && to && (
+        <button type="button" className="btn primary" onClick={() => onGo(to)}>
+          다음 철({Number(start.slice(5, 7))}월~) 예측 보기 →
+        </button>
       )}
     </section>
   );
@@ -246,11 +290,31 @@ function Result({ r }) {
           {p.reference === "baseline" && (
             <ul className="pv-notes"><li><span className="ic">🔖</span>이 품목·기간은 예측이 덜 정확해 참고용이에요</li></ul>
           )}
-          {/* 11-13: 출하철 밖 날(두 모델 다 채점해 본 적 없는 달)은 참고값 — 고른 기간 안에 있으면 그 기간을 알려 줌 */}
+          {/* 11-16 (팀 최종 정리 규칙): off_season = 월 예측(12달)이 끝난 뒤 평년 × 비율로 낸 참고값. 출하철 밖 달은 예측 자체가 없음(그래프 빈 곳) */}
           {(() => {
             const off = p.forecast.filter((f) => f.off_season);
-            return off.length > 0 && (
-              <ul className="pv-notes"><li><span className="ic">🔖</span>{md(off[0].date)}~{md(off.at(-1).date)} 중 출하철이 아닌 날은 정확도를 확인하지 못해 참고용이에요 (표의 ‘참고’)</li></ul>
+            const gaps = [];
+            const fc = [{ date: p.base_date }, ...p.forecast];
+            for (let i = 1; i < fc.length; i++) if (daysBetween(fc[i - 1].date, fc[i].date) > GAP_DAYS) gaps.push([addDays(fc[i - 1].date, 1), addDays(fc[i].date, -1)]);
+            return (off.length > 0 || gaps.length > 0) && (
+              <ul className="pv-notes">
+                {gaps.length > 0 && <li><span className="ic">🔖</span>{gaps.map(([a, b]) => `${md(a)}~${md(b)}`).join(", ")}은 출하철이 아니라(거래가 거의 없는 철) 예측하지 않아요</li>}
+                {off.length > 0 && <li><span className="ic">🔖</span>{md(off[0].date)}~{md(off.at(-1).date)}은 월 예측(12달)이 끝난 뒤라 평년 × 비율로 낸 참고값이에요 (표의 ‘참고’)</li>}
+              </ul>
+            );
+          })()}
+          {/* 11-14: 마지막 거래가 7일 넘게 지난 품목은 '지금' 값이 그날까지의 7일 평균임을 알림 */}
+          {(() => {
+            const old = series.filter((s) => s.raw.base_stale && s.raw.base_price_date);
+            return old.length > 0 && (
+              <ul className="pv-notes"><li><span className="ic">🕒</span>{old.map((s) => `${s.name} ${md(s.raw.base_price_date)}`).join(" · ")} 뒤로 거래가 없어 ‘지금’ 값은 그 마지막 거래일까지 7일 평균이에요 — 변동률은 참고만 해 주세요</li></ul>
+            );
+          })()}
+          {/* 11-14: 폭락 보정 — 최근 시세가 작년보다 크게 낮은 품종은 1~14거래일 예측을 낮춰 잡음 (예외 규칙이라 숨기지 않고 알림) */}
+          {(() => {
+            const adj = p.forecast.filter((f) => f.crash_adj);
+            return adj.length > 0 && (
+              <ul className="pv-notes"><li><span className="ic">📉</span>최근 시세가 작년 이맘때보다 크게 낮은 품종이 있어 {md(adj[0].date)}~{md(adj.at(-1).date)} 예측을 낮춰 잡았어요 (값이 떨어진 뒤엔 한동안 낮게 이어진 경우가 많았어요)</li></ul>
             );
           })()}
         </section>
@@ -286,7 +350,14 @@ export default function Predict() {
     if (!opts) return null;
     const ms = marketsIn(opts.markets, q.region, q.item);
     // 품종: DB 예측기는 품종 예측을 그대로 돌려줌(raw.variety). 더미(raw.variety 빈 값)면 [샘플] 품목 예측 × 품종 계수
-    const res = await Promise.all(ms.map((m) => predict({ item: q.item, market: m.code, horizon, history_days: 56, ...(q.variety ? { variety: q.variety } : {}) })));
+    let res;
+    try {
+      res = await Promise.all(ms.map((m) => predict({ item: q.item, market: m.code, horizon, history_days: 56, ...(q.variety ? { variety: q.variety } : {}) })));
+    } catch (e) {
+      // 11-16: 출하철 밖이라 예측이 없으면 오류 대신 '언제 거래되는지 + 다음 철 보기' 안내
+      if (e.status === 404 && e.detail?.season) return { offSeason: e.detail.season, itemName: (itemOf(q.item)?.name ?? q.item) + (variety ? ` ${variety.label}` : "") };
+      throw e;
+    }
     const series = res.map((raw, i) => {
       const f = (raw.variety ?? "") === q.variety ? 1 : varietyFactor(q.variety || null);
       const k = (v) => Math.round(v * f);
@@ -317,7 +388,9 @@ export default function Predict() {
         {(o) => (
           <>
             <PredictSearch key={JSON.stringify(q)} value={q} markets={o.markets} today={today} onSearch={search} />
-            <Async state={result} minHeight={420}>{(r) => <Result r={r} />}</Async>
+            <Async state={result} minHeight={420}>
+              {(r) => (r.offSeason ? <OffSeason s={r.offSeason} itemName={r.itemName} today={today} onGo={(to) => search({ ...q, to })} /> : <Result r={r} />)}
+            </Async>
           </>
         )}
       </Async>

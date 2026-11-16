@@ -7,7 +7,14 @@ rem  Docker 의 DB 가 켜져 있어야 함. 처음 한 번: py -3 -m pip instal
 rem  자동으로 매일: 작업 스케줄러에 이 파일을 "auto" 인자로 등록 (예: 새벽 6시 — 경매 정산 자료가 전날까지 올라온 뒤)
 rem  표는 tables_daily 폴더에 씀 (tables 폴더의 2020년부터 전체 파일을 덮어쓰지 않게)
 rem ============================================================
-set "DATA=D:\nong-clock-data\05_DB적재\data"
+rem 데이터 폴더: 학원 PC = D:\nong-clock-data, 집 PC = C:\finalproject\nong-clock-data (있는 쪽을 자동으로 씀, 11-14)
+rem 다른 곳이면 환경 변수 NC_DATA_ROOT 에 맨 위 폴더를 넣거나 아래 DATA 를 직접 고치세요
+set "DATA_ROOT=%NC_DATA_ROOT%"
+if "%DATA_ROOT%"=="" if exist "D:\nong-clock-data\05_DB적재\data" set "DATA_ROOT=D:\nong-clock-data"
+if "%DATA_ROOT%"=="" if exist "C:\finalproject\nong-clock-data\05_DB적재\data" set "DATA_ROOT=C:\finalproject\nong-clock-data"
+if "%DATA_ROOT%"=="" set "DATA_ROOT=D:\nong-clock-data"
+set "DATA=%DATA_ROOT%\05_DB적재\data"
+echo 데이터 폴더: %DATA%
 for %%i in ("%~dp0..") do set "REPO=%%~fi"
 
 echo [A] 수집 → 표 → DB

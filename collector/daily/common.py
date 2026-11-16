@@ -48,6 +48,7 @@ def load_env():
 
 # 데이터 폴더 (원장·표·기록). 코드는 git, 데이터는 git 밖에 두려고 FARMBID_DATA 로 위치를 바꿀 수 있다 (11-09)
 # 환경변수나 이 폴더 .env 에 FARMBID_DATA=D:\nong-clock-data\05_DB적재\data  (없으면 이 폴더의 data)
+#   집 PC (11-14): FARMBID_DATA=C:\finalproject\nong-clock-data\05_DB적재\data
 load_env()
 DATA = Path(os.getenv('FARMBID_DATA', HERE / 'data'))
 RAW = Path(os.getenv('FARMBID_RAW', DATA / 'raw'))

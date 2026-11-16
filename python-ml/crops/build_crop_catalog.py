@@ -2,7 +2,7 @@
 """작물 추천용 작물 표 만들기 (11-13) → shared/crops.json  (ml-api 작물 추천이 읽음)
 
   python python-ml/crops/build_crop_catalog.py                      # 기본 경로
-  python python-ml/crops/build_crop_catalog.py --data D:\\nong-clock-data --out shared/crops.json
+  python python-ml/crops/build_crop_catalog.py --data <자료 폴더(생략하면 자동)> --out shared/crops.json
 
 무엇을 어디서 가져오나 (손으로 넣는 숫자는 crop_map.csv 의 대응·보관 일수뿐)
   ① 심는 때·수확 때  농사로 재배력 (02_전처리/21_농사로_재배력_생육온도): 01 작형별 시기 · 09 공식도서 확인(감자·고구마·콩) · 04 달력 보조(옥수수·멜론·과수)
@@ -88,6 +88,7 @@ class Data:
         self.a1 = pd.read_csv(p / "25_생산비_저장_수수료_재배력" / "A1_생산비소득_4품목_전국_연도별.csv")
         self.a3 = pd.read_csv(p / "25_생산비_저장_수수료_재배력" / "A3_콩_보리_참깨_생산비소득_전국_연도별.csv")
         self.month = self._national(tables)
+        self.tables_dir = Path(tables).parent if Path(tables).name == "price_daily.csv" else root / "05_DB적재" / "data" / "tables"
 
     @staticmethod
     def _national(tables: Path):
@@ -171,10 +172,22 @@ class Data:
         return round(min(RATIO_HI, max(RATIO_LO, raw)), 3), round(raw, 3)
 
     # ── ④ 평년 월별 도매가 ──
-    def normal(self, code):
-        if code not in self.month.index.get_level_values(0):
-            return None
-        d = self.month.loc[code].reset_index(); d = d[d.y.isin(NORMAL_YEARS) & (d.volume_kg > 0)]
+    def normal_variety(self, unit_names):
+        """품종 작형(11-14, 양파 조생 등): 그 품종 단위들의 전국 월별 금액÷물량 평년 (price_unit_daily)"""
+        vu = pd.read_csv(self.tables_dir / "variety_unit.csv", usecols=["unit_id", "unit_name"])
+        ids = set(vu[vu.unit_name.isin(unit_names)].unit_id)
+        if not ids:
+            raise SystemExit(f"variety_unit 에 단위 없음: {unit_names}")
+        u = pd.read_csv(self.tables_dir / "price_unit_daily.csv", usecols=["date", "unit_id", "volume_kg", "amount_won"])
+        u = u[u.unit_id.isin(ids)]; u["y"] = u.date.str[:4].astype(int); u["m"] = u.date.str[5:7].astype(int)
+        return self.normal("", u.groupby(["y", "m"])[["amount_won", "volume_kg"]].sum())
+
+    def normal(self, code, month=None):
+        if month is None:
+            if code not in self.month.index.get_level_values(0):
+                return None
+            month = self.month.loc[code]
+        d = month.reset_index(); d = d[d.y.isin(NORMAL_YEARS) & (d.volume_kg > 0)]
         d["p"] = d.amount_won / d.volume_kg
         vol = d.groupby("m").volume_kg.mean(); top = vol.max() if len(vol) else 0
         out = {"price": [], "low": [], "high": []}
@@ -189,7 +202,9 @@ class Data:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default=r"D:\nong-clock-data", help="자료 폴더 맨 위")
+    sys.path.insert(0, str(REPO / "python-ml"))
+    from config import data_root   # 학원 D:\nong-clock-data / 집 C:\finalproject\nong-clock-data 중 있는 곳 (11-14)
+    ap.add_argument("--data", default=str(data_root()), help="자료 폴더 맨 위")
     ap.add_argument("--tables", default="", help="price_daily.csv (기본: <data>/05_DB적재/data/tables/price_daily.csv)")
     ap.add_argument("--price-cache", default="", help="전국·ALL 줄만 미리 거른 price_daily (있으면 이걸 읽음, 빠름)")
     ap.add_argument("--map", default=str(HERE / "crop_map.csv"))
@@ -248,7 +263,15 @@ def main():
         if r["land"] not in c["land_types"]:
             c["land_types"].append(r["land"])
         est = ["storage_days"] + (["schedule"] if r["sched_src"] in ("manual", "n04") else [])
-        c["croppings"].append(dict(
+        var = (r.get("variety") or "").strip()
+        extra = {}
+        if var:   # 11-14 품종 작형: 가격 = 그 품종 예측·평년, 수확 시기는 도매시장 품종별 거래 달로 나눔 (추정)
+            vinfo = next(v for v in items[code]["varieties"] if v["id"] == var)
+            extra = dict(price_variety=var, price_variety_label=vinfo["label"], normal=D.normal_variety(vinfo["units"]))
+            est.append("schedule"); where += f" · 수확 시기는 도매시장 「{vinfo['label']}」 거래 달로 나눔 (추정)"
+        elif r["code"] == "onion":
+            est.append("schedule"); where += " · 수확 시기는 도매시장 중생·만생 거래 달로 나눔 (추정)"
+        c["croppings"].append(dict(**extra,
             name=r["cropping"], land=r["land"], plant_from=list(pf), plant_to=list(pt), harvest_from=list(h0), harvest_to=list(h1),
             days_first=int(d0), days_last=int(d1), harvest_days=hd, multi_harvest=multi,
             yield_t_per_10a=round(e["kg"] / 1000, 3), cost_per_10a=round(e["cost"] - e["rent"]), cost_survey_per_10a=round(e["cost"]), land_rent_in_survey=round(e["rent"]),

@@ -1,6 +1,6 @@
 {
  "_about": "작물 추천용 작물 표. python-ml/crops/build_crop_catalog.py 가 만듦 (손으로 고치지 말 것 — crop_map.csv 를 고치고 다시 만들기). 심는 때·수확 때 = 농사로 재배력(전국 표준 달력, 순 단위라 ±10일), 수량·경영비 = 농진청 농산물소득조사·통계청 생산비조사 최근 3개 해 평균(전국), farm_ratio = 조사 농가수취가격 ÷ 같은 해 수확 달 전국 도매 평균가, normal = 2021~2025 같은 달 전국 도매 평균(최저·최고). storage_days 는 추정. 농사로 자료는 공공누리 제4유형(출처표시·상업적 이용금지·변경금지)",
- "built_at": "2026-11-13",
+ "built_at": "2026-11-14",
  "land_types": {
   "open": "노지",
   "house": "시설",
@@ -93,7 +93,53 @@
    "survey_price": null,
    "croppings": [
     {
-     "name": "보통재배",
+     "price_variety": "onion-3",
+     "price_variety_label": "조생",
+     "normal": {
+      "price": [
+       null,
+       null,
+       1190,
+       1000,
+       804,
+       804,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ],
+      "low": [
+       null,
+       null,
+       649,
+       587,
+       540,
+       541,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ],
+      "high": [
+       null,
+       null,
+       1620,
+       1251,
+       1086,
+       1056,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     },
+     "name": "조생종 재배",
      "land": "open",
      "plant_from": [
       10,
@@ -108,10 +154,64 @@
       1
      ],
      "harvest_to": [
+      5,
+      31
+     ],
+     "days_first": 172,
+     "days_last": 178,
+     "harvest_days": 14,
+     "multi_harvest": false,
+     "yield_t_per_10a": 6.595,
+     "cost_per_10a": 2351833,
+     "cost_survey_per_10a": 2351833,
+     "land_rent_in_survey": 0,
+     "farm_ratio": 0.686,
+     "farm_ratio_raw": 0.686,
+     "storage_days": 30,
+     "source": {
+      "schedule": "농사로 재배력 「양파 · 보통재배」 (정식) · 수확 시기는 도매시장 「조생」 거래 달로 나눔 (추정)",
+      "econ": "통계청 농축산물생산비조사 「양파」 2023~2025 평균"
+     },
+     "estimated": [
+      "storage_days",
+      "schedule"
+     ],
+     "rda": {
+      "row": "양파",
+      "source": "통계청 농축산물생산비조사",
+      "years": [
+       2023,
+       2024,
+       2025
+      ],
+      "revenue": 4437503,
+      "cost": 2351833,
+      "income": 2085669,
+      "kg": 6595,
+      "price": 673,
+      "land_rent": 0
+     }
+    },
+    {
+     "name": "중만생종 재배",
+     "land": "open",
+     "plant_from": [
+      10,
+      11
+     ],
+     "plant_to": [
+      11,
+      20
+     ],
+     "harvest_from": [
+      6,
+      1
+     ],
+     "harvest_to": [
       6,
       20
      ],
-     "days_first": 172,
+     "days_first": 233,
      "days_last": 198,
      "harvest_days": 14,
      "multi_harvest": false,
@@ -123,11 +223,12 @@
      "farm_ratio_raw": 0.686,
      "storage_days": 210,
      "source": {
-      "schedule": "농사로 재배력 「양파 · 보통재배」 (정식)",
+      "schedule": "농사로 재배력 「양파 · 보통재배」 (정식) · 수확 시기는 도매시장 중생·만생 거래 달로 나눔 (추정)",
       "econ": "통계청 농축산물생산비조사 「양파」 2023~2025 평균"
      },
      "estimated": [
-      "storage_days"
+      "storage_days",
+      "schedule"
      ],
      "rda": {
       "row": "양파",

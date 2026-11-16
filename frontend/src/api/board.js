@@ -1,9 +1,8 @@
-// 게시판 (Spring 담당). 맨 위 공지는 관리자 공지사항(api/admin.js getNotices)을 그대로 보여준다.
-// 회원 기능이 spring(VITE_AUTH=spring)이면 글·댓글은 Spring 서버(/api/posts…, /api/comments…, 명세서 2-9·2-10)로 (11-10).
-//   작성자는 서버가 로그인 세션으로 정한다. 관리자 게시판 관리·이용 제한·사진 첨부는 아직 가짜 데이터/준비 중.
-// 아니면(mock) 브라우저에 저장되는 가짜 데이터로 동작한다.
+// 게시판 (Spring 담당). 맨 위 공지는 관리자가 게시판 관리에서 쓴 "공지" 글 (api/adminBoard.js getNotices, 11-14).
+// 글·댓글은 언제나 Spring 서버(/api/posts…, /api/comments…, 명세서 2-9·2-10)로 (11-14: 가짜 게시판 없앰 — 서버가 안 되면 오류 안내).
+//   작성자는 서버가 로그인 세션으로 정한다. 관리자 글(공지)·댓글은 "관리자"(by_admin)로 오고, 숨기기·삭제는 관리자 사이트(api/adminBoard.js)에서.
+// 아래 "신고 처리·이용 제한" 부분은 숨긴 메뉴용 예시 데이터 (서버 API 없음). 실제 게시판 관리는 api/adminBoard.js
 import axios from "axios";
-import { AUTH_MODE } from "./auth";
 import { fake } from "./client";
 import { notify } from "./notify";
 import { BOARD_CATEGORIES, commentsDb, postsDb } from "../mocks/board";
@@ -14,17 +13,16 @@ export const PAGE_SIZE = 15;
 
 const nameOf = (users, id) => users.find((u) => u.id === id)?.name ?? "알 수 없음";
 const withAuthor = (users) => (p) => ({ ...p, author_name: nameOf(users, p.author) });
-const newestFirst = (a, b) => b.id - a.id;
-const commentCounts = () =>
-  commentsDb.all().reduce((m, c) => (c.deleted ? m : { ...m, [c.post_id]: (m[c.post_id] ?? 0) + 1 }), {});
 
-// ── 게시판 이용 제한 (관리자가 거는 글·댓글 작성 금지) ──
+// ── 게시판 이용 제한 ──
 
 export const BAN_DAYS = [3, 7, 30, null]; // null = 영구
 
-/** 지금 걸려 있는 게시판 이용 제한 (없으면 null) */
-export function activeBan(userId) {
-  if (SPRING) return null; // 서버에 이용 제한 기능이 아직 없음
+/** 사용자 사이트: 지금 걸려 있는 게시판 이용 제한 — 서버에 이용 제한 기능이 아직 없어 늘 null */
+export const activeBan = () => null;
+
+/** 관리자 사이트(가짜 데이터)의 이용 제한 */
+export function adminBanOf(userId) {
   const ban = usersDb.all().find((u) => u.id === userId)?.board_ban;
   if (!ban) return null;
   if (ban.until && new Date(ban.until) <= new Date()) return null;
@@ -32,7 +30,6 @@ export function activeBan(userId) {
 }
 
 // ── Spring 연결 ──
-const SPRING = AUTH_MODE === "spring";
 const api = axios.create({ timeout: 8000 });
 /** 서버 응답 → 데이터, 오류 → 서버가 보낸 {"message"} 문장 */
 const call = (req, fallback) =>
@@ -48,143 +45,49 @@ const noPhotos = (form) => (form.images?.length ? Promise.reject(new Error("사�
 
 export const banText = (ban) => (ban.until ? `${new Date(ban.until).toLocaleDateString("ko-KR")}까지` : "영구");
 
-function checkCanWrite(user) {
-  if (!user) return "로그인 후 쓸 수 있습니다";
-  const ban = activeBan(user.id);
-  if (ban) return `게시판 이용이 제한된 계정입니다 (${banText(ban)} · 사유: ${ban.reason})`;
-  return null;
-}
-
-/** 검색 결과에 보여줄 본문 일부 (검색어 앞뒤) */
-function snippetOf(body, keyword, len = 70) {
-  const at = body.toLowerCase().indexOf(keyword);
-  const start = at < 0 ? 0 : Math.max(0, at - 20);
-  const text = body.slice(start, start + len);
-  return `${start > 0 ? "…" : ""}${text}${start + len < body.length ? "…" : ""}`;
-}
-
 /**
  * 글 목록 (숨김 글 제외). 검색어가 있으면 본문 일부(snippet)도 함께
  * @param {{category?: string, q?: string, page?: number}} opts
  * @returns {Promise<{rows: object[], total: number, page: number, pages: number}>}
  */
 export function getPosts({ category = "", q = "", page = 1 } = {}) {
-  if (SPRING) return call(api.get("/api/posts", { params: { category: category || undefined, q: q.trim() || undefined, page } }), "글 목록을 불러오지 못했습니다");
-  const users = usersDb.all();
-  const keyword = q.trim().toLowerCase();
-  const rows = postsDb
-    .all()
-    .filter((p) => !p.hidden && (!category || p.category === category))
-    .filter((p) => !keyword || `${p.title} ${p.body} ${nameOf(users, p.author)}`.toLowerCase().includes(keyword))
-    .sort(newestFirst);
-  const counts = commentCounts();
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const cur = Math.min(Math.max(1, page), pages);
-  return fake({
-    rows: rows.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE).map(({ body, ...p }) => ({
-      ...withAuthor(users)(p),
-      comment_count: counts[p.id] ?? 0,
-      ...(keyword && { snippet: snippetOf(body, keyword) }),
-    })),
-    total: rows.length,
-    page: cur,
-    pages,
-  });
+  return call(api.get("/api/posts", { params: { category: category || undefined, q: q.trim() || undefined, page } }), "글 목록을 불러오지 못했습니다");
 }
 
 /**
  * 마이페이지 "내가 쓴 글 · 내가 쓴 댓글" (11-11).
- * Spring 에는 아직 API 가 없어(명세서 2-9 제안: GET /api/posts?mine=true, GET /api/me/comments) spring 모드면 null 을 돌려주고 화면은 "준비 중"으로 보여 준다.
+ * Spring 에는 아직 API 가 없어(명세서 2-9 제안: GET /api/posts?mine=true, GET /api/me/comments) null 을 돌려주고 화면은 "준비 중"으로 보여 준다.
  * @returns {Promise<{posts: object[] | null, comments: object[] | null}>}
  */
-export function getMyActivity(user) {
-  if (SPRING) return Promise.resolve({ posts: null, comments: null });
-  const counts = commentCounts();
-  const posts = postsDb.all().filter((p) => p.author === user.id && !p.hidden).sort(newestFirst)
-    .map(({ body, ...p }) => ({ ...p, comment_count: counts[p.id] ?? 0 }));
-  const titles = Object.fromEntries(postsDb.all().map((p) => [p.id, p.title]));
-  const comments = commentsDb.all().filter((c) => c.author === user.id && !c.deleted).sort(newestFirst)
-    .map((c) => ({ ...c, post_title: titles[c.post_id] ?? "지운 글" }));
-  return fake({ posts, comments });
+export async function getMyActivity() {
+  // 11-16: 마이페이지 '내가 쓴 글·댓글' = GET /api/me/posts · /api/me/comments (최근 100개). 못 불러오면 null → 화면이 안내
+  const [posts, comments] = await Promise.all([
+    call(api.get("/api/me/posts"), "내 글을 불러오지 못했습니다").catch(() => null),
+    call(api.get("/api/me/comments"), "내 댓글을 불러오지 못했습니다").catch(() => null),
+  ]);
+  return { posts, comments };
 }
 
 /** 글 보기. countView 면 조회수 +1 (같은 브라우저 탭에서는 한 번만) */
 export function getPost(id, { countView = false } = {}) {
-  if (SPRING) return call(api.get(`/api/posts/${id}`, { params: countView ? { view: true } : {} }), "글을 불러오지 못했습니다"); // 조회수 중복은 서버가 막음
-  const rows = postsDb.all();
-  const p = rows.find((x) => x.id === Number(id));
-  if (!p || p.hidden) return Promise.reject(new Error("삭제되었거나 볼 수 없는 글입니다"));
-  const key = `farmbid-viewed:${p.id}`;
-  if (countView && !sessionStorage.getItem(key)) {
-    sessionStorage.setItem(key, "1");
-    p.views += 1;
-    postsDb.saveAll(rows);
-  }
-  return fake(withAuthor(usersDb.all())(p), 120);
-}
-
-function validate(form) {
-  if (!BOARD_CATEGORIES.includes(form.category)) return "말머리를 고르세요";
-  if (form.title.trim().length < 2) return "제목을 2자 이상 입력하세요";
-  if (form.title.trim().length > 80) return "제목은 80자까지 쓸 수 있습니다";
-  if (form.body.trim().length < 5) return "내용을 5자 이상 입력하세요";
-  return null;
+  return call(api.get(`/api/posts/${id}`, { params: countView ? { view: true } : {} }), "글을 불러오지 못했습니다"); // 조회수 중복은 서버가 막음
 }
 
 /** @param {{category: string, title: string, body: string, images: string[]}} form */
 export function createPost(user, form) {
-  if (SPRING) return noPhotos(form) ?? call(api.post("/api/posts", { category: form.category, title: form.title, body: form.body }), "글을 올리지 못했습니다");
-  const err = checkCanWrite(user) ?? validate(form);
-  if (err) return Promise.reject(new Error(err));
-  const rows = postsDb.all();
-  const p = {
-    id: Math.max(0, ...rows.map((x) => x.id)) + 1,
-    category: form.category,
-    title: form.title.trim(),
-    body: form.body.trim(),
-    images: form.images ?? [],
-    author: user.id,
-    created_at: new Date().toISOString(),
-    updated_at: null,
-    views: 0,
-    hidden: false,
-  };
-  rows.push(p);
-  postsDb.saveAll(rows);
-  return fake(p);
+  return noPhotos(form) ?? call(api.post("/api/posts", { category: form.category, title: form.title, body: form.body }), "글을 올리지 못했습니다");
 }
 
 export function updatePost(user, id, form) {
-  if (SPRING) return noPhotos(form) ?? call(api.put(`/api/posts/${id}`, { category: form.category, title: form.title, body: form.body }), "글을 고치지 못했습니다");
-  const rows = postsDb.all();
-  const p = rows.find((x) => x.id === Number(id));
-  if (!p || p.author !== user?.id) return Promise.reject(new Error("본인 글만 고칠 수 있습니다"));
-  const err = checkCanWrite(user) ?? validate(form);
-  if (err) return Promise.reject(new Error(err));
-  Object.assign(p, { category: form.category, title: form.title.trim(), body: form.body.trim(), images: form.images ?? [], updated_at: new Date().toISOString() });
-  postsDb.saveAll(rows);
-  return fake(p);
+  return noPhotos(form) ?? call(api.put(`/api/posts/${id}`, { category: form.category, title: form.title, body: form.body }), "글을 고치지 못했습니다");
 }
 
-/** 작성자 본인 삭제 */
+/** 작성자 본인 또는 관리자 삭제 (서버가 확인) */
 export function deletePost(user, id) {
-  if (SPRING) return call(api.delete(`/api/posts/${id}`), "글을 지우지 못했습니다");
-  const rows = postsDb.all();
-  const p = rows.find((x) => x.id === Number(id));
-  if (!p || p.author !== user?.id) return Promise.reject(new Error("본인 글만 지울 수 있습니다"));
-  postsDb.saveAll(rows.filter((x) => x.id !== p.id));
-  commentsDb.saveAll(commentsDb.all().filter((c) => c.post_id !== p.id));
-  return fake(true);
+  return call(api.delete(`/api/posts/${id}`), "글을 지우지 못했습니다");
 }
 
-// ── 관리자: 게시판 관리 ──
-
-/** 숨김 글 포함 전체 (관리자) */
-export function getAllPosts() {
-  const users = usersDb.all();
-  const counts = commentCounts();
-  return fake(postsDb.all().sort(newestFirst).map((p) => ({ ...withAuthor(users)(p), comment_count: counts[p.id] ?? 0, author_ban: activeBan(p.author) })));
-}
+// ── 관리자 사이트 "신고 처리"(숨긴 메뉴)용 예시 데이터 — 실제 게시판 관리는 api/adminBoard.js (11-14) ──
 
 /** 글 숨기기/다시 보이기. 숨길 때는 사유를 작성자에게 알림으로 보낸다. */
 export function setPostHidden(id, hidden, reason = "") {
@@ -197,76 +100,43 @@ export function setPostHidden(id, hidden, reason = "") {
   return fake(p);
 }
 
-/** 관리자 삭제 (작성자에게 알림) */
-export function adminDeletePost(id, reason = "") {
-  const rows = postsDb.all();
-  const p = rows.find((x) => x.id === id);
-  postsDb.saveAll(rows.filter((x) => x.id !== id));
-  commentsDb.saveAll(commentsDb.all().filter((c) => c.post_id !== id));
-  notify(p.author, { type: "notice", title: "게시글 삭제", body: `'${p.title}' 글이 관리자에 의해 삭제되었어요.${reason.trim() ? ` 사유: ${reason.trim()}` : ""}`, link: "/board" });
-  return fake(true);
-}
-
 // ── 댓글·답글 ──
 
 /**
  * 글의 댓글을 [{...댓글, replies: [...답글]}] 모양으로. 지운 댓글은 답글이 남아 있을 때만 "삭제된 댓글"로 남는다.
  */
 export function getComments(postId) {
-  if (SPRING) return call(api.get(`/api/posts/${postId}/comments`), "댓글을 불러오지 못했습니다");
-  const users = usersDb.all();
-  const rows = commentsDb.all().filter((c) => c.post_id === Number(postId)).sort((a, b) => a.id - b.id).map(withAuthor(users));
-  const top = rows.filter((c) => !c.parent_id).map((c) => ({ ...c, replies: rows.filter((r) => r.parent_id === c.id) }));
-  return fake(top, 80);
+  return call(api.get(`/api/posts/${postId}/comments`), "댓글을 불러오지 못했습니다");
 }
 
 /**
- * 댓글 쓰기. parent_id 가 있으면 답글. 글쓴이(내 글에 댓글)와 원댓글 작성자(내 댓글에 답글)에게 알림.
+ * 댓글 쓰기. parent_id 가 있으면 답글
  * @param {{body: string, parent_id?: number}} form
  */
 export function createComment(user, postId, { body, parent_id = null }) {
-  if (SPRING) return call(api.post(`/api/posts/${postId}/comments`, { body, parent_id }), "댓글을 올리지 못했습니다");
-  const err = checkCanWrite(user);
-  if (err) return Promise.reject(new Error(err));
-  const text = body.trim();
-  if (!text) return Promise.reject(new Error("댓글 내용을 입력하세요"));
-  if (text.length > 500) return Promise.reject(new Error("댓글은 500자까지 쓸 수 있습니다"));
-  const post = postsDb.all().find((p) => p.id === Number(postId));
-  if (!post || post.hidden) return Promise.reject(new Error("댓글을 달 수 없는 글입니다"));
-  const rows = commentsDb.all();
-  let parent = parent_id ? rows.find((c) => c.id === parent_id && c.post_id === post.id) : null;
-  if (parent_id && (!parent || parent.deleted)) return Promise.reject(new Error("삭제된 댓글에는 답글을 달 수 없습니다"));
-  if (parent?.parent_id) parent = rows.find((c) => c.id === parent.parent_id); // 답글의 답글은 같은 댓글 아래로
-  const c = { id: Math.max(0, ...rows.map((x) => x.id)) + 1, post_id: post.id, parent_id: parent?.id ?? null, author: user.id, body: text, created_at: new Date().toISOString(), deleted: false };
-  rows.push(c);
-  commentsDb.saveAll(rows);
+  return call(api.post(`/api/posts/${postId}/comments`, { body, parent_id }), "댓글을 올리지 못했습니다");
+}
 
-  const link = `/board/${post.id}#c${c.id}`;
-  const short = text.length > 40 ? `${text.slice(0, 40)}…` : text;
-  const replyTo = parent_id ? rows.find((x) => x.id === parent_id)?.author : null; // 실제로 답한 댓글의 작성자
-  if (replyTo && replyTo !== user.id) notify(replyTo, { type: "comment", title: "내 댓글에 답글", body: `${user.name}: ${short}`, link });
-  if (post.author !== user.id && post.author !== replyTo) notify(post.author, { type: "comment", title: "내 글에 댓글", body: `'${post.title}' — ${user.name}: ${short}`, link });
-  return fake(c);
+/** 댓글 삭제 (작성자 본인 또는 관리자, 서버가 확인). 답글이 달린 댓글은 서버가 "삭제된 댓글"로 남긴다 */
+export function deleteComment(user, id) {
+  return call(api.delete(`/api/comments/${id}`), "댓글을 지우지 못했습니다");
 }
 
 /**
- * 댓글 삭제 (작성자 본인 또는 관리자). 답글이 달린 댓글은 내용만 지우고 "삭제된 댓글입니다"로 남긴다.
- * 관리자가 지우면 작성자에게 사유를 알린다.
+ * 관리자 사이트(가짜 데이터) 댓글 삭제. 답글이 달린 댓글은 내용만 지우고 "삭제된 댓글입니다"로 남긴다. 작성자에게 사유를 알린다.
+ * 사용자 사이트의 실제 댓글은 deleteComment (서버) — 이 함수로 서버 댓글을 지우지 않음
  */
-export function deleteComment(user, id, reason = "") {
-  if (SPRING && user?.type !== "admin") return call(api.delete(`/api/comments/${id}`), "댓글을 지우지 못했습니다"); // 관리자 삭제는 아직 가짜 데이터
+export function adminDeleteComment(user, id, reason = "") {
   let rows = commentsDb.all();
   const c = rows.find((x) => x.id === id);
-  const isAdmin = user?.type === "admin";
-  if (!c || (c.author !== user?.id && !isAdmin)) return Promise.reject(new Error("본인 댓글만 지울 수 있습니다"));
+  if (!c) return Promise.reject(new Error("이미 지워진 댓글입니다"));
   const liveReplies = rows.filter((r) => r.parent_id === c.id && !r.deleted).length;
   if (liveReplies) Object.assign(c, { deleted: true, body: "" });
   else rows = rows.filter((x) => x.id !== c.id);
-  // 지운 원댓글에 답글이 하나도 안 남았으면 원댓글 자리도 정리
   const parent = c.parent_id && rows.find((x) => x.id === c.parent_id);
   if (parent?.deleted && !rows.some((r) => r.parent_id === parent.id && !r.deleted)) rows = rows.filter((x) => x.id !== parent.id && x.parent_id !== parent.id);
   commentsDb.saveAll(rows);
-  if (isAdmin && c.author !== user.id)
+  if (c.author !== user?.id)
     notify(c.author, { type: "notice", title: "댓글 삭제", body: `작성하신 댓글이 관리자에 의해 삭제되었어요.${reason.trim() ? ` 사유: ${reason.trim()}` : ""}`, link: `/board/${c.post_id}` });
   return fake(true);
 }
@@ -296,14 +166,10 @@ export function liftBan(userId) {
   return fake(true);
 }
 
-/** 이용 제한 중인 회원 목록 */
-export const getBannedUsers = () =>
-  fake(usersDb.all().filter((u) => activeBan(u.id)).map((u) => ({ id: u.id, name: u.name, email: u.email, ban: u.board_ban })));
-
 /** 관리자: 글의 모든 댓글 (평평한 목록) */
 export const getPostComments = (postId) => {
   const users = usersDb.all();
-  return fake(commentsDb.all().filter((c) => c.post_id === postId).sort((a, b) => a.id - b.id).map((c) => ({ ...withAuthor(users)(c), author_ban: activeBan(c.author) })));
+  return fake(commentsDb.all().filter((c) => c.post_id === postId).sort((a, b) => a.id - b.id).map((c) => ({ ...withAuthor(users)(c), author_ban: adminBanOf(c.author) })));
 };
 
 /** 관리자: 숨김 글도 볼 수 있는 글 조회 (신고 처리 화면용) */

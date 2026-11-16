@@ -1,7 +1,8 @@
 """python-ml 공통 설정 (11-11) — DB 접속과 결과 폴더
 
 DB 접속: 환경 변수 PGHOST · PGPORT · PGDATABASE · PGUSER · PGPASSWORD (없으면 저장소 .env 의 DB_PASSWORD, localhost:5432/farmdb)
-결과 폴더: 환경 변수 NC_MODEL_DIR (기본 D:\\nong-clock-data\\05_DB적재\\data\\model) — 패널 스냅샷·성적표·예측을 여기에 둔다 (깃 밖)
+결과 폴더: 환경 변수 NC_MODEL_DIR (기본 <자료 폴더>\\05_DB적재\\data\\model) — 패널 스냅샷·성적표·예측을 여기에 둔다 (깃 밖)
+자료 폴더: 환경 변수 NC_DATA_ROOT > D:\\nong-clock-data (학원 PC) > C:\\finalproject\\nong-clock-data (집 PC) 중 있는 곳 (11-14)
 """
 
 import os
@@ -25,8 +26,22 @@ def _env_file():
     return out
 
 
+DATA_ROOT_CANDIDATES = (r"D:\nong-clock-data", r"C:\finalproject\nong-clock-data")   # 학원 PC, 집 PC
+
+
+def data_root() -> Path:
+    """자료 폴더 맨 위 (05_DB적재 · 06_팀원자료 가 들어 있는 곳)"""
+    v = os.getenv("NC_DATA_ROOT", "").strip()
+    if v:
+        return Path(v)
+    for c in DATA_ROOT_CANDIDATES:
+        if (Path(c) / "05_DB적재").exists():
+            return Path(c)
+    return Path(DATA_ROOT_CANDIDATES[0])
+
+
 def model_dir() -> Path:
-    d = Path(os.getenv("NC_MODEL_DIR", r"D:\nong-clock-data\05_DB적재\data\model"))
+    d = Path(os.getenv("NC_MODEL_DIR", str(data_root() / "05_DB적재" / "data" / "model")))
     d.mkdir(parents=True, exist_ok=True)
     return d
 

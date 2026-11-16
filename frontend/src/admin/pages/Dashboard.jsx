@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { getAllAuctions, getUsers } from "../../api/admin";
 import { getNewsCollection, newsHealth } from "../../api/collection";
-import { getAllPosts, getBannedUsers } from "../../api/board";
+import { adminPosts } from "../../api/adminBoard";
 import { collectorHealth, getWeatherStatus, worstHealth } from "../../api/weather";
 import { Async, useAsync } from "../../components/common";
 import SystemStatus from "./SystemStatus";
@@ -37,8 +37,10 @@ function CollectionAlert() {
 /** 관리자 첫 화면: 숫자 칸(게시판 · 회원) + 수집 경고 + 서버 상태. 신고는 기능을 뺐으므로 없음 (11-13) */
 export default function Dashboard() {
   const state = useAsync(async () => {
-    const [auctions, users, posts, banned] = await Promise.all([AUCTION_ENABLED ? getAllAuctions() : [], getUsers(), getAllPosts(), getBannedUsers()]);
-    const today = new Date().toDateString();
+    // 게시판 숫자는 실제 DB (11-14). 회원 수는 아직 예시 데이터 (회원 관리 API 없음)
+    const [auctions, users, recent, hidden] = await Promise.all([
+      AUCTION_ENABLED ? getAllAuctions() : [], getUsers(), adminPosts({ page: 1 }), adminPosts({ status: "HIDDEN", page: 1 })]);
+    const todayN = recent.rows.filter((p) => new Date(p.created_at).toDateString() === new Date().toDateString()).length;
     const live = auctions.filter((a) => a.status === "진행중" && new Date(a.ends_at) > new Date());
     return {
       tiles: [
@@ -48,10 +50,10 @@ export default function Dashboard() {
               ["진행 중 경매", live.length, "/auctions"],
             ]
           : []),
-        ["오늘 올라온 글", posts.filter((p) => new Date(p.created_at).toDateString() === today).length, "/board"],
-        ["숨김 처리된 글", posts.filter((p) => p.hidden).length, "/board"],
-        ["이용 제한 중인 회원", banned.length, "/board", "amber"],
-        ["회원", users.length, "/members"],
+        ["오늘 올라온 글", todayN === recent.rows.length && recent.total > recent.rows.length ? `${todayN}+` : todayN, "/board"],
+        ["전체 글", recent.total, "/board"],
+        ["숨김 처리된 글", hidden.total, "/board", "amber"],
+        ["회원 (예시 데이터)", users.length, "/members"],
       ],
     };
   });

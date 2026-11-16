@@ -17,11 +17,29 @@ CREATE TABLE users (
     created_at       TIMESTAMP     NOT NULL DEFAULT NOW()
 );
 
--- 2. 게시글 테이블 생성 (users 생성 후 생성)
+-- 1-2. 관리자 (11-14): 일반 회원과 따로. 관리자 사이트(/admin/)는 이 표로만 로그인. 계정은 SQL 로 직접 넣음 (deploy/README.md 1-2)
+CREATE TABLE admin (
+    admin_id       BIGSERIAL     PRIMARY KEY,
+    email          VARCHAR(100)  NOT NULL UNIQUE,
+    password_hash  VARCHAR(100)  NOT NULL,
+    name           VARCHAR(30)   NOT NULL,
+    created_at     TIMESTAMP     NOT NULL DEFAULT NOW()
+);
+
+-- 1-3. 관심 품목 (11-16, 마이페이지): 회원 × 품목 코드. 탈퇴하면 같이 지워짐. 이미 만든 DB 에는 Spring 이 켜질 때 resources/db/mypage_tables.sql 로 만든다 (내용 같음)
+CREATE TABLE IF NOT EXISTS user_favorite (
+    user_id     BIGINT       NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    item_code   VARCHAR(30)  NOT NULL,
+    created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, item_code)
+);
+
+-- 2. 게시글 테이블 생성 (users 생성 후 생성). 회원 글은 author_id, 관리자 글(공지 등)은 admin_id (11-14)
 CREATE TABLE post (
     post_id        BIGSERIAL     PRIMARY KEY,
-    author_id      BIGINT        NOT NULL REFERENCES users(user_id),
-    category       VARCHAR(20)   NOT NULL CHECK (category IN ('FREE','QUESTION','INFO','REVIEW')),
+    author_id      BIGINT        REFERENCES users(user_id),
+    admin_id       BIGINT        REFERENCES admin(admin_id) ON DELETE SET NULL,
+    category       VARCHAR(20)   NOT NULL CHECK (category IN ('FREE','QUESTION','INFO','REVIEW','NOTICE')),
     title          VARCHAR(80)   NOT NULL,
     body           TEXT          NOT NULL,
     views          INT           NOT NULL DEFAULT 0,
@@ -39,7 +57,8 @@ CREATE TABLE IF NOT EXISTS post_comment (
     comment_id  BIGSERIAL  PRIMARY KEY,
     post_id     BIGINT     NOT NULL REFERENCES post(post_id) ON DELETE CASCADE,
     parent_id   BIGINT     REFERENCES post_comment(comment_id) ON DELETE CASCADE,
-    author_id   BIGINT     NOT NULL REFERENCES users(user_id),
+    author_id   BIGINT     REFERENCES users(user_id),
+    admin_id    BIGINT     REFERENCES admin(admin_id) ON DELETE SET NULL,  -- 관리자 댓글 (11-14)
     body        TEXT       NOT NULL,
     deleted     BOOLEAN    NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP  NOT NULL DEFAULT NOW()

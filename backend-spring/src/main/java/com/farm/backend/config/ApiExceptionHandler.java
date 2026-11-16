@@ -1,6 +1,9 @@
 package com.farm.backend.config;
 
+import com.farm.backend.controller.AdminAuthController;
+import com.farm.backend.controller.AdminBoardController;
 import com.farm.backend.controller.CommentController;
+import com.farm.backend.controller.NoticeController;
 import com.farm.backend.controller.PostController;
 import com.farm.backend.controller.UserController;
 import org.slf4j.Logger;
@@ -24,7 +27,8 @@ import java.util.Map;
  * 서버 내부 오류(DB 등)는 문장을 숨기고 로그에만 남긴다 — 예전에는 e.getMessage() 를 그대로 보내 내부 정보가 보였음.
  * 다른 컨트롤러(시세 등)의 오류 처리는 바꾸지 않도록 회원·게시판 컨트롤러에만 적용.
  */
-@RestControllerAdvice(assignableTypes = {UserController.class, PostController.class, CommentController.class})
+@RestControllerAdvice(assignableTypes = {UserController.class, PostController.class, CommentController.class,
+        AdminAuthController.class, AdminBoardController.class, NoticeController.class}) // 11-14 관리자·공지 추가
 public class ApiExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 

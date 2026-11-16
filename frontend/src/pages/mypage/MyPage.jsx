@@ -48,8 +48,8 @@ function FavCards({ onAdd }) {
     const today = await getTodayPrices();
     const rows = today.items.filter((p) => favorites.includes(p.item)).slice(0, 3);
     return Promise.all(rows.map(async (p) => {
-      const [hist, pred] = await Promise.all([getPriceHistory(p.item, { days: 8 }).catch(() => null), predict({ item: p.item, horizon: 7 }).catch(() => null)]);
-      return { ...p, compared_date: today.compared_date, spark: (hist?.points ?? []).map((x) => x.price).filter((v) => v != null), pred };
+      const [hist, pred] = await Promise.all([getPriceHistory(p.item, { days: 8 }).catch(() => null), predict({ item: p.item, horizon: 7 }).catch((e) => ({ season: e.detail?.season ?? null }))]);
+      return { ...p, compared_date: today.compared_date, spark: (hist?.points ?? []).map((x) => x.price).filter((v) => v != null), pred: pred?.season !== undefined ? null : pred, season: pred?.season ?? null };
     }));
   }, [favorites.join()]);
   return (
@@ -64,6 +64,9 @@ function FavCards({ onAdd }) {
             <Spark values={p.spark} />
             {p.pred && (
               <div className="ai"><span>AI 1주 뒤 예측</span><b>{won(p.pred.predicted_price)}원 {p.pred.change_pct >= 0 ? "▲" : "▼"} {Math.abs(p.pred.change_pct).toFixed(1)}%</b></div>
+            )}
+            {!p.pred && p.season?.label && (
+              <div className="ai"><span>AI 예측</span><b>출하철 아님 · 주로 {p.season.label}</b></div>
             )}
           </Link>
         );
@@ -84,13 +87,13 @@ function Activity({ act }) {
         <button role="tab" className={tab === "posts" ? "on" : ""} onClick={() => setTab("posts")}>내가 쓴 글{act?.posts && <em>{act.posts.length}</em>}</button>
         <button role="tab" className={tab === "comments" ? "on" : ""} onClick={() => setTab("comments")}>내가 쓴 댓글{act?.comments && <em>{act.comments.length}</em>}</button>
       </div>
-      {act && rows == null && <p className="mp-empty">서버 준비 중이에요. 게시판에서 내 글을 찾아볼 수 있어요.</p>}
+      {act && rows == null && <p className="mp-empty">지금은 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>}
       {rows && !rows.length && <p className="mp-empty">아직 {tab === "posts" ? "쓴 글이" : "쓴 댓글이"} 없어요. <Link className="link" to="/board">게시판 가기 ›</Link></p>}
       <ul className="mp-list">
         {tab === "posts" && rows?.slice(0, 6).map((p) => (
           <li key={p.id}>
             <span className="badge">{p.category}</span>
-            <Link to={`/board/${p.id}`}>{p.title}</Link>
+            {p.status === "HIDDEN" ? <span title="관리자가 숨긴 글이라 다른 사람에게 보이지 않아요">{p.title} <em className="muted small">(숨김)</em></span> : <Link to={`/board/${p.id}`}>{p.title}</Link>}
             {p.comment_count > 0 && <span className="cmt">[{p.comment_count}]</span>}
             <span className="m">{boardDate(p.created_at)} · 조회 {p.views}</span>
           </li>

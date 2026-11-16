@@ -1,106 +1,165 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { getModelPerformance } from "../../api/admin";
-import { getItems } from "../../api/ml";
 import { Async, SectionHead, useAsync } from "../../components/common";
 
-// 모델 성능: 품목별 가격 예측 모델(최종 앙상블)의 검증 기간 오차 (shared/model_accuracy.json)
-// 오차 = WAPE(%) — 낮을수록 좋음. 기준선 = "오늘 가격이 그대로 간다"
-const GROUPS = ["전체", "연중", "제철", "비수기뚜렷", "계절편차", "수입위주", "참고용"];
-const tone = (v) => (v == null ? "" : v <= 15 ? "#1f9d55" : v <= 25 ? "#7a9a1f" : v <= 35 ? "#e0a100" : "#d93025");
+// 모델 성능: 화면 가격 예측에 쓰는 최종 모델(팀원 76판 · 11-13 확정)의 시험 정확도 (shared/final_model_accuracy.json)
+// 정확도 = 100 − 단위마다 평균 |예측÷실제 − 1|(%) 의 단위 중앙값 — 높을수록 좋음. 비교 기준 = "작년 같은 시기 가격"
+const tone = (v) => (v == null ? "" : v >= 85 ? "#1f9d55" : v >= 75 ? "#7a9a1f" : v >= 65 ? "#e0a100" : "#d93025");
+const f1 = (v) => (v == null ? "-" : v.toFixed(1));
 
-function Kpi({ perf, h }) {
-  const s = perf.summary[`${h.label}|day`];
-  const m = perf.summary[`${h.label}|mon`];
+const CARDS = [
+  { key: "H1-5", src: "day_total", label: "1~5거래일 뒤", sub: (t) => `폭락 보정 전 ${f1(t.no_crash_adj)} · u7d만 ${f1(t.u7d)} · 원인만 ${f1(t.cause)}` },
+  { key: "H6-14", src: "day_total", label: "6~14거래일 뒤", sub: (t) => `폭락 보정 전 ${f1(t.no_crash_adj)} · u7d만 ${f1(t.u7d)} · 원인만 ${f1(t.cause)}` },
+  { key: "h1-3", src: "month_total", label: "1~3달 뒤 (달 평균)", sub: (t) => `원인 모델만 ${f1(t.cause)}` },
+  { key: "h4-6", src: "month_total", label: "4~6달 뒤 (달 평균)", sub: (t) => `원인 모델만 ${f1(t.cause)}` },
+  { key: "h7-12", src: "month_total", label: "7~12달 뒤 (달 평균)", sub: (t) => `원인 모델만 ${f1(t.cause)}` },
+];
+const COLS = [
+  { key: "d1", label: "1~5일" }, { key: "d2", label: "6~14일" },
+  { key: "m1", label: "1~3달" }, { key: "m2", label: "4~6달" }, { key: "m3", label: "7~12달" },
+];
+
+function Kpi({ c, t }) {
+  const gap = t.final_same_rows - t.last_year;
   return (
     <div className="stat">
-      <div className="muted small">{h.label} 뒤 · 품목 평균 오차</div>
-      <div className="v" style={{ color: tone(s.fin) }}>{s.fin.toFixed(1)}%</div>
-      <div className="muted small">기준선 {s.base.toFixed(1)}% · 공통 모델 {s.com.toFixed(1)}%{s.ly != null ? ` · 작년 같은 시기 ${s.ly.toFixed(1)}%` : ""}</div>
-      <div className="muted small">기준선보다 나은 품목 {s.better}/{s.n}{m ? ` · 달 평균 정답 ${m.fin.toFixed(1)}%` : ""}</div>
+      <div className="muted small">{c.label}</div>
+      <div className="v" style={{ color: tone(t.final) }}>{f1(t.final)}%</div>
+      <div className="muted small">작년 같은 시기 {f1(t.last_year)}% ({gap >= 0 ? "+" : ""}{gap.toFixed(1)}%p)</div>
+      <div className="muted small">{c.sub(t)} · {t.units}단위</div>
+    </div>
+  );
+}
+
+function ByDistance({ title, rows, unit, cols }) {
+  return (
+    <div className="table-wrap" style={{ marginBottom: 16 }}>
+      <table className="table mp-table">
+        <thead>
+          <tr><th>{title}</th>{rows.map((r) => <th key={r.h} className="r">{r.h}{unit}</th>)}</tr>
+        </thead>
+        <tbody>
+          {cols.map(([k, name]) => (
+            <tr key={k}>
+              <td className={k === "final" ? "" : "muted small"}>{name}</td>
+              {rows.map((r) => <td key={r.h} className="r num">{k === "final" ? <b style={{ color: tone(r[k]) }}>{f1(r[k])}</b> : f1(r[k])}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
 export default function ModelPerformance() {
   const [q, setQ] = useState("");
-  const [group, setGroup] = useState("전체");
-  const [sortBy, setSortBy] = useState("7");
-  const state = useAsync(async () => {
-    const [perf, items] = await Promise.all([getModelPerformance(), getItems()]);
-    return { perf, items: Object.fromEntries(items.map((i) => [i.code, i])) };
-  });
+  const [item, setItem] = useState("전체");
+  const [sortBy, setSortBy] = useState("d1");
+  const [onlyWorse, setOnlyWorse] = useState(false);
+  const state = useAsync(getModelPerformance);
 
   return (
     <section className="card">
       <Async state={state}>
-        {({ perf, items }) => {
-          const word = q.trim();
-          const rows = Object.entries(perf.items)
-            .map(([code, r]) => ({ code, ...r, info: items[code] }))
-            .filter((r) => (group === "전체" ? true : group === "참고용" ? r.reference_only.length > 0 : group === "수입위주" ? r.import_heavy : r.season === group))
-            .filter((r) => !word || (r.info?.name ?? r.model_name).includes(word))
-            .sort((a, b) => (a.wape[sortBy] ?? 999) - (b.wape[sortBy] ?? 999));
-          return (
-            <>
-              <SectionHead
-                title="모델 성능 모니터링"
-                desc={`${perf.model_version} · 검증 기간 ${perf.period.hold} · 품목별 예측 오차 WAPE(%) — 낮을수록 좋음 · 정답 = 공영도매시장 경매 단가(원/kg)`}
-              />
-              <div className="stat-row" style={{ marginBottom: 16 }}>
-                {perf.horizons.map((h) => <Kpi key={h.days} perf={perf} h={h} />)}
-              </div>
-              <div className="mp-ctrl">
-                <div className="pills">
-                  {GROUPS.map((g) => <button key={g} className={`pill sm ${group === g ? "on" : ""}`} onClick={() => setGroup(g)}>{g}</button>)}
-                </div>
-                <input className="input" style={{ maxWidth: 200 }} placeholder="품목 검색" value={q} onChange={(e) => setQ(e.target.value)} aria-label="품목 검색" />
-              </div>
-              <div className="table-wrap">
-                <table className="table mp-table">
-                  <thead>
-                    <tr>
-                      <th>품목</th><th>시즌 유형</th>
-                      {perf.horizons.map((h) => (
-                        <th key={h.days} className="r">
-                          <button className="link small" onClick={() => setSortBy(String(h.days))} title="오차 낮은 순으로 정렬">{h.label}{sortBy === String(h.days) ? " ▲" : ""}</button>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r) => (
-                      <tr key={r.code}>
-                        <td>{r.info?.emoji} {r.info?.name ?? r.model_name} <small className="muted">{r.info?.code4}</small></td>
-                        <td className="muted small">{r.season}{r.import_heavy ? " · 수입위주" : ""}</td>
-                        {perf.horizons.map((h) => {
-                          const v = r.wape[h.days], base = r.baseline[h.days], ref = r.reference_only.includes(h.days);
-                          return (
-                            <td key={h.days} className="r num" title={v == null ? "" : `최종 ${v}% · 기준선 ${base}% · 공통 ${r.common[h.days]}%${r.last_year[h.days] != null ? ` · 작년 ${r.last_year[h.days]}%` : ""}`}>
-                              {v == null ? "-" : (
-                                <>
-                                  <b style={{ color: tone(v) }}>{v.toFixed(1)}</b>
-                                  {ref && <em className="mp-ref">참고용</em>}
-                                  <small className="muted">기준 {base.toFixed(1)}</small>
-                                </>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="muted small" style={{ marginTop: 12, lineHeight: 1.7 }}>
-                {rows.length}개 품목 · 칸 = 최종 앙상블 오차(%), 아래 작은 숫자 = 기준선(오늘 가격 그대로) 오차 · 3·6개월은 "그날 가격" 정답 기준(달 평균 정답은 위 카드) ·
-                <b> 참고용</b> = 최종이 기준선보다 0.1%p 넘게 나쁜 품목·기간 (양배추 1·3·6개월, 당근 3·6개월, 무 1개월, 석류 6개월) — 예측 화면에도 "참고용"으로 표시해요 ·
-                6개월보다 먼 예측(최대 1년)은 아직 검증하지 않아 화면에서 6개월 오차보다 넓게 잡아요 ·
-                예측 대상일이 지나면 서비스 운영 중 "예측 vs 실제" 비교가 추가될 예정이에요.
-              </p>
-            </>
-          );
-        }}
+        {(perf) => <Body perf={perf} {...{ q, setQ, item, setItem, sortBy, setSortBy, onlyWorse, setOnlyWorse }} />}
       </Async>
     </section>
+  );
+}
+
+function Body({ perf, q, setQ, item, setItem, sortBy, setSortBy, onlyWorse, setOnlyWorse }) {
+  const items = useMemo(() => ["전체", ...[...new Set(perf.units.map((u) => u.item))].sort((a, b) => a.localeCompare(b, "ko"))], [perf]);
+  const word = q.trim();
+  const worse = (u) => COLS.some(({ key }) => u[key] && u[key][1] != null && u[key][0] < u[key][1]);
+  const rows = perf.units
+    .filter((u) => item === "전체" || u.item === item)
+    .filter((u) => !word || u.unit.includes(word))
+    .filter((u) => !onlyWorse || worse(u))
+    .sort((a, b) => (b[sortBy]?.[0] ?? -1) - (a[sortBy]?.[0] ?? -1));
+  const tm = perf.teammate;
+
+  return (
+    <>
+      <SectionHead
+        title="모델 성능 모니터링"
+        desc={`${perf.model_version} · 시험 기간 ${perf.period.check} (달 예측 ${perf.period.month_check}) · 정확도(%) — 높을수록 좋음`}
+      />
+      <ul className="muted small" style={{ margin: "0 0 14px", paddingLeft: 18, lineHeight: 1.7 }}>
+        <li>{perf.rule.day}</li>
+        <li>{perf.rule.month}</li>
+        <li>{perf.rule.far} — 시험 줄이 없어 점수 없음</li>
+      </ul>
+      <div className="stat-row" style={{ marginBottom: 16 }}>
+        {CARDS.map((c) => <Kpi key={c.key} c={c} t={perf[c.src][c.key]} />)}
+      </div>
+
+      <ByDistance title="거래일 뒤" unit="" rows={perf.day} cols={[["final", "최종"], ["no_crash_adj", "폭락 보정 전"], ["u7d", "u7d만"], ["cause", "원인 모델만"], ["last_year", "작년 같은 주"]]} />
+      <ByDistance title="달 뒤" unit="달" rows={perf.month} cols={[["final", "최종 (v4)"], ["cause", "원인 모델만"], ["last_year", "작년 같은 달"]]} />
+
+      <h3 style={{ margin: "20px 0 8px" }}>예측 단위별 ({perf.units.length}단위)</h3>
+      <div className="mp-ctrl">
+        <select className="input" style={{ maxWidth: 160 }} value={item} onChange={(e) => setItem(e.target.value)} aria-label="품목 고르기">
+          {items.map((i) => <option key={i} value={i}>{i}</option>)}
+        </select>
+        <label className="small"><input type="checkbox" checked={onlyWorse} onChange={(e) => setOnlyWorse(e.target.checked)} /> 작년 같은 시기보다 낮은 칸이 있는 단위만</label>
+        <input className="input" style={{ maxWidth: 200 }} placeholder="단위 검색" value={q} onChange={(e) => setQ(e.target.value)} aria-label="단위 검색" />
+      </div>
+      <div className="table-wrap">
+        <table className="table mp-table">
+          <thead>
+            <tr>
+              <th>예측 단위</th>
+              {COLS.map((c) => (
+                <th key={c.key} className="r">
+                  <button className="link small" onClick={() => setSortBy(c.key)} title="정확도 높은 순으로 정렬">{c.label}{sortBy === c.key ? " ▼" : ""}</button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((u) => (
+              <tr key={u.unit}>
+                <td>{u.unit}</td>
+                {COLS.map(({ key }) => {
+                  const v = u[key];
+                  if (!v) return <td key={key} className="r num">-</td>;
+                  const bad = v[1] != null && v[0] < v[1];
+                  return (
+                    <td key={key} className="r num" title={`최종 ${v[0]}% · 작년 같은 시기 ${v[1] ?? "-"}%`}>
+                      <b style={{ color: tone(v[0]) }}>{f1(v[0])}</b>
+                      {bad && <em className="mp-ref">작년보다 낮음</em>}
+                      <small className="muted">작년 {f1(v[1])}</small>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style={{ margin: "20px 0 8px" }}>팀원 시험 성적 (76판, 팀원 자료 그대로)</h3>
+      <div className="table-wrap">
+        <table className="table mp-table">
+          <thead><tr><th>달 예측 구간</th><th className="r">단위</th><th className="r">v4</th><th className="r">작년 그대로</th></tr></thead>
+          <tbody>
+            {tm.monthly.map((r) => (
+              <tr key={r.구간}><td>{r.구간}</td><td className="r num">{r.단위}</td><td className="r num"><b>{f1(r.우리)}</b></td><td className="r num">{f1(r.작년그대로)}</td></tr>
+            ))}
+            <tr><td>일 예측 u7d (1~14거래일)</td><td className="r num">{tm.daily_h1.단위수}</td><td className="r num"><b>{f1(tm.daily_h1.새기준)}</b></td><td className="r num">{f1(tm.daily_h1.작년같은주)}</td></tr>
+            {tm.weekly.map((r) => (
+              <tr key={r.H}><td>주 예측 u7d {r.H}주 뒤</td><td className="r num">{r.단위수}</td><td className="r num"><b>{f1(r.새기준)}</b></td><td className="r num">{f1(r.작년같은주)}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="muted small" style={{ marginTop: 12, lineHeight: 1.7 }}>
+        {perf.metric} · 섞는 비율은 {perf.period.pick} 줄로만 골랐고, 위 점수는 그 뒤 기간(고를 때 안 쓴 줄)이에요 ·
+        작년 같은 시기 = 목표일 364일 전 앞뒤 3일(일) / 작년 같은 달(달) 가격, 그 값이 있는 줄만으로 비교 (괄호 안 %p) ·
+        일 점수는 매주 토요일 기준으로 낸 예측 줄 · 팀원 표는 팀원 정답·줄 기준이라 위 점수와 조금 달라요 ·
+        예측 대상일이 지나면 서비스 운영 중 "예측 vs 실제" 비교가 추가될 예정이에요.
+      </p>
+    </>
   );
 }

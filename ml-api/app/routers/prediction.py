@@ -35,7 +35,8 @@ def predict(req: PredictRequest, predictor: PredictorDep) -> PredictResponse:
     except KeyError:
         raise HTTPException(status_code=404, detail=f"unknown variety: {req.variety}")
     except NoForecast as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        # 11-16: 출하철 안내가 있으면 {"message", "season": {months, label, share, next_start, next_end}} — 화면이 '다음 철 예측 보기'
+        raise HTTPException(status_code=404, detail={"message": str(e), "season": e.season} if e.season else str(e))
     res.region = req.region  # (예전 방식) 지역은 그대로 돌려줌
     return res
 
@@ -57,6 +58,8 @@ def top_movers(
             continue  # 이 기간 예측 없는 품목은 빼고 (DB 예측기)
         if p.forecast and p.forecast[-1].off_season:
             continue  # 11-13: 그날이 출하철 밖(정확도를 모르는 참고값)인 품목은 홈 급등락 카드에 올리지 않음
+        if p.base_stale:
+            continue  # 11-14: 마지막 거래가 7일 넘게 지난 품목은 '지금 가격'이 오래돼 변동률이 뜻이 없음 → 카드에서 뺌
         movers.append(
             TopMover(
                 item=p.item,

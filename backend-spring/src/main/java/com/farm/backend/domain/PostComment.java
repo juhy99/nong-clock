@@ -28,8 +28,11 @@ public class PostComment {
     @Column(name = "parent_id")
     private Long parentId;
 
-    @Column(name = "author_id", nullable = false)
-    private Long authorId; // 로그인한 회원(세션) 번호만 넣을 것
+    @Column(name = "author_id")
+    private Long authorId; // 로그인한 회원(세션) 번호만 넣을 것. 관리자 댓글이면 null
+
+    @Column(name = "admin_id")
+    private Long adminId; // 관리자 댓글이면 관리자 번호 (11-14)
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String body;

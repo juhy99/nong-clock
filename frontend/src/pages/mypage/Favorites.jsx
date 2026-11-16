@@ -15,8 +15,8 @@ export default function FavoriteAlerts({ onEdit }) {
     const today = await getTodayPrices();
     const rows = today.items.filter((p) => favorites.includes(p.item));
     // 예측 없는 품목(출하철 밖 등, DB 예측기 404)은 그 품목만 '예측 없음' (11-11)
-    const preds = await Promise.all(rows.map((p) => predict({ item: p.item, horizon: 7 }).catch(() => null)));
-    return rows.map((p, i) => ({ ...p, compared_date: today.compared_date, forecast_pct: preds[i]?.change_pct ?? null }));
+    const preds = await Promise.all(rows.map((p) => predict({ item: p.item, horizon: 7 }).catch((e) => ({ season: e.detail?.season ?? null }))));
+    return rows.map((p, i) => ({ ...p, compared_date: today.compared_date, forecast_pct: preds[i]?.change_pct ?? null, season: preds[i]?.season ?? null }));
   }, [favorites.join()]);
 
   return (
@@ -36,7 +36,7 @@ export default function FavoriteAlerts({ onEdit }) {
                 <span className="num">{wonPerKg(p.price)}</span>
                 <PriceChange change={p.change} changePct={p.change_pct} comparedDate={p.compared_date} className="small" />
                 <span className="ai small muted">
-                  AI 예측: 1주 후 {p.forecast_pct == null ? "예측 없음" : <PctChange value={p.forecast_pct} />}
+                  AI 예측: 1주 후 {p.forecast_pct != null ? <PctChange value={p.forecast_pct} /> : p.season?.label ? `출하철 아님 (주로 ${p.season.label})` : "예측 없음"}
                 </span>
               </div>
             ))}

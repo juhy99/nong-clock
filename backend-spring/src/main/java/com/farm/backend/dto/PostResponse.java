@@ -23,6 +23,9 @@ public record PostResponse(
         @JsonProperty("created_at") LocalDateTime createdAt,
         @JsonProperty("updated_at") LocalDateTime updatedAt,
         Integer views,
-        @JsonProperty("comment_count") Long commentCount
+        @JsonProperty("comment_count") Long commentCount,
+        @JsonProperty("by_admin") Boolean byAdmin,        // 관리자가 쓴 글이면 true (11-14), 회원 글이면 응답에서 빠짐
+        String status,                                     // 관리자 API 에만: VISIBLE · HIDDEN
+        @JsonProperty("hidden_reason") String hiddenReason // 관리자 API 에만: 숨긴 사유
 ) {
 }

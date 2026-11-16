@@ -28,7 +28,8 @@ class PricePoint(BaseModel):
 class ForecastPoint(PricePoint):
     lower: int = Field(description="예측 오차범위 하단")
     upper: int = Field(description="예측 오차범위 상단")
-    off_season: bool = Field(False, description="출하철 밖 날 — 두 모델 다 채점해 본 적 없는 달이라 참고용 (11-13, DB 예측 표 off_season)")
+    off_season: bool = Field(False, description="참고값 — 월 예측(12달)이 끝난 뒤 평년 × 비율로 낸 값 (11-16 팀 최종 규칙, DB 예측 표 off_season). 출하철 밖 날은 예측 자체가 없음")
+    crash_adj: bool = Field(False, description="폭락 보정이 섞인 날 — 최근 7일 시세가 작년 같은 주의 0.67배 이하인 단위의 1~14거래일 예측을 낮춤 (11-14, DB 예측 표 crash_adj)")
 
 
 class WeatherAlert(BaseModel):
@@ -51,7 +52,9 @@ class PredictResponse(BaseModel):
     region: str
     horizon: Horizon
     base_date: date
-    base_price: int = Field(description="기준일 공영도매시장 경매 단가(원/kg)")
+    base_price: int = Field(description="기준가(원/kg) = 기준일 앞 마지막 거래일까지 7일 공영도매시장 금액 합 ÷ 물량 합 (11-14, DB 예측기)")
+    base_price_date: date | None = Field(None, description="기준가의 마지막 거래일 (11-14)")
+    base_stale: bool = Field(False, description="마지막 거래가 기준일보다 7일 넘게 앞 — '지금 가격'이 오래됨, 급등락 카드에서 뺌 (11-14)")
     history: list[PricePoint] = Field(description="최근 실제 시세")
     forecast: list[ForecastPoint] = Field(description="기준일 다음 날부터 horizon 일까지 일별 예측. lower·upper = 예측 ± 모델 검증 오차(WAPE)")
     predicted_price: int = Field(description="horizon 일 후 예상 도매가(원/kg)")

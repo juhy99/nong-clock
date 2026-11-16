@@ -17,3 +17,8 @@ __pycache__/
 # 서버 배포 기록 (deploy/deploy.ps1)
 /deploy/deploy.log
 /deploy/deployed.txt
+
+# 월 예측(v4) 직접 만들기 (11-16): seed·OCR 글꼴·버전 기록은 PC에만 (팀원에게는 zip으로 따로)
+/collector/daily/model/seed/
+/collector/daily/tools/tessdata/
+/collector/daily/model/버전_이PC.txt

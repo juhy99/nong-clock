@@ -6,7 +6,6 @@ import { liveRegionalWeather } from "./live/kmaWeather";
 import {
   MARKETS, mockAuctionHouses, mockGradePrices, mockMarketCompare, mockMarketShare, mockOriginPrices, mockPriceHistory, mockTodayPrices, mockVolumeTrend,
 } from "../mocks/market";
-import { mockRegionalWeather } from "../mocks/weather";
 import { mockMarketIndex } from "../mocks/marketIndex";
 import { mockSeasonal } from "../mocks/seasonal";
 import { varietyFactor, varietyOf } from "../mocks/items50";
@@ -88,7 +87,10 @@ export const getVolumeTrend = (key, { market, date } = {}) =>
 export const getMarketCompare = (item) => (REAL ? real("/prices/{item}/markets")(item) : fake(mockMarketCompare(item)));
 
 /** 홈 날씨 지도: 시·도 17곳의 오늘 날씨와 특보 (테스트 모드에서는 기상청 실제 값) */
-export const getRegionalWeather = () => (DATA_SOURCE === "live" ? liveRegionalWeather() : fake(mockRegionalWeather()));
+/** 지금 날씨 (시·도 17곳, 11-14): Spring GET /api/weather/regions (기상청 초단기실황·단기예보·특보, 10분 캐시) · 테스트 모드는 기상청 직접.
+ *  가짜 날씨로 대신하지 않는다 — 안 되면 오류 (홈 날씨 카드는 지난 날씨만 보여 줌) */
+export const getRegionalWeather = () =>
+  REAL ? api("/weather/regions") : DATA_SOURCE === "live" ? liveRegionalWeather() : Promise.reject(new Error("지금 날씨 출처가 없어요 (VITE_PRICE_SOURCE=db 또는 VITE_DATA_SOURCE=live)"));
 
 /** 계절 패턴 · 월별 반입량 (가격 예측 화면). Spring GET /api/prices/{item}/monthly (11-13): 평년 · 올해 실제 · 남은 달 예측. mock 모드만 예시 데이터 */
 export const getSeasonal = (item, { anchor } = {}) => (REAL ? real("/prices/{item}/monthly")(item) : fake(mockSeasonal(item, { anchor })));

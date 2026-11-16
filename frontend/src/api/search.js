@@ -1,7 +1,7 @@
 // 통합 검색 (Spring 담당). 지금은 품목·경매·게시글·공지·뉴스 가짜 데이터를 화면 쪽에서 모아 찾는다.
 // Spring 이 생기면 searchAll 안쪽을 GET /api/search?q= 한 번으로 바꾼다. 명세: docs/06_api_spec.md 2-13
 import { fake } from "./client";
-import { getNotices } from "./admin";
+import { getNotices } from "./adminBoard";
 import { displayStatus } from "./auction";
 import { getPosts } from "./board";
 import { getNews } from "./news";
@@ -53,8 +53,9 @@ export async function searchAll(q, { newsSize = 4 } = {}) {
   const item = ITEMS.find((i) => i.code === code) ?? null;
   const [posts, notices, news] = await Promise.all([
     getPosts({ q: word }),
-    getNotices(),
-    getNews({ q: word, qItem: code, size: newsSize }),
+    getNotices().catch(() => []), // 11-14: 공지는 서버 (관리자 게시판 관리에서 쓴 글)
+    // 11-14: 뉴스 출처가 없으면(예시 기사 없앰) 검색 전체를 멈추지 않고 뉴스만 0건
+    getNews({ q: word, qItem: code, size: newsSize }).catch(() => ({ rows: [], total: 0, updated_at: null })),
   ]);
   const auctions = findAuctions(word, code);
   const crops = findCrops(word, code);

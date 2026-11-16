@@ -42,9 +42,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     static Rule ruleOf(String method, String path) {
         if (path == null) return null;
-        if (path.equals("/api/auth/login") || path.equals("/api/auth/signup") || path.equals("/api/auth/check")) return AUTH;
+        if (path.equals("/api/auth/login") || path.equals("/api/auth/signup") || path.equals("/api/auth/check") || path.equals("/api/admin/auth/login")
+                || path.equals("/api/me/password")) return AUTH;   // 11-16: 비밀번호 변경도 비밀번호 맞히기 시도라 로그인과 같은 제한
         boolean read = method.equals("GET") || method.equals("HEAD") || method.equals("OPTIONS");
-        if (!read && (path.startsWith("/api/posts") || path.startsWith("/api/comments") || path.equals("/api/me"))) return WRITE;
+        if (!read && (path.startsWith("/api/posts") || path.startsWith("/api/comments") || path.equals("/api/me") || path.startsWith("/api/me/"))) return WRITE;
         return null;
     }
 

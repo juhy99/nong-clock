@@ -20,7 +20,7 @@ services:
   backend:
     build: ./backend-spring
     container_name: nong-clock-backend
-    profiles: ["spring"]
+    # 11-14: 언제나 켬 (예전 profiles: ["spring"] — 회원·게시판·시세가 모두 backend 를 씀)
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/farmdb
       SPRING_DATASOURCE_USERNAME: postgres
@@ -29,6 +29,7 @@ services:
       TZ: Asia/Seoul   # 글·댓글 쓴 시간을 한국 시간으로 (없으면 컨테이너 기본 UTC 라 9시간 이르게 저장됨)
       ML_API_URL: http://ml-api:8000
       SHARED_DIR: /app/shared  # 시세 API 의 품종 목록 shared/items50.json
+      DATA_GO_KR_KEY: ${DATA_GO_KR_KEY:-}  # 지금 날씨 /api/weather/regions (11-14) — 기상청 단기예보·특보 (공공데이터포털 키)
     volumes:
       - ./shared:/app/shared:ro
     depends_on:
@@ -107,8 +108,7 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      args:  # 배포 버전 (deploy/deploy.ps1 이 채움, 관리자 화면에 표시) · 회원 기능 mock/spring (서버 .env 의 AUTH_MODE)
-        VITE_AUTH: ${AUTH_MODE:-mock}
+      args:  # 배포 버전 (deploy/deploy.ps1 이 채움, 관리자 화면에 표시). 회원·게시판은 언제나 backend (11-14, AUTH_MODE 없앰)
         VITE_PRICE_SOURCE: ${PRICE_SOURCE:-db}  # 시세: db(Spring /api/prices… 가 DB 를 읽음, 기본 11-13) · mock(가짜)
         VITE_ENABLE_AUCTION: ${ENABLE_AUCTION:-false}
         BUILD_SHA: ${BUILD_SHA:-}

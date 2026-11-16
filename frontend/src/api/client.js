@@ -16,9 +16,11 @@ export const PRICE_SOURCE = import.meta.env.VITE_PRICE_SOURCE === "mock" ? "mock
 export const PRICE_API_BASE = (import.meta.env.VITE_PRICE_API_BASE || "").replace(/\/$/, "");
 
 export class ApiError extends Error {
-  constructor(message, status) {
+  /** detail = 서버가 보낸 자세한 내용 (11-16: 예측 없음이면 {message, season}) */
+  constructor(message, status, detail = null) {
     super(message);
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -34,8 +36,9 @@ export async function request(base, path, { method = "GET", body, timeoutMs = 80
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      const detail = typeof data?.detail === "string" ? data.detail : `HTTP ${res.status}`;
-      throw new ApiError(detail, res.status);
+      const d = data?.detail;
+      const detail = typeof d === "string" ? d : typeof d?.message === "string" ? d.message : `HTTP ${res.status}`;
+      throw new ApiError(detail, res.status, d && typeof d === "object" ? d : null);
     }
     return data;
   } catch (e) {

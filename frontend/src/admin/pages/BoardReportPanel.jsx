@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { deleteComment, getPostComments, getPostForAdmin, setPostHidden } from "../../api/board";
-import { useAuth } from "../../components/AuthContext";
+import { adminDeleteComment, getPostComments, getPostForAdmin, setPostHidden } from "../../api/board";
+import { useAdminAuth } from "../AdminAuth";
 import { Async, useAsync } from "../../components/common";
 import { SITE_URL } from "../siteUrl";
 import BanPanel from "./BanPanel";
 
 /** 신고된 게시글·댓글 내용 확인 + 바로 조치 (글 숨기기 / 댓글 삭제 / 작성자 이용 제한) */
 export default function BoardReportPanel({ report }) {
-  const { user } = useAuth();
+  const { admin: user } = useAdminAuth(); // 신고 처리(숨긴 메뉴, 예시 데이터)
   const [msg, setMsg] = useState("");
   const state = useAsync(async () => {
     const post = await getPostForAdmin(report.post_id);
@@ -52,7 +52,7 @@ export default function BoardReportPanel({ report }) {
                 <button className="btn sm danger" onClick={() => run(() => setPostHidden(post.id, true, reason), "글을 숨겼습니다")}>글 숨기기</button>
               )}
               {report.kind === "comment" && comment && !comment.deleted && (
-                <button className="btn sm danger" onClick={() => run(() => deleteComment(user, comment.id, reason), "댓글을 지웠습니다")}>댓글 삭제</button>
+                <button className="btn sm danger" onClick={() => run(() => adminDeleteComment(user, comment.id, reason), "댓글을 지웠습니다")}>댓글 삭제</button>
               )}
             </div>
             {report.target_user && <BanPanel userId={report.target_user} name={authorName ?? report.target_user} />}

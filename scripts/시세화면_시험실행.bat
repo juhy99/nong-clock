@@ -6,7 +6,14 @@ rem  시세 화면을 실제 데이터로 보기 (내 PC 시험용, 2026-11-09)
 rem  1) 도커로 DB + Spring(backend) + AI 예측(ml-api, DB 예측기) 켜기  2) 수집기 표(CSV)를 DB에 넣기  3) 화면(npm run dev) 켜기
 rem  데이터 폴더가 다르면 아래 DATA 한 줄만 고치세요. (저장소 위치는 이 파일 위치로 자동)
 rem ============================================================
-set "DATA=D:\nong-clock-data\05_DB적재\data"
+rem 데이터 폴더: 학원 PC = D:\nong-clock-data, 집 PC = C:\finalproject\nong-clock-data (있는 쪽을 자동으로 씀, 11-14)
+rem 다른 곳이면 환경 변수 NC_DATA_ROOT 에 맨 위 폴더를 넣거나 아래 DATA 를 직접 고치세요
+set "DATA_ROOT=%NC_DATA_ROOT%"
+if "%DATA_ROOT%"=="" if exist "D:\nong-clock-data\05_DB적재\data" set "DATA_ROOT=D:\nong-clock-data"
+if "%DATA_ROOT%"=="" if exist "C:\finalproject\nong-clock-data\05_DB적재\data" set "DATA_ROOT=C:\finalproject\nong-clock-data"
+if "%DATA_ROOT%"=="" set "DATA_ROOT=D:\nong-clock-data"
+set "DATA=%DATA_ROOT%\05_DB적재\data"
+echo 데이터 폴더: %DATA%
 for %%i in ("%~dp0..") do set "REPO=%%~fi"
 
 docker version >nul 2>&1
@@ -20,7 +27,7 @@ for /f "tokens=1,* delims==" %%a in ('findstr /b "DB_PASSWORD=" .env') do set "D
 echo [1/3] DB · Spring · AI 예측^(ml-api^)을 켜는 중 ^(처음엔 빌드로 몇 분 걸려요^)...
 rem 예측기를 DB 예측기로 (가격 예측 = DB 의 price_forecast_monthly). 서버 기본은 dummy 그대로
 set "PREDICTOR=db"
-docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d --build db backend ml-api
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build db backend ml-api
 if errorlevel 1 ( echo [멈춤] docker compose 실패. 위 오류를 확인하세요. & pause & exit /b 1 )
 
 echo     DB 가 준비될 때까지 기다리는 중...
@@ -38,7 +45,7 @@ rem price_unit_daily 는 tables 에 전 기간이 있으니 DB 표를 비우고 
 call :load "%DATA%\tables" price_unit_daily || ( pause & exit /b 1 )
 rem 덧붙임 폴더 (11-12): tables_* (예: tables_1112 = 그 뒤 받은 시세 + 일 단위 예측 표) 가 있으면 이름 순서로 이어서 넣음 (같은 날짜는 덮어씀)
 for /d %%f in ("%DATA%\tables_*") do ( call :load "%%~ff" || ( pause & exit /b 1 ) )
-docker compose -f docker-compose.yml -f docker-compose.local.yml --profile spring up -d backend >nul
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d backend >nul
 
 echo [3/3] 화면 켜기
 cd /d "%REPO%\frontend"

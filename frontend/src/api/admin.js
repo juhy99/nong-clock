@@ -1,13 +1,13 @@
 // 개발자(관리자) 페이지 API. ML API 상태는 실제로 확인하고, 나머지는 가짜 데이터.
 // 실제로는 Spring 이 관리자 권한(role=admin)을 확인한 뒤에만 응답해야 한다.
-import { PRICE_API_BASE, PRICE_SOURCE, fake } from "./client";
-import { AUTH_MODE } from "./auth";
+import { PRICE_API_BASE, fake } from "./client";
 import { recalc } from "./auction";
 import { pingMl } from "./ml";
-import { notify, notifyAll } from "./notify";
+import { notify } from "./notify";
 import { BUILD, getNewsCollection, newsHealth } from "./collection";
 import { collectorHealth, getWeatherStatus, worstHealth } from "./weather";
-import { DATA_SOURCES, INITIAL_NOTICES, INITIAL_REPORTS, MODEL_PERFORMANCE } from "../mocks/admin";
+import { DATA_SOURCES, INITIAL_REPORTS } from "../mocks/admin";
+import FINAL_MODEL_ACCURACY from "../../../shared/final_model_accuracy.json";
 import { auctionsDb, usersDb } from "../mocks/auctions";
 import { load, save } from "../mocks/store";
 import { dateTime, daysBetween, todayIso } from "../utils/format";
@@ -68,31 +68,7 @@ export function cancelBids(auctionId, bidIndexes, reason) {
   return fake(a);
 }
 
-// ── 공지사항 (홈 배너에도 사용) ──
-const sortNotices = (rows) =>
-  [...rows].sort((a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.created_at) - new Date(a.created_at));
-
-export const getNotices = () => fake(sortNotices(load("notices", INITIAL_NOTICES)), 150);
-
-/** sendNotification 이면 새 공지를 모든 회원에게 알림으로도 보낸다 */
-export function saveNotice({ sendNotification, ...notice }) {
-  const rows = load("notices", INITIAL_NOTICES);
-  if (sendNotification) notifyAll({ type: "notice", title: `공지 · ${notice.category}`, body: notice.title, link: "/" });
-  if (notice.id) {
-    const i = rows.findIndex((n) => n.id === notice.id);
-    rows[i] = { ...rows[i], ...notice };
-  } else {
-    rows.push({ ...notice, id: Math.max(0, ...rows.map((n) => n.id)) + 1, created_at: new Date().toISOString() });
-  }
-  save("notices", rows);
-  return fake(sortNotices(rows));
-}
-
-export function deleteNotice(id) {
-  const rows = load("notices", INITIAL_NOTICES).filter((n) => n.id !== id);
-  save("notices", rows);
-  return fake(sortNotices(rows));
-}
+// 공지사항 (11-14): 관리자 게시판 관리에서 말머리 "공지"로 쓰는 글로 바뀜 → api/adminBoard.js getNotices (서버)
 
 // ── 서버·API 상태 ──
 export async function getSystemStatus() {
@@ -118,13 +94,9 @@ export async function getSystemStatus() {
   ];
 }
 
-/** Spring · DB 상태 (11-13): 이 화면이 Spring 을 쓰는 설정(VITE_AUTH=spring 또는 VITE_PRICE_SOURCE=db)일 때만 실제로 확인.
+/** Spring · DB 상태 (11-13, 11-14 회원은 언제나 Spring 이라 늘 확인).
  *  /api/markets 는 DB 를 읽으므로 200 이면 둘 다 정상, 응답은 왔는데 오류면 Spring 은 살아 있고 DB 문제 */
 async function springRows() {
-  if (AUTH_MODE !== "spring" && PRICE_SOURCE !== "db") {
-    const d = "이 화면은 가짜 데이터로 동작 중 (VITE_AUTH · VITE_PRICE_SOURCE)";
-    return [{ name: "Backend (Spring Boot)", ok: false, pending: true, ms: null, detail: d }, { name: "Database (PostgreSQL)", ok: false, pending: true, ms: null, detail: d }];
-  }
   const t0 = performance.now();
   const res = await fetch(`${PRICE_API_BASE}/api/markets`, { cache: "no-cache", credentials: "include" }).catch(() => null);
   const ms = Math.round(performance.now() - t0);
@@ -217,8 +189,8 @@ export function weatherRows({ meta, collect, preprocess, sample }, today = today
   };
 }
 
-// ── 모델 성능 ──
-export const getModelPerformance = () => fake(MODEL_PERFORMANCE);
+// ── 모델 성능 ── 최종 모델(76판) 시험 정확도 표 (실제 시험 결과 파일, 가짜 아님)
+export const getModelPerformance = () => Promise.resolve(FINAL_MODEL_ACCURACY);
 
 // ── 회원·경매 관리 ──
 export const getUsers = () => fake(usersDb.all().map(({ password, ...u }) => u));

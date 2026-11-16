@@ -19,6 +19,7 @@ public record CommentResponse(
         String body,
         @JsonProperty("created_at") LocalDateTime createdAt,
         boolean deleted,
-        List<CommentResponse> replies
+        List<CommentResponse> replies,
+        @JsonProperty("by_admin") Boolean byAdmin // 관리자 댓글이면 true (11-14)
 ) {
 }

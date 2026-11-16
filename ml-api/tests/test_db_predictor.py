@@ -1,6 +1,6 @@
 """DB 예측기 (11-11) — DB 없이 가짜 행으로 계산 규칙만 확인"""
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -18,7 +18,11 @@ class FakeDb(DbPredictor):
         self.monthly, self.prices, self.factors = monthly, prices or [(date(2026, 11, 3), 1000.0)], factors or []
         self.daily = daily  # None = 일 단위 표가 없는 DB (예전 판)
 
+    base_avg = None   # 11-14 기준가 7일 금액÷물량 (None = 금액·물량 없음)
+
     def _q(self, sql, params=()):
+        if "AS base_avg" in sql:
+            return [(self.base_avg,)]
         if sql.startswith("SELECT unit_id"):
             return [(1, "복숭아(백도)")]
         if sql.startswith("SELECT month, factor"):
@@ -176,6 +180,108 @@ def test_off_season_flag_comes_through():
     assert [f.off_season for f in r.forecast] == [False, True]
 
 
+# ── 11-14 폭락 보정 표시 (crash_adj) ──
+class CrashDb(OffDb):
+    """crash_adj 열까지 있는 DB. no_crash=True 면 그 열만 없는 11-13 판"""
+
+    def __init__(self, rows, no_crash=False):
+        super().__init__(rows)
+        self.no_crash = no_crash
+
+    def _q(self, sql, params=()):
+        if "price_forecast_daily" in sql and "crash_adj" in sql:
+            if self.no_crash:
+                raise RuntimeError('column "crash_adj" does not exist')
+            item, vid, _, _, _, d0, d1 = params
+            return [r[1:] for r in self.daily if r[0] == (item, vid) and d0 < r[2] <= d1]
+        if "price_forecast_daily" in sql and "off_season" in sql:
+            item, vid, _, _, _, d0, d1 = params
+            return [r[1:7] for r in self.daily if r[0] == (item, vid) and d0 < r[2] <= d1]
+        return super()._q(sql, params)
+
+
+def _crash_rows():
+    return [(("onion", "ALL"), BASE, date(2026, 11, 12), 700, 600, 900, 0, 1), (("onion", "ALL"), BASE, date(2026, 11, 13), 710, 600, 900, 1, 0)]
+
+
+def test_crash_flag_comes_through():
+    r = CrashDb(_crash_rows()).predict("onion", "national", 2, BASE, 14)
+    assert [f.crash_adj for f in r.forecast] == [True, False] and [f.off_season for f in r.forecast] == [False, True]
+
+
+def test_table_without_crash_column_still_works():
+    r = CrashDb(_crash_rows(), no_crash=True).predict("onion", "national", 2, BASE, 14)
+    assert [f.price for f in r.forecast] == [700, 710] and [f.off_season for f in r.forecast] == [False, True] and not any(f.crash_adj for f in r.forecast)
+
+
 def test_old_table_without_off_season_column_still_works():
     r = OffDb(_off_rows(), old=True).predict("onion", "national", 2, BASE, 14)
     assert [f.price for f in r.forecast] == [1000, 1010] and not any(f.off_season for f in r.forecast)
+
+
+# ── 11-14 기준가 7일 금액÷물량 · 오래된 기준가 ──
+def test_base_price_is_7day_volume_weighted():
+    P = FakeDb([row(2026, 11, 1000)], prices=[(date(2026, 11, 9), 1200.0), (date(2026, 11, 10), 200.0)])
+    P.base_avg = 1150.4
+    r = P.predict("onion", "national", 30, BASE, 14)
+    assert r.base_price == 1150 and r.base_price_date == date(2026, 11, 10) and not r.base_stale
+
+
+def test_base_price_falls_back_to_last_day_and_marks_stale():
+    P = FakeDb([row(2026, 11, 1000)], prices=[(date(2026, 11, 2), 900.0)])
+    r = P.predict("onion", "national", 30, BASE, 14)
+    assert r.base_price == 900 and r.base_stale   # 11-02 → 11-11 은 9일
+
+
+# ── 11-16 출하철 밖 안내 (예측 없음 + 언제 주로 거래되는지 + 다음 철) ──
+from app.services.db_predictor import month_label
+
+
+def test_month_label():
+    assert month_label([7, 8, 9, 10]) == "7~10월"
+    assert month_label([11, 12, 1, 2]) == "11~2월"
+    assert month_label([3, 4, 9]) == "3~4월 · 9월"
+    assert month_label(list(range(1, 13))) == "1년 내내"
+
+
+class SeasonDb(FakeDb):
+    """황도처럼 7~10월에만 예측이 있는 품종. 지난 3년 달별 물량도 줌"""
+
+    def _q(self, sql, params=()):
+        if "season_m" in sql:
+            return [(6, 500.0), (7, 3700.0), (8, 7000.0), (9, 4800.0), (10, 350.0), (11, 0.1)]
+        if "price_forecast_daily" in sql and "off_season = 0" in sql:
+            d0 = date(2027, 7, 1)
+            return [(d0 + timedelta(days=i),) for i in range(0, 123) if (d0 + timedelta(days=i)).weekday() != 6]
+        if "price_forecast_daily" in sql:
+            return []
+        if "price_forecast_monthly" in sql:
+            return []
+        return super()._q(sql, params)
+
+
+def test_off_season_tells_when_and_next_season():
+    P = SeasonDb([])
+    with pytest.raises(NoForecast) as e:
+        P.predict("peach", "national", 180, BASE, 14, False, "peach-1")
+    s = e.value.season
+    assert s["label"] == "7~10월" and s["share"] == 97 and s["next_start"] == "2027-07-01" and s["next_end"] == "2027-10-30"   # 10-31 은 일요일(휴장)
+    assert "주로 7~10월" in str(e.value) and "1년 거래량의 97%" in str(e.value)
+    with pytest.raises(NoForecast) as e2:   # 기억한 답(캐시)에서도 안내가 그대로
+        P.predict("peach", "national", 180, BASE, 14, False, "peach-1")
+    assert e2.value.season == s
+
+
+def test_no_recent_trade_uses_last_trade_within_a_year():
+    """철이 끝나 최근 30일 거래가 없는 품종: 1년 안의 마지막 거래를 '지금 가격'으로 (오래됨 표시), 예측이 있으면 보여 줌"""
+    P = FakeDb([], prices=[(date(2026, 9, 5), 1500.0)], daily=[drow("onion", "ALL", date(2026, 11, 20), 1200)])
+    calls = []
+    orig = P._q
+    def q(sql, params=()):
+        if sql.startswith("SELECT date, price FROM price_daily"):
+            calls.append(params[3])
+            return [(date(2026, 9, 5), 1500.0)] if params[2] <= date(2026, 9, 5) else []
+        return orig(sql, params)
+    P._q = q
+    r = P.predict("onion", "national", 30, DB_BASE, 14)
+    assert r.base_price == 1500 and r.base_stale and r.base_price_date == date(2026, 9, 5) and r.forecast

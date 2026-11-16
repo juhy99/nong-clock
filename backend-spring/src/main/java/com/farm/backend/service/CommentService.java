@@ -50,8 +50,18 @@ public class CommentService {
     /** GET /api/posts/{postId}/comments: 원댓글 목록, 각 원댓글의 replies 에 답글 */
     public List<CommentResponse> list(Long postId) {
         visiblePost(postId);
+        return tree(postId);
+    }
+
+    /** 관리자 (11-14): 숨긴 글의 댓글도 */
+    public List<CommentResponse> adminList(Long postId) {
+        if (postId == null || posts.findById(postId).isEmpty()) throw new ApiException(HttpStatus.NOT_FOUND, "이미 지워진 글입니다");
+        return tree(postId);
+    }
+
+    private List<CommentResponse> tree(Long postId) {
         List<PostComment> rows = comments.findByPostIdOrderByIdAsc(postId);
-        Set<Long> authorIds = rows.stream().map(PostComment::getAuthorId).collect(Collectors.toSet());
+        Set<Long> authorIds = rows.stream().map(PostComment::getAuthorId).filter(Objects::nonNull).collect(Collectors.toSet());
         Map<Long, String> names = new HashMap<>();
         for (User u : users.findAllById(authorIds)) names.put(u.getId(), u.getName());
 
@@ -71,10 +81,28 @@ public class CommentService {
     public CommentResponse create(Long authorId, Long postId, String body, Long parentId) {
         User author = authorId == null ? null : users.findById(authorId).orElse(null);
         if (author == null) throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다");
+        PostComment c = write(visiblePost(postId), body, parentId);
+        c.setAuthorId(author.getId());
+        comments.save(c);
+        return toResponse(c, Map.of(author.getId(), author.getName()), c.getParentId() == null ? List.of() : null);
+    }
+
+    /** 관리자 댓글·답글 (11-14, POST /api/admin/posts/{postId}/comments). 숨긴 글에도 달 수 있음 */
+    @Transactional
+    public CommentResponse adminCreate(Long adminId, Long postId, String body, Long parentId) {
+        Post post = postId == null ? null : posts.findById(postId).orElse(null);
+        if (post == null) throw new ApiException(HttpStatus.NOT_FOUND, "이미 지워진 글입니다");
+        PostComment c = write(post, body, parentId);
+        c.setAdminId(adminId);
+        comments.save(c);
+        return toResponse(c, Map.of(), c.getParentId() == null ? List.of() : null);
+    }
+
+    /** 내용·답글 위치 확인 → 저장 전 댓글 (작성자는 부른 쪽이 채움) */
+    private PostComment write(Post post, String body, Long parentId) {
         String text = body == null ? "" : body.trim();
         if (text.isEmpty()) throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "댓글 내용을 입력하세요");
         if (text.length() > MAX_LEN) throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "댓글은 500자까지 쓸 수 있습니다");
-        Post post = visiblePost(postId);
 
         Long rootId = null;
         if (parentId != null) {
@@ -86,20 +114,32 @@ public class CommentService {
         PostComment c = new PostComment();
         c.setPostId(post.getId());
         c.setParentId(rootId);
-        c.setAuthorId(author.getId());
         c.setBody(text);
         c.setDeleted(false);
-        comments.save(c);
-        return toResponse(c, Map.of(author.getId(), author.getName()), rootId == null ? List.of() : null);
+        return c;
     }
 
     /** DELETE /api/comments/{id}: 본인 댓글만 */
     @Transactional
     public void delete(Long userId, Long commentId) {
+        PostComment c = find(commentId);
+        if (!Objects.equals(c.getAuthorId(), userId)) throw new ApiException(HttpStatus.FORBIDDEN, "본인 댓글만 지울 수 있습니다");
+        remove(c);
+    }
+
+    /** 관리자 삭제 (11-14, DELETE /api/admin/comments/{id}): 누구 댓글이든 */
+    @Transactional
+    public void adminDelete(Long commentId) {
+        remove(find(commentId));
+    }
+
+    private PostComment find(Long commentId) {
         PostComment c = commentId == null ? null : comments.findById(commentId).orElse(null);
         if (c == null) throw new ApiException(HttpStatus.NOT_FOUND, "이미 지워진 댓글입니다");
-        if (!c.getAuthorId().equals(userId)) throw new ApiException(HttpStatus.FORBIDDEN, "본인 댓글만 지울 수 있습니다");
+        return c;
+    }
 
+    private void remove(PostComment c) {
         if (comments.existsByParentIdAndDeletedFalse(c.getId())) {
             c.setDeleted(true); // 답글이 살아 있으면 자리만 남김
             c.setBody("");
@@ -116,7 +156,9 @@ public class CommentService {
     }
 
     private static CommentResponse toResponse(PostComment c, Map<Long, String> names, List<CommentResponse> replies) {
-        return new CommentResponse(c.getId(), c.getParentId(), c.getAuthorId(), names.getOrDefault(c.getAuthorId(), "알 수 없음"),
-                c.isDeleted() ? "" : c.getBody(), c.getCreatedAt(), c.isDeleted(), replies);
+        boolean byAdmin = c.getAdminId() != null;
+        String name = byAdmin ? PostService.ADMIN_NAME : c.getAuthorId() == null ? "알 수 없음" : names.getOrDefault(c.getAuthorId(), "알 수 없음");
+        return new CommentResponse(c.getId(), c.getParentId(), c.getAuthorId(), name,
+                c.isDeleted() ? "" : c.getBody(), c.getCreatedAt(), c.isDeleted(), replies, byAdmin ? Boolean.TRUE : null);
     }
 }

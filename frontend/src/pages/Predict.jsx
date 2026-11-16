@@ -38,11 +38,14 @@ const orLast = (rows, p) => (rows.length || !p.forecast.length ? rows : [{ ...p.
 
 /** 한 시장 응답 → 주 단위 점: 지난 8주(기준일 포함) · 예측(7일마다, 마지막 날 포함) */
 function weekly(p, horizon) {
-  const byDate = new Map(p.history.map((h) => [h.date, h.price]));
-  const past = Array.from({ length: WEEKS_BACK }, (_, i) => {
-    const d = addDays(p.base_date, -7 * (WEEKS_BACK - 1 - i));
-    return { date: d, price: byDate.get(d) ?? null };
-  }).filter((x) => x.price != null);
+  // 11-15: 그 날짜에 거래가 없으면(일요일·공휴일, 아직 안 올라온 최근 날) 그 앞 가장 가까운 거래일 값.
+  //   예전엔 같은 날짜만 찾아서, 기준일이 일요일이면 8주 모두 일요일이라 점이 0개 → 그래프가 멈춤(화면 전체 오류)
+  const hist = [...p.history].sort((x, y) => (x.date < y.date ? -1 : 1));
+  const onOrBefore = (d) => { let r = null; for (const h of hist) { if (h.date <= d) r = h; else break; } return r; };
+  const seen = new Set();
+  const past = Array.from({ length: WEEKS_BACK }, (_, i) => onOrBefore(addDays(p.base_date, -7 * (WEEKS_BACK - 1 - i))))
+    .filter((h) => h && h.price != null && !seen.has(h.date) && seen.add(h.date))
+    .map((h) => ({ date: h.date, price: h.price }));
   const ts = [];
   for (let t = 7; t < horizon; t += 7) ts.push(t);
   ts.push(horizon);

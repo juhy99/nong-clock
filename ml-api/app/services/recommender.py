@@ -230,15 +230,15 @@ def sort_options(opts: list[Option]) -> list[Option]:
     return sorted(opts, key=lambda o: (o.demoted, -o.margin))
 
 
-def croppings_on(crop: Crop, d: date, lands: dict[str, float]) -> list[Cropping]:
-    return [c for c in crop.croppings if lands.get(c.land, 0) > 0 and c.in_window(d)]
+def croppings_on(crop: Crop, d: date, lands: dict[str, float], region: str | None = None) -> list[Cropping]:
+    return [c for c in crop.croppings if lands.get(c.land, 0) > 0 and c.in_window(d) and c.allowed_in(region)]
 
 
-def next_window(crop: Crop, after: date, lands: dict[str, float] | None = None) -> tuple[date, Cropping] | None:
+def next_window(crop: Crop, after: date, lands: dict[str, float] | None = None, region: str | None = None) -> tuple[date, Cropping] | None:
     for k in range(1, 370):
         d = after + timedelta(days=k)
         for c in crop.croppings:
-            if (lands is None or lands.get(c.land, 0) > 0) and c.in_window(d):
+            if (lands is None or lands.get(c.land, 0) > 0) and c.allowed_in(region) and c.in_window(d):
                 return d, c
     return None
 
@@ -246,7 +246,7 @@ def next_window(crop: Crop, after: date, lands: dict[str, float] | None = None) 
 def best_on(crop: Crop, d: date, lands: dict[str, float], rents: dict[str, Rent], today: date, region: str, market: str | None) -> Option | None:
     """그날 그 작물을 심을 수 있는 작형(토지) 가운데 순이익이 가장 큰 계획"""
     best = None
-    for c in croppings_on(crop, d, lands):
+    for c in croppings_on(crop, d, lands, region):
         o = evaluate(crop, c, d, lands[c.land], today, rents.get(c.land))
         if o is None:
             continue
@@ -273,7 +273,7 @@ def recommend_crops(
         if o:
             ok.append(apply_soil(o, prevs.get(o.cropping.land)))
         else:
-            off.append((crop, "심는 시기가 아니에요", next_window(crop, start, lands)))
+            off.append((crop, "심는 시기가 아니에요", next_window(crop, start, lands, region)))
     return sort_options(ok), off
 
 
@@ -282,7 +282,13 @@ def _ten_day(md: tuple[int, int]) -> str:
     return f"{m}월 {'상순' if d <= 10 else '중순' if d <= 20 else '하순'}"
 
 
-def excluded(ok: list[Option], lands: dict[str, float], start: date) -> list[tuple[Crop, str, str]]:
+def _window(c: Cropping) -> str:
+    """심는 기간 글. 같은 순이면 한 번만 ('6월 중순~6월 중순' → '6월 중순')"""
+    a, b = _ten_day(c.plant_from), _ten_day(c.plant_to)
+    return a if a == b else f"{a}~{b}"
+
+
+def excluded(ok: list[Option], lands: dict[str, float], start: date, region: str | None = None) -> list[tuple[Crop, str, str]]:
     """추천 상위(TOP_N)에 없는 작물마다 (작물, 이유 종류, 한 줄 이유). 종류: perennial · land · season · ph · low"""
     owned = [k for k, v in lands.items() if v > 0]
     owned_txt = "·".join(LAND_TYPES[k] for k in LAND_TYPES if k in owned) or "없음"
@@ -305,9 +311,9 @@ def excluded(ok: list[Option], lands: dict[str, float], start: date) -> list[tup
         elif not any(t in owned for t in crop.land_types):
             out.append((crop, "land", f"{lands_txt} 토지에서만 재배할 수 있어요. 고른 토지: {owned_txt}"))
         else:
-            mine = [c for c in crop.croppings if c.land in owned]
-            ws = ", ".join(f"{c.name} {_ten_day(c.plant_from)}~{_ten_day(c.plant_to)}" for c in mine)
-            nxt = next_window(crop, start, lands)
+            mine = [c for c in crop.croppings if c.land in owned and c.allowed_in(region)]
+            ws = ", ".join(f"{c.name} {_window(c)}" for c in mine)
+            nxt = next_window(crop, start, lands, region)
             tail = f" 다음 심는 때: {nxt[0].month}/{nxt[0].day}부터({nxt[1].name})" if nxt else ""
             out.append((crop, "season", f"고른 날({start.month}/{start.day})은 심는 시기가 아니에요. 심는 때: {ws}.{tail}"))
     return out

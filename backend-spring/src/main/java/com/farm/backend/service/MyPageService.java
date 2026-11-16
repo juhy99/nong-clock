@@ -124,11 +124,13 @@ public class MyPageService {
             List<String> known = jdbc.queryForList("SELECT item_code FROM item WHERE item_code IN (:c)", Map.of("c", codes), String.class);
             if (known.size() != codes.size()) throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "없는 품목이 있어요");
         }
+        // 11-16: 같은 회원의 저장이 동시에 두 번 오면(빠른 연속 클릭) 둘 다 지우고 넣다가 중복 키 500 이 났음 → 회원 줄을 잠가 차례로, 넣기는 겹쳐도 무시
+        jdbc.queryForList("SELECT id FROM users WHERE id = :id FOR UPDATE", Map.of("id", id), Long.class);
         jdbc.update("DELETE FROM user_favorite WHERE user_id = :id", Map.of("id", id));
         LocalDateTime t = LocalDateTime.now();
         int i = 0;
         for (String c : codes)   // 넣은 순서를 created_at 으로 남김 (1ms 씩)
-            jdbc.update("INSERT INTO user_favorite (user_id, item_code, created_at) VALUES (:id, :c, :t)",
+            jdbc.update("INSERT INTO user_favorite (user_id, item_code, created_at) VALUES (:id, :c, :t) ON CONFLICT (user_id, item_code) DO NOTHING",
                     Map.of("id", id, "c", c, "t", Timestamp.valueOf(t.plusNanos(1_000_000L * i++))));
         return favorites(id);
     }

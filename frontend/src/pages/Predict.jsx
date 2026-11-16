@@ -76,7 +76,9 @@ function checkpoints(p, horizon) {
   for (let t = step; t < horizon; t += step) ts.push(t);
   if (!ts.length || horizon - ts[ts.length - 1] >= step / 2) ts.push(horizon);
   else ts[ts.length - 1] = horizon;
-  return orLast(ts.map((t) => fcAt(p, t)).filter(Boolean), p).map((x) => ({ ...x, from: addDays(x.date, -(Math.min(step, x.t) - 1)) }));
+  // 11-16: 기간은 앞 칸 다음 날부터 (예전엔 칸마다 7일·30일로 거꾸로 세서 마지막 칸이 9일이면 12/8~9 같은 날이 빠졌음)
+  const rows = orLast(ts.map((t) => fcAt(p, t)).filter(Boolean), p);
+  return rows.map((x, i) => ({ ...x, from: addDays(i ? rows[i - 1].date : p.base_date, 1) }));
 }
 
 /** 그래프: 시장마다 선 (지난 8주 얇게 → 예측 굵게). 시장 하나면 예측 범위 띠 */

@@ -97,7 +97,7 @@ function AiPane({ on }) {
   return (
     <div className={`hv-pane ${on ? "on" : ""}`} onMouseEnter={() => setHold(true)} onMouseLeave={() => setHold(false)}>
       <div className="hv-ai-top">
-        <span className="hv-tag">AI 가격 예측 <i className="hv-live" /> 매일 06:00 갱신</span>
+        <span className="hv-tag">AI 가격 예측 <i className="hv-live" /> {d?.base_price_date ? `${Number(d.base_price_date.slice(5, 7))}/${Number(d.base_price_date.slice(8, 10))} 거래까지 반영` : "최근 거래일 기준"}</span>
         <div className="hv-ai-items">
           {AI_ITEMS.map(([c, , n], j) => (
             <button key={c} type="button" className={j === idx ? "on" : ""} onClick={() => setIdx(j)}>{n}</button>

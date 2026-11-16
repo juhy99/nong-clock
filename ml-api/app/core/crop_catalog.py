@@ -13,6 +13,7 @@
 - 여러 번 수확(multi = True, 과채·딸기·상추 등): 첫 수확부터 수확 기간 끝날(harvest_to)까지
 """
 
+import re
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
@@ -86,6 +87,10 @@ class Cropping:
     normal_price: tuple[int | None, ...] = ()   # 품종 작형의 평년 도매가 (빈 값 = 작물 평년)
     normal_low: tuple[int | None, ...] = ()
     normal_high: tuple[int | None, ...] = ()
+    regions: tuple[str, ...] = ()     # 11-16: 이 작형을 하는 시·도 (빈 값 = 어디서나). 고랭지 작형 = 강원만
+
+    def allowed_in(self, region: str | None) -> bool:
+        return not self.regions or not region or region == "national" or region in self.regions
 
     @property
     def window_days(self) -> int:
@@ -155,6 +160,15 @@ def _survey(r: dict) -> Survey:
                   int(r.get("land_rent") or 0))
 
 
+# 11-16: 고랭지(해발 400~600m 이상) 작형은 강원에서만 추천 — 예전엔 경기에서도 '고랭지 여름재배'가 최적으로 나왔음
+HIGHLAND_REGIONS = ("강원",)
+
+
+def _same_month_range(text: str | None) -> str | None:
+    """'매년 10~10월' → '매년 10월' (수확 달이 한 달뿐인 나무)"""
+    return re.sub(r"(\d+)~\1월", r"\1월", text) if text else text
+
+
 def _cropping(x: dict) -> Cropping:
     return Cropping(
         name=x["name"], land=x["land"], plant_from=tuple(x["plant_from"]), plant_to=tuple(x["plant_to"]),
@@ -164,6 +178,7 @@ def _cropping(x: dict) -> Cropping:
         schedule_source=x["source"]["schedule"], econ_source=x["source"]["econ"], estimated=tuple(x.get("estimated") or ()), survey=_survey(x["rda"]),
         price_variety=x.get("price_variety") or "", normal_price=tuple((x.get("normal") or {}).get("price") or ()),
         normal_low=tuple((x.get("normal") or {}).get("low") or ()), normal_high=tuple((x.get("normal") or {}).get("high") or ()),
+        regions=tuple(x.get("regions") or (HIGHLAND_REGIONS if "고랭지" in x["name"] else ())),
     )
 
 
@@ -171,7 +186,7 @@ def _crop(c: dict) -> Crop:
     n = c.get("normal") or {}
     return Crop(
         code=c["code"], name=c["name"], emoji=c["emoji"], land_types=tuple(c["land_types"]), price_source=c["price_source"],
-        croppings=tuple(_cropping(x) for x in c["croppings"]), perennial_note=c.get("perennial_note"),
+        croppings=tuple(_cropping(x) for x in c["croppings"]), perennial_note=_same_month_range(c.get("perennial_note")),
         harvest_months=tuple(c["harvest_months"]) if c.get("harvest_months") else None, soil_ph_name=c.get("soil_ph_name"),
         survey=_survey(c["rda"]) if c.get("rda") else None, survey_price=c.get("survey_price"),
         normal_price=tuple(n.get("price") or ()), normal_low=tuple(n.get("low") or ()), normal_high=tuple(n.get("high") or ()),

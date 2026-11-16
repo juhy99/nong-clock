@@ -34,6 +34,9 @@ public class WeatherService {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     private static final String BASE = "https://apis.data.go.kr/1360000";
     private static final Duration TTL = Duration.ofMinutes(10);
+    /** 11-16: yyyyMMdd. 예전엔 BASIC_ISO_DATE 를 썼는데 ZonedDateTime 이면 "20261116+0900" 처럼 시간대가 붙어
+     *  기상청이 APPLICATION_ERROR 로 거절 → 지금 날씨가 한 번도 안 나왔음 */
+    static final DateTimeFormatter YMD = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /** 시·도 id (지도 데이터 id) → [이름, nx, ny] (시·도청 소재지 격자) */
     private static final Map<String, Object[]> REGIONS = new LinkedHashMap<>();
@@ -63,7 +66,8 @@ public class WeatherService {
         4, new String[]{"🌦️", "소나기"}, 5, new String[]{"🌧️", "빗방울"}, 6, new String[]{"🌨️", "빗방울눈날림"}, 7, new String[]{"❄️", "눈날림"});
 
     private final String key;
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    // 11-16: HTTP/1.1 로 고정 — 공공데이터포털은 HTTP/2 협상이 들쭉날쭉해서 (curl 은 되는데 자바만 실패하는 경우 대비)
+    private final HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(5)).build();
     /** 주소 → 응답 글 (시험에서 바꿔 끼움). 기본은 실제 호출 */
     private final java.util.function.Function<String, String> fetch;
     private final ObjectMapper json = new ObjectMapper();
@@ -87,8 +91,15 @@ public class WeatherService {
             return http.send(HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(10)).GET().build(),
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "기상청에 연결하지 못했어요: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "기상청에 연결하지 못했어요: " + why(e));
         }
+    }
+
+    /** 오류 이유 (종류 + 문장). 키가 문장에 섞여 나오지 않게 가림 */
+    private String why(Exception e) {
+        String m = e.getClass().getSimpleName() + (e.getMessage() == null ? "" : " " + e.getMessage());
+        if (!key.isEmpty()) m = m.replace(key, "***").replace(URLEncoder.encode(key, StandardCharsets.UTF_8), "***");
+        return m.length() > 200 ? m.substring(0, 200) : m;
     }
 
     /** { base_time, regions: [{ id, name, temp, min, max, icon, sky, rain_prob, humidity, wind, soil_temp, warning, note }] } */
@@ -99,11 +110,11 @@ public class WeatherService {
         ZonedDateTime now = ZonedDateTime.now(KST);
         // 초단기실황: 매시 정각 자료가 40분쯤 올라오므로 40분 전 기준 정각
         ZonedDateTime n = now.minusMinutes(40);
-        String ncstDate = n.format(DateTimeFormatter.BASIC_ISO_DATE), ncstTime = String.format("%02d00", n.getHour());
+        String ncstDate = n.format(YMD), ncstTime = String.format("%02d00", n.getHour());
         // 오늘 최저·최고가 모두 든 단기예보: 오늘 02시 발표 (02:10 전이면 어제 23시 발표)
-        String today = now.format(DateTimeFormatter.BASIC_ISO_DATE);
+        String today = now.format(YMD);
         boolean after = now.getHour() > 2 || (now.getHour() == 2 && now.getMinute() >= 10);
-        String fcstDate = after ? today : now.minusDays(1).format(DateTimeFormatter.BASIC_ISO_DATE), fcstTime = after ? "0200" : "2300";
+        String fcstDate = after ? today : now.minusDays(1).format(YMD), fcstTime = after ? "0200" : "2300";
         String hourNow = String.format("%02d00", now.getHour());
 
         Map<String, String> warn = warnings();
@@ -246,7 +257,7 @@ public class WeatherService {
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "기상청에 연결하지 못했어요: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "기상청에 연결하지 못했어요: " + why(e));
         }
     }
 }

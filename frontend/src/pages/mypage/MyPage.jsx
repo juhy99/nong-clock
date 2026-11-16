@@ -63,7 +63,7 @@ function FavCards({ onAdd }) {
             <div className="d"><b className={up ? "up" : "down"}>{up ? "▲" : "▼"} {won(Math.abs(p.change ?? 0))}원 ({Math.abs(p.change_pct ?? 0).toFixed(1)}%)</b><br />직전 거래일 대비</div>
             <Spark values={p.spark} />
             {p.pred && (
-              <div className="ai"><span>AI 1주 뒤 예측</span><b>{won(p.pred.predicted_price)}원 {p.pred.change_pct >= 0 ? "▲" : "▼"} {Math.abs(p.pred.change_pct).toFixed(1)}%</b></div>
+              <div className="ai"><span>AI 1주 뒤 예측</span><b>{won(p.pred.predicted_price)}원 {p.pred.change_pct >= 0 ? "▲" : "▼"} {Math.abs(p.pred.change_pct).toFixed(1)}%</b>{p.pred.base_price != null && <small className="muted">최근 7일 평균 {won(p.pred.base_price)}원 대비</small>}</div>
             )}
             {!p.pred && p.season?.label && (
               <div className="ai"><span>AI 예측</span><b>출하철 아님 · 주로 {p.season.label}</b></div>
@@ -211,7 +211,7 @@ export default function MyPage() {
       <div className="mp-grid">
         <div className="mp-col">
           <section className="card">
-            <div className="mp-head"><h2>관심 품목 가격</h2><small>오늘 도매 시세 (직전 거래일 대비) · AI 1주 뒤 예측</small></div>
+            <div className="mp-head"><h2>관심 품목 가격</h2><small>오늘 도매 시세 (직전 거래일 대비) · AI 1주 뒤 예측 (최근 7일 평균 대비)</small></div>
             <FavCards onAdd={() => go("watch")} />
           </section>
           <Activity act={act.data} />

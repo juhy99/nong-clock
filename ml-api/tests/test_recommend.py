@@ -230,3 +230,26 @@ def test_missing_day_uses_nearest_forecast_day(monkeypatch):
     monkeypatch.setattr(crop_prices, "STORE", crop_prices._Store())
     w = crop_prices.wholesale(CROPS["onion"], sat + timedelta(days=1), TODAY)   # 일요일
     assert w.basis == "forecast" and w.wholesale == 1234.0
+
+
+# ── 11-16 점검: 고랭지 작형은 강원만 · 같은 순/같은 달 문구 ──
+def test_highland_cropping_only_in_gangwon():
+    hl = next(c for c in CROPS["napa_cabbage"].croppings if "고랭지" in c.name)
+    assert hl.regions == ("강원",) and hl.allowed_in("강원") and not hl.allowed_in("경기") and hl.allowed_in(None)
+    d = next(TODAY + timedelta(days=k) for k in range(366) if hl.in_window(TODAY + timedelta(days=k)))
+    names = lambda region: [c.name for c in recommender.croppings_on(CROPS["napa_cabbage"], d, {"open": 600}, region)]
+    assert hl.name in names("강원") and hl.name not in names("경기")
+    nxt = recommender.next_window(CROPS["napa_cabbage"], d - timedelta(days=1), {"open": 600}, "경기")
+    assert nxt is None or "고랭지" not in nxt[1].name
+
+
+def test_window_text_collapses_same_ten_day_and_month():
+    import dataclasses
+    c = dataclasses.replace(CROPS["napa_cabbage"].croppings[0], plant_from=(6, 11), plant_to=(6, 20))
+    assert recommender._window(c) == "6월 중순"
+    c = dataclasses.replace(c, plant_to=(7, 5))
+    assert recommender._window(c) == "6월 중순~7월 상순"
+    from app.core.crop_catalog import _same_month_range
+    assert _same_month_range("매년 10~10월에 수확해요") == "매년 10월에 수확해요"
+    assert _same_month_range("매년 7~11월에 수확해요") == "매년 7~11월에 수확해요"
+    assert "10~10월" not in (CROPS["sweet_persimmon"].perennial_note or "")

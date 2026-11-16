@@ -7,6 +7,9 @@ import { useErrorPopup } from "../../components/ErrorPopup";
 import ImagePicker from "../../components/ImagePicker";
 import Photo from "../../components/Photo";
 
+// 11-16: 사진 저장(서버)이 아직 없어 사진 칸을 숨김 — 예전엔 고를 수는 있는데 올리면 "준비 중"으로 거절됐음. 서버가 생기면 true
+const PHOTOS_ENABLED = false;
+
 /** 글쓰기 / 글 수정 (주소에 :id 가 있으면 수정) */
 export default function PostWrite() {
   const { id } = useParams();
@@ -57,6 +60,7 @@ export default function PostWrite() {
           <input className="input" aria-label="제목" placeholder="제목" maxLength={80} value={f.title} onChange={set("title")} />
         </div>
         <textarea className="input" aria-label="내용" rows={12} placeholder="내용을 입력하세요" value={f.body} onChange={set("body")} />
+        {PHOTOS_ENABLED && (
         <div className="field">
           <label>사진 <span className="muted small">(선택, 최대 {MAX_IMAGES}장)</span></label>
           {kept.length > 0 && (
@@ -71,6 +75,7 @@ export default function PostWrite() {
           )}
           <ImagePicker files={files} onChange={setFiles} max={MAX_IMAGES - kept.length} />
         </div>
+        )}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <Link className="btn" to={id ? `/board/${id}` : "/board"}>취소</Link>
           <button className="btn primary" disabled={busy}>{id ? "수정하기" : "등록하기"}</button>

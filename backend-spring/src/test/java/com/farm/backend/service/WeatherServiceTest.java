@@ -26,7 +26,7 @@ class WeatherServiceTest {
           {"t6":"o 강풍주의보 : 제주도(제주도산지), 강원도(강원북부산지)\\no 건조주의보 : 강원도"}]}}}}""";
 
     private static String today() {
-        return java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Seoul")).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        return java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Seoul")).format(WeatherService.YMD); // 11-16: 예전엔 BASIC_ISO_DATE ("…+0900") 로 서비스의 같은 실수를 따라 해서 시험이 못 잡았음
     }
 
     @Test
@@ -64,5 +64,20 @@ class WeatherServiceTest {
     void 키_오류는_502() {
         WeatherService s = new WeatherService("k", u -> "<OpenAPI_ServiceResponse><cmmMsgHeader><errMsg>SERVICE ERROR</errMsg></cmmMsgHeader></OpenAPI_ServiceResponse>");
         assertEquals(502, assertThrows(ResponseStatusException.class, s::regions).getStatusCode().value());
+    }
+
+    /** 11-16: 기상청에 보내는 날짜는 숫자 8자리만 (예전엔 "20261116+0900" 이 가서 모두 거절됨) */
+    @Test
+    void sends_plain_eight_digit_dates() {
+        List<String> urls = new java.util.concurrent.CopyOnWriteArrayList<>();
+        WeatherService s = new WeatherService("abc/def==", url -> {
+            urls.add(url);
+            return url.contains("getUltraSrtNcst") ? NCST : url.contains("getVilageFcst") ? FCST.formatted(today()) : WARN;
+        });
+        s.regions();
+        List<String> dates = urls.stream().filter(u -> u.contains("base_date="))
+            .map(u -> u.replaceAll(".*base_date=([^&]*).*", "$1")).toList();
+        assertFalse(dates.isEmpty());
+        dates.forEach(d -> assertTrue(d.matches("\\d{8}"), "base_date=" + d));
     }
 }

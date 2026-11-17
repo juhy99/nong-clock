@@ -171,10 +171,10 @@ function MiniCalendar({ o }) {
 }
 
 function CropCard({ o, rank, topProfit, topRate, goInfo }) {
-  const [open, setOpen] = useState(rank === 0);
   const profit = o === topProfit, rate = o === topRate;
+  // 재배 달력은 늘 펼쳐 둠 (11-16) — 카드 높이는 .rc-top3 에서 같은 줄끼리 맞춤
   return (
-    <section className={`card rc-card ${open ? "open" : ""}`}>
+    <section className="card rc-card">
       <span className={`rc-art ${profit ? "profit" : rate ? "rate" : ""}`}>
         <i aria-hidden>{o.emoji}</i>
         {profit && <b className="profit">💰 순수익 1위</b>}
@@ -187,8 +187,8 @@ function CropCard({ o, rank, topProfit, topRate, goInfo }) {
         <div className={rate ? "hi-rate" : ""}><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div>
       </div>
       {refLine(o) && <span className="rc-ref">ⓘ {refLine(o)}</span>}
-      <button type="button" className="rc-toggle" aria-expanded={open} onClick={() => setOpen(!open)}><span>📅 재배 달력 보기</span><span className="ar">▾</span></button>
-      <div className="rc-exp"><div><MiniCalendar o={o} /></div></div>
+      <div className="rc-calhead">📅 재배 달력</div>
+      <MiniCalendar o={o} />
       <div className="rc-acts">
         {IN50.has(o.crop) && <Link className="btn primary" to={`/ai?item=${o.crop}`}>{o.crop_name} 가격 예측 보기</Link>}
         <button type="button" className="btn" onClick={() => goInfo(o.crop)}>재배 정보 ›</button>

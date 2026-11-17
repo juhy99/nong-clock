@@ -1,6 +1,8 @@
 // 가격 예측 모델 오차 (품목·예측 기간별 WAPE, 검증 기간). 기준은 shared/model_accuracy.json 한 파일
 // (ml-api/app/core/accuracy.py 도 같은 파일·같은 규칙). 오차 범위(띠)·신뢰도·"참고용" 표시가 모두 여기서 나온다.
 import ACC from "../../../shared/model_accuracy.json";
+import FINAL from "../../../shared/final_model_accuracy.json";
+import ITEMS50 from "../../../shared/items50.json";
 
 export const ACCURACY = ACC;
 export const ANCHORS = ACC.horizons.map((h) => h.days); // 7 · 14 · 30 · 90 · 180
@@ -33,9 +35,24 @@ export function referenceOf(item, t) {
 /** 신뢰도 지수 = 100 − 오차(%) (참고용이면 화면에 따로 표시) */
 export const confidenceOf = (item, t) => Math.max(0, Math.round(100 - errorPct(item, t)));
 
-/** 화면 안내용: 예측 기간별 107품목 평균 오차 "1주 약 18% · 2주 약 20% · …" */
-export const averageText = () => ACC.horizons.map((h) => `${h.label} 약 ${Math.round(ACC.average_wape[h.days])}%`).join(" · ");
+/** 화면 안내용 (11-17): 최종 모델 시험 정확도 "1~5거래일 77.8% · … · 7~12달 83.5%(달 평균)" — 관리자 모델 성능과 같은 숫자 */
+export const averageText = () => [
+  ["1~5거래일", FINAL.day_total["H1-5"].final], ["6~14거래일", FINAL.day_total["H6-14"].final],
+  ["1~3달", FINAL.month_total["h1-3"].final], ["4~6달", FINAL.month_total["h4-6"].final], ["7~12달", FINAL.month_total["h7-12"].final],
+].map(([l, v]) => `${l} ${v}%`).join(" · ");
 
-// [샘플] 예측 정확도가 낮은 품목: 1개월 오차 35% 이상 또는 참고용 기간이 있는 품목 (기준은 추후 확정)
-export const LOW_ACC_LIMIT = 35;
-export const LOW_ACCURACY = new Set(Object.entries(ACC.items).filter(([, r]) => (r.wape["30"] ?? 0) >= LOW_ACC_LIMIT || r.reference_only.length).map(([c]) => c));
+// 예측 정확도가 낮은 품목 (11-17, 최종 모델): 품목 단위 중앙값이 1~5거래일 70% 미만 또는 1~3달 75% 미만 → 이름 옆 (!)
+//   (전에는 옛 107품목 모델 오차로 정해 지금 모델과 맞지 않았음)
+const med = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : null; };
+const UNIT_ACC = Object.fromEntries(FINAL.units.map((u) => [u.unit, u]));
+export const LOW_ACCURACY = new Set(ITEMS50.items.filter((it) => {
+  const us = it.varieties.flatMap((v) => v.units).map((u) => UNIT_ACC[u]).filter(Boolean);
+  const d1 = med(us.filter((u) => u.d1).map((u) => u.d1[0])), m1 = med(us.filter((u) => u.m1).map((u) => u.m1[0]));
+  return (d1 != null && d1 < 70) || (m1 != null && m1 < 75);
+}).map((it) => it.code));
+// 11-17: 품종도 같은 기준 (예: 포도 샤인마스캇 1~5거래일 47.3 · 1~3달 26.8 → (!))
+export const LOW_ACCURACY_VARIETY = new Set(ITEMS50.items.flatMap((it) => it.varieties).filter((v) => {
+  const us = v.units.map((u) => UNIT_ACC[u]).filter(Boolean);
+  const d1 = med(us.filter((u) => u.d1).map((u) => u.d1[0])), m1 = med(us.filter((u) => u.m1).map((u) => u.m1[0]));
+  return (d1 != null && d1 < 70) || (m1 != null && m1 < 75);
+}).map((v) => v.id));

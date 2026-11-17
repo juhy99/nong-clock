@@ -54,7 +54,7 @@ public class UserService {
         return i < 0 ? null : i + 1;
     }
 
-    static String regionName(Integer id) {
+    public static String regionName(Integer id) {   // 11-17: 관리자 회원 목록에서도 씀
         return id == null || id < 1 || id > REGIONS.size() ? null : REGIONS.get(id - 1);
     }
 
@@ -62,11 +62,20 @@ public class UserService {
         return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 
-    /** 닉네임: 앞뒤 공백 빼고 2~20자. 틀리면 422 */
+    /** 닉네임 규칙 (11-17): 한글(완성된 글자)·영문·숫자만 2~12자. 띄어쓰기·특수문자·자음만(ㅋㅋ) 안 됨 */
+    static final java.util.regex.Pattern NICKNAME = java.util.regex.Pattern.compile("^[가-힣A-Za-z0-9]{2,12}$");
+    /** 관리자로 착각할 수 있는 이름은 회원이 못 씀 (관리자 글은 "관리자"로 보임) */
+    static final List<String> RESERVED_NICKNAMES = List.of("관리자", "운영자", "admin", "농클락", "nongclock");
+    static final String NICKNAME_RULE = "닉네임은 한글·영문·숫자로 2~12자 입력하세요 (띄어쓰기·특수문자 없이)";
+
+    /** 닉네임: 앞뒤 공백 빼고 규칙 검사. 틀리면 422 */
     static String normNickname(String nickname, String name) {
         String v = nickname != null && !nickname.isBlank() ? nickname : name;
         v = v == null ? "" : v.trim();
-        if (v.length() < 2 || v.length() > 20) throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "닉네임은 2~20자로 입력하세요");
+        if (!NICKNAME.matcher(v).matches()) throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, NICKNAME_RULE);
+        String lower = v.toLowerCase(Locale.ROOT);
+        if (RESERVED_NICKNAMES.stream().anyMatch(lower::contains))
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "관리자로 보일 수 있는 닉네임은 쓸 수 없어요");
         return v;
     }
 

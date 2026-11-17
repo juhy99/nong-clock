@@ -8,6 +8,7 @@ import { useAuth } from "../components/AuthContext";
 import { useAsync } from "../components/common";
 import { SIDO, addDays, md, timeAgo, todayIso, won } from "../utils/format";
 import "./home.css";
+import { TEAM_INFO_READY } from "../features";
 
 /* ─────────────────────────────────────────────
    홈 (v17, 11-11)
@@ -51,7 +52,9 @@ function useCountUp(to, key) {
       if (k < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    // 11-17: 화면이 가려져 있으면(다른 탭 등) requestAnimationFrame 이 멈춰 "+0원"으로 남음 → 1초 뒤에는 끝 값으로
+    const done = setTimeout(() => { cancelAnimationFrame(raf); setV(to); }, 1000);
+    return () => { cancelAnimationFrame(raf); clearTimeout(done); };
   }, [to, key]);
   return v;
 }
@@ -339,7 +342,10 @@ const INTRO = [
   ["🌱", "작물 추천", [["내 땅 넣기", "/recommend"], ["순수익 순위", "/recommend"], ["재배 달력", "/recommend?tab=info"], ["작물 정보", "/recommend?tab=info"]]],
   // 자주 묻는 질문은 서비스 소개 페이지의 "자주 묻는 질문"(#faq)으로, 누르면 그 질문이 펼쳐짐 (11-13)
   ["❓", "자주 묻는 질문", [["가격 기준", "/about#faq-price"], ["등급 기준", "/about#faq-grade"], ["예측 정확도", "/about#faq-accuracy"], ["자료 출처", "/about#faq-source"], ["전체 질문 보기", "/about#faq"]]],
-  ["✉️", "문의하기", [["contact@nongclock.kr", "/about#contact"], ["02-000-0000", "/about#contact"], ["평일 10:00~18:00", "/about#contact"]]],
+  // 11-17: 연락처가 견본이라 팀 정보가 정해지기 전에는 '문의하기' 대신 시세·뉴스 바로 가기 (features.js TEAM_INFO_READY)
+  TEAM_INFO_READY
+    ? ["✉️", "문의하기", [["contact@nongclock.kr", "/about#contact"], ["02-000-0000", "/about#contact"], ["평일 10:00~18:00", "/about#contact"]]]
+    : ["📊", "시세·소식", [["오늘 도매 시세", "/market"], ["농업 뉴스", "/news"], ["게시판", "/board"]]],
 ];
 
 export default function Home() {
@@ -376,7 +382,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <Link className="hv-team" to="/about#team">› 만든 사람들 <span>농산물 가격 예측 플랫폼 팀 프로젝트 · 2026</span></Link>
+          {TEAM_INFO_READY && <Link className="hv-team" to="/about#team">› 만든 사람들 <span>농산물 가격 예측 플랫폼 팀 프로젝트 · 2026</span></Link>}
         </div>
       </section>
     </div>

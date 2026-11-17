@@ -21,6 +21,8 @@ import "./recommend.css";
 const man = (v) => `${won(Math.round(v / 1e4))}만원`;
 const f1 = (v) => Number(v).toFixed(1);
 const mo = (iso) => Number(iso.slice(5, 7));
+/** 11-17: 다른 해 날짜면 해를 붙임 — 쌀 '저장 가능 ~10/14'(다음 해)가 수확(10/15)보다 앞처럼 읽혔음 */
+const mdy = (iso, ref) => (iso.slice(0, 4) !== ref.slice(0, 4) ? `${iso.slice(2, 4)}년 ${md(iso)}` : md(iso));
 const DEFAULT_FORM = { region: "경기", type: "open", area: 1200, prev: "", rent: 0, date: todayIso() };
 
 /** 가장 비싸게 팔리는 달 */
@@ -36,7 +38,7 @@ const PH_LINE = {
 function reasonLines(o, region) {
   const b = bestMonth(o);
   const out = [
-    `${md(o.harvest_start)}~${md(o.harvest_end)} 수확${o.storage_days > 0 ? `, 저장하면 ${md(o.storage_end)}까지 팔 수 있어요 (순수익은 수확 때 가격으로 계산)` : ", 저장 없이 바로 출하해요"}`,
+    `${md(o.harvest_start)}~${md(o.harvest_end)} 수확${o.storage_days > 0 ? `, 저장하면 ${mdy(o.storage_end, o.harvest_end)}까지 팔 수 있어요 (순수익은 수확 때 가격으로 계산)` : ", 저장 없이 바로 출하해요"}`,
     `가장 비싸게 팔리는 달은 ${mo(b.month + "-01")}월 (${won(b.price_per_kg)}원/kg)이에요`,
     o.no_market ? `${region}에는 공영 도매시장이 없어 전국 평균 가격으로 계산했어요` : `${region} 안에서는 ${o.market.name}에 팔 때 순이익이 가장 커요`,
   ];
@@ -70,10 +72,25 @@ const request = (f) => ({
 });
 
 /* ── 입력 ── */
+// 11-17 입력 상한 (ml-api schemas/recommend.py 와 같게): 면적 30만 평 · 1년 임대료 평당 2만원
+const MAX_AREA = 300000, MAX_RENT_PER_PYEONG = 20000;
+const formError = (d) => {
+  const area = Number(d.area), rent = Number(d.rent) || 0;
+  // 11-17: 지난 날짜·1년 넘는 날짜는 서버에 보내기 전에 (예전엔 서버 문장 "start_date 는 …"이 그대로 보였음)
+  const today = todayIso();
+  if (!d.date || d.date < today || d.date > addDays(today, 365)) return "심을 날짜는 오늘부터 1년 안으로 골라 주세요";
+  if (!(area > 0)) return "면적을 1평 이상 넣어 주세요";
+  if (area > MAX_AREA) return `면적은 ${won(MAX_AREA)}평까지 넣을 수 있어요`;
+  if (rent < 0) return "임대료는 0 이상이어야 해요";
+  if (rent * 10000 > area * MAX_RENT_PER_PYEONG) return `1년 임대료가 평당 ${won(MAX_RENT_PER_PYEONG)}원을 넘어요 (${won(area)}평이면 ${won(Math.floor((area * MAX_RENT_PER_PYEONG) / 10000))}만원까지)`;
+  return "";
+};
+
 function LandForm({ form, onApply }) {
   const [d, setD] = useState(form);
   const set = (p) => setD((x) => ({ ...x, ...p }));
   const today = todayIso();
+  const err = formError(d);
   return (
     <section className="card rc-form">
       <label className="rc-f"><span>시·도</span>
@@ -83,7 +100,7 @@ function LandForm({ form, onApply }) {
         <input className="input" type="date" min={today} max={addDays(today, 365)} value={d.date} onChange={(e) => e.target.value && set({ date: e.target.value })} />
       </label>
       <label className="rc-f"><span>면적 (평)</span>
-        <input className="input" type="number" min="1" inputMode="numeric" value={d.area} onChange={(e) => set({ area: e.target.value })} />
+        <input className="input" type="number" min="1" max={MAX_AREA} inputMode="numeric" value={d.area} onChange={(e) => set({ area: e.target.value })} aria-invalid={!!err && err.startsWith("면적")} />
       </label>
       <label className="rc-f"><span>기존에 키우던 작물 <Info>기존 작물로 흙 pH를 어림해서, 맞지 않는 작물은 아래로 내려요.</Info></span>
         <select className="input" value={d.prev} onChange={(e) => set({ prev: e.target.value })}>
@@ -92,12 +109,13 @@ function LandForm({ form, onApply }) {
         </select>
       </label>
       <label className="rc-f"><span>임대료 (1년, 만원) <Info>1년 임대료를 넣으면 심는 날부터 마지막 수확까지 기간만큼만 순수익에서 빼요 (예: 3개월이면 1/4). 내 땅이면 0을 넣으세요.</Info></span>
-        <input className="input" type="number" min="0" inputMode="numeric" value={d.rent} onChange={(e) => set({ rent: e.target.value })} />
+        <input className="input" type="number" min="0" inputMode="numeric" value={d.rent} onChange={(e) => set({ rent: e.target.value })} aria-invalid={!!err && err.includes("임대료")} />
       </label>
       <div className="rc-f"><span>재배 방식</span>
         <div className="pills">{Object.entries(LAND_TYPES).map(([k, l]) => <button key={k} type="button" className={`pill ${d.type === k ? "on" : ""}`} onClick={() => set({ type: k })}>{l}</button>)}</div>
       </div>
-      <button type="button" className="btn primary rc-go" onClick={() => onApply(d)}>다시 추천받기 →</button>
+      {err && <p className="rc-err" role="alert">⚠️ {err}</p>}
+      <button type="button" className="btn primary rc-go" disabled={!!err} onClick={() => onApply(d)}>다시 추천받기 →</button>
     </section>
   );
 }
@@ -146,7 +164,7 @@ function MiniCalendar({ o }) {
       <div className="when">
         <div>심기<b>{md(o.plant_date)}</b></div>
         <div>수확<b>{md(o.harvest_start)}~{md(o.harvest_end)}</b></div>
-        {store ? <div title="순수익은 수확 때 가격으로 계산했어요">저장 가능<b>~{md(o.storage_end)}</b></div> : <div>재배 기간<b>{daysBetween(o.plant_date, o.harvest_end)}일</b></div>}
+        {store ? <div title="순수익은 수확 때 가격으로 계산했어요">저장 가능<b>~{mdy(o.storage_end, o.harvest_end)}</b></div> : <div>재배 기간<b>{daysBetween(o.plant_date, o.harvest_end)}일</b></div>}
       </div>
     </div>
   );
@@ -179,12 +197,84 @@ function CropCard({ o, rank, topProfit, topRate, goInfo }) {
   );
 }
 
-function Results({ state, form, goInfo }) {
+/* ── 11-17 과수원: 나무는 심는 날 비교 대신 다 자란 나무 기준 1년 소득 (농진청 소득조사) ── */
+const monthsText = (h) => (h ? (h[0] === h[1] ? `${h[0]}월` : `${h[0]}~${h[1]}월`) : "");
+function OrchardResults({ list, goInfo }) {
+  if (!list.length) return <div className="card state">과수원 작물 자료를 불러오지 못했어요.</div>;
+  const top = list.slice(0, 3), rest = list.slice(3);
+  const src = top[0].rda;
+  return (
+    <>
+      <div className="card rc-note rc-orchard-note">
+        🌳 과수원 나무는 한 번 심으면 여러 해 기르니 <b>심을 날짜 비교 대신 다 자란 나무에서 1년에 얻는 순수익</b>으로 줄 세웠어요.
+        {src && ` 수량·가격·경영비는 ${src.source} ${src.years[0]}~${src.years.at(-1)}년 전국 평균이고, 가격에는 고른 시·도 도매시장이 전국보다 얼마나 비싼지(싼지)를 곱했어요.`} 새로 심으면 첫 수확까지 몇 해가 걸려요.
+      </div>
+      <div className="rc-top3">
+        {top.map((o, i) => (
+          <section key={o.crop} className="card rc-card open">
+            <span className={`rc-art ${i === 0 ? "profit" : ""}`}><i aria-hidden>{o.emoji}</i>{i === 0 && <b className="profit">💰 순수익 1위</b>}</span>
+            <span className={`rc-n ${i === 0 ? "first" : ""}`}>{String(i + 1).padStart(2, "0")}</span>
+            <div className="rc-nm">{o.crop_name}<small>과수원 · 다 자란 나무 기준{o.harvest_months ? ` · ${monthsText(o.harvest_months)} 수확` : ""}</small></div>
+            <div className="rc-money">
+              <div className={i === 0 ? "hi-profit" : ""}><span>1년 순수익</span><b>{man(o.margin)}</b></div>
+              <div><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div>
+            </div>
+            <ul className="rc-why">
+              <li>1년 수확 {f1(o.yield_t)}톤 × {won(o.price_per_kg)}원/kg = 매출 {man(o.revenue)}</li>
+              <li>경영비 {man(o.base_cost)}{o.land_rent > 0 ? ` + 임대료 1년 ${man(o.land_rent)}` : ""}</li>
+              {/* 11-17: 시·도 안 도매시장 값 차이 반영 (수확 달 시장 계수 평균) */}
+              {o.market && o.market !== "national" && (
+                <li>팔 시장 {o.market_name} — 수확 철 값이 전국 평균의 {Math.round(o.market_factor * 100)}%라 조사 가격에 곱했어요</li>
+              )}
+            </ul>
+            {o.region_note && <span className="rc-ref">ⓘ {o.region_note}</span>}
+            <div className="rc-acts">
+              {IN50.has(o.crop) && <Link className="btn primary" to={`/ai?item=${o.crop}`}>{o.crop_name} 가격 예측 보기</Link>}
+              <button type="button" className="btn" onClick={() => goInfo(o.crop)}>재배 정보 ›</button>
+            </div>
+          </section>
+        ))}
+      </div>
+      {rest.length > 0 && (
+        <div className="card rc-rest">
+          {rest.map((o, i) => (
+            <button key={o.crop} type="button" className="rc-rest-row" onClick={() => goInfo(o.crop)}>
+              <span>{String(i + 4).padStart(2, "0")} {o.emoji} {o.crop_name}</span>
+              <span>1년 순수익 <b>{man(o.margin)}</b> · 마진율 {Math.round(o.margin_rate)}%{o.region_note ? " · ⓘ 주산지 밖" : ""}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* 11-17: 결과가 0개면 이유와 다음에 심을 수 있는 날을 보여 주고, 그 날로 바로 다시 보기 */
+function NoResult({ d, form, retry }) {
+  const max = addDays(todayIso(), 365);
+  const next = d.unavailable.filter((u) => u.next_plant_date && u.next_plant_date <= max).sort((a, b) => a.next_plant_date.localeCompare(b.next_plant_date));
+  const land = LAND_TYPES[form.type];
+  return (
+    <div className="card rc-few rc-none">
+      <b>{md(form.date)}에 {land}에 심을 수 있는 작물이 없어요</b>
+      {next.length ? (
+        <>
+          <p>{land}에서 비교하는 작물은 {d.unavailable.map((u) => u.crop_name).join("·")}이고, 심는 때가 정해져 있어요.</p>
+          <ul>{next.map((u) => <li key={u.crop}>{u.emoji} {u.crop_name} — {u.next_cropping} <b>{md(u.next_plant_date)}부터</b></li>)}</ul>
+          <button type="button" className="btn primary" onClick={() => retry(next[0].next_plant_date)}>{md(next[0].next_plant_date)}({next[0].crop_name})로 다시 보기 →</button>
+        </>
+      ) : <p>재배 방식이나 심을 날짜를 바꿔 보세요.</p>}
+    </div>
+  );
+}
+
+function Results({ state, form, goInfo, retry }) {
   return (
     <Async state={state} minHeight={360}>
       {(d) => {
+        if (form.type === "orchard") return <OrchardResults list={d.orchards ?? []} goInfo={goInfo} />;
         const top = d.results.slice(0, 3);
-        if (!top.length) return <div className="card state">이 조건에서 심을 수 있는 작물이 없어요. 재배 방식이나 심을 날짜를 바꿔 보세요.</div>;
+        if (!top.length) return <NoResult d={d} form={form} retry={retry} />;
         const topProfit = top.reduce((a, b) => (b.margin > a.margin ? b : a));
         const topRate = top.reduce((a, b) => (b.margin_rate > a.margin_rate ? b : a));
         return (
@@ -470,7 +560,7 @@ export default function Recommend() {
         <>
           <div className="page-head"><h1>내 땅에 무엇을 심을까</h1><p>내 땅 조건과 심을 날짜를 알려 주시면, 임대료를 뺀 순수익이 높은 작물을 골라 드려요.</p></div>
           <LandForm key={JSON.stringify(form)} form={form} onApply={setForm} />
-          <Results state={rec} form={form} goInfo={goInfo} />
+          <Results state={rec} form={form} goInfo={goInfo} retry={(date) => { setForm({ ...form, date }); top(); }} />
         </>
       ) : (
         <>

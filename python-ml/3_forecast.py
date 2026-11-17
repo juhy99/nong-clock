@@ -7,10 +7,11 @@
 규칙 (팀 최종 모델 76판 정리 PDF 'UNIT 05 365일 일별' 그대로, 11-16)
   ① 1~14거래일 (u7d 예측이 있는 날): log 값 = W_DAY × u7d + (1 − W_DAY) × 원인        ← 팀 합의 11-13
   ② 그 뒤 v4 마지막 목표월까지: 그 달 v4 월 예측 × 날짜 모양
-       날짜 모양 = 그 단위의 과거 요일 패턴 + 그 달 안 몇째 주 패턴 (2021~기준일, 해마다 같은 무게)
-         몇째 주 효과는 주 가운데 날(4·11·18·25·29.5일)에 두고 사이 날은 직선으로 이음 (11-16: 7일 칸 경계 계단 없앰,
-         2024·2025 시험에서 칸 방식보다 정확도 +0.3·+0.2, 하루 계단 상위 10% 7.5% → 6.3%)
+       날짜 모양 = 그 단위의 과거 요일 패턴 (2021~기준일). [11-17] '몇째 주 패턴'(11-16)은 뺌 — 아래 이어진 달 수준이 대신함
        달 안 거래일(월~토) 값의 평균 = v4 월 값 (ⓕ 보정비로 '날 평균' 기준으로 바꾼 값)
+       [11-17] 달 수준은 계단이 아니라 이어진 선: 달 가운데(15.5일)에 점을 두고 사이를 직선으로 이은 뒤,
+         달마다 평균이 v4 값과 같아지도록 점 높이를 몇 번 고침 (SMOOTH_ITER). 출하철이 끊기는 곳은 잇지 않음.
+         → 달이 바뀌는 날 값이 뛰던 것 없앰 (11-17 점검: 품목 전체 20% 넘는 달 경계 61번)
   ①→② 사이: ① 마지막 날 뒤 FADE(14일 ≈ 10거래일) 동안 차이를 직선으로 줄여 이음 (PDF '다음 10거래일')
   ③ v4 끝 다음 달 ~ 기준일 + 365일: 평년 × 마지막 예측 달 비율 × 날짜 모양 → 참고 값 (off_season = 1 로 표시)
        평년 = 그 단위·그 달 최근 5년 달 평균의 기하평균, 비율 = 마지막 v4 달 값 ÷ 그 달 평년
@@ -42,7 +43,8 @@ ADJ_LO, ADJ_HI = 0.9, 1.1   # ⓕ 보정비를 자르는 범위
 FADE = 14       # ①→② 이음 (달력 14일 ≈ 10거래일)
 SHAPE_YEARS = 5
 PK_CENTER = np.array([4.0, 11.0, 18.0, 25.0, 29.5])   # 몇째 주(0~4) 효과를 두는 날
-COVER_MIN = 0.5  # 묶음에서 값 있는 단위 무게 몫이 이보다 작으면 그날 줄 없음
+COVER_MIN = 0.5
+SMOOTH_ITER = 6  # [11-17] 달 수준 이은 선: 달 평균 맞추기 반복 횟수  # 묶음에서 값 있는 단위 무게 몫이 이보다 작으면 그날 줄 없음
 
 
 def band_of(days: int, seg: str, B: pd.DataFrame):
@@ -116,6 +118,40 @@ def crash_factor(state: float, h: int, T: pd.DataFrame) -> float:
     return float(np.log(r.곱.iloc[0])) if len(r) else 0.0
 
 
+def smooth_level(dates: np.ndarray, ym: np.ndarray, es: np.ndarray, tgt: np.ndarray) -> np.ndarray:
+    """[11-17] 한 단위의 날짜별 달 목표값(tgt, 없으면 nan) → 달 평균(es 곱한 날 평균)은 목표와 같고 달 사이가 이어진 수준.
+    목표가 있는 달이 이어진 구간마다 따로 (출하철이 끊기면 따로). 구간 첫 달 앞·끝 달 뒤는 평평"""
+    lev = np.full(len(dates), np.nan)
+    months = pd.unique(ym[np.isfinite(tgt)])
+    if not len(months):
+        return lev
+    per = pd.PeriodIndex(months, freq="M")
+    order = np.argsort(per.asi8)
+    per, months = per[order], months[order]
+    segs, cur = [], [0]
+    for i in range(1, len(per)):
+        if (per[i] - per[i - 1]).n == 1:
+            cur.append(i)
+        else:
+            segs.append(cur); cur = [i]
+    segs.append(cur)
+    t_day = dates.astype("datetime64[D]").astype(np.int64).astype(float)
+    for sg in segs:
+        ms = months[sg]
+        mid = np.array([(p.start_time + pd.Timedelta(days=(p.end_time - p.start_time).days / 2)).value // 86_400_000_000_000 for p in per[sg]], float)
+        idx = [np.flatnonzero(ym == m) for m in ms]
+        goal = np.array([np.log(np.nanmean(tgt[ix])) for ix in idx])
+        anc = goal.copy()
+        rows = np.concatenate(idx)
+        for _ in range(SMOOTH_ITER):
+            L = np.interp(t_day[rows], mid, anc)                    # 끝 밖은 평평
+            lev[rows] = L
+            for k, ix in enumerate(idx):
+                anc[k] += goal[k] - np.log(np.mean(np.exp(lev[ix]) * es[ix]))
+        lev[rows] = np.interp(t_day[rows], mid, anc)
+    return np.exp(lev)
+
+
 def unit_forecasts(a) -> pd.DataFrame:
     """단위 × 목표일 → log 값 · 규칙 · 범위 구간 · 참고 여부"""
     E = pd.read_csv(a.engine, parse_dates=["base_date", "target_date"])
@@ -145,8 +181,9 @@ def unit_forecasts(a) -> pd.DataFrame:
     G["목표월"] = G.date.dt.strftime("%Y-%m")
     G["in_season"] = [(u, m) in season for u, m in zip(G.unit, G.m)]
     G = G.merge(wd, on=["unit", "dow"], how="left").reset_index(drop=True)
-    G["pk"] = week_effect(G, pk)
-    G["s"] = (G.wd.fillna(0) + G.pk).clip(-0.4, 0.4)
+    # [11-17] 달 수준을 이어진 선으로 바꾸면서 '몇째 주 효과'는 뺌 — 이어진 선이 달 안 오르내림을 이미 그려서, 같이 쓰면 두 번 세어 달 끝이 튐
+    #   (2024·2025 시험, 달 평균을 안다고 칠 때: 계단+요일+주 84.75·84.15 → 이음+요일 84.82·84.17, 달 경계 하루 변화 중앙 16.6% → 2.5%)
+    G["s"] = G.wd.fillna(0).clip(-0.4, 0.4)
     G["es"] = np.exp(G.s)
     G["es"] = G.es / G.groupby(["unit", "목표월"]).es.transform("mean")   # 달 안 거래일 평균 = 1
     G = G.merge(V, on=["unit", "목표월"], how="left").merge(nor, on=["unit", "m"], how="left")
@@ -159,10 +196,18 @@ def unit_forecasts(a) -> pd.DataFrame:
     G = G.sort_values(["unit", "date"]).reset_index(drop=True)
 
     b = np.full(len(G), np.nan); rule = np.full(len(G), "", dtype=object); seg = np.full(len(G), "", dtype=object); ref = np.zeros(len(G), bool)
-    s2 = (G.date <= v4_end) & G.v4.notna()
-    b[s2] = np.log(G.v4[s2] * G.es[s2]); rule[s2] = "v4 × 날짜 모양"; seg[s2] = "월"
-    s3 = (G.date > v4_end) & G.normal.notna() & G.ratio.notna()
-    b[s3] = np.log(G.normal[s3] * G.ratio[s3] * G.es[s3]); rule[s3] = "평년 × 비율 (참고)"; seg[s3] = "월"; ref[s3] = True
+    s2 = ((G.date <= v4_end) & G.v4.notna()).to_numpy()
+    s3 = ((G.date > v4_end) & G.normal.notna() & G.ratio.notna()).to_numpy()
+    # [11-17] 달 목표값(출하철 달만) → 이어진 수준. 달 평균은 그대로라 v4 정확도는 같음
+    tgt = np.where(s2, G.v4, np.where(s3, G.normal * G.ratio, np.nan)).astype(float)
+    tgt[~G.in_season.to_numpy()] = np.nan
+    lev = np.full(len(G), np.nan)
+    ymv, dv, esv = G["목표월"].to_numpy(), G.date.to_numpy(), G.es.to_numpy()
+    for u, ix in G.groupby("unit").indices.items():
+        lev[ix] = smooth_level(dv[ix], ymv[ix], esv[ix], tgt[ix])
+    ok = np.isfinite(lev)
+    b[ok & s2] = np.log(lev[ok & s2] * esv[ok & s2]); rule[s2] = "v4 × 날짜 모양"; seg[s2] = "월"
+    b[ok & s3] = np.log(lev[ok & s3] * esv[ok & s3]); rule[s3] = "평년 × 비율 (참고)"; seg[s3] = "월"; ref[s3] = True
     one = np.where(G.cause.notna(), W_DAY * np.log(G.u7) + (1 - W_DAY) * np.log(G.cause), np.log(G.u7))
     # ⓖ 폭락 보정: 단위마다 ① 날을 거래일 순서(H=1..)로 세어 곱을 더함 (이음 계산 전에)
     crash = np.zeros(len(G), dtype=bool)

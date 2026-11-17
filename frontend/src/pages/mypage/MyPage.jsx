@@ -8,7 +8,7 @@ import { USER_TYPE_LABEL, canSell, useAuth } from "../../components/AuthContext"
 import { useAsync } from "../../components/common";
 import { NOTIFY_TYPES } from "../../mocks/notifications";
 import { AUCTION_ENABLED, NOTIFY_ENABLED } from "../../features";
-import { boardDate, timeAgo, won } from "../../utils/format";
+import { boardDate, md, timeAgo, won } from "../../utils/format";
 import { FavoritePicker } from "./Favorites";
 import MyAuctions from "./MyAuctions";
 import MyBids from "./MyBids";
@@ -40,13 +40,17 @@ function Spark({ values }) {
   );
 }
 
+const FAV_SHOW = 7;   // 카드 7개 + '바꾸기' 1칸 = 두 줄
+const mdOf = (iso) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
+
 function FavCards({ onAdd }) {
   const { user } = useAuth();
   const favorites = user.favorites ?? [];
   const state = useAsync(async () => {
     if (!favorites.length) return [];
     const today = await getTodayPrices();
-    const rows = today.items.filter((p) => favorites.includes(p.item)).slice(0, 3);
+    // 11-17: 3개만 자르던 것 → 고른 순서대로 FAV_SHOW 개까지 (넘으면 '외 N개'), 관심 품목 4개인데 3개만 보이던 문제
+    const rows = favorites.map((f) => today.items.find((p) => p.item === f)).filter(Boolean).slice(0, FAV_SHOW);
     return Promise.all(rows.map(async (p) => {
       const [hist, pred] = await Promise.all([getPriceHistory(p.item, { days: 8 }).catch(() => null), predict({ item: p.item, horizon: 7 }).catch((e) => ({ season: e.detail?.season ?? null }))]);
       return { ...p, compared_date: today.compared_date, spark: (hist?.points ?? []).map((x) => x.price).filter((v) => v != null), pred: pred?.season !== undefined ? null : pred, season: pred?.season ?? null };
@@ -59,20 +63,38 @@ function FavCards({ onAdd }) {
         return (
           <Link key={p.item} className="mp-fav" to={`/search?q=${encodeURIComponent(p.name)}`}>
             <div className="nm"><span aria-hidden>{p.emoji}</span>{p.name}</div>
-            <div className="p">{won(p.price)}원<small>/kg</small></div>
-            <div className="d"><b className={up ? "up" : "down"}>{up ? "▲" : "▼"} {won(Math.abs(p.change ?? 0))}원 ({Math.abs(p.change_pct ?? 0).toFixed(1)}%)</b><br />직전 거래일 대비</div>
-            <Spark values={p.spark} />
-            {p.pred && (
-              <div className="ai"><span>AI 1주 뒤 예측</span><b>{won(p.pred.predicted_price)}원 {p.pred.change_pct >= 0 ? "▲" : "▼"} {Math.abs(p.pred.change_pct).toFixed(1)}%</b>{p.pred.base_price != null && <small className="muted">최근 7일 평균 {won(p.pred.base_price)}원 대비</small>}</div>
+            {/* 11-17: 오늘 거래가 없으면 '-원 ▲0원 (0.0%)' 대신 거래 없음 + 마지막 거래일 */}
+            {p.price != null ? (
+              <>
+                <div className="p">{won(p.price)}원<small>/kg</small></div>
+                {p.change != null
+                  ? <div className="d"><b className={up ? "up" : "down"}>{up ? "▲" : "▼"} {won(Math.abs(p.change))}원 ({Math.abs(p.change_pct ?? 0).toFixed(1)}%)</b><br />직전 거래일 대비</div>
+                  : <div className="d">직전 거래일 값이 없어 비교 안 함</div>}
+              </>
+            ) : (
+              <>
+                <div className="p none">오늘 거래 없음</div>
+                <div className="d">{p.pred?.base_price_date ? `마지막 거래 ${mdOf(p.pred.base_price_date)} · 그때 7일 평균 ${won(p.pred.base_price)}원/kg` : "최근 거래가 없어요"}</div>
+              </>
             )}
+            <Spark values={p.spark} />
+            {p.pred && (p.pred.base_stale ? (
+              /* 11-17: 마지막 거래가 오래전이면 변동률(%)을 보여 주지 않음 — 철이 바뀐 값끼리 견줘 ▲178% 같은 숫자가 나왔음 */
+              <div className="ai"><span>AI 1주 뒤 예측</span><b>{won(p.pred.predicted_price)}원</b><small className="muted">최근 거래가 없어 지금 값과 비교하지 않아요</small></div>
+            ) : (
+              <div className="ai"><span>AI 1주 뒤 예측</span><b>{won(p.pred.predicted_price)}원 {p.pred.change_pct >= 0 ? "▲" : "▼"} {Math.abs(p.pred.change_pct).toFixed(1)}%</b>{p.pred.base_price != null && <small className="muted">최근 7일 평균 {won(p.pred.base_price)}원 대비</small>}
+                {/* 11-17: 작년보다 크게 오른 때는 예측이 낮게 나오기 쉬움 (예측 화면 ⚠️ 와 같은 기준) */}
+                {p.pred.trend_vs_last_year >= 1.5 && <small className="muted">⚠️ 작년보다 {p.pred.trend_vs_last_year.toFixed(1)}배 높은 때라 예측이 낮게 나오기 쉬워요</small>}</div>
+            ))}
             {!p.pred && p.season?.label && (
-              <div className="ai"><span>AI 예측</span><b>출하철 아님 · 주로 {p.season.label}</b></div>
+              // 11-17: 지금 거래는 있는데 1주 뒤 예측만 없는 때(예: 11월 딸기)도 '출하철 아님'이라 헷갈림 → 다음 예측 시작일을 보여 줌
+              <div className="ai"><span>AI 예측</span><b>{p.season.next_start ? `${md(p.season.next_start)}부터 예측해요 · 주로 ${p.season.label}` : `출하철 아님 · 주로 ${p.season.label}`}</b></div>
             )}
           </Link>
         );
       })}
       <button type="button" className="mp-fav add" onClick={onAdd}>
-        <b>+</b>관심 품목 {favorites.length ? "바꾸기" : "더하기"}<small>50개 품목에서 골라요</small>
+        <b>+</b>관심 품목 {favorites.length ? "바꾸기" : "더하기"}<small>{favorites.length > FAV_SHOW ? `외 ${favorites.length - FAV_SHOW}개 더 있어요 · ` : ""}50개 품목에서 골라요</small>
       </button>
     </div>
   );

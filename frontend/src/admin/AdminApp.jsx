@@ -10,6 +10,10 @@ import Dashboard from "./pages/Dashboard";
 import DataStatus from "./pages/DataStatus";
 import Members from "./pages/Members";
 import ModelPerformance from "./pages/ModelPerformance";
+import ForecastHealth from "./pages/ForecastHealth";
+import NewsAdmin from "./pages/NewsAdmin";
+import OpsErrors from "./pages/OpsErrors";
+import SiteSettings from "./pages/SiteSettings";
 import { buildText } from "../api/admin";
 import { BUILD } from "../api/collection";
 import { AUCTION_ENABLED } from "../features";
@@ -21,6 +25,11 @@ const MENU = [
   ...(AUCTION_ENABLED ? [["auctions", "🔨 경매 관리"]] : []),
   ["data", "📥 데이터 수집"],
   ["model", "📈 모델 성능"],
+  // 11-17 운영 화면
+  ["forecast", "🩺 예측 점검"],
+  ["errors", "🚨 오류 기록"],
+  ["news", "📰 뉴스 관리"],
+  ["site", "⚙️ 사이트 설정"],
 ];
 
 /** 관리자 로그인 (11-14): DB 표 admin 의 계정만 — 사용자 사이트 회원 계정으로는 못 들어옴 */
@@ -73,17 +82,20 @@ function AdminLayout() {
             <NavLink key={to} to={`/${to}`} end={to === ""}>{label}</NavLink>
           ))}
         </nav>
-        <button
-          className="btn sm danger"
-          onClick={async () => {
-            if (!confirm(`이 브라우저의 예시 데이터(회원 관리 예시·${AUCTION_ENABLED ? "입찰·" : ""}사진)를 처음 상태로 되돌릴까요? 실제 DB(게시판·공지·회원)는 바뀌지 않아요`)) return;
-            resetAll();
-            await clearImages().catch(() => {});
-            location.href = "/admin/";
-          }}
-        >
-          예시 데이터 초기화
-        </button>
+        {/* 11-17: 회원 관리가 실제 DB 로 바뀌어 예시 데이터는 경매(보류)에만 남음 → 경매를 켤 때만 보여 줌 */}
+        {AUCTION_ENABLED && (
+          <button
+            className="btn sm danger"
+            onClick={async () => {
+              if (!confirm("이 브라우저의 경매 예시 데이터(입찰·사진)를 처음 상태로 되돌릴까요? 실제 DB(게시판·공지·회원)는 바뀌지 않아요")) return;
+              resetAll();
+              await clearImages().catch(() => {});
+              location.href = "/admin/";
+            }}
+          >
+            예시 데이터 초기화
+          </button>
+        )}
       </aside>
       <div className="admin-main">
         <header className="admin-top">
@@ -119,6 +131,10 @@ export default function AdminApp() {
         <Route path="auctions" element={AUCTION_ENABLED ? <AuctionsAdmin /> : <Navigate to="/" replace />} />
         <Route path="data" element={<DataStatus />} />
         <Route path="model" element={<ModelPerformance />} />
+        <Route path="forecast" element={<ForecastHealth />} />
+        <Route path="errors" element={<OpsErrors />} />
+        <Route path="news" element={<NewsAdmin />} />
+        <Route path="site" element={<SiteSettings />} />
         <Route path="system" element={<Navigate to="/" replace />} />
         <Route path="*" element={<div className="card state">없는 메뉴입니다.</div>} />
       </Route>

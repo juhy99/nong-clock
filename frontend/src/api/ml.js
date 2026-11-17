@@ -1,9 +1,8 @@
 // ML API(FastAPI) 호출. 명세: docs/06_api_spec.md 1번 섹션.
-// 서버가 꺼져 있으면 예비 데이터(mocks)로 대신 보여주고, 화면 상단에 "데모 데이터" 안내를 띄운다.
+// 서버가 꺼져 있으면 품목·지역·시장 목록만 저장소의 목록으로 대신하고(값이 아니라 이름표), 예측·추천 값은 오류로 알린다. 화면 위에 안내 띠.
 import { ML_API_BASE, request } from "./client";
 import { HORIZONS, ITEMS, REGIONS } from "../mocks/catalog";
 import { MARKETS } from "../mocks/market";
-import { mockTopMovers } from "../mocks/prediction";
 
 const listeners = new Set();
 let offline = false;
@@ -50,12 +49,13 @@ export const predict = (req) =>
 export const getTopMovers = ({ horizon = 7, limit = 4 } = {}) =>
   withFallback(
     () => request(ML_API_BASE, `/predict/top-movers?horizon=${horizon}&limit=${limit}`),
-    () => mockTopMovers(horizon, limit),
+    noMock, // 11-17: 가짜 급등락 값으로 대신하지 않음 (지금 화면에서는 안 쓰는 함수)
   );
+
+function noMock() { throw new Error("AI 서버에 연결할 수 없어요. 잠시 뒤 다시 시도해 주세요."); }
 
 // ── 작물 추천 (docs/06_api_spec.md 1-6) ──
 // 작물 추천 (11-13): 실제 자료(shared/crops.json + DB 예측)로 계산 — 서버가 안 되면 가짜 값 대신 오류를 보여 줌
-const noMock = () => { throw new Error("AI 서버에 연결할 수 없어요. 잠시 뒤 다시 시도해 주세요."); };
 export const getRecommendCrops = () => withFallback(() => request(ML_API_BASE, "/recommend/crops"), noMock);
 
 /** 내 땅으로 작물 고르기. @param {{lands: {type: string, area_pyeong: number}[], start_date: string}} req */
@@ -78,6 +78,7 @@ export async function pingMl() {
   const t0 = performance.now();
   try {
     const data = await request(ML_API_BASE, "/health", { timeoutMs: 3000 });
+    if (!data?.status) throw new Error("ML API 가 아닌 응답이 왔어요 (주소 설정 확인)"); // 11-17: JSON 이 아닌 응답이면 대시보드가 죽었음
     return { ok: true, ms: Math.round(performance.now() - t0), detail: data };
   } catch (e) {
     return { ok: false, ms: null, detail: e.message };

@@ -14,6 +14,8 @@
 - 순이익 범위 = 예측 하한·상한으로 판 매출 − 경영비
 - 기존 작물(토지마다) → 흙 pH 어림. 후보 작물 최고값보다 0.5 이상 높으면 순이익과 상관없이 맨 아래로 (soil_ph.py)
 - 한 작물에 작형이 여럿이면 고른 날 심을 수 있는 작형 중 순이익이 가장 큰 것 하나만 결과에 넣음
+- 과수원(여러 해 나무)은 심는 날 비교를 하지 않고, 다 자란 나무 기준 1년 소득으로 따로 줄 세움 (orchard_options, 11-17)
+  매출·수량 = 농진청 농산물소득조사 10a당 평균 × 면적 · 경영비 = 조사 경영비(토지임차료 뺌) × 면적 + 1년 임대료 전부
 """
 
 from dataclasses import dataclass, field, replace
@@ -373,3 +375,76 @@ def price_on(crop: Crop, d: date, today: date) -> Price | None:
 
 __all__ = ["Option", "Rent", "TOP_N", "at_best_market", "compare_markets", "evaluate", "excluded", "planting_dates", "price_on",
            "recommend_crops", "sido_markets"]
+
+
+# ── 11-17 과수원: 다 자란 나무 기준 1년 소득 (조사 자료 그대로, 날짜·가격 예측은 안 씀) ──
+MAIN_REGIONS = {"mandarin": ("제주",)}   # 노지감귤은 거의 제주에서만 재배 → 다른 시·도면 안내만 붙이고 순위는 그대로
+
+
+@dataclass(frozen=True)
+class OrchardOption:
+    crop: Crop
+    area_pyeong: float
+    yield_t: float
+    price: float          # 조사 kg당 수취가
+    revenue: float
+    base_cost: float      # 조사 경영비(토지임차료 뺌) × 면적
+    land_rent: float      # 사용자 1년 임대료 (원)
+    machine_rent: float
+    region_note: str | None
+    market: str = NATIONAL    # 11-17: 시·도 안에서 수확 철 값이 가장 좋은 공영 도매시장 (없으면 전국)
+    factor: float = 1.0       # 그 시장 계수 (수확 달 평균, 0.67~1.5) — 매출에 곱함
+
+    @property
+    def cost(self) -> float:
+        return self.base_cost + self.land_rent + self.machine_rent
+
+    @property
+    def margin(self) -> float:
+        return self.revenue - self.cost
+
+    @property
+    def margin_rate(self) -> float:
+        return self.margin / self.revenue * 100 if self.revenue else 0.0
+
+
+def _months(span: tuple[int, int] | None) -> list[int]:
+    if not span:
+        return list(range(1, 13))
+    a, b = span
+    return [((a - 1 + i) % 12) + 1 for i in range(((b - a) % 12) + 1)]
+
+
+def orchard_market(crop: Crop, region: str) -> tuple[str, float]:
+    """11-17: 과수원도 노지·시설처럼 시·도 안 도매시장 값 차이를 반영 — 수확 달들의 시장 계수(그 시장 ÷ 전국, 0.67~1.5) 평균이
+    가장 큰 시장. 시·도 안에 시장이 없으면 전국(1.0). 수량·경영비는 조사 전국 평균 그대로 (시·도별 조사 자료가 없음)"""
+    codes, _ = sido_markets(region, crop)
+    months = _months(crop.harvest_months)
+    best = (NATIONAL, 1.0)
+    for m in codes:
+        if m == NATIONAL:
+            continue
+        f = sum(crop_prices.market_factor(crop, m, mo) for mo in months) / len(months)
+        if best[0] == NATIONAL or f > best[1]:
+            best = (m, f)
+    return best
+
+
+def orchard_options(lands: dict[str, float], rents: dict[str, Rent], region: str) -> list[OrchardOption]:
+    area = lands.get("orchard", 0)
+    if area <= 0:
+        return []
+    a10, r = area / PYEONG_PER_10A, rents.get("orchard") or Rent()
+    out = []
+    for crop in CROPS.values():
+        s = crop.survey
+        if "orchard" not in crop.land_types or not crop.perennial_note or s is None or not s.revenue:
+            continue
+        main = MAIN_REGIONS.get(crop.code)
+        note = f"노지{crop.name}은 겨울 추위 때문에 거의 {'·'.join(main)}에서만 길러요. {region}에서는 조사값만큼 거두기 어려워 맨 아래에 뒀어요" \
+            if main and region not in main and region != NATIONAL else None
+        market, f = orchard_market(crop, region)
+        out.append(OrchardOption(crop=crop, area_pyeong=area, yield_t=s.kg * a10 / 1000, price=s.price * f, revenue=s.revenue * a10 * f,
+                                 base_cost=max(0, s.cost - s.land_rent) * a10, land_rent=r.land * 1e4, machine_rent=r.machine * 1e4, region_note=note,
+                                 market=market, factor=f))
+    return sorted(out, key=lambda o: (o.region_note is not None, -o.margin))

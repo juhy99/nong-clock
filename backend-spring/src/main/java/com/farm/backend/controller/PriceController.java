@@ -4,7 +4,9 @@ import com.farm.backend.service.PriceService;
 import com.farm.backend.service.VarietyCatalog;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -41,9 +43,14 @@ public class PriceController {
         }
     }
 
-    /** 품종의 예측 단위 id 들 (품종 하나 = 단위 하나 또는 화면묶음째 여럿). 품종을 안 골랐거나 시장을 골랐으면 null = 품목 전체 */
-    private List<Integer> units(String variety, String market) {
-        if (variety == null || variety.isBlank() || !"national".equals(market)) return null;
+    /**
+     * 품종의 예측 단위 id 들 (품종 하나 = 단위 하나 또는 화면묶음째 여럿). 품종을 안 골랐거나 시장을 골랐으면 null = 품목 전체.
+     * 11-17: 다른 품목의 품종(예: /prices/apple/...?variety=pear-1)이면 404 — 예전에는 배 값을 사과 이름으로 돌려줬음
+     */
+    private List<Integer> units(String item, String variety, String market) {
+        if (variety == null || variety.isBlank()) return null;
+        if (!variety.startsWith(item + "-")) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "품종 " + variety + " 은(는) " + item + " 의 품종이 아닙니다");
+        if (!"national".equals(market)) return null;
         List<Integer> ids = prices.unitIdsOf(varieties.unitNames(variety));
         if (ids.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "품종 " + variety + " 의 시세가 DB 에 없습니다");
         return ids;
@@ -62,7 +69,7 @@ public class PriceController {
     @GetMapping("/prices/{item}/grades")
     public Map<String, Object> grades(@PathVariable String item, @RequestParam(defaultValue = "national") String market,
                                       @RequestParam(required = false) String date, @RequestParam(required = false) String variety) {
-        return prices.grades(item, market, day(date), units(variety, market));
+        return prices.grades(item, market, day(date), units(item, variety, market));
     }
 
     @GetMapping("/prices/{item}/history")
@@ -70,7 +77,7 @@ public class PriceController {
                                        @RequestParam(defaultValue = "HIGH") String grade, @RequestParam(required = false) String date,
                                        @RequestParam(defaultValue = "8") int days, @RequestParam(required = false) String variety) {
         if (!GRADE_SET.contains(grade)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "grade 는 " + PriceService.GRADES + " 중 하나");
-        return prices.history(item, market, grade, day(date), Math.max(1, Math.min(days, 400)), units(variety, market));
+        return prices.history(item, market, grade, day(date), Math.max(1, Math.min(days, 400)), units(item, variety, market));
     }
 
     @GetMapping("/prices/{item}/origins")
@@ -93,7 +100,7 @@ public class PriceController {
     /** 도매시장별 최근 12달 평균 경락가 · 물량 몫 (시세 화면 맨 아래, 11-12). 품종을 주면 그 품종 (시장 × 품종 월 표) */
     @GetMapping("/prices/{item}/market-share")
     public Map<String, Object> marketShare(@PathVariable String item, @RequestParam(required = false) String variety) {
-        return prices.marketShare(item, units(variety, "national"));
+        return prices.marketShare(item, units(item, variety, "national"));
     }
 
     /** 산지공판장 최근 12달 · 23~25년 평균 경락가 · 물량 몫 (시세 화면 맨 아래, 11-12). 품종별 산지 자료가 없어 품목 값 */
@@ -105,6 +112,23 @@ public class PriceController {
     /** 가격 예측 화면의 계절 패턴 · 월별 반입량 (11-13): 평년 · 올해 실제 · 남은 달 예측. 품종을 주면 그 품종 */
     @GetMapping("/prices/{item}/monthly")
     public Map<String, Object> monthly(@PathVariable String item, @RequestParam(required = false) String variety) {
-        return prices.monthly(item, variety, units(variety, "national"));
+        return prices.monthly(item, variety, units(item, variety, "national"));
+    }
+
+    /**
+     * 오류도 화면이 읽는 {"message","detail"} 로 (11-17). 예전에는 스프링 기본 오류 모양(timestamp·status·error)이라
+     * 화면에 "HTTP 404" 만 보이고 "품종 … 시세가 DB 에 없습니다" 같은 이유가 사라졌음
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> failed(ResponseStatusException e) {
+        String why = e.getReason() == null ? "시세를 불러오지 못했어요" : e.getReason();
+        return ResponseEntity.status(e.getStatusCode()).body(Map.of("message", why, "detail", why));
+    }
+
+    /** ?days=abc 처럼 숫자 칸에 글자 → 400 */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> typeMismatch(MethodArgumentTypeMismatchException e) {
+        String why = "요청 값을 확인하세요 (" + e.getName() + ")";
+        return ResponseEntity.badRequest().body(Map.of("message", why, "detail", why));
     }
 }

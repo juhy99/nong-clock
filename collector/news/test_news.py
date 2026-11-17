@@ -42,7 +42,7 @@ class RulesTest(unittest.TestCase):
         cases = [
             ("빅맥 1.7배 묵직", []), ("매출 3배 증가", []), ("칼로리 다섯 배 차이", []), ("레알은 배가 아프다", []),
             ("1-1 무, 승점 1", []), ("사과와 배, 단감", ["apple", "pear"]), ("고랭지 무값 하락", ["radish"]),
-            ("배추 2배 올라", ["napa_cabbage"]), ("양배추 값", ["cabbage"]), ("양송이 서울시의원 예산", []),
+            ("배추 2배 올라", ["napa_cabbage"]), ("양배추 값", ["cabbage"]), ("양송이 서울시의원 예산", []), ("중고거래 플랫폼 당근에 따르면 검색량 급증", []), ("당근모임 유료 일정", []), ("월동 당근 출하 지연", ["carrot"]),
         ]
         for text, want in cases:
             with self.subTest(text=text):

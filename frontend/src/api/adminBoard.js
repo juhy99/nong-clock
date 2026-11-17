@@ -45,3 +45,9 @@ export const adminDeleteComment = (id) => call(api.delete(`/api/admin/comments/$
 
 /** 사용자 게시판 맨 위 공지 (누구나) */
 export const getNotices = () => call(api.get("/api/notices"), "공지를 불러오지 못했습니다");
+
+// ── 회원 관리 (11-17): 실제 DB users — 보기만 (정지 없음, 탈퇴는 본인만) ──
+/** @returns {Promise<{id,email,nickname,region,farmName,joined,posts,comments}[]>} */
+export const adminUsers = () => call(api.get("/api/admin/users"), "회원 목록을 불러오지 못했습니다");
+/** @returns {Promise<{members:number, joined_today:number, joined_7d:number}>} */
+export const adminStats = () => call(api.get("/api/admin/stats"), "회원 수를 불러오지 못했습니다");

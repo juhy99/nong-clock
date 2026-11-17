@@ -36,7 +36,7 @@ export async function request(base, path, { method = "GET", body, timeoutMs = 80
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      const d = data?.detail;
+      const d = data?.detail ?? data?.message; // ml-api(FastAPI)는 detail, Spring 은 message (11-17)
       const detail = typeof d === "string" ? d : typeof d?.message === "string" ? d.message : `HTTP ${res.status}`;
       throw new ApiError(detail, res.status, d && typeof d === "object" ? d : null);
     }

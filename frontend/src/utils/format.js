@@ -65,6 +65,18 @@ export function seeded(seedText) {
   };
 }
 
+/**
+ * 닉네임 규칙 (11-17, 서버 UserService.normNickname 과 같음): 한글(완성된 글자)·영문·숫자 2~12자,
+ * 띄어쓰기·특수문자 없이, 관리자로 보일 수 있는 이름 안 됨. 맞으면 "", 틀리면 안내 문장
+ */
+export const NICKNAME_RULE = "한글·영문·숫자 2~12자 (띄어쓰기·특수문자 없이)";
+export function nicknameError(v) {
+  const s = String(v ?? "").trim();
+  if (!/^[가-힣A-Za-z0-9]{2,12}$/.test(s)) return "닉네임은 한글·영문·숫자로 2~12자 입력하세요 (띄어쓰기·특수문자 없이)";
+  if (["관리자", "운영자", "admin", "농클락", "nongclock"].some((w) => s.toLowerCase().includes(w))) return "관리자로 보일 수 있는 닉네임은 쓸 수 없어요";
+  return "";
+}
+
 /** 회원 지역 (시·도) */
 export const SIDO = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
 

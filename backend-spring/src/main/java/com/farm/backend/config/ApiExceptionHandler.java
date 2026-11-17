@@ -28,7 +28,8 @@ import java.util.Map;
  * 다른 컨트롤러(시세 등)의 오류 처리는 바꾸지 않도록 회원·게시판 컨트롤러에만 적용.
  */
 @RestControllerAdvice(assignableTypes = {UserController.class, PostController.class, CommentController.class,
-        AdminAuthController.class, AdminBoardController.class, NoticeController.class}) // 11-14 관리자·공지 추가
+        AdminAuthController.class, AdminBoardController.class, NoticeController.class,
+        com.farm.backend.controller.AdminOpsController.class, com.farm.backend.controller.SiteController.class}) // 11-14 관리자·공지 · 11-17 운영·사이트 설정
 public class ApiExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
@@ -62,7 +63,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> unknown(Exception e) {
+    public ResponseEntity<Map<String, Object>> unknown(Exception e, jakarta.servlet.http.HttpServletRequest req) {
+        OpsLog.note(req, e);   // 11-17: 관리자 '오류 기록'에 오류 종류를 남김
         // 스프링이 상태 코드를 정해 둔 오류(잘못된 메서드 405, 형식 415 등)는 그 코드 그대로
         if (e instanceof ErrorResponse er)
             return ResponseEntity.status(er.getStatusCode()).body(Map.of("message", "요청을 처리할 수 없습니다 (" + er.getStatusCode().value() + ")"));

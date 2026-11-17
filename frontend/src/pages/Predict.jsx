@@ -40,6 +40,7 @@ function fcAt(p, t) {
 }
 /** 11-16: 점 사이가 GAP_DAYS 넘게 비면(출하철 밖이라 예측 안 하는 달) 선을 끊음 */
 const GAP_DAYS = 10;
+const STEP_RATIO = 1.25; // 11-17: 붙은 거래일 사이 25% 넘게 바뀌면 '산지·작형이 바뀌는 날' 안내
 function splitGaps(arr) {
   const out = [];
   for (const x of arr) {
@@ -190,9 +191,11 @@ function MarketCards({ series, horizon }) {
       <div className="pv-track" ref={track} onScroll={onScroll}>
         {series.map((m) => (
           <ul className="pv-weeks pv-slide" key={m.code} aria-label={`${m.name} 예측`}>
-            <li className="now"><span className="w"><b>지금</b>{md(m.base_date)} 기준</span><span className="rg" /><span className="pr">{won(m.base)}원</span></li>
+            <li className="now"><span className="w"><b>지금</b>{md(m.raw?.base_price_date ?? m.base_date)} 거래까지</span><span className="rg" /><span className="pr">{won(m.base)}원</span></li>
             {m.rows.map((f) => {
-              const c = pct(f.price, m.base), best = f.t === m.bestRow.t && f.price > m.base; // 지금보다 비쌀 때만 출하 추천
+              // 11-17: 표의 '출하 추천'은 위 출하 추천 날짜(주마다 고른 최고가 m.best)가 들어 있는 칸 — 예전엔 칸 끝 날 값끼리 따로 골라
+              //        "9월 3주차 (9/20)" 인데 표는 8/14~9/11 칸에 붙는 일이 있었음. 지금보다 비쌀 때만
+              const c = pct(f.price, m.base), best = m.best.price > m.base && f.from <= m.best.date && m.best.date <= f.date;
               return (
                 <li key={f.t} className={best ? "best" : ""}>
                   <span className="w"><b>{horizon <= 60 ? afterLabel(f.t) : `${Math.max(1, Math.round(f.t / 30.4))}개월 뒤`}{best && <em>출하 추천</em>}{f.off_season && <em className="ref" title="월 예측이 끝난 뒤라 평년 × 비율로 낸 값 (정확도를 확인하지 못함)">참고</em>}</b>{md(f.from)}~{md(f.date)}</span>
@@ -225,9 +228,9 @@ function OffSeason({ s, itemName, today, onGo }) {
   return (
     <section className="card pv-offseason">
       <div className="pv-off-ic" aria-hidden>🗓️</div>
-      <h2>{itemName}{eunNeun(itemName)} 지금 출하철이 아니에요</h2>
+      <h2>{s.no_market_trade ? `이 지역 도매시장에는 ${itemName} 거래가 없어요` : `${itemName}${eunNeun(itemName)} 지금 출하철이 아니에요`}</h2>
       <p>{s.message}</p>
-      {s.label && <p className="muted small">출하철 = 예측 모델이 값을 내는 달 (팀 기준: 1년 거래량의 대부분이 몰린 달). 그 밖의 달은 몇 상자만 거래돼 값이 들쭉날쭉해서 예측하지 않아요.</p>}
+      {s.label && !s.no_market_trade && <p className="muted small">출하철 = 예측 모델이 값을 내는 달 (팀 기준: 1년 거래량의 대부분이 몰린 달). 그 밖의 달은 몇 상자만 거래돼 값이 들쭉날쭉해서 예측하지 않아요.</p>}
       {start && to && (
         <button type="button" className="btn primary" onClick={() => onGo(to)}>
           다음 철({Number(start.slice(5, 7))}월~) 예측 보기 →
@@ -286,8 +289,14 @@ function Result({ r }) {
           <div className="pv-head"><h2>이 예측, 믿을 만한가요?</h2></div>
           <div className="pv-acc">
             <div className="pv-ring" style={{ "--v": p.confidence }}><span>{p.confidence}%</span></div>
-            <p>지난 검증 기간에 이 품목 {afterLabel(horizon)} 예측은<br />실제 가격과 평균 <b>±{Math.round(p.error_pct)}% 안</b>에서 맞았어요.</p>
+            {/* 11-17: 최종 모델 시험 정확도 (품종 → 품목). 전에는 범위 폭의 절반이라 품목과 상관없이 같은 값이었음. 3주 넘게 먼 날은 달 평균 기준 */}
+            <p>지난 시험 기간(2025~)에 이 {p.variety ? "품종" : "품목"} {afterLabel(horizon)} 예측은<br />실제 가격과 평균 <b>{Math.round(p.error_pct)}%</b> 차이 났어요{horizon > 20 ? " (달 평균 기준)" : ""}.</p>
           </div>
+          {/* 11-17: 시험 정확도가 50% 밑(예: 포도 샤인마스캇 7~12달 뒤 −3.3 → 0%)이면 숫자만 두지 않고 분명히 알림.
+              샤인마스캇은 2024~25 공급이 늘며 값이 크게 내려 모델이 따라가지 못함 (작년 같은 때 값보다도 덜 맞음) */}
+          {p.confidence < 50 && (
+            <ul className="pv-notes"><li><span className="ic">⚠️</span>이 {p.variety ? "품종" : "품목"}은 지난 시험에서 예측이 실제와 크게 달랐어요. 값은 참고만 하고 시세 화면의 실제 가격 흐름을 함께 보세요.</li></ul>
+          )}
           {/* 이상기후 주의 구간은 실제 모델이 붙을 때까지 숨김 (11-13, 지금 ml-api 값은 더미) */}
           {p.reference === "baseline" && (
             <ul className="pv-notes"><li><span className="ic">🔖</span>이 품목·기간은 예측이 덜 정확해 참고용이에요</li></ul>
@@ -305,11 +314,40 @@ function Result({ r }) {
               </ul>
             );
           })()}
+          {/* 11-17: 하루 사이 크게 바뀌는 날 — 묶음(품목·품종) 안에서 주로 거래되는 산지·작형이 바뀌는 날 (예: 배추 기타 11/30 가을 강원 → 12/1 겨울 전남).
+              모델(팀 최종)은 그대로 두고 이유를 알림. 고르게 펴는 시험은 정확도 차이가 작아(2024 85.17→85.37) 넣지 않음 — 시험_하루튐_구성바뀌는날_고르게_1117 */}
+          {(() => {
+            const steps = [];
+            const f = p.forecast;
+            for (let i = 1; i < f.length; i++) {
+              const r = f[i].price / f[i - 1].price;
+              if (daysBetween(f[i - 1].date, f[i].date) <= 3 && (r >= STEP_RATIO || r <= 1 / STEP_RATIO)) steps.push([f[i - 1], f[i], r]);
+            }
+            return steps.length > 0 && (
+              <ul className="pv-notes"><li><span className="ic">🔀</span>
+                {steps.slice(0, 3).map(([a, b, r]) => `${md(a.date)}→${md(b.date)} ${r > 1 ? "+" : "−"}${Math.round(Math.abs(r - 1) * 100)}%`).join(" · ")}{steps.length > 3 ? ` 외 ${steps.length - 3}곳` : ""}:
+                {" "}이 무렵은 주로 거래되는 산지·작형(품종)이 바뀌거나 철 끝이라 거래가 적은 때예요. 예측은 산지·작형마다 따로 맞힌 값을 거래량 비율로 섞어서, 섞이는 것이 바뀌는 날 값이 크게 달라 보여요.
+                실제 도매 시세도 이런 때 하루 사이에 크게 움직여요 (2024~25년 하루 30% 넘게 바뀐 날 12%)
+              </li></ul>
+            );
+          })()}
           {/* 11-14: 마지막 거래가 7일 넘게 지난 품목은 '지금' 값이 그날까지의 7일 평균임을 알림 */}
           {(() => {
             const old = series.filter((s) => s.raw.base_stale && s.raw.base_price_date);
             return old.length > 0 && (
               <ul className="pv-notes"><li><span className="ic">🕒</span>{old.map((s) => `${s.name} ${md(s.raw.base_price_date)}`).join(" · ")} 뒤로 거래가 없어 ‘지금’ 값은 그 마지막 거래일까지 7일 평균이에요 — 변동률은 참고만 해 주세요</li></ul>
+            );
+          })()}
+          {/* 11-17: 값이 작년보다 크게 오른 품목 — 모델은 그대로 두고(보정 시험에서 근거 약함), 왜 첫 몇 주 예측이 지금보다 크게 낮은지 알림 */}
+          {(() => {
+            const hot = series.map((s) => s.raw.trend_vs_last_year).filter((v) => v != null && v >= 1.5);
+            if (!hot.length || horizon > 120) return null;
+            const r = Math.max(...hot);
+            return (
+              <ul className="pv-notes"><li><span className="ic">⚠️</span>
+                최근 시세(7일 평균)가 작년 이맘때보다 <b>{r.toFixed(1)}배</b> 높아요. 이 예측은 지금 가격을 그대로 이어 가지 않고 출하량·재배 면적·작년 같은 시기 가격 같은 <b>원인</b>으로 맞혀서,
+                값이 크게 오른 뒤에는 앞으로 몇 주 예측이 지금보다 크게 낮게 나와요. 지난 시험(2025~)에서 이런 때 1~14거래일 예측은 실제보다 평균 {r >= 2 ? "27" : "20"}% 낮았어요 — 실제로는 높은 값이 더 오래 이어질 수 있어요
+              </li></ul>
             );
           })()}
           {/* 11-14: 폭락 보정 — 최근 시세가 작년보다 크게 낮은 품종은 1~14거래일 예측을 낮춰 잡음 (예외 규칙이라 숨기지 않고 알림) */}
@@ -350,11 +388,17 @@ export default function Predict() {
   const variety = varietyOf(q.item, q.variety);
   const result = useAsync(async () => {
     if (!opts) return null;
-    const ms = marketsIn(opts.markets, q.region, q.item);
+    let ms = marketsIn(opts.markets, q.region, q.item);
     // 품종: DB 예측기는 품종 예측을 그대로 돌려줌(raw.variety). 더미(raw.variety 빈 값)면 [샘플] 품목 예측 × 품종 계수
     let res;
     try {
-      res = await Promise.all(ms.map((m) => predict({ item: q.item, market: m.code, horizon, history_days: 56, ...(q.variety ? { variety: q.variety } : {}) })));
+      // 11-17: 지역 안 한 시장에만 거래가 없으면(예: 안동 홍고추) 그 시장만 빼고 나머지로 보여 줌. 모두 안 되면 첫 오류
+      const got = await Promise.allSettled(ms.map((m) => predict({ item: q.item, market: m.code, horizon, history_days: 56, ...(q.variety ? { variety: q.variety } : {}) })));
+      const okIdx = got.map((g, i) => (g.status === "fulfilled" ? i : -1)).filter((i) => i >= 0);
+      const onlyMarket = got.every((g) => g.status === "fulfilled" || g.reason?.detail?.season?.no_market_trade);
+      if (got.length && (!okIdx.length || !onlyMarket)) throw got.find((g) => g.status === "rejected").reason;
+      res = okIdx.map((i) => got[i].value);
+      ms = okIdx.map((i) => ms[i]);
     } catch (e) {
       // 11-16: 출하철 밖이라 예측이 없으면 오류 대신 '언제 거래되는지 + 다음 철 보기' 안내
       if (e.status === 404 && e.detail?.season) return { offSeason: e.detail.season, itemName: (itemOf(q.item)?.name ?? q.item) + (variety ? ` ${variety.label}` : "") };

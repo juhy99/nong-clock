@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 /**
  * PATCH /api/me 요청 (11-16, 명세서 2-6): 내 정보 수정. 이메일은 바꿀 수 없음.
- * 닉네임(name 열)은 2~20자·중복 불가 (UserService.normNickname 과 같은 규칙), 지역은 시·도 이름
+ * 닉네임(name 열)은 한글·영문·숫자 2~12자·중복 불가 (11-17) (UserService.normNickname 과 같은 규칙), 지역은 시·도 이름
  */
 public record ProfileRequest(
         String nickname,

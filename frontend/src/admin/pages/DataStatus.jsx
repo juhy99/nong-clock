@@ -5,7 +5,7 @@ import NewsCollection from "./NewsCollection";
 
 const MODE = {
   server: ["서버 수집", "green"],
-  test: ["테스트 모드", "amber"],
+  live: ["실시간 조회", "green"],
   file: ["파일", "blue"],
   none: ["미연결", ""],
 };
@@ -50,7 +50,7 @@ export default function DataStatus() {
           <section className="card">
             <SectionHead
               title="데이터 수집 현황"
-              desc="원천별 수집 방식과 보유 기간. 서버 수집 = 팀 서버 컴퓨터가 계속 모음 · 테스트 모드 = 개발 중 화면이 그때그때 부름 · 파일 = 받은 자료"
+              desc="원천별 수집 방식과 보유 기간. 서버 수집 = 팀 서버 컴퓨터가 계속 모음 · 실시간 조회 = 화면을 열 때 Spring 이 바로 받음 · 파일 = 받은 자료를 DB에 넣음"
               right={<button className="btn sm" onClick={state.reload} disabled={state.loading}>{state.loading ? "불러오는 중…" : "다시 불러오기"}</button>}
             />
             <div className="stat-row" style={{ marginBottom: 16 }}>

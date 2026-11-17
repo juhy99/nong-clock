@@ -36,27 +36,28 @@ export const AUCTION_REPORT_TYPES = {
 // 데이터 수집 현황. 실제로는 수집 스크립트가 DB 에 남긴 기록을 Spring/ML API 가 돌려준다.
 /**
  * 데이터 원천 목록 (관리자 › 데이터 수집). news 줄은 뉴스 수집 기록, 날씨 줄(forecast·weather_obs·longrange)은 날씨 수집기 기록·화면 파일로 채운다 (api/admin.js getCollectionStatus).
- * mode: server(서버 수집기가 모음) · test(테스트 모드에서 화면이 그때그때 부름) · file(받은 파일) · none(미연결)
+ * mode: server(서버 수집기가 모음) · live(화면을 열 때 Spring 이 기상청에서 바로 받음) · file(받은 자료를 DB·파일로) · none(미연결)
  * ranges: 보유 기간 [[시작, 끝], …] (끝 null = 오늘까지), 막대로 그린다. 기간을 모르면 rangeText 만
  */
 export const DATA_SOURCES = [
   { key: "news", source: "농업 뉴스", provider: "NAVER API HUB 뉴스 검색", schedule: "1시간마다", mode: "server", note: "collector/news · 90일 보관" },
+  // 11-17: 예전 설명(빈 기간 2025-03~04 · 2025-10~2026-03, 등급·소매가 없음)은 옛 CSV 기준 → 지금 DB 기준으로. 끝 날짜는 /api/prices/today 의 기준일로 채움
   {
-    key: "market", source: "도매시장 32곳 일별 시세", provider: "팀 데이터 (CSV)", schedule: "받은 파일", mode: "file",
-    ranges: [["2020-01-01", "2025-02-28"], ["2025-05-01", "2025-09-30"], ["2026-04-01", "2026-08-31"]],
-    note: "빈 기간 2025-03~04, 2025-10~2026-03 · 등급·출하지역·소매가 없음",
+    key: "market", source: "도매시장 32곳 일별 시세", provider: "공영도매시장 경매 자료 → DB (price_daily · 품종 단위 price_unit_daily)", schedule: "받은 자료를 DB에 넣음", mode: "file",
+    note: "금액 ÷ 물량(원/kg) · 품목·품종·등급별 · 시세 화면과 AI 예측이 같이 씀",
   },
-  { key: "auction", source: "도매시장 실시간 경락", provider: "aT 공영도매시장", schedule: "-", mode: "none", note: "시세 담당 결정 후 연결" },
+  { key: "retail", source: "소매가격", provider: "KAMIS 농산물유통정보 → DB (retail_price_daily)", schedule: "수집 스크립트 (collector/daily)", mode: "file", note: "검색 화면의 '도매가보다 N% 비싸요' · 소매가가 없는 품목도 있어요" },
+  { key: "production", source: "생산량·재배면적", provider: "통계청 KOSIS → DB (production_yearly)", schedule: "연 1회", mode: "file", note: "원인 모델 입력 (출하량·재배 면적)" },
+  { key: "income", source: "농산물 소득·생산비 조사", provider: "농진청 농산물소득조사 · 통계청 생산비조사 → shared/crops.json", schedule: "연 1회", mode: "file", note: "작물 추천의 10a당 수량·경영비 (최근 3개 해 평균) · 재배 시기는 농사로 재배력" },
   {
     key: "forecast", source: "단기·중기예보", provider: "기상청 · 데이터 담당 수집기 (collector/weather)", schedule: "3시간마다 (02:20~23:20)", mode: "server",
-    rangeText: "10/21 17시 발표부터", note: "단기 격자 218곳 · 중기 구역 10·도시 27 · 지난 발표는 다시 못 받음 · 홈 날씨 연결 전 (지금 홈은 예시·테스트 모드)",
+    rangeText: "10/21 17시 발표부터", note: "단기 격자 218곳 · 중기 구역 10·도시 27 · 지난 발표는 다시 못 받음",
   },
-  { key: "warning", source: "기상특보", provider: "기상청", schedule: "화면을 열 때", mode: "test", rangeText: "지금 발효 중", note: "테스트 모드에서만" },
+  { key: "warning", source: "지금 날씨 · 기상특보", provider: "기상청 초단기실황·특보 → Spring /api/weather/regions", schedule: "화면을 열 때 (10분 캐시)", mode: "live", rangeText: "지금 값만 (보관 안 함)", note: "홈 날씨 카드 위쪽 '지금 날씨'" },
   {
     key: "weather_obs", source: "지난 날씨 (관측 통합)", provider: "기상청 ASOS·AWS + 농진청 농업기상 → 데이터 담당 전처리", schedule: "매일 10:40 수집·전처리", mode: "server",
     note: "날씨_대통합_일별.csv → 홈 날씨 '지난 날씨' (5분마다 확인) · 지온은 아직 없음",
   },
   { key: "longrange", source: "장기전망 (1개월·3개월)", provider: "기상청 날씨누리 PDF", schedule: "매일 확인", mode: "server", note: "평년보다 높음·낮음 확률 · 참고용 (강수 적중 낮음) · 화면 연결 전" },
-  { key: "holiday", source: "명절·공휴일", provider: "천문연 특일 정보", schedule: "연 1회", mode: "file", rangeText: "2029년까지", note: "holidays.csv 695건 (모델 학습용)" },
 ];
 

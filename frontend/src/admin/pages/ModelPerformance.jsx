@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { getModelPerformance } from "../../api/admin";
 import { Async, SectionHead, useAsync } from "../../components/common";
 
-// 모델 성능: 화면 가격 예측에 쓰는 최종 모델(팀원 76판 · 11-13 확정)의 시험 정확도 (shared/final_model_accuracy.json)
+// 모델 성능: 화면 가격 예측에 쓰는 최종 모델(팀원 76판 + PDF 규칙, 11-17 달 이음)의 시험 정확도 (shared/final_model_accuracy.json)
+// 11-17: 달 이음은 달 평균을 그대로 지키므로 달 점수(h1-3 …)는 바뀌지 않고, 1~14거래일 규칙도 그대로라 일 점수도 그대로
 // 정확도 = 100 − 단위마다 평균 |예측÷실제 − 1|(%) 의 단위 중앙값 — 높을수록 좋음. 비교 기준 = "작년 같은 시기 가격"
 const tone = (v) => (v == null ? "" : v >= 85 ? "#1f9d55" : v >= 75 ? "#7a9a1f" : v >= 65 ? "#e0a100" : "#d93025");
 const f1 = (v) => (v == null ? "-" : v.toFixed(1));
@@ -88,6 +89,7 @@ function Body({ perf, q, setQ, item, setItem, sortBy, setSortBy, onlyWorse, setO
         <li>{perf.rule.day}</li>
         <li>{perf.rule.month}</li>
         <li>{perf.rule.far} — 시험 줄이 없어 점수 없음</li>
+        {perf.shape_check && <li>{perf.shape_check}</li>}
       </ul>
       <div className="stat-row" style={{ marginBottom: 16 }}>
         {CARDS.map((c) => <Kpi key={c.key} c={c} t={perf[c.src][c.key]} />)}

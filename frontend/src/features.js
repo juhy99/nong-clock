@@ -10,3 +10,7 @@ export const NOTIFY_ENABLED = import.meta.env.VITE_ENABLE_NOTIFY === "true";
 
 /** 경매와 관련된 신고인지 (예전 신고는 kind 가 없고 경매 신고였다) */
 export const isAuctionReport = (r) => (r.kind ?? "auction") === "auction";
+
+// 팀 이름·연락처: 아직 정하지 않아 견본(이름 · 02-000-0000)이 보이던 것 → 숨김 (11-17).
+// 소개의 '만든 사람들'·'문의하기', 홈의 '문의하기' 칸·'만든 사람들' 줄, 꼬리말 '문의'. 정보를 pages/About.jsx 의 TEAM · CONTACT 에 넣고 true 로
+export const TEAM_INFO_READY = false;

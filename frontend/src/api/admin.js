@@ -2,6 +2,7 @@
 // 실제로는 Spring 이 관리자 권한(role=admin)을 확인한 뒤에만 응답해야 한다.
 import { PRICE_API_BASE, fake } from "./client";
 import { recalc } from "./auction";
+import { getFreshness } from "./adminOps";
 import { pingMl } from "./ml";
 import { notify } from "./notify";
 import { BUILD, getNewsCollection, newsHealth } from "./collection";
@@ -136,9 +137,11 @@ export function buildText() {
  * @returns {Promise<{rows: object[], news: object}>}
  */
 export async function getCollectionStatus() {
-  const [news, weather] = await Promise.all([
+  const [news, weather, today, fresh] = await Promise.all([
     getNewsCollection().catch((e) => ({ error: e.message })),
     getWeatherStatus().catch((e) => ({ meta: { ok: false, error: e.message, unreachable: true } })),
+    fetch(`${PRICE_API_BASE}/api/prices/today`, { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    getFreshness().catch(() => null), // 11-17: 소매가 마지막 날 (DB)
   ]);
   const health = news.log ? newsHealth(news.log) : null;
   const latest = news.log?.runs?.find((r) => r.ok);
@@ -152,6 +155,10 @@ export async function getCollectionStatus() {
         rangeText: latest ? `기사 ${latest.stored_total ?? "?"}건` : news.error ? "서버 연결 안 됨" : "-",
         health,
       };
+    // 11-17: 시세 보유 기간 = 2020-01 ~ DB 마지막 기준일 (오늘 시세 API)
+    if (s.key === "market")
+      return { ...s, ranges: today?.base_date ? [["2020-01-01", today.base_date]] : undefined, rangeText: today?.base_date ? `2020-01 ~ ${today.base_date}` : "DB 연결 안 됨" };
+    if (s.key === "retail" && fresh?.retail_last) return { ...s, rangeText: `${fresh.retail_last} 까지` };
     return wx[s.key] ? { ...s, ...wx[s.key] } : s;
   });
   return { rows, news };

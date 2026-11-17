@@ -6,7 +6,7 @@ import { useErrorPopup } from "../../components/ErrorPopup";
 import { SectionHead } from "../../components/common";
 import { DEFAULT_NOTIFY, NOTIFY_TYPES } from "../../mocks/notifications";
 import { AUCTION_ENABLED, NOTIFY_ENABLED } from "../../features";
-import { SIDO, formatPhone } from "../../utils/format";
+import { NICKNAME_RULE, SIDO, formatPhone, nicknameError } from "../../utils/format";
 
 function InfoForm() {
   const { user, updateProfile } = useAuth();
@@ -17,7 +17,8 @@ function InfoForm() {
 
   async function submit(e) {
     e.preventDefault();
-    if (f.name.trim().length < 2 || f.name.trim().length > 20) return setMsg({ ok: false, text: "닉네임은 2~20자로 입력하세요" });
+    // 11-17: 닉네임을 바꿀 때만 새 규칙 검사 (규칙 전에 가입한 회원도 다른 정보는 고칠 수 있게 — 서버와 같음)
+    if (f.name.trim() !== user.name && nicknameError(f.name)) return setMsg({ ok: false, text: nicknameError(f.name) });
     if (!/^01\d-\d{3,4}-\d{4}$/.test(f.phone)) return setMsg({ ok: false, text: "휴대폰 번호를 확인하세요 (예: 010-1234-5678)" });
     try {
       await updateProfile({ ...f, name: f.name.trim(), notify });
@@ -33,7 +34,8 @@ function InfoForm() {
       <div className="two-col">
         <div className="field">
           <label htmlFor="p-name">닉네임</label>
-          <input id="p-name" className="input" value={f.name} onChange={set("name")} />
+          <input id="p-name" className="input" value={f.name} onChange={set("name")} maxLength={20} />
+          <span className="hint">{NICKNAME_RULE}</span>
         </div>
         <div className="field">
           <label>이메일</label>

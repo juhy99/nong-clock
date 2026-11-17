@@ -13,6 +13,7 @@ from app.schemas.recommend import (
     MarketRef,
     MarketResult,
     Option,
+    OrchardOption,
     Per10a,
     PhInfo,
     PlantingDatesRequest,
@@ -109,7 +110,7 @@ def list_crops() -> list[CropOut]:
 def recommend_crops(req: RecommendCropsRequest) -> RecommendCropsResponse:
     today = date.today()
     if not today <= req.start_date <= today + timedelta(days=START_WINDOW_DAYS):
-        raise HTTPException(status_code=422, detail=f"start_date 는 오늘부터 {START_WINDOW_DAYS}일 안이어야 해요")
+        raise HTTPException(status_code=422, detail=f"심을 날짜는 오늘부터 {START_WINDOW_DAYS}일 안으로 골라 주세요")  # 11-17: 화면에 그대로 보여서 필드 이름(start_date) 대신 쉬운 말
     lands: dict[str, float] = {}
     rents: dict[str, recommender.Rent] = {}
     prevs: dict[str, str | None] = {}
@@ -132,8 +133,18 @@ def recommend_crops(req: RecommendCropsRequest) -> RecommendCropsResponse:
                         next_plant_date=nxt[0] if nxt else None, next_cropping=nxt[1].name if nxt else None)
             for c, why, nxt in off
         ],
+        orchards=[_orchard(o) for o in recommender.orchard_options(lands, rents, req.region)],
         model_version=_version(max(bases) if bases else None),
     )
+
+
+def _orchard(o: recommender.OrchardOption) -> OrchardOption:
+    c = o.crop
+    return OrchardOption(crop=c.code, crop_name=c.name, emoji=c.emoji, area_pyeong=o.area_pyeong,
+                         harvest_months=list(c.harvest_months) if c.harvest_months else None, note=c.perennial_note, region_note=o.region_note,
+                         yield_t=round(o.yield_t, 2), price_per_kg=round(o.price), market=o.market, market_name=market_name(o.market),
+                         market_factor=round(o.factor, 3), revenue=round(o.revenue), base_cost=round(o.base_cost),
+                         land_rent=round(o.land_rent), cost=round(o.cost), margin=round(o.margin), margin_rate=round(o.margin_rate, 1), rda=_rda(c.survey))
 
 
 @router.post("/planting-dates", response_model=PlantingDatesResponse, summary="(화면에서는 안 씀) 작물로 가장 좋은 심는 날 고르기")

@@ -1,5 +1,5 @@
 import { CATEGORIES50, ITEMS50, itemOf, sortedVarieties } from "../mocks/items50";
-import { LOW_ACCURACY } from "../mocks/accuracy";
+import { LOW_ACCURACY, LOW_ACCURACY_VARIETY } from "../mocks/accuracy";
 
 /**
  * 부류 → 품목 → 품종 고르기 (50품목). onChange({ item, variety })
@@ -29,7 +29,7 @@ export default function CropSelect({ item, variety, onChange, only, warn = false
       <label className="cs-f"><span>{n(4, "품종")}</span>
         <select className="input" value={variety} onChange={(e) => onChange({ item, variety: e.target.value })}>
           <option value="">전체</option>
-          {sortedVarieties(it).map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+          {sortedVarieties(it).map((v) => <option key={v.id} value={v.id}>{v.label}{warn && LOW_ACCURACY_VARIETY.has(v.id) ? " (!)" : ""}</option>)}
         </select>
       </label>
     </div>

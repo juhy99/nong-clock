@@ -54,14 +54,15 @@ class PredictResponse(BaseModel):
     base_date: date
     base_price: int = Field(description="기준가(원/kg) = 기준일 앞 마지막 거래일까지 7일 공영도매시장 금액 합 ÷ 물량 합 (11-14, DB 예측기)")
     base_price_date: date | None = Field(None, description="기준가의 마지막 거래일 (11-14)")
+    trend_vs_last_year: float | None = Field(None, description="지금(마지막 거래일까지 7일 금액÷물량) ÷ 작년 같은 7일(364일 전) (11-17). 예측에는 안 씀 — 1.5 넘으면 화면이 '값이 크게 오른 뒤라 예측이 낮게 나오기 쉬움' 안내 (2025~ 시험: 예측÷실제 1.5~2배 0.80 · 2배 넘음 0.73)")
     base_stale: bool = Field(False, description="마지막 거래가 기준일보다 7일 넘게 앞 — '지금 가격'이 오래됨, 급등락 카드에서 뺌 (11-14)")
     history: list[PricePoint] = Field(description="최근 실제 시세")
     forecast: list[ForecastPoint] = Field(description="기준일 다음 날부터 horizon 일까지 일별 예측. lower·upper = 예측 ± 모델 검증 오차(WAPE)")
     predicted_price: int = Field(description="horizon 일 후 예상 도매가(원/kg)")
     change_pct: float = Field(description="기준가 대비 변동률(%)")
-    error_pct: float = Field(0, description="고른 날(horizon)의 예측 오차 ±% = 모델 검증 오차(WAPE, 품목·기간별). 6개월보다 먼 날은 6개월 값보다 넓게")
+    error_pct: float = Field(0, description="고른 날(horizon)의 평균 예측 오차 % = 100 − 최종 모델 시험 정확도 (품종 → 품목 단위 중앙값, 11-17 app/core/final_accuracy.py). 21일 넘게 먼 날은 달 평균 기준")
     reference: Literal["far", "baseline"] | None = Field(None, description="참고용: far 6개월보다 먼 날 · baseline 이 품목·기간은 기준선(오늘 가격 그대로)보다 나쁨")
-    confidence: int = Field(ge=0, le=100, description="신뢰도 지수 = 100 − 예측 오차(%)")
+    confidence: int = Field(ge=0, le=100, description="신뢰도 = 최종 모델 시험 정확도(%) = 100 − error_pct")
     alerts: list[WeatherAlert]
     last_year: list[PricePoint] = Field(default_factory=list, description="작년 같은 시기 실제 시세 (요청 last_year=true 일 때). 52주(364일) 전 같은 요일로, history 첫날 ~ forecast 마지막 날과 같은 기간. date 는 작년 날짜")
     model_version: str

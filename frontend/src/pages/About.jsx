@@ -12,7 +12,8 @@ import "./about.css";
 const N_ITEMS = ITEMS50.length;
 const N_MARKETS = MARKETS.filter((m) => m.code !== "national").length;
 const N_VARIETIES = ITEMS50.reduce((n, i) => n + (i.varieties?.length ?? 0), 0);
-const STATS = [[N_MARKETS, "곳", "공영 도매시장"], [N_ITEMS, "품목", `예측 품목 · 품종 ${N_VARIETIES}가지`], [1, "년", "최대 예측 기간"], ["매일", "", "새 시세로 예측 갱신"]];
+// [값, 단위, 설명, 강조 대상 주소] — 홈의 "품목 50개"(#items)로 들어오면 품목 칸이 깜빡임 (11-16)
+const STATS = [[N_MARKETS, "곳", "공영 도매시장"], [N_ITEMS, "품목", `예측 품목 · 품종 ${N_VARIETIES}가지`, "items"], [1, "년", "최대 예측 기간"], ["매일", "", "새 시세로 예측 갱신"]];
 
 // ✏️ 팀 정보와 연락처는 여기만 고치면 된다.
 const TEAM = [
@@ -66,14 +67,23 @@ const FAQ = [
 
 export default function About() {
   // #faq-xxx 로 들어오면 그 질문을 펼치고 그 자리로 (머리말 높이만큼은 CSS scroll-margin)
-  const { hash } = useLocation();
+  // 들어온 직후 그 칸을 잠깐 강조 (11-16). 같은 링크를 다시 눌러도 다시 깜빡이도록 location.key 로 다시 실행
+  const { hash, key } = useLocation();
   useEffect(() => {
     if (!hash) return;
-    const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+    const id = decodeURIComponent(hash.slice(1));
+    const el = document.getElementById(id);
     if (!el) return;
     if (el.tagName === "DETAILS") el.open = true;
     requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
-  }, [hash]);
+    // 강조할 칸: data-flash 로 따로 정한 칸(예: #items → "품목" 숫자 칸)이 있으면 그것, 없으면 주소 칸 자체
+    const target = document.querySelector(`[data-flash~="${id}"]`) ?? el;
+    target.classList.remove("ab-flash");
+    void target.offsetWidth; // 애니메이션을 처음부터 다시
+    target.classList.add("ab-flash");
+    const t = setTimeout(() => target.classList.remove("ab-flash"), 2600);
+    return () => { clearTimeout(t); target.classList.remove("ab-flash"); };
+  }, [hash, key]);
   return (
     <div className="page ab">
       <section className="card ab-hero" id="items">
@@ -91,8 +101,8 @@ export default function About() {
           </div>
         </div>
         <div className="ab-stats">
-          {STATS.map(([v, u, l]) => (
-            <div key={l}><b>{v}<small>{u}</small></b><span>{l}</span></div>
+          {STATS.map(([v, u, l, flash]) => (
+            <div key={l} data-flash={flash}><b>{v}<small>{u}</small></b><span>{l}</span></div>
           ))}
         </div>
       </section>

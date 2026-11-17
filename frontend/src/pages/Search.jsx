@@ -54,15 +54,24 @@ function ItemSummary({ item, crops }) {
         <div className="name">{item.name} <span className="cat">{item.category}</span></div>
         {row && (
           <div className="kpis">
+            {/* 11-17: 값이 없으면 '-원 · 0%' 대신 없다고 씀 (오늘 거래 없는 품목 · 소매가 자료가 없는 품목) */}
             <div>
               <div className="muted small">오늘 도매 시세</div>
-              <div className="v num">{won(row.price)}원<small>/kg</small></div>
-              <PriceChange change={row.change} changePct={row.change_pct} comparedDate={today.data.compared_date} className="small" />
+              {row.price != null ? (
+                <>
+                  <div className="v num">{won(row.price)}원<small>/kg</small></div>
+                  <PriceChange change={row.change} changePct={row.change_pct} comparedDate={today.data.compared_date} className="small" />
+                </>
+              ) : <div className="v none">오늘 거래 없음</div>}
             </div>
             <div>
               <div className="muted small">소매가</div>
-              <div className="v num">{won(row.retail_price)}원<small>/kg</small></div>
-              <span className="muted small">도매가보다 {Math.abs(row.margin_pct)}% {row.margin_pct >= 0 ? "비싸요" : "싸요"}</span>
+              {row.retail_price != null ? (
+                <>
+                  <div className="v num">{won(row.retail_price)}원<small>/kg</small></div>
+                  {row.margin_pct != null && <span className="muted small">도매가보다 {Math.abs(row.margin_pct)}% {row.margin_pct >= 0 ? "비싸요" : "싸요"}</span>}
+                </>
+              ) : <div className="v none">소매가 자료 없음</div>}
             </div>
           </div>
         )}
@@ -280,7 +289,7 @@ function Results({ d, tab, setTab }) {
 
 export default function Search() {
   const [params, setParams] = useSearchParams();
-  const q = (params.get("q") ?? "").trim();
+  const q = (params.get("q") ?? "").trim().slice(0, 50); // 11-17: 주소에 아주 긴 검색어를 넣어도 50자까지만 (최근 검색·화면이 넘치지 않게, 서버 게시판 검색도 제한 있음)
   const tab = params.get("tab") ?? "all";
   const [recent, setRecent] = useState(recentSearches);
   const state = useAsync(() => (q ? searchAll(q) : Promise.resolve(null)), [q]);

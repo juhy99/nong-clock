@@ -42,7 +42,7 @@ services:
       dockerfile: ml-api/Dockerfile
     container_name: nong-clock-ml-api
     environment:
-      MODEL_VERSION: ${MODEL_VERSION:-dummy-0.1}
+      MODEL_VERSION: ${MODEL_VERSION:-}   # 비우면 PREDICTOR=db 일 때 최종 모델 이름 (ml-api/app/core/config.py, 11-17)
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
       ENABLE_REGIONAL_FORECAST: ${ENABLE_REGIONAL_FORECAST:-false}
       # 예측기: db(DB 실제 시세 + price_forecast_daily 일 단위 예측, 기본 11-13) · dummy(가짜)

@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 LandType = Literal["open", "house", "paddy", "orchard"]
 PriceBasis = Literal["forecast", "normal", "survey"]
@@ -17,15 +17,31 @@ class CropOut(BaseModel):
     perennial: bool = Field(description="여러 해 기르는 작물 (심는 날 비교를 하지 않음)")
 
 
+# 11-17 입력 상한 (예전 100만 평 · 임대료 100억까지 받아 당근 매출 115억 · 마진율 −14,989% 같은 값이 나왔음)
+MAX_AREA = 300_000          # 평 (약 100ha)
+MAX_RENT_PER_PYEONG = 20_000  # 1년 임대료 평당 원 — 넘으면 입력 실수로 봄
+MAX_MACHINE = 10_000        # 만원 (1억)
+
+
+def check_rent(area: float, rent: float) -> None:
+    if rent * 10_000 > area * MAX_RENT_PER_PYEONG:
+        raise ValueError(f"1년 임대료가 평당 {MAX_RENT_PER_PYEONG:,}원을 넘어요 ({area:,.0f}평이면 {area * MAX_RENT_PER_PYEONG / 10_000:,.0f}만원까지)")
+
+
 Sido = Literal["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"]
 
 
 class Land(BaseModel):
     type: LandType = Field(examples=["house"], description="open 노지 · house 시설 · paddy 논 · orchard 과수원")
-    area_pyeong: float = Field(gt=0, le=1_000_000, examples=[600], description="평수")
-    land_rent: float = Field(0, ge=0, le=1_000_000, description="1년 토지 임차료 (만원) — 재배 기간(심는 날~마지막 수확, 최대 1년)만큼 나눠 경영비에 더함 (11-16)")
-    machine_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 농기계·시설 임차료 (만원) — 경영비에 그대로 더함")
+    area_pyeong: float = Field(gt=0, le=MAX_AREA, examples=[600], description="평수 (30만 평까지)")
+    land_rent: float = Field(0, ge=0, description="1년 토지 임차료 (만원) — 재배 기간(심는 날~마지막 수확, 최대 1년)만큼 나눠 경영비에 더함 (11-16). 평당 2만원까지")
+    machine_rent: float = Field(0, ge=0, le=MAX_MACHINE, description="이번 작기 농기계·시설 임차료 (만원) — 경영비에 그대로 더함")
     prev_crop: str | None = Field(None, examples=["상추"], description="이 토지에서 기존에 키우던 작물 (shared/soil_ph.json 의 작물 이름). 없으면 pH 비교 안 함")
+
+    @model_validator(mode="after")
+    def _rent(self):
+        check_rent(self.area_pyeong, self.land_rent)
+        return self
 
 
 class WhereToSell(BaseModel):
@@ -161,6 +177,29 @@ class Excluded(BaseModel):
     reason: str = Field(description="화면에 그대로 보여 줄 한 줄 이유")
 
 
+class OrchardOption(BaseModel):
+    """과수원 (11-17): 다 자란 나무 기준 1년 소득 — 농진청 농산물소득조사 10a당 평균 × 면적. 날짜·가격 예측은 안 씀"""
+    crop: str
+    crop_name: str
+    emoji: str
+    area_pyeong: float
+    harvest_months: list[int] | None = Field(None, description="[시작 달, 끝 달]")
+    note: str | None = Field(None, description="나무를 심고 몇 해 뒤부터 수확 · 수확 시기 (작물 표 perennial_note)")
+    region_note: str | None = Field(None, description="주산지 밖이면 안내 (순위는 맨 아래로)")
+    yield_t: float
+    price_per_kg: int = Field(description="조사 농가 수취가 × 시장 계수 (원/kg)")
+    market: str = Field("national", description="11-17: 시·도 안에서 수확 철 값이 가장 좋은 도매시장 (없으면 national)")
+    market_name: str = Field("전국 평균", description="그 시장 이름")
+    market_factor: float = Field(1.0, description="그 시장 ÷ 전국 (수확 달 평균, 0.67~1.5)")
+    revenue: int
+    base_cost: int = Field(description="조사 경영비(토지임차료 뺌) × 면적")
+    land_rent: int = Field(description="사용자 1년 임대료 전부 (나무는 1년 내내 땅을 씀)")
+    cost: int
+    margin: int
+    margin_rate: float
+    rda: "RdaRef"
+
+
 class RecommendCropsResponse(BaseModel):
     start_date: date
     region: str
@@ -169,15 +208,21 @@ class RecommendCropsResponse(BaseModel):
     results: list[Option] = Field(description="심을 수 있는 작물: 순이익 높은 순, pH 를 낮춰야 하는 작물은 맨 아래")
     excluded: list[Excluded] = Field(default_factory=list, description="추천 상위(3위 안)에 없는 작물과 이유 — 작물 정보 탭")
     unavailable: list[Unavailable]
+    orchards: list[OrchardOption] = Field(default_factory=list, description="과수원을 고르면: 나무 작물 1년 소득 순 (11-17)")
     model_version: str
 
 
 class PlantingDatesRequest(WhereToSell):
     crop: str = Field(examples=["tomato"])
-    area_pyeong: float = Field(gt=0, le=1_000_000, examples=[600])
+    area_pyeong: float = Field(gt=0, le=MAX_AREA, examples=[600])
     land: LandType | None = Field(None, description="이 토지의 작형만 (없으면 작물이 자랄 수 있는 토지 모두)")
-    land_rent: float = Field(0, ge=0, le=1_000_000, description="1년 토지 임차료 (만원) — 재배 기간만큼 나눠 뺌 (11-16)")
-    machine_rent: float = Field(0, ge=0, le=1_000_000, description="이번 작기 농기계·시설 임차료 (만원)")
+    land_rent: float = Field(0, ge=0, description="1년 토지 임차료 (만원) — 재배 기간만큼 나눠 뺌 (11-16). 평당 2만원까지")
+    machine_rent: float = Field(0, ge=0, le=MAX_MACHINE, description="이번 작기 농기계·시설 임차료 (만원)")
+
+    @model_validator(mode="after")
+    def _rent(self):
+        check_rent(self.area_pyeong, self.land_rent)
+        return self
 
 
 class PlantingPoint(BaseModel):

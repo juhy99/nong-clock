@@ -3,7 +3,7 @@ import { getItems, predict } from "../../api/ml";
 import { getTodayPrices } from "../../api/market";
 import { useAuth } from "../../components/AuthContext";
 import { Async, PctChange, PriceChange, SectionHead, useAsync } from "../../components/common";
-import { wonPerKg } from "../../utils/format";
+import { md, wonPerKg } from "../../utils/format";
 import ItemImage from "../../components/ItemImage";
 import { IN50 } from "../../mocks/items50";
 
@@ -37,7 +37,7 @@ export default function FavoriteAlerts({ onEdit }) {
                 <span className="num">{wonPerKg(p.price)}</span>
                 <PriceChange change={p.change} changePct={p.change_pct} comparedDate={p.compared_date} className="small" />
                 <span className="ai small muted">
-                  AI 예측: 1주 후 {p.forecast_pct != null ? <><PctChange value={p.forecast_pct} /> (최근 7일 평균 대비)</> : p.season?.label ? `출하철 아님 (주로 ${p.season.label})` : "예측 없음"}
+                  AI 예측: 1주 후 {p.forecast_pct != null ? <><PctChange value={p.forecast_pct} /> (최근 7일 평균 대비)</> : p.season?.label ? (p.season.next_start ? `${md(p.season.next_start)}부터 예측 (주로 ${p.season.label})` : `출하철 아님 (주로 ${p.season.label})`) : "예측 없음"}
                 </span>
               </div>
             ))}

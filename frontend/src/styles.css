@@ -428,7 +428,8 @@ mark { background: #fff1a8; color: inherit; padding: 0 1px; border-radius: 3px; 
 .search-page .tabs { margin-top: -10px; }
 .tab-n { color: var(--green); font-weight: 700; margin-left: 4px; }
 .search-related { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: -12px; }
-.pill.recent { gap: 4px; padding-right: 8px; }
+.pill.recent { gap: 4px; padding-right: 8px; max-width: 100%; }
+.pill.recent > a, .pill.recent > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; } /* 11-17: 아주 긴 최근 검색어가 화면을 가로로 늘렸음 */
 .pill.recent button { border: none; background: none; cursor: pointer; color: var(--muted); font-size: 14px; padding: 0 2px; }
 .search-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
 .search-main { display: grid; gap: 34px; min-width: 0; }
@@ -441,6 +442,7 @@ mark { background: #fff1a8; color: inherit; padding: 0 1px; border-radius: 3px; 
 .search-item .kpis { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 10px; }
 .search-item .kpis .v { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
 .search-item .kpis .v small { font-size: 14px; color: var(--muted); font-weight: 500; }
+.search-item .kpis .v.none { font-size: 18px; font-weight: 600; color: var(--muted); }
 .search-item .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .btn.fav-on { color: var(--up); border-color: #f3c6c2; }
 .search-item-chart { background: #fff; border-radius: 18px; padding: 12px 12px 10px; min-width: 0; }
@@ -1227,3 +1229,6 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 .members-only .mo-ic { font-size: 42px; } .members-only h1 { font-size: 22px; } .members-only p { margin: 0; }
 .mo-acts { display: flex; gap: 10px; margin-top: 8px; } .mo-acts .btn { min-width: 110px; }
 .ps-note { font-size: 13px; color: var(--muted); }
+
+/* 11-17: 띄어쓰기 없는 긴 낱말(검색어 등)이 휴대폰 화면을 옆으로 늘리지 않게 */
+main h1, main h2 { overflow-wrap: anywhere; }

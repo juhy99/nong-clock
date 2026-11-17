@@ -47,6 +47,24 @@ class MyPageServiceTest {
     }
 
     @Test
+    void nickname_charset_length_and_reserved_names() {
+        for (String ok : new String[]{"이농부", "farmer7", "농부Kim2", "가나", "가나다라마바사아자차카타"})
+            assertThat(UserService.normNickname(ok, null)).isEqualTo(ok);
+        for (String bad : new String[]{"<b>x</b>", "이 농부", "농부!", "ㅋㅋㅋ", "가", "가나다라마바사아자차카타파", "😀농부", "a_b"})
+            assertThatThrownBy(() -> UserService.normNickname(bad, null)).isInstanceOf(ApiException.class).hasMessageContaining("2~12자");
+        for (String r : new String[]{"관리자", "관리자1", "Admin", "진짜admin", "농클락팀"})
+            assertThatThrownBy(() -> UserService.normNickname(r, null)).hasMessageContaining("관리자로 보일");
+    }
+
+    @Test
+    void old_nickname_outside_new_rule_can_still_save_other_fields() {
+        u.setName("옛 닉네임!");
+        User r = s.updateProfile(7L, new ProfileRequest("옛 닉네임!", null, "010-3333-4444", "전남", ""));
+        assertThat(r.getName()).isEqualTo("옛 닉네임!");
+        assertThatThrownBy(() -> s.updateProfile(7L, new ProfileRequest("새 닉네임!", null, "010-3333-4444", "전남", ""))).hasMessageContaining("2~12자");
+    }
+
+    @Test
     void password_change() {
         assertThatThrownBy(() -> s.changePassword(7L, new PasswordRequest("wrong123", "newpass99"))).isInstanceOf(ApiException.class).hasMessageContaining("지금 비밀번호");
         assertThatThrownBy(() -> s.changePassword(7L, new PasswordRequest("farm1234", "farm1234"))).hasMessageContaining("같아요");
@@ -63,10 +81,13 @@ class MyPageServiceTest {
     }
 
     @Test
-    void favorites_save_locks_user_row_and_ignores_duplicate_insert() {
+    void favorites_save_locks_user_row_and_ignores_duplicate_insert() throws Exception {
         when(jdbc.queryForList(startsWith("SELECT item_code FROM item"), anyMap(), eq(String.class))).thenReturn(List.of("onion"));
         s.setFavorites(7L, List.of("onion"));
-        verify(jdbc).queryForList(contains("FOR UPDATE"), anyMap(), eq(Long.class));
+        verify(jdbc).queryForList(contains("FROM users WHERE user_id = :id FOR UPDATE"), anyMap(), eq(Long.class));
+        // 11-17: 가짜 DB 라 열 이름 실수(id)를 못 잡았음 → 실제 표 정의(base_tables.sql)에 그 열이 있는지도 확인
+        String ddl = new String(getClass().getResourceAsStream("/db/base_tables.sql").readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(ddl).containsPattern("CREATE TABLE IF NOT EXISTS users \\(\\s*user_id\\s");
         verify(jdbc).update(contains("ON CONFLICT (user_id, item_code) DO NOTHING"), anyMap());
     }
 }

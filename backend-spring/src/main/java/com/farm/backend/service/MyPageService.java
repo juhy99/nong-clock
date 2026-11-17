@@ -47,7 +47,9 @@ public class MyPageService {
     @Transactional
     public User updateProfile(Long id, ProfileRequest r) {
         User u = user(id);
-        String nickname = UserService.normNickname(r.nickname(), r.name());
+        // 11-17: 닉네임을 그대로 두면 새 규칙 검사를 건너뜀 (규칙 전에 가입한 회원이 다른 정보만 고칠 수 있게)
+        String raw = r.nickname() != null && !r.nickname().isBlank() ? r.nickname() : r.name();
+        String nickname = raw != null && raw.trim().equals(u.getName()) ? u.getName() : UserService.normNickname(r.nickname(), r.name());
         if (!nickname.equalsIgnoreCase(u.getName()) && userRepository.existsByNameIgnoreCase(nickname))
             throw new ApiException(HttpStatus.CONFLICT, "이미 사용 중인 닉네임이에요");
         Integer region = UserService.regionId(r.region());
@@ -125,7 +127,7 @@ public class MyPageService {
             if (known.size() != codes.size()) throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "없는 품목이 있어요");
         }
         // 11-16: 같은 회원의 저장이 동시에 두 번 오면(빠른 연속 클릭) 둘 다 지우고 넣다가 중복 키 500 이 났음 → 회원 줄을 잠가 차례로, 넣기는 겹쳐도 무시
-        jdbc.queryForList("SELECT id FROM users WHERE id = :id FOR UPDATE", Map.of("id", id), Long.class);
+        jdbc.queryForList("SELECT user_id FROM users WHERE user_id = :id FOR UPDATE", Map.of("id", id), Long.class); // 11-17: 열 이름 user_id (id 로 써서 저장마다 500 이었음)
         jdbc.update("DELETE FROM user_favorite WHERE user_id = :id", Map.of("id", id));
         LocalDateTime t = LocalDateTime.now();
         int i = 0;

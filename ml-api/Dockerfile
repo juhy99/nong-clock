@@ -6,7 +6,7 @@ WORKDIR /app
 COPY ml-api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY shared/items.json shared/items50.json shared/markets.json shared/soil_ph.json shared/model_accuracy.json shared/crops.json shared/
+COPY shared/items.json shared/items50.json shared/markets.json shared/soil_ph.json shared/model_accuracy.json shared/final_model_accuracy.json shared/crops.json shared/
 COPY ml-api/app ./app
 
 # 11-13 보안: 일반 사용자로 실행 · 동시에 처리하는 요청은 100개까지 (넘으면 503 으로 바로 돌려보내 서버가 멈추지 않게)

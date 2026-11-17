@@ -33,3 +33,5 @@
 }
 /* 유리판 안이라 카드가 조금 좁아짐 → 표 칸 여백을 줄이고 숫자는 한 줄로 (넘치면 표만 옆으로 밀림) */
 .mk-group .mk-table th, .mk-group .mk-table td { padding-left: 8px; padding-right: 8px; white-space: nowrap; }
+/* 11-17 카드 기간 한 줄 */
+.mk-period { margin: -4px 0 8px; }

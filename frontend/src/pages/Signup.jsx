@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { checkDuplicate } from "../api/auth";
 import { useAuth } from "../components/AuthContext";
 import { useErrorPopup } from "../components/ErrorPopup";
-import { SIDO, formatPhone } from "../utils/format";
+import { NICKNAME_RULE, SIDO, formatPhone, nicknameError } from "../utils/format";
 import { AUCTION_ENABLED } from "../features";
 
 // 약관 동의 단계 없이 바로 정보 입력 (11-07 결정). 이메일·닉네임은 [중복 확인] 을 눌러 통과해야 가입할 수 있다
@@ -13,7 +13,7 @@ function validate(f, checked) {
   else if (checked.email !== f.email.trim().toLowerCase()) e.email = "이메일 중복 확인을 눌러 주세요";
   if (f.password.length < 8 || !/[A-Za-z]/.test(f.password) || !/\d/.test(f.password)) e.password = "영문과 숫자를 섞어 8자 이상 입력하세요";
   if (f.password2 !== f.password) e.password2 = "비밀번호가 일치하지 않습니다";
-  if (f.nickname.trim().length < 2 || f.nickname.trim().length > 20) e.nickname = "닉네임은 2~20자로 입력하세요";
+  if (nicknameError(f.nickname)) e.nickname = nicknameError(f.nickname);
   else if (checked.nickname !== f.nickname.trim().toLowerCase()) e.nickname = "닉네임 중복 확인을 눌러 주세요";
   if (!/^01\d-\d{3,4}-\d{4}$/.test(f.phone)) e.phone = "휴대폰 번호를 확인하세요 (예: 010-1234-5678)";
   if (!f.region) e.region = "지역을 선택하세요";
@@ -41,7 +41,7 @@ export default function Signup() {
   async function check(k) {
     const v = f[k].trim();
     if (k === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return setDup({ ...dup, email: { ok: false, msg: "올바른 이메일 형식이 아닙니다" } });
-    if (k === "nickname" && (v.length < 2 || v.length > 20)) return setDup({ ...dup, nickname: { ok: false, msg: "닉네임은 2~20자로 입력하세요" } });
+    if (k === "nickname" && nicknameError(v)) return setDup({ ...dup, nickname: { ok: false, msg: nicknameError(v) } });
     try {
       const taken = await checkDuplicate(k, v);
       const label = k === "email" ? "이메일" : "닉네임";
@@ -89,7 +89,7 @@ export default function Signup() {
           {input("email", "이메일", { type: "email", autoComplete: "email" }, true)}
           {input("password", "비밀번호", { type: "password", autoComplete: "new-password", hint: "영문+숫자 8자 이상" })}
           {input("password2", "비밀번호 확인", { type: "password", autoComplete: "new-password" })}
-          {input("nickname", "닉네임", { autoComplete: "nickname", hint: "게시판·댓글에 보이는 이름 (2~20자)" }, true)}
+          {input("nickname", "닉네임", { autoComplete: "nickname", maxLength: 12, hint: `게시판·댓글에 보이는 이름 (${NICKNAME_RULE})` }, true)}
           {input("phone", "휴대폰 번호", { inputMode: "numeric", placeholder: "010-1234-5678" })}
           <div className="field">
             <label htmlFor="region">지역</label>

@@ -99,7 +99,8 @@ function fromSpring(u) {
 /** 백엔드 오류 → 화면에 보여줄 문장 + 응답 코드(status, 서버에 못 닿으면 0). 오류 팝업(ErrorPopup)이 status 로 설명을 고른다 */
 function springError(e, fallback) {
   const data = e.response?.data;
-  const text = typeof data === "string" && data.trim() ? data.trim() : data?.message;
+  // 11-17: 글로 온 응답이 HTML(오류 화면)이면 화면에 그대로 보이지 않게 버림
+  const text = typeof data === "string" && data.trim() && !data.trim().startsWith("<") ? data.trim() : data?.message;
   const err = new Error(text || (e.response ? fallback : "회원 서버에 연결할 수 없습니다"));
   err.status = e.response?.status ?? 0;
   return err;

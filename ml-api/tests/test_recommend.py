@@ -290,3 +290,49 @@ def test_peak_price_flag_when_price_far_above_survey(monkeypatch):
     assert o.peak_ratio == pytest.approx(3.0, rel=0.01)
     monkeypatch.setattr(crop_prices, "farm_price", lambda crop, c, day, today: crop_prices.Price(c.survey.price * 1.5, 1, 1, "normal"))
     assert recommender.evaluate(crop, c, d, 600, TODAY).peak_ratio is None
+
+
+# ── 11-17 과수원: 다 자란 나무 기준 1년 소득 (조사 자료) ──
+def test_orchard_gives_tree_crops_by_income():
+    j = _post([{"type": "orchard", "area_pyeong": 1000, "land_rent": 100}], region="경북").json()
+    assert j["results"] == [] and len(j["orchards"]) == 7
+    o = j["orchards"]
+    assert [x["margin"] for x in o if not x["region_note"]] == sorted((x["margin"] for x in o if not x["region_note"]), reverse=True)
+    a = next(x for x in o if x["crop"] == "apple")
+    s = CROPS["apple"].survey
+    a10 = 1000 / recommender.PYEONG_PER_10A
+    assert a["revenue"] == round(s.revenue * a10) and a["land_rent"] == 1_000_000
+    assert a["cost"] == round((s.cost - s.land_rent) * a10 + 1_000_000) and a["margin"] == a["revenue"] - a["cost"]
+    m = next(x for x in o if x["crop"] == "mandarin")
+    assert m["region_note"] and o[-1]["crop"] == "mandarin"   # 제주 밖 감귤은 안내 + 맨 아래
+
+
+def test_orchard_in_jeju_has_no_note_and_other_lands_have_no_orchards():
+    o = _post([{"type": "orchard", "area_pyeong": 1000}], region="제주").json()["orchards"]
+    assert all(x["region_note"] is None for x in o)
+    assert _post([{"type": "open", "area_pyeong": 1000}]).json()["orchards"] == []
+
+
+def test_orchard_uses_best_market_in_sido(monkeypatch):
+    """11-17: 과수원도 시·도 안 도매시장 계수(수확 달 평균)를 매출에 곱함 — 예전엔 어느 시·도든 같은 값"""
+    from app.core.markets import markets_in_sido
+    codes = [m.code for m in markets_in_sido("강원")]
+    fac = {codes[0]: 1.2, codes[1]: 0.9}
+    monkeypatch.setattr(crop_prices, "market_factor", lambda crop, market, month: fac.get(market, 1.0))
+    o = {x["crop"]: x for x in _post([{"type": "orchard", "area_pyeong": 1000}], region="강원").json()["orchards"]}
+    a10 = 1000 / recommender.PYEONG_PER_10A
+    s = CROPS["apple"].survey
+    assert o["apple"]["market"] == codes[0] and o["apple"]["market_factor"] == 1.2
+    assert o["apple"]["revenue"] == round(s.revenue * a10 * 1.2)
+    j = {x["crop"]: x for x in _post([{"type": "orchard", "area_pyeong": 1000}], region="제주").json()["orchards"]}
+    assert j["apple"]["market"] == "national" and j["apple"]["revenue"] == round(s.revenue * a10)   # 제주는 공영도매시장이 없어 전국
+
+
+# ── 11-17 입력 상한: 면적 30만 평 · 임대료 평당 2만원 · 농기계 1억 ──
+def test_input_caps():
+    ok = {"type": "open", "area_pyeong": 1000, "land_rent": 2000}
+    assert _post([ok]).status_code == 200
+    assert _post([{**ok, "area_pyeong": 300_001}]).status_code == 422
+    r = _post([{**ok, "land_rent": 2001}])   # 1,000평 × 2만원 = 2,000만원까지
+    assert r.status_code == 422 and "평당" in r.text
+    assert _post([{**ok, "machine_rent": 10_001}]).status_code == 422

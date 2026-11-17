@@ -18,6 +18,7 @@ const HINTS = {
   404: "이미 지워졌거나 찾을 수 없어요. 화면을 새로고침해서 다시 확인해 주세요.",
   409: "이미 사용 중이에요. 다른 값으로 바꿔서 다시 시도해 주세요.",
   422: "입력한 내용이 규칙에 맞지 않아요. 위 안내대로 고쳐서 다시 시도해 주세요.",
+  429: "짧은 시간에 요청을 너무 많이 보냈어요. 1분쯤 기다렸다가 다시 시도해 주세요.",
   500: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요. 계속되면 관리자에게 알려 주세요.",
 };
 
@@ -47,6 +48,8 @@ export function ErrorPopupProvider({ children }) {
   }, [loc.pathname]);
 
   const close = () => setErr(null);
+  // 11-17: 다른 화면으로 가면(뒤로 가기 등) 앞 화면의 오류 팝업은 닫음 — 예전에는 지운 글 팝업이 첫 화면까지 따라왔음
+  useEffect(() => setErr(null), [loc.pathname]);
   useEffect(() => {
     if (!err) return;
     okRef.current?.focus();

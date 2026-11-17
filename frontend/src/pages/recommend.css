@@ -115,3 +115,13 @@
 .rc-info > button:hover, .rc-info > button[aria-expanded="true"] { background: var(--brand); border-color: var(--brand); color: #fff; }
 .rc-tip { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; width: max-content; max-width: min(320px, 100%); padding: 10px 14px; border-radius: 12px; background: #1f3a2a; color: #fff; font-size: 14px; line-height: 1.55; box-shadow: 0 8px 24px rgba(19, 38, 26, 0.2); }
 .rc-tip::before { content: ""; position: absolute; top: -5px; left: var(--ax, 16px); width: 10px; height: 10px; background: #1f3a2a; transform: rotate(45deg); }
+
+/* 11-17 과수원 결과 · 결과 0개 안내 */
+.rc-orchard-note { line-height: 1.6; margin-bottom: 20px; }
+.rc-rest { display: grid; gap: 0; padding: 6px 20px; margin-top: 20px; }
+.rc-rest-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 0; border: 0; border-bottom: 1px solid rgba(19, 38, 26, 0.08); background: none; font: inherit; font-size: 17px; text-align: left; cursor: pointer; color: inherit; }
+.rc-rest-row:last-child { border-bottom: 0; }
+.rc-rest-row span:last-child { color: var(--muted); }
+.rc-none { min-height: 0; }
+.rc-none ul { margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.8; }
+.rc-err { grid-column: 1 / -1; margin: 0; color: var(--danger, #c0392b); font-size: 15px; }

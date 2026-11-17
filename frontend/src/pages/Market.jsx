@@ -56,7 +56,8 @@ function GradeCard({ title, tag, card, kind, onClick, dates }) {
       {empty ? (
         <>
           <div className="p">-</div>
-          <div className="none">이 날은 {title} 등급 거래가 없어요</div>
+          {/* 11-17: 소매가는 등급이 아니라 소매 조사(KAMIS) 값 — 예전엔 "소매가 등급 거래가 없어요"로 보였음 */}
+          <div className="none">{kind === "retail" ? "이 날 이 지역 소매가 조사 자료가 없어요" : `이 날은 ${title} 등급 거래가 없어요`}</div>
         </>
       ) : (
         <>
@@ -66,7 +67,7 @@ function GradeCard({ title, tag, card, kind, onClick, dates }) {
         </>
       )}
       <Spark points={card.points} id={`${kind ?? ""}${title}`} />
-      <div className="ax"><span>5거래일 전</span><span>{md(dates.at(-1))}</span></div>
+      <div className="ax"><span>5거래일 전</span><span>{dates.length ? md(dates.at(-1)) : ""}</span></div>
     </button>
   );
 }
@@ -82,6 +83,8 @@ function GradeSection({ item, market, date, grade, setGrade, defGrade, onAvail }
   return (
     <Async state={state} minHeight={220}>
       {(d) => {
+        // 11-17: 고른 날짜까지 거래 기록이 하나도 없으면(자료 시작 전 날짜) 빈 카드·NaN 날짜 대신 안내
+        if (!d.base_date) return <div className="card state">{date ? `${date} 이전에는 이 시장·품목의 거래 기록이 없어요. 더 뒤의 날짜를 골라 주세요.` : "이 시장·품목의 거래 기록이 없어요."}</div>;
         const dates = d.retail.points.map((p) => p.date);
         const shown = shownGrades(d, grade);
         const hidden = d.grades.filter((g) => !shown.includes(g)).map((g) => gradeName(g.grade));
@@ -330,6 +333,13 @@ function Pager({ page, pages, setPage }) {
 }
 const C_HI = "#0e7a45", C_MID = "#57c98a", C_LO = "#bfe3cc", C_PAST = "#cfd8cf";
 
+/** 카드 위 기간 한 줄 (11-17): "최근 12달 평균 · 25.11.15 ~ 26.11.14 — 오늘 시세와 달라요" */
+const ymd = (iso) => iso.slice(2).replaceAll("-", ".");
+function PeriodNote({ d }) {
+  if (!d.from || !d.to) return null;
+  return <p className="muted small mk-period">{d.period ?? "기간"} 평균 · {ymd(d.from)} ~ {ymd(d.to)} — 오늘 시세와 다를 수 있어요</p>;
+}
+
 function MarketShareCard({ item }) {
   const [view, setView] = useState("price");
   const [page, setPage] = useState(0);
@@ -353,6 +363,8 @@ function MarketShareCard({ item }) {
           const pages = Math.ceil(d.markets.length / PER), cur = Math.min(page, pages - 1);
           return (
             <>
+              {/* 11-17: 기간을 안 밝혀 오늘 시세와 숫자가 달라 보였음 (양파 799 vs 1,237) */}
+              <PeriodNote d={d} />
               <div className="mk-grow">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={narrow ? d.markets.slice(0, 4) : d.markets} margin={{ top: 22, right: 8, left: 0, bottom: 0 }}>
@@ -416,6 +428,7 @@ function AuctionHouseCard({ item }) {
           const pages = Math.ceil(d.houses.length / PER), cur = Math.min(page, pages - 1);
           return (
             <>
+              <PeriodNote d={d} />
               <div className="mk-grow">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={narrow ? d.houses.slice(0, 4) : d.houses} margin={{ top: 22, right: 8, left: 0, bottom: 0 }} barGap={2}>

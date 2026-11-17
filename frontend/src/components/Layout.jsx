@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { DATA_SOURCE, ML_API_BASE, NEWS_URL } from "../api/client";
 import { onMlOffline } from "../api/ml";
-import { AUCTION_ENABLED, NOTIFY_ENABLED } from "../features";
+import { AUCTION_ENABLED, NOTIFY_ENABLED, TEAM_INFO_READY } from "../features";
 import { recommendLink, suggest } from "../api/search";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
 import { Highlight } from "./common";
@@ -78,6 +78,7 @@ function HeaderSearch() {
       <input
         placeholder={AUCTION_ENABLED ? "품목·경매·뉴스·게시글 검색" : "품목·뉴스·게시글 검색"}
         value={q}
+        maxLength={50}
         onChange={(e) => {
           setQ(e.target.value);
           setOpen(true);
@@ -190,7 +191,8 @@ function Header() {
               </button>
             </>
           ) : (
-            <Link to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} className="btn sm login">로그인</Link>
+            // 11-17: 로그인·가입 화면에서 누르면 next 가 겹쳐 쌓이던 것 → 그 화면의 next 를 그대로
+            <Link to={["/login", "/signup"].includes(loc.pathname) ? `/login${loc.search}` : `/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} className="btn sm login">로그인</Link>
           )}
           <button type="button" className="hdr-menu" aria-label={menu ? "메뉴 닫기" : "메뉴 열기"} aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
             {menu ? "✕" : "☰"}
@@ -264,7 +266,7 @@ export default function Layout() {
         <span>© NongClock · 공영도매시장 경매 · KAMIS · 기상청 데이터</span>
         <span className="r">
           <Link to="/about">서비스 소개</Link>
-          <Link to="/about#contact">문의</Link>
+          {TEAM_INFO_READY && <Link to="/about#contact">문의</Link>}
         </span>
       </footer>
       <CoreDock />

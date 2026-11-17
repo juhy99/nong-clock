@@ -18,6 +18,7 @@ class FakeDb(DbPredictor):
         self.monthly, self.prices, self.factors = monthly, prices or [(date(2026, 11, 3), 1000.0)], factors or []
         self.daily = daily  # None = 일 단위 표가 없는 DB (예전 판)
 
+    month_vol = []    # 11-17: [(달, 거래량kg)]
     base_avg = None   # 11-14 기준가 7일 금액÷물량 (None = 금액·물량 없음)
 
     def _q(self, sql, params=()):
@@ -27,6 +28,12 @@ class FakeDb(DbPredictor):
             return [(1, "복숭아(백도)")]
         if sql.startswith("SELECT month, factor"):
             return self.factors
+        if "AS thin_m" in sql:   # 11-17: 달별 거래량 (없으면 빈 목록 = 거르지 않음)
+            return self.month_vol
+        if "AS has_daily" in sql:   # 11-17: 그 품목·품종이 일 단위 표에 한 번이라도 있나
+            if self.daily is None:
+                raise RuntimeError('relation "price_forecast_daily" does not exist')
+            return [(1,)] if any(r[0] == (params[0], params[1]) for r in self.daily) else []
         if "price_forecast_daily" in sql:
             if self.daily is None:
                 raise RuntimeError('relation "price_forecast_daily" does not exist')
@@ -103,6 +110,28 @@ def test_variety_daily_and_fallback_to_monthly():
     assert P.predict("peach", "national", 250, BASE, 14, False, "peach-1").forecast[0].price == 4100
     r = P.predict("peach", "national", 250, BASE, 14)    # 품목 전체(ALL)는 일 표에 없음 → 월 표
     assert r.model_version.startswith("v4 시험 · 기준월")
+
+
+def test_variety_in_daily_table_but_off_season_does_not_use_old_monthly():
+    """11-17: 일 단위 표에 그 품종이 있는데 고른 기간만 비면(출하철 밖) 빈칸·안내 — 예전엔 월 표(11-09 옛 v4, 기준월 2026-09)를
+    직선으로 이어 보여 줘서 양파 저장(onion-3) 등 21개 품종이 옛 예측·일요일 값으로 나왔음"""
+    daily = [drow("peach", "peach-1", date(2027, 6, 20), 4100)]
+    P = FakeDb([row(2026, 11, 3000), row(2026, 12, 3100)], daily=daily)
+    with pytest.raises(NoForecast):
+        P.predict("peach", "national", 30, BASE, 14, False, "peach-1")
+
+
+def test_forecast_hidden_in_months_with_almost_no_trade():
+    """11-17: 표에 값이 있어도 지난 3년 그 달 거래량이 1년의 1% 밑이면 보이지 않음 (거래량만 씀, 가격은 안 씀)
+    예: 자두 후무사 11월 18,459원/kg (마지막 거래 11/2 4,000원)"""
+    daily = [drow("plum", "plum-5", date(2026, 11, 20), 18000), drow("plum", "plum-5", date(2026, 12, 5), 19000)]
+    P = FakeDb([], daily=daily)
+    P.month_vol = [(6, 400_000.0), (7, 500_000.0), (8, 90_000.0), (11, 2_000.0), (12, 1_000.0)]   # 11·12월 = 0.2%·0.1%
+    with pytest.raises(NoForecast):
+        P.predict("plum", "national", 30, DB_BASE, 14, False, "plum-5")
+    P2 = FakeDb([], daily=daily)
+    P2.month_vol = [(11, 300_000.0), (12, 200_000.0), (6, 500_000.0)]   # 11·12월이 충분하면 그대로
+    assert len(P2.predict("plum", "national", 30, DB_BASE, 14, False, "plum-5").forecast) == 2
 
 
 def test_no_daily_table_in_old_db_uses_monthly():
@@ -285,3 +314,23 @@ def test_no_recent_trade_uses_last_trade_within_a_year():
     P._q = q
     r = P.predict("onion", "national", 30, DB_BASE, 14)
     assert r.base_price == 1500 and r.base_stale and r.base_price_date == date(2026, 9, 5) and r.forecast
+
+# ── 11-17 작년 같은 7일 대비 (화면 ⚠️ 안내용, 예측값엔 안 씀) ──
+class TrendDb(FakeDb):
+    def _q(self, sql, params=()):
+        if "AS base_avg" in sql:
+            return [(3000.0 if params[-1] > date(2026, 1, 1) else 1000.0,)]   # 올해 3,000 · 작년 1,000
+        return super()._q(sql, params)
+
+
+def test_trend_vs_last_year():
+    P = TrendDb([row(2026, 11, 1000)], prices=[(date(2026, 11, 10), 3000.0)])
+    r = P.predict("onion", "national", 30, BASE, 14)
+    assert r.trend_vs_last_year == 3.0 and r.base_price == 3000
+
+
+def test_no_trend_when_base_is_stale_or_no_amount():
+    P = TrendDb([row(2026, 11, 1000)], prices=[(date(2026, 11, 2), 900.0)])
+    assert P.predict("onion", "national", 30, BASE, 14).trend_vs_last_year is None   # 오래된 가격
+    Q = FakeDb([row(2026, 11, 1000)], prices=[(date(2026, 11, 10), 900.0)])
+    assert Q.predict("onion", "national", 30, BASE, 14).trend_vs_last_year is None   # 금액·물량 없음

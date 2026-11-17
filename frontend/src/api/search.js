@@ -99,7 +99,8 @@ const RECENT_KEY = "farmbid-recent-search";
 
 export function recentSearches() {
   try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY)) ?? [];
+    const v = JSON.parse(localStorage.getItem(RECENT_KEY));
+    return Array.isArray(v) ? v.filter((x) => typeof x === "string").map((x) => x.slice(0, 50)) : []; // 11-17: 예전에 저장된 아주 긴 검색어도 50자까지
   } catch {
     return [];
   }

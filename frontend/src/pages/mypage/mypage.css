@@ -30,9 +30,11 @@
 .mp-fav .nm span { font-size: 26px; }
 .mp-fav .p { font-size: 28px; font-weight: 700; } .mp-fav .p small { font-size: 15px; font-weight: 400; color: var(--muted); }
 .mp-fav .d { font-size: 15px; color: var(--muted); }
+.mp-fav .p.none { font-size: 20px; color: var(--muted); }
 .mp-spark { width: 100%; height: 44px; display: block; margin: 4px 0; }
 .mp-fav .ai { display: grid; gap: 2px; font-size: 15px; padding: 8px 10px; border-radius: 10px; background: rgba(246, 224, 176, 0.6); color: var(--amber-ink); }
-.mp-fav .ai b { font-size: 16px; white-space: nowrap; }
+.mp-fav .ai b { font-size: 16px; overflow-wrap: anywhere; } /* 11-17: nowrap 이면 휴대폰 2칸에서 긴 안내("12/1부터 예측해요 …")가 화면 밖으로 밀림 */
+.mp-fav { min-width: 0; }
 .mp-fav.add { place-items: center; align-content: center; text-align: center; border: 2px dashed rgba(19, 38, 26, 0.18); background: rgba(255, 255, 255, 0.3); cursor: pointer; font: inherit; font-size: 17px; color: var(--muted); min-height: 220px; }
 .mp-fav.add b { display: block; font-size: 32px; font-weight: 400; color: #2b7a4b; }
 .mp-fav.add small { display: block; font-size: 15px; }

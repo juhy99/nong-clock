@@ -3,6 +3,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../components/AuthContext";
 import { useErrorPopup } from "../components/ErrorPopup";
 
+/** 로그인 뒤 갈 주소: 이 사이트 안 주소(/로 시작)만 (11-17: ?next=//다른사이트 같은 값은 첫 화면으로) */
+export const safeNext = (next) => (typeof next === "string" && /^\/(?![\/\\])/.test(next) ? next : "/");
+
 export default function Login() {
   const { login } = useAuth();
   const nav = useNavigate();
@@ -17,7 +20,7 @@ export default function Login() {
     setBusy(true);
     try {
       await login(email, pw);
-      nav(params.get("next") || "/", { replace: true });
+      nav(safeNext(params.get("next")), { replace: true });
     } catch (err) {
       showError(err, { title: "로그인하지 못했어요", login: false, hints: { 401: "이메일과 비밀번호를 다시 확인해 주세요. 영문 대소문자도 구분해요." } });
     } finally {

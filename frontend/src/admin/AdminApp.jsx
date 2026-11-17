@@ -73,17 +73,20 @@ function AdminLayout() {
             <NavLink key={to} to={`/${to}`} end={to === ""}>{label}</NavLink>
           ))}
         </nav>
-        <button
-          className="btn sm danger"
-          onClick={async () => {
-            if (!confirm(`이 브라우저의 예시 데이터(회원 관리 예시·${AUCTION_ENABLED ? "입찰·" : ""}사진)를 처음 상태로 되돌릴까요? 실제 DB(게시판·공지·회원)는 바뀌지 않아요`)) return;
-            resetAll();
-            await clearImages().catch(() => {});
-            location.href = "/admin/";
-          }}
-        >
-          예시 데이터 초기화
-        </button>
+        {/* 11-17: 회원 관리가 실제 DB 로 바뀌어 예시 데이터는 경매(보류)에만 남음 → 경매를 켤 때만 보여 줌 */}
+        {AUCTION_ENABLED && (
+          <button
+            className="btn sm danger"
+            onClick={async () => {
+              if (!confirm("이 브라우저의 경매 예시 데이터(입찰·사진)를 처음 상태로 되돌릴까요? 실제 DB(게시판·공지·회원)는 바뀌지 않아요")) return;
+              resetAll();
+              await clearImages().catch(() => {});
+              location.href = "/admin/";
+            }}
+          >
+            예시 데이터 초기화
+          </button>
+        )}
       </aside>
       <div className="admin-main">
         <header className="admin-top">

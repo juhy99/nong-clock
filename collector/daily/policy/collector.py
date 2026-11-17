@@ -229,6 +229,7 @@ class Collector:
   docmap={r[0]:r for r in docs}
   for u,doc,path,status,err,at in files:
    extraction='미실행';txt=''
+   if path:path=str(self.out/'attachments'/re.split(r'[\\/]',path)[-1])   # 11-17: 저장된 경로가 다른 컴퓨터 것(윈도우 D:\… ↔ 도커 /nong-clock-data/…)이어도 파일 이름으로 찾음
    if status=='downloaded' and Path(path).exists():
     try:txt=extract_file(Path(path));extraction='추출완료'
     except Exception as e:extraction=str(e)

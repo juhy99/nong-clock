@@ -2,6 +2,7 @@ import { getCollectionStatus } from "../../api/admin";
 import { Async, SectionHead, useAsync } from "../../components/common";
 import { dateTime } from "../../utils/format";
 import NewsCollection from "./NewsCollection";
+import RefreshCard from "./RefreshCard";
 
 const MODE = {
   server: ["서버 수집", "green"],
@@ -44,6 +45,8 @@ function SourceStatus({ row }) {
 export default function DataStatus() {
   const state = useAsync(getCollectionStatus);
   return (
+    <>
+    <RefreshCard />
     <Async state={state}>
       {({ rows, news }) => (
         <>
@@ -86,5 +89,6 @@ export default function DataStatus() {
         </>
       )}
     </Async>
+    </>
   );
 }

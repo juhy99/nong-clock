@@ -30,6 +30,8 @@ services:
       ML_API_URL: http://ml-api:8000
       SHARED_DIR: /app/shared  # 시세 API 의 품종 목록 shared/items50.json
       DATA_GO_KR_KEY: ${DATA_GO_KR_KEY:-}  # 지금 날씨 /api/weather/regions (11-14) — 기상청 단기예보·특보 (공공데이터포털 키)
+      UPDATER_URL: http://price-updater:8090   # 관리자 [지금 갱신] (11-17) → 아래 price-updater
+      UPDATER_TOKEN: ${UPDATER_TOKEN:-}
     volumes:
       - ./shared:/app/shared:ro
     depends_on:
@@ -101,6 +103,44 @@ services:
       - weatherraw:/weather:ro
       - ./collector/weather_site/input:/app/collector/weather_site/input:ro
       - weatherdata:/app/collector/weather_site/data
+    restart: unless-stopped
+
+  # 갱신 서비스 (11-17, collector/updater/README.md): 관리자 화면 [지금 갱신]·[월 예측 만들기]·[PDF 올리기] 를 받아
+  # 가격 수집 → 표 → DB → 예측을 컨테이너 안에서 돌린다 (예전에는 scripts\매일_예측_갱신.bat 을 손으로)
+  # 밖으로 열지 않음(expose 만) — backend 만 부르고, 그때도 UPDATER_TOKEN 이 맞아야 함. 토큰이 비면 모든 요청 거절
+  # 자료 폴더: .env 의 NC_DATA_ROOT (예: D:\nong-clock-data). 자동 실행은 기본 꺼짐 — 켜려면 UPDATER_DAILY_AT=06:00
+  price-updater:
+    build:
+      context: .
+      dockerfile: collector/updater/Dockerfile
+    container_name: nong-clock-price-updater
+    init: true  # 멈출 때 돌고 있던 수집·예측도 같이 정리
+    expose:
+      - "8090"
+    environment:
+      UPDATER_TOKEN: ${UPDATER_TOKEN:-}
+      UPDATER_DAILY_AT: ${UPDATER_DAILY_AT:-}
+      NC_DATA_ROOT: /nong-clock-data
+      FARMBID_DATA: /nong-clock-data/05_DB적재/data
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: farmdb
+      PGUSER: postgres
+      PGPASSWORD: ${DB_PASSWORD}
+      # 수집 인증키 (collector/daily/키_발급_따라하기.md). 없는 키의 자료는 건너뛰고 받은 자료로 계속
+      MAFRA_API_KEY: ${MAFRA_API_KEY:-}
+      KAMIS_KEY: ${KAMIS_KEY:-}
+      KAMIS_ID: ${KAMIS_ID:-}
+      KMA_APIHUB_KEY: ${KMA_APIHUB_KEY:-}
+      DATA_GO_KR_KEY: ${DATA_GO_KR_KEY:-}
+      KOSIS_API_KEY: ${KOSIS_API_KEY:-}
+      ECOS_API_KEY: ${ECOS_API_KEY:-}
+      SEOUL_OPENAPI_KEY: ${SEOUL_OPENAPI_KEY:-}
+      TZ: Asia/Seoul
+    volumes:
+      - ${NC_DATA_ROOT:-./nong-clock-data}:/nong-clock-data
+    depends_on:
+      - db
     restart: unless-stopped
 
   # 서버 화면: http://서버주소 (사용자) · /admin/ (관리자) · /api/ (회원 백엔드) · /ml/ (ML API) · /data/ (수집한 뉴스) · /data/weather/ (날씨)

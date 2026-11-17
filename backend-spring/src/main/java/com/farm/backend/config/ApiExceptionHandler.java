@@ -29,7 +29,8 @@ import java.util.Map;
  */
 @RestControllerAdvice(assignableTypes = {UserController.class, PostController.class, CommentController.class,
         AdminAuthController.class, AdminBoardController.class, NoticeController.class,
-        com.farm.backend.controller.AdminOpsController.class, com.farm.backend.controller.SiteController.class}) // 11-14 관리자·공지 · 11-17 운영·사이트 설정
+        com.farm.backend.controller.AdminOpsController.class, com.farm.backend.controller.SiteController.class,
+        com.farm.backend.controller.AdminRefreshController.class}) // 11-14 관리자·공지 · 11-17 운영·사이트 설정·데이터 갱신
 public class ApiExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
@@ -60,6 +61,19 @@ public class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> typeMismatch(MethodArgumentTypeMismatchException e) {
         return ResponseEntity.badRequest().body(Map.of("message", "요청 값을 확인하세요 (" + e.getName() + ")"));
+    }
+
+    /** 올린 파일이 한도(50MB)를 넘음 (11-17 월보 PDF) */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> tooLarge(org.springframework.web.multipart.MaxUploadSizeExceededException e) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(Map.of("message", "파일이 너무 커요 (50MB 까지)"));
+    }
+
+    /** 파일 올리기 요청인데 파일 칸(file)이 없음 */
+    @ExceptionHandler({org.springframework.web.multipart.MultipartException.class, org.springframework.web.multipart.support.MissingServletRequestPartException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class})
+    public ResponseEntity<Map<String, Object>> noFile(Exception e) {
+        return ResponseEntity.badRequest().body(Map.of("message", "올릴 파일을 골라 주세요"));
     }
 
     @ExceptionHandler(Exception.class)

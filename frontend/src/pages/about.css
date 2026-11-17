@@ -51,3 +51,15 @@
 #faq, #items, #how, #price, #grades, #team, #contact { scroll-margin-top: 96px; }
 @media (max-width: 860px) { .ab-hero, .ab-two { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .ab-team, .ab-stats { grid-template-columns: 1fr; } }
+/* 다른 화면 링크로 들어온 칸 잠깐 강조 (11-16): 노란 바탕 + 주황 테두리가 2.6초 동안 두 번 숨 쉬고 사라짐 */
+.ab-flash { animation: ab-flash 2.6s ease-out; }
+@keyframes ab-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(217, 96, 11, 0); background-color: rgba(255, 236, 170, 0); }
+  12%  { box-shadow: 0 0 0 3px rgba(217, 96, 11, .9), 0 0 0 9px rgba(217, 96, 11, .18); background-color: #fff3c4; }
+  35%  { box-shadow: 0 0 0 3px rgba(217, 96, 11, .5), 0 0 0 4px rgba(217, 96, 11, 0); background-color: #fff6d3; }
+  55%  { box-shadow: 0 0 0 3px rgba(217, 96, 11, .9), 0 0 0 9px rgba(217, 96, 11, .18); background-color: #fff3c4; }
+  100% { box-shadow: 0 0 0 0 rgba(217, 96, 11, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ab-flash { animation: none; box-shadow: 0 0 0 3px rgba(217, 96, 11, .9); background-color: #fff3c4; }
+}

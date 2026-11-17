@@ -118,4 +118,18 @@
 .pv-chartbox { position: relative; flex: 1 1 auto; min-height: 320px; margin-top: 8px; }
 .pv-chartbox .pv-chart { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; }
 @media (max-width: 1200px) { .pv-chartbox { flex: none; min-height: 0; aspect-ratio: 900 / 380; } }
+/* 11-17: 넓은 화면에서 오른쪽 열(시장별 예측 · 믿을 만한가요)은 줄 높이를 정하지 않고 왼쪽 카드 높이에 맞춤.
+   height:0 + min-height:100% → 오른쪽 내용이 길어도 왼쪽 그래프 카드가 늘어나지 않음 (그래프 위 빈 공간이 생기던 문제).
+   '믿을 만한가요' 카드는 남는 높이를 채우고 설명이 넘치면 안쪽만 스크롤 */
+@media (min-width: 1201px) {
+  .pv-chartbox { min-height: 460px; }
+  .pv-side { height: 0; min-height: 100%; display: flex; flex-direction: column; gap: 20px; }
+  .pv-side > .card:first-child { flex: none; }
+  .pv-trust { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .pv-trust .pv-head, .pv-trust .pv-acc { flex: none; }
+  .pv-trust-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 6px; margin-top: 4px; scrollbar-width: thin; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); scrollbar-color: rgba(19, 38, 26, 0.16) transparent; }
+  .pv-trust-body::-webkit-scrollbar { width: 6px; }
+  .pv-trust-body::-webkit-scrollbar-thumb { background: rgba(19, 38, 26, 0.16); border-radius: 6px; }
+  .pv-slide { max-height: 360px; }
+}
 @media (max-width: 640px) { .pv-chartbox { aspect-ratio: 420 / 400; } }

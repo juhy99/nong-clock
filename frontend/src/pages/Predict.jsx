@@ -302,13 +302,15 @@ function Result({ r }) {
       </section>
       <div className="pv-side">
         <MarketCards series={series} horizon={horizon} />
-        <section className="card">
+        {/* 11-17: 설명이 길어져도 왼쪽 그래프 카드 높이에 영향을 주지 않게 — 오른쪽 열은 왼쪽 높이에 맞추고 이 카드 안쪽만 스크롤 */}
+        <section className="card pv-trust">
           <div className="pv-head"><h2>이 예측, 믿을 만한가요?</h2></div>
           <div className="pv-acc">
             <div className="pv-ring" style={{ "--v": p.confidence }}><span>{p.confidence}%</span></div>
             {/* 11-17: 최종 모델 시험 정확도 (품종 → 품목). 전에는 범위 폭의 절반이라 품목과 상관없이 같은 값이었음. 3주 넘게 먼 날은 달 평균 기준 */}
             <p>지난 시험 기간(2025~)에 이 {p.variety ? "품종" : "품목"} {afterLabel(horizon)} 예측은<br />실제 가격과 평균 <b>{Math.round(p.error_pct)}%</b> 차이 났어요{horizon > 20 ? " (달 평균 기준)" : ""}.</p>
           </div>
+          <div className="pv-trust-body">
           {/* 11-17: 시험 정확도가 50% 밑(예: 포도 샤인마스캇 7~12달 뒤 −3.3 → 0%)이면 숫자만 두지 않고 분명히 알림.
               샤인마스캇은 2024~25 공급이 늘며 값이 크게 내려 모델이 따라가지 못함 (작년 같은 때 값보다도 덜 맞음) */}
           {p.confidence < 50 && (
@@ -374,6 +376,7 @@ function Result({ r }) {
               <ul className="pv-notes"><li><span className="ic">📉</span>최근 시세가 작년 이맘때보다 크게 낮은 품종이 있어 {md(adj[0].date)}~{md(adj.at(-1).date)} 예측을 낮춰 잡았어요 (값이 떨어진 뒤엔 한동안 낮게 이어진 경우가 많았어요)</li></ul>
             );
           })()}
+          </div>
         </section>
       </div>
       {/* 계절 패턴 · 월별 반입량 (품목 단위, 전국) — 예시 데이터는 지금 시세 평균에 맞춰 크기 조정 */}

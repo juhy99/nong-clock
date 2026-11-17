@@ -170,7 +170,8 @@ function Header() {
   return (
     <header className={`header ${solid || menu ? "solid" : ""}`}>
       <div className="container header-inner">
-        <Link to="/" className="logo">
+        {/* 11-17: 홈에서 로고를 누르면 화면을 새로 고침 (다른 화면에서는 홈으로) */}
+        <Link to="/" className="logo" onClick={(e) => { if (loc.pathname === "/") { e.preventDefault(); window.scrollTo(0, 0); window.location.reload(); } }}>
           <img src="/logo-nongclock.png" alt="NongClock" />
         </Link>
         <HeaderSearch />

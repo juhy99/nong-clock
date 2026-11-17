@@ -245,6 +245,8 @@ function Result({ r }) {
   if (!series.length) return <div className="card state">이 지역 도매시장에서는 이 품목을 거래하지 않아요. 다른 지역을 골라 주세요.</div>;
   const top = series.reduce((a, s) => (s.best.price > a.best.price ? s : a));
   const gain = top.best.price - top.base;
+  // 고른 날짜(오늘 + horizon)의 예상가: 시장마다 그날 값, 그중 가장 비싼 시장
+  const target = series.map((s) => ({ s, f: fcAt(s.raw, horizon) })).filter((x) => x.f).reduce((a, x) => (!a || x.f.price > a.f.price ? x : a), null);
   const p = series[0].raw;
   const low = LOW_ACCURACY.has(item);
   const one = series.length === 1 ? series[0] : null;
@@ -252,12 +254,27 @@ function Result({ r }) {
     <div className="pv-grid">
       <section className="card pv-main">
         <div className="pv-head"><h2>{itemName} · {regionName}</h2><small>원/kg · 오늘부터 {afterLabel(horizon)}({md(addDays(series[0].base_date, horizon))})까지</small></div>
-        <div className="pv-big">
-          <b>{won(top.best.price)}원</b>
-          <span className={gain >= 0 ? "up" : "down"}>{signPct(pct(top.best.price, top.base))}</span>
-          <span className="muted">{series.length > 1 ? `${top.name} · ` : ""}{afterLabel(top.best.t)} 최고 예상가 · 지금 {won(top.base)}원</span>
-          {low && <span className="pv-low">❗ 예측 정확도가 낮은 품목이에요</span>}
-        </div>
+        {/* 11-17: 크게 = 고른 날짜의 예상가 (지역 안 시장 중 그날 가장 비싼 곳), 작게 = 오늘부터 그날까지 최고가.
+            고른 날이 출하철 밖이라 예측이 없으면 예전처럼 기간 최고가를 크게 */}
+        {target ? (
+          <div className="pv-big">
+            <b>{won(target.f.price)}원</b>
+            <span className={target.f.price >= target.s.base ? "up" : "down"}>{signPct(pct(target.f.price, target.s.base))}</span>
+            <span className="muted">{series.length > 1 ? `${target.s.name} · ` : ""}{md(target.f.date)}({afterLabel(target.f.t)}) 예상가 · 지금 {won(target.s.base)}원</span>
+            {low && <span className="pv-low">❗ 예측 정확도가 낮은 품목이에요</span>}
+            <span className="pv-peak">
+              <i aria-hidden>▲</i> 오늘부터 이 날까지 최고 <b>{won(top.best.price)}원</b>
+              <small>{series.length > 1 ? `${top.name} · ` : ""}{afterLabel(top.best.t)} ({md(top.best.date)} 무렵)</small>
+            </span>
+          </div>
+        ) : (
+          <div className="pv-big">
+            <b>{won(top.best.price)}원</b>
+            <span className={gain >= 0 ? "up" : "down"}>{signPct(pct(top.best.price, top.base))}</span>
+            <span className="muted">{series.length > 1 ? `${top.name} · ` : ""}{afterLabel(top.best.t)} 최고 예상가 · 지금 {won(top.base)}원</span>
+            {low && <span className="pv-low">❗ 예측 정확도가 낮은 품목이에요</span>}
+          </div>
+        )}
         <Chart series={series} horizon={horizon} />
         <div className="pv-legend">
           {series.map((s) => <span key={s.code}><i style={{ background: s.color, height: 4 }} />{s.name}</span>)}

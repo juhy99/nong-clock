@@ -57,6 +57,12 @@ body { background: var(--bg); color: var(--ink); font-size: 17px; }
 .header.solid .search { background: #eef2ea; }
 .header .search:focus-within { background: #fff; box-shadow: 0 0 0 2px #b9d6ab; }
 .header .search button { background: var(--accent); color: var(--brand); }
+/* 11-17: 검색 자동완성 칸이 위 '검색' 버튼 모양(초록 알약 · 안쪽 여백)을 물려받아 창 밖으로 넘치던 것 — 목록 줄은 목록 모양으로 되돌리고 긴 제목은 … 로 자름 */
+.header .search .search-dd { grid-template-columns: minmax(0, 1fr); overflow: hidden; }
+.header .search .search-dd .o { background: none; color: inherit; border-radius: 10px; padding: 8px 10px; font-weight: 400; min-width: 0; box-sizing: border-box; }
+.header .search .search-dd .o:hover, .header .search .search-dd .o:focus-visible { background: var(--soft); }
+.header .search .search-dd .o b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.header .search .search-dd .o.all { color: var(--green); font-weight: 700; background: none; }
 .top-nav { display: flex; align-items: center; gap: clamp(14px, 1.8vw, 30px); margin-left: auto; }
 .top-nav a { font-size: 16px; color: rgba(19, 38, 26, 0.82); padding: 6px 0; border-bottom: 2px solid transparent; letter-spacing: 0.04em; white-space: nowrap; }
 .top-nav a:hover { color: var(--ink); }

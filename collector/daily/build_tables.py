@@ -67,9 +67,6 @@ def t_refs():
     grp = {c: g['code'] for g in ij.get('index_groups', []) for c in g.get('categories', [])}
     it['index_group'] = it.category.map(grp).fillna('')
     save(it[['item_code', 'code4', 'name', 'category', 'index_group', 'emoji', 'kamis_code', 'sort_order']], 'item')
-    if ij.get('index_groups'):
-        save(pd.DataFrame([{'group_code': g['code'], 'name': g['name'], 'emoji': g.get('emoji', ''), 'categories': pg_array(g.get('categories', []))}
-                           for g in ij['index_groups']] + [{'group_code': 'all', 'name': '전체', 'emoji': '📊', 'categories': '{}'}]), 'index_group')
     u = ref('variety_unit')
     uc = ref('variety_unit_code')
     code = dict(zip(it.code4, it.item_code))
@@ -78,7 +75,6 @@ def t_refs():
     u['months'] = u.months.map(lambda s: pg_array(s.split(',')) if s else '')
     save(u[['unit_id', 'unit_name', 'item_code', 'unit_kind', 'variety_codes', 'variety_names', 'months', 'main_region_id',
             'cultivation', 'origin_type', 'avg_volume_t', 'is_active']], 'variety_unit')
-    save(ref('grade_map'), 'grade_map')
 
 
 # ───────────── 경매 원장 → 시세 ─────────────
@@ -294,29 +290,6 @@ def t_prices(since):
     print(f'    품종 단위에 들어간 국산 물량 비율: {inu / max(dom, 1):.3f}')
 
 
-def t_index(since):
-    """홈 지수: 품목 전국 단가 ÷ 그 품목 직전 365일 평균 × 100 을 묶음 안에서 평균 (평소 = 100). price_daily(전국·ALL) 전체 기간이 필요"""
-    f = HIST / 'price_all.csv'
-    if not f.exists():
-        return
-    p = pd.read_csv(f, dtype={'market_code': str})
-    p = p[p.market_code == 'national'][['date', 'item_code', 'price']].copy()
-    p['date'] = pd.to_datetime(p.date)
-    p = p.sort_values(['item_code', 'date'])
-    p = p.reset_index(drop=True)
-    p['base'] = pd.concat([g.set_index('date').price.rolling('365D', min_periods=60).mean().shift(1).reset_index(drop=True).set_axis(g.index)
-                           for _, g in p.groupby('item_code')]).sort_index()
-    p['ratio'] = p.price / p.base * 100
-    it = pd.read_csv(OUT / 'item.csv', dtype=str)
-    p['group_code'] = p.item_code.map(dict(zip(it.item_code, it.index_group)))
-    p = p.dropna(subset=['ratio'])
-    if p.empty:
-        print('  price_index_daily: 기준(직전 365일 중 60일 이상)이 아직 없음 → 과거 원장을 먼저 채우세요'); return
-    g = pd.concat([p, p.assign(group_code='all')]).groupby(['date', 'group_code']).agg(value=('ratio', 'mean'), item_count=('ratio', 'size')).reset_index()
-    g['value'] = g.value.astype(float).round(2); g['date'] = g.date.dt.date.astype(str)
-    save(g[g.date >= str(since)], 'price_index_daily')
-
-
 def t_market_factor():
     """시장 계수: 그 시장 단가 ÷ 전국 단가의 품목·달 중앙값 (최근 3년, 10일 이상). 시장별 예측 = 전국 예측 × 계수"""
     f = HIST / 'price_all.csv'
@@ -476,47 +449,7 @@ def t_retail(since):
     save(r[['date', 'item_code', 'price', 'source_spec']], 'retail_price_daily')
 
 
-# ───────────── 날씨 (팀 날씨 수집기 결과: data/weather/site/날씨_대통합_일별.csv) ─────────────
-WX_SITE = C.DATA / 'weather' / 'site' / '날씨_대통합_일별.csv'
-
-
-def read_wx():
-    if not WX_SITE.exists():
-        print(f'  날씨 대통합 없음: {WX_SITE} (collect.py weather 먼저)'); return None
-    w = pd.read_csv(WX_SITE, encoding='utf-8-sig', low_memory=False)
-    w = w[w.구분 == '시도_일'].copy()
-    w['region_id'] = w.시도.map(dict(zip(ref('region').name, ref('region').region_id)))
-    return w[w.region_id.notna()]
-
-
-def t_weather(since):
-    """시·도 일별: ASOS+AWS+농업기상 관측소 평균 (팀 기상 통합 전처리 값 그대로)"""
-    w = read_wx()
-    if w is None:
-        return
-    w = w[w.날짜 >= str(since)]
-    g = pd.DataFrame({'date': w.날짜, 'region_id': w.region_id, 'temp_avg': w.평균기온.fillna(w.평균기온_근사), 'temp_min': w.최저기온,
-                      'temp_max': w.최고기온, 'rain_mm': w.강수량, 'sun_hr': w.일조시간, 'humidity': w.평균습도, 'wind': w.최대풍속})
-    g[g.columns[2:]] = g[g.columns[2:]].astype(float).round(1)
-    save(g, 'weather_daily')
-
-
-def t_weather_normal():
-    """평년(1991~2020 같은 월·일 앞뒤 3일). 팀 결과의 평년_ 열 그대로 (1991~2014 ASOS 원본이 있어야 채워짐)"""
-    w = read_wx()
-    if w is None:
-        return
-    w = w.dropna(subset=['평년_평균기온'])
-    if w.empty:
-        print('  weather_normal: 평년 값 없음 (weather/README 8번: ASOS 1991~2014 원본 넣기)'); return
-    w['month'] = w.날짜.str[5:7].astype(int); w['day'] = w.날짜.str[8:10].astype(int)
-    n = w.drop_duplicates(['region_id', 'month', 'day'], keep='last')
-    o = pd.DataFrame({'region_id': n.region_id, 'month': n.month, 'day': n.day, 'temp_normal': n.평년_평균기온, 'temp_max_normal': n.평년_최고기온,
-                      'temp_min_normal': n.평년_최저기온, 'rain_normal': n.평년_강수량})
-    o[o.columns[3:]] = o[o.columns[3:]].astype(float).round(2)
-    save(o.sort_values(['region_id', 'month', 'day']), 'weather_normal')
-
-
+# ───────────── 기상특보 ─────────────
 WRN = {'W': '강풍', 'R': '호우', 'C': '한파', 'D': '건조', 'T': '태풍', 'S': '대설', 'Y': '황사', 'H': '폭염', 'F': '안개',
        'O': '해일', 'N': '지진해일', 'V': '풍랑'}
 LAND = {'강풍', '호우', '한파', '건조', '태풍', '대설', '황사', '폭염'}
@@ -599,104 +532,7 @@ def t_warning(since):
     save(g[['date', 'region_id', 'warn_type', 'level', 'area_share']], 'weather_warning_daily')
 
 
-SKY = {'1': '맑음', '3': '구름많음', '4': '흐림'}
-PTY = {'1': '비', '2': '비/눈', '3': '눈', '4': '소나기'}
-
-
-def latlon_to_grid(lat, lon):
-    import math
-    RE, GRID, SLAT1, SLAT2, OLON, OLAT, XO, YO = 6371.00877, 5.0, 30.0, 60.0, 126.0, 38.0, 43, 136
-    D = math.pi / 180.0
-    re_ = RE / GRID; s1, s2, olon, olat = SLAT1 * D, SLAT2 * D, OLON * D, OLAT * D
-    sn = math.log(math.cos(s1) / math.cos(s2)) / math.log(math.tan(math.pi * 0.25 + s2 * 0.5) / math.tan(math.pi * 0.25 + s1 * 0.5))
-    sf = math.pow(math.tan(math.pi * 0.25 + s1 * 0.5), sn) * math.cos(s1) / sn
-    ro = re_ * sf / math.pow(math.tan(math.pi * 0.25 + olat * 0.5), sn)
-    ra = re_ * sf / math.pow(math.tan(math.pi * 0.25 + lat * D * 0.5), sn)
-    th = lon * D - olon
-    th = th - 2 * math.pi if th > math.pi else th + 2 * math.pi if th < -math.pi else th
-    th *= sn
-    return int(ra * math.sin(th) + XO + 0.5), int(ro - ra * math.cos(th) + YO + 0.5)
-
-
-def t_now():
-    """시·도 오늘 날씨: 팀 예보 수집기 DB(data/weather/raw/fcst/진행상태.sqlite3)의 가장 최근 단기예보.
-    시·도 안 시군구 격자들의 값을 모아 기온은 평균, 최저·최고는 평균, 강수확률은 최대, 하늘은 가장 많은 값"""
-    import gzip, sqlite3
-    db = C.DATA / 'weather' / 'raw' / 'fcst' / '진행상태.sqlite3'
-    if not db.exists():
-        print(f'  예보 DB 없음: {db} (collect.py fcst 먼저)'); return
-    sg = pd.read_csv(C.HERE / 'weather' / 'ref' / '시군구_좌표.csv', encoding='utf-8-sig').dropna(subset=['위도', '경도'])
-    sido_of = {}
-    for r in sg.itertuples():
-        sido_of.setdefault(latlon_to_grid(float(r.위도), float(r.경도)), r.시도)
-    con = sqlite3.connect(db)
-    issue = con.execute("SELECT max(issue) FROM raw WHERE kind='short'").fetchone()[0]
-    if not issue:
-        return
-    day = C.today().strftime('%Y%m%d')
-    recs = []
-    for point, body in con.execute("SELECT point, body FROM raw WHERE kind='short' AND issue=?", (issue,)):
-        nx, ny = map(int, point.split(','))
-        sd = sido_of.get((nx, ny))
-        if not sd:
-            continue
-        for it in json.loads(gzip.decompress(body)):
-            if it.get('fcstDate') == day:
-                recs.append((sd, it['category'], it['fcstTime'], it['fcstValue']))
-    con.close()
-    if not recs:
-        return
-    f = pd.DataFrame(recs, columns=['sido', 'cat', 'tm', 'val'])
-    f['num'] = pd.to_numeric(f.val, errors='coerce')
-    rid = dict(zip(ref('region').name, ref('region').region_id))
-    bt = dt.datetime.strptime(issue, '%Y%m%d%H%M').replace(tzinfo=C.KST)
-    rows = []
-    for sd, g in f.groupby('sido'):
-        t12 = '1200' if (g.tm == '1200').any() else g.tm.min()
-        c = lambda cat, tm=None: g[(g.cat == cat) & ((g.tm == tm) if tm else True)]
-        tmn = c('TMN').num.mean(); tmx = c('TMX').num.mean()
-        if pd.isna(tmn): tmn = c('TMP').num.min()
-        if pd.isna(tmx): tmx = c('TMP').num.max()
-        pty = c('PTY', t12).val.mode(); sky = c('SKY', t12).val.mode()
-        pty = pty.iloc[0] if len(pty) else '0'; sky = sky.iloc[0] if len(sky) else '1'
-        pop = c('POP').num.max()
-        note = []
-        if pd.notna(tmx) and pd.notna(tmn) and tmx - tmn >= 10: note.append('일교차 큼')
-        if pd.notna(tmn) and tmn <= 0: note.append('서리·냉해 주의')
-        if pd.notna(tmx) and tmx >= 33: note.append('폭염 주의 · 시설 환기')
-        if pd.notna(pop) and pop >= 60: note.append('비 예보 · 수확 일정 조정')
-        rows.append({'base_time': bt.isoformat(), 'region_id': rid.get(sd), 'temp': c('TMP', t12).num.mean(), 'temp_min': tmn, 'temp_max': tmx,
-                     'sky': PTY.get(str(pty)) or SKY.get(str(sky), ''), 'icon': f'pty{pty}' if str(pty) != '0' else f'sky{sky}',
-                     'rain_prob': pop, 'humidity': c('REH', t12).num.mean(), 'wind': c('WSD', t12).num.mean(), 'soil_temp': '',
-                     'note': ' · '.join(note) or '작물 생육에 무난한 날씨'})
-    df = pd.DataFrame(rows).dropna(subset=['region_id']).round(1)
-    for col in ('rain_prob', 'humidity'):
-        df[col] = df[col].round().astype('Int64')
-    save(df, 'weather_region_now')
-
-
-def t_holiday():
-    rows = []
-    for f in glob.glob(str(RAW / 'holiday' / '*.json')):
-        for x in json.loads(Path(f).read_text(encoding='utf-8')):
-            d = str(x.get('locdate', ''))
-            if len(d) == 8 and x.get('isHoliday', 'Y') == 'Y':
-                rows.append({'date': f'{d[:4]}-{d[4:6]}-{d[6:]}', 'name': x.get('dateName', '')})
-    if not rows:
-        return
-    h = pd.DataFrame(rows).drop_duplicates('date')
-    # 도매시장 휴장: 설·추석 연휴는 휴장. 그 밖 공휴일은 시장마다 달라 원장에 거래가 없던 날로 판단
-    h['is_market_closed'] = h.name.str.contains('설날|추석')
-    f = HIST / 'price_all.csv'
-    if f.exists():
-        p = pd.read_csv(f, usecols=['date', 'market_code'], dtype=str)
-        traded = set(p[p.market_code == 'national'].date)
-        past = h.date < C.today().isoformat()
-        h.loc[past, 'is_market_closed'] = ~h.loc[past, 'date'].isin(traded)
-    save(h.sort_values('date'), 'holiday')
-
-
-# ───────────── 산지공판장 · 가락 반입 · aT 출하예약 · 환율 · 정책 (예측 입력·화면 보조) ─────────────
+# ───────────── 산지공판장 ─────────────
 def t_producer(since):
     """산지공판장 일별: 날짜 × 공판장 × 품목 물량·금액·단가 (+ 전국 'national')"""
     files = sorted(f for f in glob.glob(str(RAW / 'sanji' / '*.csv.gz')) if Path(f).name[:8] >= since.strftime('%Y%m%d'))
@@ -717,98 +553,8 @@ def t_producer(since):
     save(g.rename(columns={'market': 'producer_code', 'market_name': 'producer_name'}), 'producer_price_daily')
 
 
-def t_garak_inout(since):
-    """가락 경매전(그날 경매 전 집계)·경매후(그날 실제 반입) 품목 반입량. 단위 톤 → kg. 소계·합계 줄은 뺌"""
-    gi = ref('garak_item') if (REF / 'garak_item.csv').exists() else None
-    out = []
-    for svc, kind, name_col, code_col, tot in (('GarakAuctionBefore', 'before', 'GUBUN', None, 'TOT'), ('GarakAuctionAfter', 'after', 'ITM_NM', 'ITM_CD', 'SUM_TOT')):
-        f = RAW / 'garak_inout' / f'{svc}.csv'
-        if not f.exists():
-            continue
-        x = pd.read_csv(f, dtype=str)
-        x['date'] = pd.to_datetime(x.TODATE.str[:8], format='%Y%m%d', errors='coerce').dt.date.astype(str)
-        x = x[x.date >= str(since)]
-        nm = x[name_col].fillna('').str.strip()
-        bad = nm.str.contains(r'계$|합계|소계') | x.BURYU.fillna('').str.contains('계')
-        if code_col:
-            bad |= x[code_col].fillna('').str.strip() == ''
-        x = x[~bad]
-        y = pd.DataFrame({'date': x.date, 'kind': kind, 'garak_name': nm[~bad], 'garak_code': x[code_col].str.strip() if code_col else '-',
-                          'volume_kg': (pd.to_numeric(x[tot], errors='coerce') * 1000).round(1)})
-        if gi is not None:
-            key = 'before_name' if kind == 'before' else 'after_code'
-            src = y.garak_name if kind == 'before' else y.garak_code
-            y['item_code'] = src.map(dict(zip(gi[key], gi.item_code))).fillna('-').replace('', '-')
-        else:
-            y['item_code'] = '-'
-        out.append(y)
-    if out:
-        g = pd.concat(out)
-        g = g.groupby(['date', 'kind', 'garak_name', 'garak_code', 'item_code'], as_index=False).volume_kg.sum()
-        save(g, 'garak_inout_daily')
-
-
-def _kg(q, u, nm):
-    nm = str(nm).strip().lower()
-    f = {'kg': 1, '키로그램': 1, '킬로그램': 1, 'g': 0.001, '그램': 0.001, '톤': 1000, 't': 1000, 'ton': 1000}.get(nm)
-    return q * u * f if f else np.nan
-
-
-def t_at_resv(since):
-    """aT 전국 도매시장 출하예약(전자송품장): 출하예정일 × 시장 × 품목 × 품종(소분류) 예약물량 kg. 수집시각이 늦은 파일이 최종"""
-    files = sorted(f for f in glob.glob(str(RAW / 'at_resv' / '*.csv')) if Path(f).stem >= str(since))
-    if not files:
-        return
-    x = pd.concat([pd.read_csv(f, dtype=str) for f in files if Path(f).stat().st_size > 100] or [pd.DataFrame()])
-    if x.empty:
-        return
-    x['code4'] = x.gds_lclsf_cd.str.zfill(2) + x.gds_mclsf_cd.str.zfill(2)
-    it = ref('item')
-    x['item_code'] = x.code4.map(dict(zip(it.code4, it.item_code)))
-    x = x[x.item_code.notna()]
-    x['kg'] = [_kg(float(q or 0), float(u or 0), n) for q, u, n in zip(x.spmt_qty.fillna(0), x.unit_qty.fillna(0), x.unit_nm)]
-    g = x.groupby(['spmt_dt', 'whsl_mrkt_cd', 'item_code', 'gds_sclsf_cd'], as_index=False).agg(
-        reserved_kg=('kg', 'sum'), invoice_rows=('kg', 'size'), collected_at=('수집시각', 'max'))
-    g = g.rename(columns={'spmt_dt': 'date', 'whsl_mrkt_cd': 'market_code', 'gds_sclsf_cd': 'variety_code'})
-    g['date'] = g.date.str[:10]   # API 값이 '2026-10-25T00:00:00Z' 모양
-    g['reserved_kg'] = g.reserved_kg.round(1)
-    save(g, 'shipment_reservation_daily')
-
-
-def t_fx(since):
-    f = RAW / 'fx' / 'fx_daily.csv'
-    if not f.exists():
-        return
-    x = pd.read_csv(f, dtype=str)
-    x = x[x.date >= str(since)]
-    x['value'] = pd.to_numeric(x.value.str.replace(',', ''), errors='coerce')
-    x = x.drop_duplicates(['date', 'item_code'], keep='last')
-    save(x.rename(columns={'item_code': 'currency_code', 'item_name': 'currency_name', 'value': 'rate'})[['date', 'currency_code', 'currency_name', 'rate']], 'fx_daily')
-
-
-def t_policy(since):
-    """정부 수급정책 문서 목록: 공지 후보·예측 입력(정부 개입 시점). 게시일 없으면 수집일"""
-    f = C.DATA / 'policy' / '01_전체문서_수집목록.csv'
-    if not f.exists():
-        return
-    x = pd.read_csv(f, dtype=str, encoding='utf-8-sig')
-    x['date'] = x.게시일.fillna('').str[:10]
-    x.loc[x.date == '', 'date'] = x.발표일시.fillna('').str[:10]          # 게시일·발표일시 둘 다 없으면 비워 둠(수집일로 채우지 않음)
-    x['collected_at'] = x.수집일시.fillna('')
-    x = x[(x.date >= str(since)) | ((x.date == '') & (x.collected_at.str[:10] >= str(since)))]
-    save(pd.DataFrame({'doc_id': x.문서ID, 'date': x.date, 'source': x.출처, 'title': x.제목, 'url': x.원문주소, 'status': x.본문상태,
-                       'collected_at': x.collected_at}), 'policy_doc')
-
-
-def t_log():
-    f = C.LOG / 'collect_log.csv'
-    if f.exists():
-        save(pd.read_csv(f), 'collect_log')
-
-
-STEPS = ['refs', 'price_daily', 'price_index_daily', 'market_factor', 'piece_weight', 'retail_price_daily', 'weather_daily', 'weather_normal',
-         'weather_warning_daily', 'weather_region_now', 'holiday', 'producer_price_daily', 'garak_inout_daily',
-         'shipment_reservation_daily', 'fx_daily', 'policy_doc', 'collect_log']
+# 11-17: 화면·예측이 읽는 표만 만든다. 공휴일·날씨·가락 반입·출하예약·환율·정책·지수·수집기록 표는 읽는 곳이 없어 뺌 (원자료 수집은 collect.py 그대로)
+STEPS = ['refs', 'price_daily', 'market_factor', 'piece_weight', 'retail_price_daily', 'weather_warning_daily', 'producer_price_daily']
 
 
 def main():
@@ -820,12 +566,8 @@ def main():
     todo = a.only or STEPS
     print(f'표 만들기: {since} 부터 → {OUT}', flush=True)
     for s in todo:
-        {'refs': t_refs, 'price_daily': lambda: t_prices(since), 'price_index_daily': lambda: t_index(since),
-         'market_factor': t_market_factor, 'piece_weight': lambda: t_piece_weight(since), 'retail_price_daily': lambda: t_retail(since), 'weather_daily': lambda: t_weather(since),
-         'weather_normal': t_weather_normal, 'weather_warning_daily': lambda: t_warning(since), 'weather_region_now': t_now,
-         'holiday': t_holiday, 'producer_price_daily': lambda: t_producer(since), 'garak_inout_daily': lambda: t_garak_inout(since),
-         'shipment_reservation_daily': lambda: t_at_resv(since), 'fx_daily': lambda: t_fx(since), 'policy_doc': lambda: t_policy(since),
-         'collect_log': t_log}[s]()
+        {'refs': t_refs, 'price_daily': lambda: t_prices(since), 'market_factor': t_market_factor, 'piece_weight': lambda: t_piece_weight(since),
+         'retail_price_daily': lambda: t_retail(since), 'weather_warning_daily': lambda: t_warning(since), 'producer_price_daily': lambda: t_producer(since)}[s]()
 
 
 if __name__ == '__main__':

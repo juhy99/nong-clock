@@ -13,20 +13,15 @@ import sys
 import common as C
 
 # 표 이름: 기본키 (넣는 순서 = FK 순서)
-TABLES = [
-    ('region', ['region_id']), ('market', ['market_code']), ('index_group', ['group_code']), ('item', ['item_code']),
-    ('variety_unit', ['unit_id']), ('grade_map', ['source', 'raw_grade']), ('holiday', ['date']),
+TABLES = [   # 11-17: 화면·예측이 읽는 표만. 공휴일·날씨·가락 반입·출하예약·환율·정책·지수·수집기록 표는 읽는 곳이 없어 뺌 (scripts\\안쓰는표_지우기.bat)
+    ('region', ['region_id']), ('market', ['market_code']), ('item', ['item_code']),
+    ('variety_unit', ['unit_id']),
     ('price_daily', ['date', 'market_code', 'item_code', 'grade']),
     ('price_origin_daily', ['date', 'market_code', 'item_code', 'origin_region_id', 'is_import']),
     ('price_unit_daily', ['date', 'unit_id']), ('retail_price_daily', ['date', 'item_code']),
-    ('price_index_daily', ['date', 'group_code']), ('market_factor', ['item_code', 'market_code', 'month']), ('price_forecast_monthly', ['base_month', 'item_code', 'variety_id', 'target_month']), ('price_forecast_daily', ['base_date', 'item_code', 'variety_id', 'target_date']), ('production_yearly', ['supply_unit', 'year']),
-    ('weather_daily', ['date', 'region_id']), ('weather_normal', ['region_id', 'month', 'day']),
-    ('weather_region_now', ['base_time', 'region_id']), ('weather_warning_daily', ['date', 'region_id', 'warn_type']),
+    ('market_factor', ['item_code', 'market_code', 'month']), ('price_forecast_monthly', ['base_month', 'item_code', 'variety_id', 'target_month']), ('price_forecast_daily', ['base_date', 'item_code', 'variety_id', 'target_date']), ('production_yearly', ['supply_unit', 'year']),
+    ('weather_warning_daily', ['date', 'region_id', 'warn_type']),
     ('producer', ['producer_code']), ('producer_price_daily', ['date', 'producer_code', 'item_code']), ('price_unit_market_monthly', ['month', 'market_code', 'unit_id']),
-    ('garak_inout_daily', ['date', 'kind', 'garak_name', 'garak_code', 'item_code']),
-    ('shipment_reservation_daily', ['date', 'market_code', 'item_code', 'variety_code']),
-    ('fx_daily', ['date', 'currency_code']), ('policy_doc', ['doc_id']),
-    ('collect_log', ['source', 'started_at']),
 ]
 
 
@@ -53,8 +48,6 @@ def load(cur, name, keys):
         cols = next(csv.reader(fh))
     q = lambda c: '"' + c + '"'
     cur.execute(f'CREATE TEMP TABLE _t (LIKE {name} INCLUDING DEFAULTS) ON COMMIT DROP')
-    if name == 'collect_log':
-        cur.execute('ALTER TABLE _t ALTER COLUMN log_id DROP NOT NULL')
     with f.open(encoding='utf-8') as fh:
         cur.copy_expert(f"COPY _t ({','.join(map(q, cols))}) FROM STDIN WITH (FORMAT csv, HEADER true, NULL '')", fh)
     if name in REPLACE:   # 표를 비우고 통째로 다시 넣기 (11-12, 단위 정의를 바꾼 뒤 옛 줄이 남지 않게). 파일 줄이 너무 적으면 안 비움

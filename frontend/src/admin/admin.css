@@ -84,3 +84,12 @@ body { background: #f3f4f1; }
 @media (max-width: 900px) {
   .news-col-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* 데이터 갱신 카드 (11-17) */
+.refresh-rows { display: grid; gap: 10px; }
+.refresh-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid var(--line, #e3e8e3); border-radius: 10px; }
+.refresh-row > div:first-child { flex: 1 1 320px; min-width: 0; }
+.refresh-row .btn { white-space: nowrap; }
+.refresh-tail { margin: 8px 0 0; padding: 10px 12px; background: #1f2a24; color: #e8efe9; border-radius: 8px; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-height: 260px; }
+.refresh-card details > summary { cursor: pointer; }
+.refresh-line { flex: 1 1 100%; opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

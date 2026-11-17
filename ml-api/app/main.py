@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import APP_NAME, CORS_ORIGINS, MODEL_VERSION
-from app.routers import catalog, prediction, recommend
+from app.routers import catalog, prediction, public, recommend
 
 app = FastAPI(title=APP_NAME, version=MODEL_VERSION)
 
@@ -16,6 +16,7 @@ app.add_middleware(
 app.include_router(catalog.router)
 app.include_router(prediction.router)
 app.include_router(recommend.router)
+app.include_router(public.router)   # 로그인 없이 보는 미리보기 (11-17)
 
 
 @app.get("/health", tags=["health"])

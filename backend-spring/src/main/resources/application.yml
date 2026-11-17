@@ -24,6 +24,13 @@ spring:
       mode: always
       schema-locations: classpath:db/base_tables.sql, classpath:db/post_comment.sql, classpath:db/admin_tables.sql, classpath:db/mypage_tables.sql, classpath:db/ops_tables.sql  # 회원·글 → 댓글 → 관리자(11-14) → 마이페이지 관심 품목(11-16) → 관리자 운영(11-17) 순서
 
+  # 월보 PDF 올리기 (11-17, /api/admin/refresh/wolbo): 파일 하나 50MB 까지. 넘으면 컨트롤러에서 한국어 문장으로 거절하도록 늦게 읽음
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 60MB
+      resolve-lazily: true
+
   jpa:
     hibernate:
       ddl-auto: validate  # 이미 도커에서 테이블을 만들었으므로 validate나 none을 쓰는 것이 안전합니다.
@@ -38,10 +45,11 @@ spring:
 shared:
   dir: ${SHARED_DIR:../shared}
 
-ml:
-  api:
-    url: http://localhost:8000  # FastAPI 서버 주소
-
 # 지금 날씨 (11-14, /api/weather/regions): 공공데이터포털 일반 인증키. 저장소 .env 의 DATA_GO_KR_KEY (도커는 docker-compose 가 넘김)
 weather:
   data-go-kr-key: ${DATA_GO_KR_KEY:}
+
+# 관리자 [지금 갱신] (11-17): 갱신 서비스(price-updater 컨테이너) 주소와 토큰. 도커는 docker-compose 가 넘김 (.env 의 UPDATER_TOKEN)
+updater:
+  url: ${UPDATER_URL:http://localhost:8090}
+  token: ${UPDATER_TOKEN:}

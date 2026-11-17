@@ -3,6 +3,7 @@ import { getAllAuctions } from "../../api/admin";
 import { getNewsCollection, newsHealth } from "../../api/collection";
 import { adminPosts, adminStats } from "../../api/adminBoard";
 import { getFreshness, getOpsErrors, weekdaysSince } from "../../api/adminOps";
+import { getRefreshStatus } from "../../api/adminRefresh";
 import { md } from "../../utils/format";
 import { collectorHealth, getWeatherStatus, worstHealth } from "../../api/weather";
 import { Async, useAsync } from "../../components/common";
@@ -40,6 +41,18 @@ function CollectionAlert() {
  * 자료 신선도 (11-17): 시세 · 예측이 며칠 것까지 들어왔나 + 서버 오류 횟수 (Spring /api/admin/ops/freshness · errors)
  * 초록 = 평일 1일 안 · 노랑 = 2~3일 · 빨강 = 그보다 오래됨 (도매시장 원장은 평일에 올라와 주말은 세지 않음)
  */
+/** 가격 갱신(자동 실행·[지금 갱신])이 실패했거나 전날 경매 자료가 덜 들어왔으면 첫 화면에 알림 (11-17). 갱신 서비스가 꺼져 있으면 조용히 넘어감 — 데이터 수집 화면에서 안내 */
+function RefreshAlert() {
+  const state = useAsync(() => getRefreshStatus().catch(() => null));
+  return (state.data?.alerts ?? []).map((a) => (
+    <div key={a.text} className={`alert-band ${a.level === "bad" ? "bad" : "warn"}`} role="alert">
+      <b>{a.level === "bad" ? "🔴" : "⚠️"} 가격 갱신</b>
+      <span>{a.text}</span>
+      <Link className="link" to="/data">데이터 수집에서 갱신 →</Link>
+    </div>
+  ));
+}
+
 function Freshness() {
   const state = useAsync(() => Promise.all([getFreshness(), getOpsErrors().catch(() => null)]));
   const tone = (n) => (n == null ? "bad" : n <= 1 ? "ok" : n <= 3 ? "warn" : "bad");
@@ -110,6 +123,7 @@ export default function Dashboard() {
   return (
     <>
       <h1>대시보드</h1>
+      <RefreshAlert />
       <CollectionAlert />
       <Freshness />
       <Async state={state}>

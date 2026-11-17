@@ -18,6 +18,7 @@
 | `news-collector` | 켜자마자 한 번, 그 뒤 1시간마다 뉴스 수집 | — |
 | `weather-collector` | 날씨 수집(예보 3시간마다, 관측·장기전망 매일 10:40) + 통합 전처리 → 볼륨 `weatherraw` | — |
 | `weather-export` | 5분마다 전처리 결과(날씨 CSV)가 바뀌었는지 보고 화면 파일로 다시 만듦 | — |
+| `price-updater` | 관리자 화면 [지금 갱신]·[월 예측 만들기]·[월보 PDF 올리기] 를 받아 가격 수집 → DB → 예측 실행 (11-17). 밖으로 안 열림. `.env` 의 `UPDATER_TOKEN` · `NC_DATA_ROOT` 필요 — `collector/updater/README.md` | — |
 | `ml-api` | AI 예측 | `:8000` |
 | `db` | Postgres | `:5432` |
 

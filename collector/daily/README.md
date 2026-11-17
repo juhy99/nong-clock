@@ -48,26 +48,18 @@ Windows: `2_매일_실행.bat` + `4_매일_자동실행_등록.bat`(매일 07:40
 
 ## 만들어지는 표
 
+> 11-17: **화면·예측이 읽는 표만** 만든다. 공휴일·날씨 관측/평년/오늘 날씨·가락 반입·출하예약·환율·정책·가격 지수·수집 기록 표(12개)는 읽는 곳이 없어 뺐다 — 원자료 수집(`collect.py`)은 그대로이고 `data/raw` 에 쌓인다. 예전에 만든 DB 에 남은 표는 `scripts\안쓰는표_지우기.bat` 로 한 번 지운다. 날씨 화면은 `weather-collector` 가 만든 파일을 읽는다.
+
 | 표 | 내용 | 출처 |
 |---|---|---|
-| region · market · item · index_group · variety_unit · grade_map | 기준표 | ref/ (+팀 shared/items.json·markets.json) |
+| region · market · item · variety_unit | 기준표 | ref/ (+팀 shared/items.json·markets.json) |
 | price_daily | 날짜 × 시장(+전국 'national') × 품목 × 등급(SPECIAL·HIGH·MID·LOW·ALL): 물량·금액·단가, 최고·최저 = 물량 가중 p90·p10 | 공영도매 정산가격 |
 | price_origin_daily | 같은 것 × 출하 시·도 (수입은 origin_region_id 0) | 〃 |
 | price_unit_daily | 날짜 × 예측 단위(326): 전국·국산 | 〃 + ref/variety_unit_code |
-| price_index_daily | 품목 단가 ÷ 직전 365일 평균 × 100 을 묶음 안에서 평균 (평소 = 100) | price_daily 기록(data/hist) |
 | market_factor | 품목 × 시장 × 달: 시장 단가 ÷ 전국 단가 중앙값(최근 3년, 10일 이상). 시장별 예측 = 전국 예측 × factor | 〃 |
 | retail_price_daily | 날짜 × 품목 소매가 원/kg (상품 우선, kg·g 단위만) | KAMIS |
-| weather_daily | 날짜 × 시·도: ASOS+AWS+농업기상 관측소 평균 (wind = 최대풍속) | 팀 날씨 `날씨_대통합_일별.csv` 시도_일 |
-| weather_normal | 시·도 × 월·일 평년(1991~2020, 앞뒤 3일): 평균·최고·최저기온, 강수 | 〃 평년_ 열 |
 | weather_warning_daily | 날짜 × 시·도 × 특보: 수준(1 주의보·2 경보·3 중대경보), 걸린 구역 비중 | 특보 이력 |
-| weather_region_now | 시·도 오늘 날씨 + 농사 안내 문구 (시·도 안 시군구 격자 모아서) | 팀 예보 DB 최근 발표 |
-| holiday | 공휴일 + 도매시장 휴장(설·추석, 지난 날은 원장 거래 없던 날) | 특일 정보 |
 | producer_price_daily | 날짜 × 산지공판장(+전국) × 품목: 물량·금액·단가 | 산지공판장 정산 |
-| garak_inout_daily | 날짜 × 경매전/후 × 가락 품목: 반입 kg (50품목 연결은 36개, 나머지 item_code '-') | 서울 열린데이터 |
-| shipment_reservation_daily | 출하예정일 × 시장 × 품목 × 품종: 예약 kg, 받은 시각 | aT 출하예약 |
-| fx_daily | 날짜 × 통화: 매매기준율 | ECOS |
-| policy_doc | 보도자료·공고 제목·주소·날짜(게시일→발표일시, 없으면 비움)·받은 시각 | 팀 정책 수집기 |
-| collect_log | 수집·적재 기록 (관리자 › 데이터 수집 현황) | data/log |
 
 검증(조민철 PC, 2026-11-04 원장 + 시험 자료로 PostgreSQL 16 적재 두 번 — 두 번째도 행 수 같음): price_daily 전국 단가·물량이 NongClock 26번 원장 집계와 48품목 모두 일치(비율 0.999~1.001), p10·p90 도 일치. 예측 단위에 들어간 국산 물량 99.4~99.7%.
 

@@ -1,0 +1,9 @@
+# 갱신 서비스 컨테이너용 (수집·표·DB + 예측 + v4). v4 를 팀원 결과와 똑같이 만들려고 버전을 고정 (11-16 재현 확인 버전)
+pandas==3.0.5
+numpy==2.5.3
+lightgbm==4.7.0
+scikit-learn==1.9.1
+scipy==1.18.1
+pypdf>=4.0
+lxml>=4.9
+psycopg2-binary

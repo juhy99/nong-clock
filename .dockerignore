@@ -9,3 +9,8 @@ collector/**/data
 collector/**/input
 python-ml/data
 backend-spring/build
+# 갱신 서비스(price-updater): PC 에만 있는 v4 seed·OCR 자료는 이미지에 넣지 않음 → 자료 폴더 v4_seed 에서 읽음 (collector/updater/README.md)
+collector/daily/model/seed
+collector/daily/tools/tessdata
+collector/daily/model/버전_이PC.txt
+collector/updater/tests

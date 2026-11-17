@@ -18,6 +18,11 @@
 .pv-big b { font-size: 60px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
 .pv-big .up, .pv-big .down { font-size: 24px; font-weight: 600; }
 .pv-big .muted { font-size: 17px; }
+/* 11-17: 오늘부터 고른 날까지 최고가 (작게, 큰 가격 아래 한 줄) */
+.pv-peak { flex-basis: 100%; display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-top: 2px; font-size: 17px; color: var(--ink); }
+.pv-peak i { font-style: normal; color: #d92d20; font-size: 13px; }
+.pv-peak b { font-size: 20px; font-weight: 700; }
+.pv-peak small { font-size: 15px; color: var(--muted); }
 .pv-low { font-size: 15px; font-weight: 600; color: #8a5300; background: rgba(246, 224, 176, 0.75); padding: 4px 10px; border-radius: 8px; }
 .pv-chart { width: 100%; height: auto; display: block; margin-top: 8px; }
 .pv-path { stroke-dasharray: 2400; stroke-dashoffset: 2400; animation: pv-draw 1.6s 0.2s cubic-bezier(0.3, 0.7, 0.3, 1) forwards; }

@@ -26,6 +26,10 @@ async function withFallback(call, fallback) {
     setOffline(false);
     return data;
   } catch (e) {
+    // 11-17: 예측·추천은 서버에서도 회원만 — 로그인 시간이 끝난 채 쓰고 있었으면 로그인 화면으로 (로그인 뒤 보던 화면으로 돌아옴)
+    if (e.status === 401 && typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+    }
     if (e.status) throw e; // 서버가 응답한 오류(404, 422 등)는 그대로 알린다
     setOffline(true);
     return fallback();
@@ -45,6 +49,16 @@ export const predict = (req) =>
   withFallback(() => request(ML_API_BASE, "/predict", { method: "POST", body: req }), () => {
     throw new Error("AI 예측 서버에 연결할 수 없어요. 잠시 뒤 다시 시도해 주세요.");
   });
+
+/** 로그인 없이 보는 미리보기 (11-17): 전국 평균 7일 · 4주만. 시장·품종·날짜를 고르는 predict 는 서버가 회원만 통과시킴 */
+export const previewPredict = (item, horizon = 28) =>
+  withFallback(() => request(ML_API_BASE, `/public/predict?item=${encodeURIComponent(item)}&horizon=${horizon}`), () => {
+    throw new Error("AI 예측 서버에 연결할 수 없어요. 잠시 뒤 다시 시도해 주세요.");
+  });
+
+/** 로그인 없이 보는 미리보기 (11-17): 오늘 1,200평에 심으면 순수익 위 3개 */
+export const previewRecommend = (region, type) =>
+  withFallback(() => request(ML_API_BASE, `/public/recommend?region=${encodeURIComponent(region)}&type=${encodeURIComponent(type)}`), noMock);
 
 export const getTopMovers = ({ horizon = 7, limit = 4 } = {}) =>
   withFallback(

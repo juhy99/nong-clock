@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getItems, predict } from "../api/ml";
+import { getItems, previewPredict } from "../api/ml";
 import { NEWS_CATEGORIES, NEWS_PAGE_SIZE, getNews, getNewsMostCovered, getNewsTrend } from "../api/news";
 import { useAuth } from "../components/AuthContext";
 import { Async, PctChange, useAsync } from "../components/common";
@@ -23,7 +23,7 @@ function byDay(rows) {
 
 /** 오른쪽: 뉴스에 가장 많이 나온 품목의 AI 예측을 함께 */
 function NewsWithForecast({ top }) {
-  const p = useAsync(() => (top ? predict({ item: top.item, horizon: 7 }) : Promise.resolve(null)), [top?.item]);
+  const p = useAsync(() => (top ? previewPredict(top.item, 7) : Promise.resolve(null)), [top?.item]);
   if (!top || !p.data) return null;
   const d = p.data;
   return (

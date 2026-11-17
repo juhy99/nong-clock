@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { predict, recommendCrops } from "../api/ml";
+import { previewPredict, previewRecommend } from "../api/ml";
 import { NEWS_CATEGORIES, getNews } from "../api/news";
 import { getRegionalWeather } from "../api/market";
 import { getWeatherHistory, summarizeRegion } from "../api/weather";
@@ -64,7 +64,7 @@ function AiPane({ on }) {
   const [idx, setIdx] = useState(0);
   const [hold, setHold] = useState(false);
   const [code, emoji, name] = AI_ITEMS[idx];
-  const state = useAsync(() => predict({ item: code, horizon: 28, history_days: 49 }), [code]);
+  const state = useAsync(() => previewPredict(code, 28), [code]);
   // 5초마다 다음 품목 (마우스를 카드에 올리면 멈춤)
   useEffect(() => {
     if (!on || hold) return undefined;
@@ -156,7 +156,7 @@ function CropPane({ on }) {
   const [type, setType] = useState("open");
   const region = user?.region || "경기";
   const state = useAsync(
-    () => recommendCrops({ region, lands: [{ type, area_pyeong: 1200 }], start_date: todayIso() }),
+    () => previewRecommend(region, type),
     [region, type],
   );
   const rows = (state.data?.results ?? []).slice(0, 3);

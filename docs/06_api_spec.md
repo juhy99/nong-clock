@@ -228,8 +228,15 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 
 ## 1. ML API (FastAPI)
 
-> ⚠️ **현재는 더미(가짜) 예측값**을 돌려줍니다. 응답 **형식은 최종과 동일**하므로 이 형식대로 화면·연동을 개발하면 됩니다.
-> 같은 품목·시장·날짜로 요청하면 항상 같은 값이 나옵니다.
+> 예측은 매일 미리 계산해 DB 에 넣어 둔 표(`price_forecast_daily`)를 읽어 돌려줍니다 (`PREDICTOR=db`, 기본). `PREDICTOR=dummy` 는 DB 없이 형식만 보는 가짜 값.
+
+> 🔒 **로그인 (11-17).** 서버(nginx)에서 `/ml/…` 로 부를 때 예측·작물 추천 본 기능(`/predict…` · `/recommend…`)은 **회원 로그인 쿠키가 있어야** 통과합니다 — nginx 가 요청마다 Spring `GET /api/me/session`(회원이면 204)에 물어봄. 로그인이 없으면 **401** `{"message","detail":"로그인이 필요합니다"}`.
+> 로그인 없이 되는 주소: `/health` · `/items` · `/markets` · `/regions` · `/horizons` · 아래 미리보기 두 개.
+>
+> | 메서드 | 주소 | 설명 | 사용 화면 |
+> |---|---|---|---|
+> | GET | `/public/predict?item=&horizon=7\|28` | 품목의 **전국 평균** 7일·4주 예측만 (오늘 기준, 응답은 `POST /predict` 와 같은 모양). 다른 기간은 422 | 홈 · 뉴스 |
+> | GET | `/public/recommend?region=&type=` | 오늘 1,200평에 심을 때 순수익 **위 3개만** (응답은 `POST /recommend/crops` 와 같은 모양, `excluded`·`unavailable` 은 빈 목록) | 홈 |
 
 ### 한눈에 보기
 
@@ -1037,3 +1044,4 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 | 2026-11-14 | **가짜 계정 · 가짜 게시판 없앰, 관리자 따로.** 화면 회원·게시판은 언제나 Spring (`VITE_AUTH`/`AUTH_MODE` 없앰, backend 는 늘 켬). 관리자 = DB 표 `admin`(SQL 로 넣음), `/api/admin/auth/*` 로그인, 게시판 관리 API(목록·숨기기·삭제·관리자 글·공지·댓글, 2-17), `GET /api/notices` 구현. 회원 API 는 `ROLE_MEMBER` 만. 관리자 사이트 "공지사항" 메뉴는 게시판 관리로 합침. 회원 관리·이용 제한은 아직 예시 데이터 | |
 | 2026-11-14 | **지금 날씨 · 가짜 뉴스/날씨 뺌.** Spring `GET /api/weather/regions`(2-7) 구현 — 기상청 초단기실황·단기예보·기상특보를 시·도 17곳 대표 격자로, 10분 캐시, 키 `DATA_GO_KR_KEY`(없으면 503). 홈 날씨 카드 위쪽은 지금 날씨, 아래 문장은 지난 관측(수집기 파일). 뉴스·지난 날씨는 출처가 없으면 예시 대신 오류 안내 | |
 | 2026-11-17 | 2-20 관리자 데이터 갱신 추가 (`/api/admin/refresh…` → 갱신 서비스 price-updater) | |
+| 2026-11-17 | **예측·작물 추천은 서버에서도 회원만.** nginx 가 `/ml/predict…` · `/ml/recommend…` 를 Spring `GET /api/me/session` 으로 로그인 확인 후 통과. 홈·뉴스 미리보기용 `GET /public/predict` · `GET /public/recommend` 추가 | |

@@ -86,6 +86,15 @@ public class UserController {
         throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "email 또는 nickname 을 주세요");
     }
 
+    /**
+     * 회원으로 로그인했는지만 확인 (11-17) — nginx 가 /ml/predict · /ml/recommend 요청마다 먼저 여기를 불러 204 일 때만 ml-api 로 넘긴다.
+     * /api/me/** 라서 SecurityConfig 가 회원이 아니면 401(로그인 안 함) · 403(관리자 계정)으로 막음. 자주 불리므로 DB 는 읽지 않음
+     */
+    @GetMapping("/me/session")
+    public ResponseEntity<Void> session() {
+        return ResponseEntity.noContent().build();
+    }
+
     /** 로그인 필수 (SecurityConfig). 다른 기기에서 탈퇴해 지워진 회원의 남은 세션은 여기서 끊음 */
     @GetMapping("/me")
     public UserResponse me(@AuthenticationPrincipal LoginUser me, HttpServletRequest request) {

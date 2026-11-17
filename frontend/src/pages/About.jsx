@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { AUCTION_ENABLED, TEAM_INFO_READY } from "../features";
 import { ITEMS50 } from "../mocks/items50";
 import { MARKETS } from "../mocks/market";
+import { useSite } from "../api/site";
 import "./about.css";
 
 /* 서비스 소개 (v17, 11-11): 유리 카드 머리 + 숫자 4칸 · 기능 칸 · 예측 흐름 1~4 · 가격 기준 · 자주 묻는 질문 · 만든 사람들 / 문의
@@ -67,6 +68,10 @@ const FAQ = [
 ];
 
 export default function About() {
+  // 11-17: 팀 소개 · 연락처는 관리자 사이트 '사이트 설정'에서 넣은 값 (없으면 이 칸을 안 보임). 아래 TEAM · CONTACT 견본은 TEAM_INFO_READY 를 켰을 때만
+  const site = useSite();
+  const team = site.team.length ? site.team : TEAM_INFO_READY ? TEAM : [];
+  const contact = site.contact.email || site.contact.phone ? site.contact : TEAM_INFO_READY ? CONTACT : { email: "", phone: "", hours: "" };
   // #faq-xxx 로 들어오면 그 질문을 펼치고 그 자리로 (머리말 높이만큼은 CSS scroll-margin)
   // 들어온 직후 그 칸을 잠깐 강조 (11-16). 같은 링크를 다시 눌러도 다시 깜빡이도록 location.key 로 다시 실행
   const { hash, key } = useLocation();
@@ -173,11 +178,11 @@ export default function About() {
         </div>
       </section>
 
-      {TEAM_INFO_READY && <div className="ab-two">
+      {(TEAM_INFO_READY || team.length > 0 || contact.email) && <div className="ab-two">
         <section className="card" id="team">
           <div className="ab-hrow"><h2 className="ab-h">만든 사람들</h2><small>{PROJECT}</small></div>
           <div className="ab-team">
-            {TEAM.map((m, i) => (
+            {team.map((m, i) => (
               <div key={i}><i aria-hidden>👤</i><span><b>{m.name}</b><small>{m.role}</small></span></div>
             ))}
           </div>
@@ -185,8 +190,8 @@ export default function About() {
         <section className="card" id="contact">
           <h2 className="ab-h">문의하기</h2>
           <dl className="ab-contact">
-            <div><dt>이메일</dt><dd><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></dd></div>
-            <div><dt>전화</dt><dd>{CONTACT.phone} <small>{CONTACT.hours}</small></dd></div>
+            {contact.email && <div><dt>이메일</dt><dd><a href={`mailto:${contact.email}`}>{contact.email}</a></dd></div>}
+            {contact.phone && <div><dt>전화</dt><dd>{contact.phone} <small>{contact.hours}</small></dd></div>}
           </dl>
           <p className="ab-note">서비스 이용, 데이터 오류 제보, 제휴 문의 모두 환영해요.{AUCTION_ENABLED && " 경매 관련 신고는 각 경매 화면의 🚨 신고 버튼을 이용해 주세요."}</p>
         </section>

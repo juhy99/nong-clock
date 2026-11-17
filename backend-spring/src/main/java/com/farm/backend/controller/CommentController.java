@@ -24,9 +24,11 @@ import java.util.List;
 public class CommentController {
 
     private final CommentService commentService;
+    private final com.farm.backend.service.SiteSettings site;   // 11-17: 금칙어
 
-    public CommentController(CommentService commentService) {
+    public CommentController(CommentService commentService, com.farm.backend.service.SiteSettings site) {
         this.commentService = commentService;
+        this.site = site;
     }
 
     @GetMapping("/posts/{postId}/comments")
@@ -37,6 +39,7 @@ public class CommentController {
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<CommentResponse> create(@AuthenticationPrincipal LoginUser me, @PathVariable Long postId,
                                                   @Valid @RequestBody CommentRequest body) {
+        site.checkWords(body.body());
         CommentResponse c = commentService.create(me.id(), postId, body.body(), body.parentId());
         return ResponseEntity.status(HttpStatus.CREATED).body(c);
     }

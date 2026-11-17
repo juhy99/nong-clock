@@ -12,6 +12,7 @@ import {
   adminWritePost,
 } from "../../api/adminBoard";
 import { Async, SectionHead, useAsync } from "../../components/common";
+import { getFlood } from "../../api/adminOps";
 import { dateTime } from "../../utils/format";
 import { SITE_URL } from "../siteUrl";
 
@@ -184,6 +185,19 @@ function PostDetail({ id, onChange }) {
   );
 }
 
+/** 도배 감지 (11-17): 최근 1시간 · 24시간에 글+댓글을 많이 쓴 회원 (Spring /api/admin/ops/flood). 없으면 아무것도 안 보임 */
+function FloodCard() {
+  const state = useAsync(getFlood);
+  const d = state.data;
+  if (!d || !d.rows.length) return null;
+  return (
+    <div className="alert-band warn" role="alert">
+      <b>⚠️ 짧은 시간에 많이 쓴 회원 {d.rows.length}명</b>
+      <span>{d.rows.map((r) => `${r.nickname} (1시간 ${r.last_hour} · 하루 ${r.last_day})`).join(" · ")} — 기준: 1시간 {d.hour_limit}건 · 하루 {d.day_limit}건. 아래 검색창에 닉네임을 넣어 글을 확인하세요</span>
+    </div>
+  );
+}
+
 export default function BoardAdmin() {
   const [filter, setFilter] = useState({ category: "", q: "", status: "", page: 1 });
   const [keyword, setKeyword] = useState("");
@@ -197,6 +211,7 @@ export default function BoardAdmin() {
 
   return (
     <>
+      <FloodCard />
       <section className="card">
         <SectionHead
           title="공지 · 관리자 글쓰기"

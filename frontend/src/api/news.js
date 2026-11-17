@@ -3,6 +3,7 @@
 // 기사 출처: VITE_NEWS_URL(서버에 모인 기사 파일) → 테스트 모드(VITE_DATA_SOURCE=live, api/live/naverNews.js) → 가짜 예시 기사
 // Spring 이 생기면 newsPool 대신 GET /api/news 로 바꾼다 (검색·쪽 나누기를 서버가 함).
 import { ApiError, DATA_SOURCE, NEWS_URL, fake } from "./client";
+import { getHiddenNewsUrls } from "./site";
 import { liveNewsPool } from "./live/naverNews";
 import { ITEMS } from "../mocks/catalog";
 import { NEWS_CATEGORIES } from "../mocks/news";
@@ -15,6 +16,9 @@ export const NEWS_PAGE_SIZE = 15;
 const SERVER_TTL_MS = 60000;
 let serverCache = null; // { at, promise }
 
+/** 기억해 둔 기사 목록을 비움 — 관리자가 기사를 숨기거나 되돌린 바로 뒤 (11-17) */
+export const clearNewsCache = () => { serverCache = null; };
+
 /** 서버에 모인 기사 파일 (1분 캐시, 같은 때 여러 번 불러도 한 번만 받음) */
 function serverNewsPool() {
   if (serverCache && Date.now() - serverCache.at < SERVER_TTL_MS) return serverCache.promise;
@@ -25,7 +29,8 @@ function serverNewsPool() {
     }, () => {
       throw new ApiError("서버에 연결할 수 없어요 (서버 주소·접속 확인)", 0);
     })
-    .then((d) => ({ rows: d.articles, fetchedAt: new Date(d.updated_at), real: true }));
+    // 11-17: 관리자가 숨긴 기사(잘못 분류된 기사 등)는 뺌 — 수집 파일은 그대로 두고 화면에서만
+    .then((d) => getHiddenNewsUrls().then((hidden) => ({ rows: d.articles.filter((a) => !hidden.has(a.url)), fetchedAt: new Date(d.updated_at), real: true })));
   promise.catch(() => (serverCache = null));
   serverCache = { at: Date.now(), promise };
   return promise;

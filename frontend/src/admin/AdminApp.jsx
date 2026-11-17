@@ -10,6 +10,10 @@ import Dashboard from "./pages/Dashboard";
 import DataStatus from "./pages/DataStatus";
 import Members from "./pages/Members";
 import ModelPerformance from "./pages/ModelPerformance";
+import ForecastHealth from "./pages/ForecastHealth";
+import NewsAdmin from "./pages/NewsAdmin";
+import OpsErrors from "./pages/OpsErrors";
+import SiteSettings from "./pages/SiteSettings";
 import { buildText } from "../api/admin";
 import { BUILD } from "../api/collection";
 import { AUCTION_ENABLED } from "../features";
@@ -21,6 +25,11 @@ const MENU = [
   ...(AUCTION_ENABLED ? [["auctions", "🔨 경매 관리"]] : []),
   ["data", "📥 데이터 수집"],
   ["model", "📈 모델 성능"],
+  // 11-17 운영 화면
+  ["forecast", "🩺 예측 점검"],
+  ["errors", "🚨 오류 기록"],
+  ["news", "📰 뉴스 관리"],
+  ["site", "⚙️ 사이트 설정"],
 ];
 
 /** 관리자 로그인 (11-14): DB 표 admin 의 계정만 — 사용자 사이트 회원 계정으로는 못 들어옴 */
@@ -122,6 +131,10 @@ export default function AdminApp() {
         <Route path="auctions" element={AUCTION_ENABLED ? <AuctionsAdmin /> : <Navigate to="/" replace />} />
         <Route path="data" element={<DataStatus />} />
         <Route path="model" element={<ModelPerformance />} />
+        <Route path="forecast" element={<ForecastHealth />} />
+        <Route path="errors" element={<OpsErrors />} />
+        <Route path="news" element={<NewsAdmin />} />
+        <Route path="site" element={<SiteSettings />} />
         <Route path="system" element={<Navigate to="/" replace />} />
         <Route path="*" element={<div className="card state">없는 메뉴입니다.</div>} />
       </Route>

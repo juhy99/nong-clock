@@ -1232,3 +1232,8 @@ i.plant { background: transparent; border: 2px solid #0b5e33; box-sizing: border
 
 /* 11-17: 띄어쓰기 없는 긴 낱말(검색어 등)이 휴대폰 화면을 옆으로 늘리지 않게 */
 main h1, main h2 { overflow-wrap: anywhere; }
+
+/* 11-17: 관리자 사이트 설정의 공지 · 점검 안내 띠 (맨 위) */
+.site-band { padding: 10px 16px; text-align: center; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; position: relative; z-index: 21; }
+.site-band.notice { background: #eef4fd; color: #1d3f72; border-bottom: 1px solid #c4d7f5; }
+.site-band.maint { background: var(--warn-bg); color: #7a4d00; border-bottom: 1px solid #f0d58c; font-weight: 600; }

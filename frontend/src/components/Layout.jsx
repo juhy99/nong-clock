@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { DATA_SOURCE, ML_API_BASE, NEWS_URL } from "../api/client";
+import { DATA_SOURCE, NEWS_URL } from "../api/client";
 import { onMlOffline } from "../api/ml";
 import { AUCTION_ENABLED, NOTIFY_ENABLED, TEAM_INFO_READY } from "../features";
 import { recommendLink, suggest } from "../api/search";
 import { USER_TYPE_LABEL, useAuth } from "./AuthContext";
 import { Highlight } from "./common";
 import ItemImage from "./ItemImage";
+import { useSite } from "../api/site";
 import NotificationBell from "./NotificationBell";
 
 // 가격 예측 · 작물 추천 (헤더 강조 버튼 · 휴대폰 아래 고정 바)
@@ -230,8 +231,8 @@ function OfflineBanner() {
         <span>ℹ️</span>
         {/* 글자를 한 덩어리로 묶어야 휴대폰에서 줄마다 세로로 쪼개지지 않음 */}
         <div className="banner-txt">
-          ML API({ML_API_BASE})에 연결할 수 없어 AI 예측을 <b>데모 데이터</b>로 보여주고 있습니다. ml-api 폴더에서
-          <code> python -m uvicorn app.main:app --reload </code>로 서버를 켜면 실제 API 응답으로 바뀝니다.
+          {/* 11-17: 개발자용 문장("데모 데이터 · uvicorn …")이 사용자에게 보였음. 예측·추천 값은 가짜로 대신하지 않고 오류로 알림 */}
+          지금 AI 예측 서버에 연결할 수 없어요. <b>가격 예측 · 작물 추천</b>은 잠시 뒤 다시 시도해 주세요. 시세 · 뉴스 · 게시판은 그대로 쓸 수 있어요.
         </div>
       </div>
     </div>
@@ -246,13 +247,27 @@ const DEV_BADGE = import.meta.env.DEV && (() => {
   return parts.length ? `테스트 모드 · ${parts.join(" · ")}` : null;
 })();
 
+/** 관리자가 사이트 설정에서 켠 점검 안내 · 공지 띠 (11-17). 맨 위에 있고 스크롤하면 머리말 뒤로 올라감 */
+function SiteBands() {
+  const site = useSite();
+  if (!site.maintenance && !site.notice) return null;
+  return (
+    <div role="status">
+      {site.maintenance && <div className="site-band maint">🛠️ {site.maintenance}</div>}
+      {site.notice && <div className="site-band notice">📢 {site.notice}</div>}
+    </div>
+  );
+}
+
 export default function Layout() {
+  const site = useSite();
   const { pathname } = useLocation();
   const home = pathname === "/";
   return (
     <>
       {/* 배경 밭 사진: 홈은 첫 화면이 직접 그림(또렷하게), 나머지 화면은 흐리게 깔아 글씨가 잘 보이게 */}
       {!home && <div className="farm-bg blur" aria-hidden><i /></div>}
+      <SiteBands />
       <Header />
       {/* 홈은 첫 화면 사진이 머리말 뒤까지 깔려야 해서 ML API 안내 줄을 넣지 않음 (카드는 데모 값으로 그대로 보임) */}
       {!home && <OfflineBanner />}
@@ -266,7 +281,7 @@ export default function Layout() {
         <span>© NongClock · 공영도매시장 경매 · KAMIS · 기상청 데이터</span>
         <span className="r">
           <Link to="/about">서비스 소개</Link>
-          {TEAM_INFO_READY && <Link to="/about#contact">문의</Link>}
+          {(TEAM_INFO_READY || site.contact.email) && <Link to="/about#contact">문의</Link>}
         </span>
       </footer>
       <CoreDock />

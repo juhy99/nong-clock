@@ -950,6 +950,24 @@ AI 가격예측 화면에서 도매시장·품목·**기준 날짜**를 고르�
 - 관심 품목은 DB 표 `user_favorite (user_id, item_code, created_at)` — backend 가 켜질 때 `resources/db/mypage_tables.sql` 이 만듦. 탈퇴하면 같이 지워짐 (`ON DELETE CASCADE`)
 - 화면은 예전에 브라우저에만 저장했던 관심 품목이 있고 서버에 없으면 첫 로그인 확인 때 한 번 서버로 옮김 (`auth.js refreshSession`)
 
+### 2-19. 관리자 운영 · 사이트 설정 (11-17)
+
+`/api/admin/**` 는 관리자 로그인(ROLE_ADMIN)만. 오류는 `{"message"}`.
+
+| 주소 | 누가 | 내용 |
+|---|---|---|
+| `GET /api/admin/ops/freshness` | 관리자 | 자료가 며칠 것까지: `price_last · unit_last · retail_last · forecast_base · forecast_end · monthly_base · today` (표가 없으면 null) |
+| `GET /api/admin/ops/forecast-health` | 관리자 | 가장 최근 예측 표 점검: `bases[]`(기준일별 줄 수) · `steps[]`(붙은 거래일 사이 25% 넘게 바뀌는 곳, 큰 순 150 + `steps_total`) · `items[]`(품목별 마지막 거래 · 지금 값 · 30일 안 최저/최고 · `flags`: stale · far · no_30) · `diff[]`(앞 판과 같은 목표일 비교) |
+| `GET /api/admin/ops/forecast-vs-actual` | 관리자 | 지난 예측(품목 전체)과 목표일의 전국 경매 단가 비교: `total · by_distance[] · by_base[] · by_item[] · recent[]` (`error_pct` 평균 차이 · `bias_pct` 치우침) |
+| `GET /api/admin/ops/errors` | 관리자 | Spring 이 내보낸 5xx · 429 · 로그인 실패: `events[]`(최근 300) · `hours[]`(48시간) · `total`. 메모리에만 (재시작하면 비워짐), IP 끝자리 가림 |
+| `GET /api/admin/ops/flood` | 관리자 | 최근 1시간 5건 · 하루 30건 넘게 글+댓글을 쓴 회원 |
+| `GET /api/site` | 누구나 | `{notice, maintenance, team:[{name,role}], contact:{email,phone,hours}}` — 꺼져 있으면 빈 글자. 금칙어는 안 나감 |
+| `GET · PUT /api/admin/site` | 관리자 | 설정 전부 / 고치기 `{키: 값}`. 키: `notice_on · notice_text · maintenance_on · maintenance_text · team_text("이름 \| 역할" 한 줄씩) · contact_email · contact_phone · contact_hours · banned_words` |
+| `GET /api/news/hidden` | 누구나 | 숨긴 기사 주소 목록 (화면이 수집 파일에서 뺌) |
+| `GET · POST · DELETE /api/admin/news/hidden` | 관리자 | 숨긴 기사 목록 / 숨기기 `{url,title,reason}` / 다시 보이기 `?url=` |
+
+회원이 쓰는 글·댓글(`POST·PUT /api/posts`, `POST /api/posts/{id}/comments`)에 금칙어가 있으면 422 "게시판에 쓸 수 없는 낱말이 들어 있어요…". DB 표: `site_setting` · `news_hidden` (backend-spring `db/ops_tables.sql`).
+
 ## 3. 정해야 할 것
 
 - [ ] 프론트가 ML API를 **직접 호출**할지, **Spring을 거쳐** 호출할지

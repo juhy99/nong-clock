@@ -35,9 +35,11 @@ public class PostController {
     private static final int MAX_VIEWED = 1000; // 세션 하나가 기억하는 본 글 수 (11-13: 세션 메모리가 끝없이 늘지 않게)
 
     private final PostService postService;
+    private final com.farm.backend.service.SiteSettings site;   // 11-17: 금칙어 (관리자 사이트 설정)
 
-    public PostController(PostService postService) {
+    public PostController(PostService postService, com.farm.backend.service.SiteSettings site) {
         this.postService = postService;
+        this.site = site;
     }
 
     @GetMapping
@@ -55,6 +57,7 @@ public class PostController {
     @PostMapping
     public ResponseEntity<Map<String, Long>> writePost(@AuthenticationPrincipal LoginUser me, @Valid @RequestBody PostRequest request) {
         noImages(request);
+        site.checkWords(request.title(), request.body());
         Long id = postService.writePost(me.id(), request.category(), request.title(), request.body());
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", id));
     }
@@ -62,6 +65,7 @@ public class PostController {
     @PutMapping("/{id}")
     public PostResponse update(@AuthenticationPrincipal LoginUser me, @PathVariable Long id, @Valid @RequestBody PostRequest request) {
         noImages(request);
+        site.checkWords(request.title(), request.body());
         return postService.update(me.id(), id, request.category(), request.title(), request.body());
     }
 

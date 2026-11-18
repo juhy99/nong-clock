@@ -86,7 +86,7 @@ def _option(o: recommender.Option, region: str, today: date) -> Option:
         error_pct=o.error_pct, reference=o.reference,
         yield_t=round(o.total_t, 2), sellable_t=round(o.sell_t, 2), marketable_rate=1.0,
         revenue=round(o.revenue), base_cost=round(o.base_cost), land_rent=round(o.land_rent), land_rent_year=round(o.land_rent_year),
-        rent_days=o.rent_days, machine_rent=round(o.machine_rent), peak_ratio=o.peak_ratio,
+        rent_days=o.rent_days, machine_rent=round(o.machine_rent), peak_ratio=o.peak_ratio, peak_volume_note=o.peak_volume_note,
         cost=round(o.cost), margin=round(o.margin), margin_rate=round(o.margin_rate, 1), margin_per_pyeong=round(o.margin / o.area_pyeong),
         margin_low=round(o.revenue_low - o.cost), margin_high=round(o.revenue_high - o.cost), national_margin=round(nat - o.cost),
         yield_t_per_10a=c.yield_t_per_10a, cost_per_10a=c.cost_per_10a, source=c.source, rda=_rda(c.survey),
@@ -129,6 +129,7 @@ def recommend_crops(req: RecommendCropsRequest) -> RecommendCropsResponse:
     shown = ok or orchards   # 화면은 과수원이면 orchards, 아니면 results 를 보여 줌
     return RecommendCropsResponse(
         start_date=req.start_date, region=req.region, markets=[_market_ref(c) for c in codes], no_market=none,
+        few_notice=recommender.few_notice(ok, off, req.start_date),
         region_notice=crop_regions.notice(req.region, [o.crop.code for o in shown], [o.region_tier for o in shown]),
         results=[_option(o, req.region, today) for o in ok],
         excluded=[Excluded(crop=c.code, crop_name=c.name, emoji=c.emoji, land_type=c.land_type, kind=k, reason=why)

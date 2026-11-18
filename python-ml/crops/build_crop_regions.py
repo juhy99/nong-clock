@@ -6,6 +6,7 @@
 자료: DB 표 price_origin_daily 와 같은 CSV (build_tables.py 가 경매 정산 자료의 산지명을 시·도로 바꿔 만든 것) + region.csv
   - 수입(is_import)·산지 모름(origin_region_id = 0)·전국 합계 줄(market_code = national)은 뺌
   - 기간: 자료 마지막 날이 든 달의 앞 달까지 36달 (끝 달이 덜 찬 것을 피함)
+      + month_share (11-18 저녁): 그 작물 국산 반입량의 달별 몫(1~12월 %, 같은 기간 36달 = 달마다 3번씩) — '수량 참고' 안내의 근거
 쓰는 곳: ml-api/app/core/crop_regions.py — 그 시·도 몫이 main_pct 이상이면 '주산지'(위로), rare_pct 미만이면 '거의 안 기름'(아래로 + 안내)
 주의: 재배면적이 아니라 '도매시장 반입 산지'다. 쌀·콩처럼 경매 자료에 없는 작물은 표에 없음 → 순위를 건드리지 않음.
 손으로 고치지 말 것 — 이 코드를 다시 돌리기.
@@ -34,11 +35,15 @@ def build(tables: Path, crops_json: Path) -> dict:
     g = d.groupby(["item_code", "origin_region_id"]).volume_kg.sum().unstack(fill_value=0.0)
     pct = g.div(g.sum(axis=1), axis=0) * 100
     codes = [c["code"] for c in json.loads(crops_json.read_text(encoding="utf-8"))["crops"]]
-    share = {}
+    # 11-18 저녁: 달별 몫 — 그 작물 국산 반입량이 1년 가운데 어느 달에 몇 % 들어오나 (1~12월, 합 100)
+    gm = d.assign(m=d.date.str[5:7].astype(int)).groupby(["item_code", "m"]).volume_kg.sum().unstack(fill_value=0.0).reindex(columns=range(1, 13), fill_value=0.0)
+    pm = gm.div(gm.sum(axis=1), axis=0) * 100
+    share, month_share = {}, {}
     for code in codes:
         if code not in pct.index or g.loc[code].sum() <= 0:
             continue
         share[code] = {names[r]: round(float(pct.loc[code, r]), 1) for r in pct.columns}
+        month_share[code] = [round(float(pm.loc[code, m]), 1) for m in range(1, 13)]
     return {
         "_about": "작물 추천용 주산지 표. python-ml/crops/build_crop_regions.py 가 만듦 (손으로 고치지 말 것). "
                   "값 = 공영 도매시장에 들어온 국산 물량 가운데 그 시·도산 몫(%) — 재배면적이 아니라 도매시장 반입 산지 기준. "
@@ -48,6 +53,7 @@ def build(tables: Path, crops_json: Path) -> dict:
         "main_pct": MAIN_PCT,
         "rare_pct": RARE_PCT,
         "share": share,
+        "month_share": month_share,
     }
 
 

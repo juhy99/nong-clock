@@ -63,7 +63,7 @@ function priceLine(o) {
 // 11-16: 수확 철 값이 조사 가격의 2배를 넘으면 — 수량은 1년 평균 조사값이라 그 철엔 실제 수량이 적을 수 있음 (여름 시금치 등)
 const refLine = (o) =>
   o.reference === "baseline" ? "이 작물·기간은 예측이 덜 정확해 참고용이에요"
-  : o.peak_ratio ? `수확 철 값이 조사 평균의 ${o.peak_ratio.toFixed(1)}배예요. 수량은 1년 평균 조사값이라 이 철엔 실제 수확량이 적을 수 있어 참고용이에요`
+  : o.peak_ratio ? `수확 철 값이 조사 평균의 ${o.peak_ratio.toFixed(1)}배예요. ${o.peak_volume_note ? o.peak_volume_note + ". " : ""}수량은 1년 평균 조사값이라 이 철엔 실제 수확량이 적을 수 있어 참고용이에요`
   : "";
 
 const request = (f) => ({
@@ -290,7 +290,7 @@ function Results({ state, form, goInfo, retry }) {
               {top.length < 3 && (
                 <div className="card rc-few">
                   <b>이 조건에서 심을 수 있는 작물은 {top.length}개예요</b>
-                  <p>재배 방식을 더 고르거나 심을 날짜를 바꾸면 다른 작물도 볼 수 있어요.</p>
+                  <p>{d.few_notice || "재배 방식을 더 고르거나 심을 날짜를 바꾸면 다른 작물도 볼 수 있어요."}</p>
                   <button type="button" className="link" onClick={() => goInfo(top[0].crop)}>다른 작물 재배 정보 보기 ›</button>
                 </div>
               )}

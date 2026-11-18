@@ -133,6 +133,7 @@ class Option(BaseModel):
     forecast_base_date: date | None = Field(None, description="쓴 AI 예측의 기준일 (예측을 안 썼으면 null)")
     error_pct: int = Field(description="예상 매출 범위의 반폭 (±%) — 예측 표 하한·상한으로 판 매출")
     peak_ratio: float | None = Field(None, description="수확 철 농가 수취가(전국) ÷ 조사 가격이 2배를 넘을 때 그 배수 — 수량은 1년 평균 조사값이라 이 철엔 실제 수량이 적을 수 있음 (화면 참고 표시)")
+    peak_volume_note: str | None = Field(None, description="11-18: peak_ratio 가 있을 때 — 수확 철 도매시장 반입량이 1년의 몇 %인지 한 줄 (경매 자료의 달별 몫). 값이 비싼 까닭을 사실로 알림")
     reference: Literal["far", "baseline"] | None = Field(None, description="참고용: baseline 매출 절반 넘게가 출하철 밖(채점 안 해 본 달) 예측 · far 예측(1년) 밖이라 평년 가격이 절반 넘음")
     yield_t: float = Field(description="예상 수확량 (톤)")
     sellable_t: float = Field(description="판매량 (톤) — 조사 수량이 판 주산물이라 수확량과 같음")
@@ -210,6 +211,7 @@ class RecommendCropsResponse(BaseModel):
     region: str
     markets: list[MarketRef] = Field(description="비교한 도매시장 (토지 위치 안, 없으면 전국 평균)")
     no_market: bool = Field(False, description="시·도 안에 공영 도매시장이 없어 전국 평균으로 계산함")
+    few_notice: str | None = Field(None, description="11-18: 지금 심을 수 있는 작물이 2개 이하일 때 — 비교 대상이 적다는 안내 + 곧 심을 수 있는 작물. 그 밖에는 null")
     region_notice: str | None = Field(None, description="11-18: 결과 위에 보여 줄 순서 안내 — 주산지 규칙을 썼을 때(자료 기준 포함), 또는 그 시·도는 주산지를 가릴 수 없어 소득 순으로만 줄 세웠을 때. 그 밖에는 null")
     results: list[Option] = Field(description="심을 수 있는 작물: 주산지 → 보통 → 거의 안 기름 순(11-18), 같은 묶음 안에서는 소득 높은 순. pH 를 낮춰야 하는 작물은 맨 아래")
     excluded: list[Excluded] = Field(default_factory=list, description="추천 상위(3위 안)에 없는 작물과 이유 — 작물 정보 탭")

@@ -12,7 +12,7 @@
 .rc-n.first { color: #d6a24a; }
 .rc-nm { font-size: 34px; font-weight: 700; padding-right: 112px; }
 .rc-nm small { display: block; font-size: 16px; font-weight: 400; color: var(--muted); margin-top: 4px; }
-/* 그림 자리: 순수익 1위 · 마진율 1위는 빛나는 원 + 이름표 */
+/* 그림 자리: 소득 1위 · 소득률 1위는 빛나는 원 + 이름표 */
 .rc-art { position: absolute; right: 22px; top: 18px; display: grid; justify-items: center; gap: 6px; }
 .rc-art i { font-style: normal; font-size: 60px; line-height: 1; width: 92px; height: 92px; display: grid; place-items: center; border-radius: 50%; }
 .rc-art.profit i { background: radial-gradient(circle, rgba(255, 214, 120, 0.95) 0%, rgba(246, 190, 80, 0.55) 55%, rgba(246, 190, 80, 0) 72%); animation: rc-halo 2.4s ease-in-out infinite; }

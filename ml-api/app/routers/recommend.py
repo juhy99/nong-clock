@@ -106,7 +106,7 @@ def list_crops() -> list[CropOut]:
     return [_crop_out(c) for c in CROPS.values()]
 
 
-@router.post("/crops", response_model=RecommendCropsResponse, summary="내 땅으로 작물 고르기 (순이익 높은 순, 시·도 안 도매시장 비교, 기존 작물 pH 반영)")
+@router.post("/crops", response_model=RecommendCropsResponse, summary="내 땅으로 작물 고르기 (소득 높은 순, 시·도 안 도매시장 비교, 기존 작물 pH 반영)")
 def recommend_crops(req: RecommendCropsRequest) -> RecommendCropsResponse:
     today = date.today()
     if not today <= req.start_date <= today + timedelta(days=START_WINDOW_DAYS):

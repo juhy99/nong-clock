@@ -225,7 +225,7 @@ function Results({ d, tab, setTab }) {
             <section className="card rc-search">
               <div>
                 <b>🌱 작물 추천</b>
-                <p className="muted small" style={{ margin: "2px 0 0" }}>심는 때·수확 때·10a당 수량·경영비를 보고, 내 땅 조건으로 순수익이 높은 작물을 골라 보세요</p>
+                <p className="muted small" style={{ margin: "2px 0 0" }}>심는 때·수확 때·10a당 수량·경영비를 보고, 내 땅 조건으로 소득이 높은 작물을 골라 보세요</p>
               </div>
               <div className="pills">
                 {d.crops.slice(0, 4).map((c) => (

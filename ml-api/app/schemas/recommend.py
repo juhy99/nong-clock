@@ -46,7 +46,7 @@ class Land(BaseModel):
 
 class WhereToSell(BaseModel):
     region: Sido = Field("서울", examples=["경기"], description="토지 위치 (시·도). 그 시·도 안 도매시장끼리 비교 (없으면 전국 평균)")
-    market: str | None = Field(None, examples=["310101"], description="그 시·도 안에서 특정 시장으로 고정할 때만. 없으면 순이익이 가장 높은 시장")
+    market: str | None = Field(None, examples=["310101"], description="그 시·도 안에서 특정 시장으로 고정할 때만. 없으면 소득이 가장 높은 시장")
 
 
 class RecommendCropsRequest(WhereToSell):
@@ -65,7 +65,7 @@ class MarketResult(MarketRef):
     margin: int
     margin_rate: float
     factor: float = Field(description="시장 계수 (전국 평균 = 1, 판매량 가중) — DB market_factor")
-    best: bool = Field(False, description="그 시·도 안에서 순이익이 가장 높은 시장")
+    best: bool = Field(False, description="그 시·도 안에서 소득이 가장 높은 시장")
 
 
 class PhInfo(BaseModel):
@@ -116,12 +116,12 @@ class Option(BaseModel):
     storage_days: int = Field(description="수확 뒤 저온 저장으로 팔 수 있는 일수 (추정)")
     storage_end: date
     region: str
-    market: MarketRef = Field(description="판 도매시장 (시·도 안에서 순이익이 가장 높은 곳)")
+    market: MarketRef = Field(description="판 도매시장 (시·도 안에서 소득이 가장 높은 곳)")
     no_market: bool = Field(False, description="시·도 안에 공영 도매시장이 없어 전국 평균으로 계산함")
     prev_crop: str | None = Field(None, description="그 토지의 기존 작물")
     soil_ph: float | None = Field(None, description="기존 작물로 어림한 흙 pH (범위 가운데)")
     ph: PhInfo | None = Field(None, description="흙 pH 비교 (기존 작물이 없으면 null)")
-    demoted: bool = Field(False, description="pH 를 낮춰야 해서 순이익과 상관없이 맨 아래로 내림")
+    demoted: bool = Field(False, description="pH 를 낮춰야 해서 소득과 상관없이 맨 아래로 내림")
     factor: float = Field(description="판 시장 계수 (전국 평균 = 1, 판매량 가중)")
     price_per_kg: int = Field(description="판 시장의 판매량 가중 평균 농가 수취가 (원/kg)")
     national_price_per_kg: int = Field(description="전국 평균으로 판 판매량 가중 평균 농가 수취가 (원/kg)")
@@ -141,12 +141,12 @@ class Option(BaseModel):
     rent_days: int = Field(0, description="임대료를 나눈 재배 일수 (심는 날~마지막 수확, 최대 365)")
     machine_rent: int
     cost: int = Field(description="총경영비 = base_cost + 임대료 (원)")
-    margin: int = Field(description="예상 순이익 = 매출 − 총경영비 (원)")
-    margin_rate: float = Field(description="마진률 (%) = 순이익 ÷ 매출")
+    margin: int = Field(description="예상 소득 = 매출 − 총경영비 (원). 농진청 기준 소득 (자가노동비는 빼지 않음)")
+    margin_rate: float = Field(description="소득률 (%) = 소득 ÷ 매출")
     margin_per_pyeong: int
-    margin_low: int = Field(description="예측 하한 가격으로 팔았을 때 순이익")
-    margin_high: int = Field(description="예측 상한 가격으로 팔았을 때 순이익")
-    national_margin: int = Field(description="전국 평균 가격으로 팔았을 때 순이익")
+    margin_low: int = Field(description="예측 하한 가격으로 팔았을 때 소득")
+    margin_high: int = Field(description="예측 상한 가격으로 팔았을 때 소득")
+    national_margin: int = Field(description="전국 평균 가격으로 팔았을 때 소득")
     yield_t_per_10a: float
     cost_per_10a: int = Field(description="10a당 경영비 (원, 토지임차료 뺌)")
     source: Literal["rda", "est"] = Field(description="rda: 시기·수량·경영비 모두 조사 자료 · est: 심는 때·수확 때에 추정이 들어감")
@@ -205,7 +205,7 @@ class RecommendCropsResponse(BaseModel):
     region: str
     markets: list[MarketRef] = Field(description="비교한 도매시장 (토지 위치 안, 없으면 전국 평균)")
     no_market: bool = Field(False, description="시·도 안에 공영 도매시장이 없어 전국 평균으로 계산함")
-    results: list[Option] = Field(description="심을 수 있는 작물: 순이익 높은 순, pH 를 낮춰야 하는 작물은 맨 아래")
+    results: list[Option] = Field(description="심을 수 있는 작물: 소득 높은 순, pH 를 낮춰야 하는 작물은 맨 아래")
     excluded: list[Excluded] = Field(default_factory=list, description="추천 상위(3위 안)에 없는 작물과 이유 — 작물 정보 탭")
     unavailable: list[Unavailable]
     orchards: list[OrchardOption] = Field(default_factory=list, description="과수원을 고르면: 나무 작물 1년 소득 순 (11-17)")
@@ -233,8 +233,8 @@ class PlantingPoint(BaseModel):
 class PlantingDatesResponse(BaseModel):
     crop: CropOut
     note: str | None = Field(None, description="다년생 작물 안내 (이때 points 는 비어 있음)")
-    best: Option | None = Field(description="마진률이 가장 높은 심는 날 (비슷하면 더 가까운 날)")
-    top: list[Option] = Field(description="작형마다 가장 좋은 날, 마진률 높은 순")
+    best: Option | None = Field(description="소득률이 가장 높은 심는 날 (비슷하면 더 가까운 날)")
+    top: list[Option] = Field(description="작형마다 가장 좋은 날, 소득률 높은 순")
     points: list[PlantingPoint] = Field(description="앞으로 1년, 주 단위")
     model_version: str
 

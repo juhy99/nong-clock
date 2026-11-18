@@ -56,7 +56,7 @@ export const previewPredict = (item, horizon = 28) =>
     throw new Error("AI 예측 서버에 연결할 수 없어요. 잠시 뒤 다시 시도해 주세요.");
   });
 
-/** 로그인 없이 보는 미리보기 (11-17): 오늘 1,200평에 심으면 순수익 위 3개 */
+/** 로그인 없이 보는 미리보기 (11-17): 오늘 1,200평에 심으면 소득 위 3개 */
 export const previewRecommend = (region, type) =>
   withFallback(() => request(ML_API_BASE, `/public/recommend?region=${encodeURIComponent(region)}&type=${encodeURIComponent(type)}`), noMock);
 

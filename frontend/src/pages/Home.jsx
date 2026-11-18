@@ -150,7 +150,7 @@ function AiPane({ on }) {
   );
 }
 
-/** 작물 추천 미리보기: 내 지역 · 고른 땅 · 오늘 심으면 순수익 TOP3 */
+/** 작물 추천 미리보기: 내 지역 · 고른 땅 · 오늘 심으면 소득 TOP3 */
 function CropPane({ on }) {
   const { user } = useAuth();
   const [type, setType] = useState("open");
@@ -175,7 +175,7 @@ function CropPane({ on }) {
           <li key={r.crop}>
             <span className="n">{String(i + 1).padStart(2, "0")}</span>
             <span className="nm">{r.crop_name}<small>{r.cropping} · {Number(r.harvest_start.slice(5, 7))}월 수확</small></span>
-            <span className="v">{won(Math.round(r.margin / 10000))}만원<small>예상 순수익 · 마진 {Math.round(r.margin_rate)}%</small></span>
+            <span className="v">{won(Math.round(r.margin / 10000))}만원<small>예상 소득 · 소득률 {Math.round(r.margin_rate)}%</small></span>
             <span className="bar"><i style={{ width: on ? `${(r.margin / max) * 100}%` : 0 }} /></span>
           </li>
         ))}
@@ -339,7 +339,7 @@ function WeatherCard() {
 
 const INTRO = [
   ["📈", "AI 가격 예측", [["언제 팔까", "/ai"], ["품목 50개", "/about#items"], ["예측 기간", "/about#faq-range"], ["오차 범위", "/about#faq-accuracy"]]],
-  ["🌱", "작물 추천", [["내 땅 넣기", "/recommend"], ["순수익 순위", "/recommend"], ["재배 달력", "/recommend?tab=info"], ["작물 정보", "/recommend?tab=info"]]],
+  ["🌱", "작물 추천", [["내 땅 넣기", "/recommend"], ["소득 순위", "/recommend"], ["재배 달력", "/recommend?tab=info"], ["작물 정보", "/recommend?tab=info"]]],
   // 자주 묻는 질문은 서비스 소개 페이지의 "자주 묻는 질문"(#faq)으로, 누르면 그 질문이 펼쳐짐 (11-13)
   ["❓", "자주 묻는 질문", [["가격 기준", "/about#faq-price"], ["등급 기준", "/about#faq-grade"], ["예측 정확도", "/about#faq-accuracy"], ["자료 출처", "/about#faq-source"], ["전체 질문 보기", "/about#faq"]]],
   // 11-17: 연락처가 견본이라 팀 정보가 정해지기 전에는 '문의하기' 대신 시세·뉴스 바로 가기 (features.js TEAM_INFO_READY)

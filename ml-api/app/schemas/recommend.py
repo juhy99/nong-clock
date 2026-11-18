@@ -122,6 +122,9 @@ class Option(BaseModel):
     soil_ph: float | None = Field(None, description="기존 작물로 어림한 흙 pH (범위 가운데)")
     ph: PhInfo | None = Field(None, description="흙 pH 비교 (기존 작물이 없으면 null)")
     demoted: bool = Field(False, description="pH 를 낮춰야 해서 소득과 상관없이 맨 아래로 내림")
+    region_tier: Literal["main", "rare"] | None = Field(None, description="11-18 주산지: main 그 시·도가 주산지(위로) · rare 거의 안 기름(아래로) · null 순위 그대로")
+    region_share: float | None = Field(None, description="도매시장에 들어온 국산 물량 가운데 그 시·도산 몫 (%, 최근 3년). 자료가 없으면 null")
+    region_note: str | None = Field(None, description="주산지 · 거의 안 기름 안내 한 줄 (화면에 그대로)")
     factor: float = Field(description="판 시장 계수 (전국 평균 = 1, 판매량 가중)")
     price_per_kg: int = Field(description="판 시장의 판매량 가중 평균 농가 수취가 (원/kg)")
     national_price_per_kg: int = Field(description="전국 평균으로 판 판매량 가중 평균 농가 수취가 (원/kg)")
@@ -173,7 +176,7 @@ class Excluded(BaseModel):
     crop_name: str
     emoji: str
     land_type: LandType
-    kind: Literal["perennial", "land", "season", "ph", "low"] = Field(description="다년생 · 토지 없음 · 심는 시기 아님 · pH 때문에 내림 · 상위에 못 듦")
+    kind: Literal["perennial", "land", "season", "ph", "region", "low"] = Field(description="다년생 · 토지 없음 · 심는 시기 아님 · pH 때문에 내림 · 그 시·도에서 거의 안 길러 내림 · 상위에 못 듦")
     reason: str = Field(description="화면에 그대로 보여 줄 한 줄 이유")
 
 
@@ -185,7 +188,9 @@ class OrchardOption(BaseModel):
     area_pyeong: float
     harvest_months: list[int] | None = Field(None, description="[시작 달, 끝 달]")
     note: str | None = Field(None, description="나무를 심고 몇 해 뒤부터 수확 · 수확 시기 (작물 표 perennial_note)")
-    region_note: str | None = Field(None, description="주산지 밖이면 안내 (순위는 맨 아래로)")
+    region_note: str | None = Field(None, description="주산지 · 거의 안 기름 안내 한 줄 (11-18: 모든 작물 공통 규칙)")
+    region_tier: Literal["main", "rare"] | None = Field(None, description="main 주산지(위로) · rare 거의 안 기름(아래로) · null")
+    region_share: float | None = Field(None, description="도매시장에 들어온 국산 물량 가운데 그 시·도산 몫 (%)")
     yield_t: float
     price_per_kg: int = Field(description="조사 농가 수취가 × 시장 계수 (원/kg)")
     market: str = Field("national", description="11-17: 시·도 안에서 수확 철 값이 가장 좋은 도매시장 (없으면 national)")
@@ -205,10 +210,11 @@ class RecommendCropsResponse(BaseModel):
     region: str
     markets: list[MarketRef] = Field(description="비교한 도매시장 (토지 위치 안, 없으면 전국 평균)")
     no_market: bool = Field(False, description="시·도 안에 공영 도매시장이 없어 전국 평균으로 계산함")
-    results: list[Option] = Field(description="심을 수 있는 작물: 소득 높은 순, pH 를 낮춰야 하는 작물은 맨 아래")
+    region_notice: str | None = Field(None, description="11-18: 결과 위에 보여 줄 순서 안내 — 주산지 규칙을 썼을 때(자료 기준 포함), 또는 그 시·도는 주산지를 가릴 수 없어 소득 순으로만 줄 세웠을 때. 그 밖에는 null")
+    results: list[Option] = Field(description="심을 수 있는 작물: 주산지 → 보통 → 거의 안 기름 순(11-18), 같은 묶음 안에서는 소득 높은 순. pH 를 낮춰야 하는 작물은 맨 아래")
     excluded: list[Excluded] = Field(default_factory=list, description="추천 상위(3위 안)에 없는 작물과 이유 — 작물 정보 탭")
     unavailable: list[Unavailable]
-    orchards: list[OrchardOption] = Field(default_factory=list, description="과수원을 고르면: 나무 작물 1년 소득 순 (11-17)")
+    orchards: list[OrchardOption] = Field(default_factory=list, description="과수원을 고르면: 나무 작물 — 주산지 → 보통 → 거의 안 기름 순, 묶음 안에서는 1년 소득 순 (11-17, 11-18)")
     model_version: str
 
 

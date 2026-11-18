@@ -27,6 +27,8 @@
 .rc-money .hi-profit { background: rgba(246, 224, 176, 0.75); } .rc-money .hi-profit b { color: #b06d00; }
 .rc-money .hi-rate { background: rgba(190, 228, 200, 0.8); } .rc-money .hi-rate b { color: #23764a; }
 .rc-ref { align-self: flex-start; font-size: 15px; color: #7a5a12; background: rgba(246, 224, 176, 0.6); padding: 5px 10px; border-radius: 8px; }
+.rc-ref.main { color: var(--brand); background: var(--accent); }
+.rc-main { margin-left: 8px; font-style: normal; font-size: 14px; font-weight: 700; padding: 3px 8px; border-radius: 8px; background: var(--accent); color: var(--brand); vertical-align: middle; }
 .rc-why { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 17px; line-height: 1.5; }
 .rc-why li { display: flex; gap: 10px; } .rc-why li::before { content: "✓"; color: #2b7a4b; font-weight: 700; }
 .rc-mini .mm { display: grid; grid-template-columns: repeat(12, 1fr); font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 6px; }

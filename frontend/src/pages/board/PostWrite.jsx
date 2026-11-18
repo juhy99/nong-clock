@@ -55,7 +55,8 @@ export default function PostWrite() {
         <div className="write-row">
           <select className="input" aria-label="말머리" value={f.category} onChange={set("category")} style={{ maxWidth: 160 }}>
             <option value="">말머리 선택</option>
-            {BOARD_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            {/* 예전 거래후기 글을 고칠 때는 그 말머리도 고를 수 있게 (11-18) */}
+            {[...BOARD_CATEGORIES, ...(f.category && !BOARD_CATEGORIES.includes(f.category) ? [f.category] : [])].map((c) => <option key={c}>{c}</option>)}
           </select>
           <input className="input" aria-label="제목" placeholder="제목" maxLength={80} value={f.title} onChange={set("title")} />
         </div>

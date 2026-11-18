@@ -2,7 +2,8 @@
 import { load, save } from "./store";
 
 /** 말머리. 글쓰기 화면과 목록 필터가 같이 쓴다. */
-export const BOARD_CATEGORIES = ["자유", "질문", "정보", "거래후기"];
+// 11-18: "거래후기" 말머리 뺌 (경매 보류로 거래가 없음). 예전에 쓴 거래후기 글은 그대로 보이고 서버(REVIEW)도 그대로
+export const BOARD_CATEGORIES = ["자유", "질문", "정보"];
 
 const ago = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
 

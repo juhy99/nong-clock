@@ -29,7 +29,9 @@ export const adminMe = () =>
   );
 
 // ── 게시판 관리 ──
-export const ADMIN_CATEGORIES = ["공지", "자유", "질문", "정보", "거래후기"];
+// 11-18: 거래후기 말머리 뺌 (쓰기). 목록 거르기에는 예전 글을 찾을 수 있게 남김
+export const ADMIN_CATEGORIES = ["공지", "자유", "질문", "정보"];
+export const ADMIN_FILTER_CATEGORIES = [...ADMIN_CATEGORIES, "거래후기"];
 
 /** @param {{category?: string, q?: string, status?: ""|"VISIBLE"|"HIDDEN", page?: number}} opts */
 export const adminPosts = ({ category = "", q = "", status = "", page = 1 } = {}) =>

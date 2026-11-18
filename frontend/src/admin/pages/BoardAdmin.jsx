@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
 import {
   ADMIN_CATEGORIES,
+  ADMIN_FILTER_CATEGORIES,
   adminComments,
   adminDeleteComment,
   adminDeletePost,
@@ -226,7 +227,7 @@ export default function BoardAdmin() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
           <select className="input" style={{ maxWidth: 140 }} value={filter.category} onChange={(e) => go({ category: e.target.value })} aria-label="말머리">
             <option value="">전체 말머리</option>
-            {ADMIN_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            {ADMIN_FILTER_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
           </select>
           <select className="input" style={{ maxWidth: 140 }} value={filter.status} onChange={(e) => go({ status: e.target.value })} aria-label="상태">
             <option value="">전체 상태</option>

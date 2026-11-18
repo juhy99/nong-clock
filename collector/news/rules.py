@@ -77,14 +77,18 @@ def _match_codes(text, words):
 
 
 def find_items(text):
-    """글에 나온 16개 품목 코드 (나온 순서대로, 중복 없이)"""
+    """글에 나온 품목 코드 (50품목, 나온 순서대로, 중복 없이)"""
     text = str(text or "")
     return [c for c in _match_codes(text, WORDS) if not (c in MISREAD and MISREAD[c].search(text))]
 
 
 def find_crops(text):
-    """16개 품목 밖 작물 코드 (예: '샤인머스캣 수출' → ['grape'])"""
-    return _match_codes(text, CROP_WORDS)
+    """50품목 밖 작물 코드 (예: '건고추 수매' → ['pepper']). 품목 이름 자리(홍고추 안의 '고추')는 세지 않음 (11-18)"""
+    t = str(text or "")
+    for _, w in WORDS:
+        if len(w) > 1:
+            t = t.replace(w, " " * len(w))
+    return _match_codes(t, CROP_WORDS)
 
 
 def _has(text, w):
@@ -146,10 +150,11 @@ def title_key(title):
 
 
 def queries():
-    """검색어: 기본 + 품목 16개 + 품목 밖 작물 (화면 테스트 모드와 같음)"""
+    """검색어: 기본 + 품목(11-18: 16 → 50품목, 첫 단어 · 뜻이 여럿인 이름은 queries.item_words) + 품목 밖 작물"""
     q = list(RULES["queries"]["base"])
     if RULES["queries"].get("add_items"):
-        q += [ws[0] for ws in ITEM_WORDS.values()]
+        alias = RULES["queries"].get("item_words", {})
+        q += [alias.get(code, ws[0]) for code, ws in ITEM_WORDS.items()]
     if RULES["queries"].get("add_other_crops"):
         q += [c["name"] for c in OTHER_CROPS.values()]
     return q

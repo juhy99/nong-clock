@@ -52,7 +52,7 @@ const withTags = (n) => ({
   ...n,
   item_tags: n.items.map((c) => ({ item: c, name: itemInfo(c)?.name ?? c, emoji: itemInfo(c)?.emoji ?? "🧺" })),
   // 16개 품목 밖 작물 (시세·예측 화면이 없어 링크 없이 표시)
-  crop_tags: (n.crops ?? []).map((c) => ({ crop: c, name: OTHER_CROPS[c]?.name ?? c, emoji: OTHER_CROPS[c]?.emoji ?? "🌱" })),
+  crop_tags: (n.crops ?? []).map((c) => ({ crop: c, name: OTHER_CROPS[c]?.name ?? itemInfo(c)?.name ?? c, emoji: OTHER_CROPS[c]?.emoji ?? itemInfo(c)?.emoji ?? "🌱" })), // 11-18: grape 등이 품목으로 옮겨져도 예전 기사 태그 이름이 보이게
 });
 
 /**

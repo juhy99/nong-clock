@@ -30,7 +30,7 @@ export default function BoardList() {
       <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
         <div>
           <h1>게시판</h1>
-          <p>시세 정보, 재배 노하우, 거래 후기를 나눠요</p>
+          <p>시세 정보, 재배 노하우, 궁금한 점을 나눠요</p>
         </div>
         <button className="btn primary" onClick={() => nav(user ? "/board/write" : "/login?next=/board/write")}>✏️ 글쓰기</button>
       </div>

@@ -41,17 +41,31 @@ class RulesTest(unittest.TestCase):
     def test_item_tags(self):
         cases = [
             ("빅맥 1.7배 묵직", []), ("매출 3배 증가", []), ("칼로리 다섯 배 차이", []), ("레알은 배가 아프다", []),
-            ("1-1 무, 승점 1", []), ("사과와 배, 단감", ["apple", "pear"]), ("고랭지 무값 하락", ["radish"]),
+            ("1-1 무, 승점 1", []), ("사과와 배, 단감", ["apple", "pear", "sweet_persimmon"]), ("고랭지 무값 하락", ["radish"]),
             ("배추 2배 올라", ["napa_cabbage"]), ("양배추 값", ["cabbage"]), ("양송이 서울시의원 예산", []), ("중고거래 플랫폼 당근에 따르면 검색량 급증", []), ("당근모임 유료 일정", []), ("월동 당근 출하 지연", ["carrot"]),
+            # 11-18: 50품목 (검색어 하나도 같은 규칙: 홍고추 → red_chili)
+            ("홍고추", ["red_chili"]), ("풋고추 · 꽈리고추 값", ["green_chili", "shishito_pepper"]), ("청양고추 출하", ["green_chili"]),
+            ("방울토마토와 토마토", ["cherry_tomato", "tomato"]), ("양상추 · 상추", ["iceberg_lettuce", "lettuce"]), ("얼갈이배추 · 봄동 · 알타리무 · 열무", ["young_napa_cabbage", "bomdong", "ponytail_radish", "young_radish"]),
+            ("샤인머스캣 가격 하락", ["grape"]), ("포도당 수치", []), ("한라봉 수확", ["hybrid_citrus"]), ("만감이 교차했다", []),
+            ("가지 가격 올라", ["eggplant"]), ("여러 가지 대책", []), ("나뭇가지 정리", []), ("갈등을 부추기는 발언", []), ("부추 출하", ["chive"]),
+            ("멜론 차트 1위", []), ("멜론 출하 시작", ["melon"]), ("영화 미나리 오스카", []), ("미나리 수확", ["water_parsley"]), ("해발 표고 800m", []), ("표고버섯 값", ["shiitake"]),
         ]
         for text, want in cases:
             with self.subTest(text=text):
                 self.assertEqual(rules.find_items(text), want)
 
     def test_crop_tags(self):
-        self.assertEqual(rules.find_crops("샤인머스캣 가격 하락"), ["grape"])
-        self.assertEqual(rules.find_crops("포도당 수치"), [])
+        self.assertEqual(rules.find_crops("건고추 수매 가격"), ["pepper"])
+        self.assertEqual(rules.find_crops("샤인머스캣 가격 하락"), [])  # 11-18: 포도는 품목으로 옮김
         self.assertEqual(rules.find_crops("고추장 공장"), [])
+        self.assertEqual(rules.find_crops("홍고추 · 풋고추 값"), [])  # 품목으로 잡힌 자리는 작물 태그 아님
+        self.assertEqual(rules.find_crops("고추 값 올라"), ["pepper"])
+
+    def test_queries_cover_50_items(self):
+        q = rules.queries()
+        self.assertIn("홍고추", q)
+        self.assertIn("가지 가격", q)  # 뜻이 여럿인 이름은 queries.item_words
+        self.assertNotIn("가지", q)
 
     def test_clean_and_press(self):
         self.assertEqual(rules.clean("﻿<b>배추</b> &quot;출하&quot; "), '배추 "출하"')

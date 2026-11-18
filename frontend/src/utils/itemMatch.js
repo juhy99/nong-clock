@@ -3,7 +3,7 @@
 // 찾는 방식을 바꾸면 rules.py 도 똑같이 바꿔야 한다.
 import RULES from "../../../shared/news_rules.json";
 
-/** 품목 코드 → 이 이름이 나오면 그 품목으로 본다 (품목 이름 + 품종·별칭) */
+/** 품목 코드 → 이 이름이 나오면 그 품목으로 본다 (품목 이름 + 품종·별칭). 11-18: 예측 50품목 전부 (전에는 16개라 홍고추 · 마늘 등을 검색해도 시세가 안 떴음) */
 export const ITEM_WORDS = RULES.items;
 
 /** 품목 이름이 들어 있지만 품목 뜻이 아닌 말. 먼저 지우고 찾는다. */
@@ -13,7 +13,7 @@ const NOT_ITEM = RULES.not_item;
 const MISREAD = Object.fromEntries(Object.entries(RULES.misread).map(([code, re]) => [code, new RegExp(re)]));
 
 /**
- * NongClock 16개 품목 밖이지만 기사에 자주 나오는 작물. 뉴스 태그로만 보여 준다 (시세·예측 화면이 없으므로 링크 없음).
+ * NongClock 50품목 밖이지만 기사에 자주 나오는 작물 (건고추 등). 뉴스 태그로만 보여 준다 (시세·예측 화면이 없으므로 링크 없음).
  * 품목이 늘어나면 규칙 파일에서 items 로 옮기면 된다.
  */
 export const OTHER_CROPS = RULES.other_crops;
@@ -47,8 +47,13 @@ function okBoundary(text, start, w) {
  */
 export const findItems = (text) => matchCodes(text, WORDS).filter((code) => !MISREAD[code]?.test(String(text ?? "")));
 
-/** 16개 품목 밖 작물 코드 (OTHER_CROPS 의 키, 예: "샤인머스캣 수출" → ["grape"]) */
-export const findCrops = (text) => matchCodes(text, CROP_WORDS);
+/** 50품목 밖 작물 코드 (OTHER_CROPS 의 키, 예: "건고추 수매" → ["pepper"]) */
+export const findCrops = (text) => {
+  // 11-18: 품목 이름 자리(홍고추 안의 '고추')는 작물 태그로 세지 않음
+  let t = String(text ?? "");
+  for (const { w } of WORDS) if (w.length > 1) t = t.replaceAll(w, " ".repeat(w.length));
+  return matchCodes(t, CROP_WORDS);
+};
 
 /** 검색어가 가리키는 품목 밖 작물 하나 (예: "샤인머스캣" → grape). 없으면 null */
 export const cropOfQuery = (q) => findCrops(q)[0] ?? null;

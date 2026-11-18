@@ -406,3 +406,36 @@ def test_region_notice_explains_order_and_basis():
     j = _post([{"type": "paddy", "area_pyeong": 3000}], start=d, region="전남").json()
     if all(o["crop"] in ("rice", "soybean") for o in j["results"]):
         assert j["region_notice"] is None                                # 주산지 자료가 없는 작물뿐
+
+
+# ── 11-18 저녁: 후보가 적을 때 안내 · '수량 참고'에 반입량 사실 (소득 금액은 건드리지 않음) ──
+def test_few_notice_only_when_one_or_two_candidates():
+    kinds = set()
+    for k in range(0, 365, 7):
+        d = TODAY + timedelta(days=k)
+        j = _post([{"type": "open", "area_pyeong": 1200}], start=d, region="경기").json()
+        n = len(j["results"])
+        assert (j["few_notice"] is not None) == (1 <= n <= recommender.FEW), (d, n)
+        if j["few_notice"]:
+            assert f"{n}개뿐" in j["few_notice"] and f"({d.month}/{d.day})" in j["few_notice"]
+            kinds.add("곧 심을 수 있는 작물" in j["few_notice"])
+    assert kinds   # 한 해 중 후보가 2개 이하인 주가 있음
+    assert _post([{"type": "orchard", "area_pyeong": 1000}], region="경북").json()["few_notice"] is None
+
+
+def test_month_share_table_and_peak_volume_note():
+    from app.core import crop_regions as cr
+    assert set(cr.MONTH_SHARE) == set(cr.SHARE)
+    for row in cr.MONTH_SHARE.values():
+        assert len(row) == 12 and sum(row) == pytest.approx(100, abs=1.0)
+    assert cr.volume_share("spinach", [8]) < 2 < cr.volume_share("spinach", [12])     # 시금치는 8월에 거의 안 들어옴
+    assert cr.volume_share("rice", [10]) is None
+    seen = False
+    for k in range(0, 365, 7):
+        for o in _post([{"type": "open", "area_pyeong": 1200}], start=TODAY + timedelta(days=k), region="경기").json()["results"]:
+            assert (o["peak_volume_note"] is not None) <= (o["peak_ratio"] is not None)   # '수량 참고'일 때만
+            assert abs(o["margin"] - (o["revenue"] - o["cost"])) <= 1                      # 금액은 그대로
+            if o["peak_volume_note"]:
+                seen = True
+                assert "1년 물량의" in o["peak_volume_note"] and o["crop_name"] in o["peak_volume_note"]
+    assert seen

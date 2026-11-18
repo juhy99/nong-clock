@@ -15,6 +15,7 @@ MAIN_PCT: float = _DATA["main_pct"]
 RARE_PCT: float = _DATA["rare_pct"]
 PERIOD: tuple[str, str] = tuple(_DATA["period"])
 SHARE: dict[str, dict[str, float]] = _DATA["share"]
+MONTH_SHARE: dict[str, list[float]] = _DATA.get("month_share", {})   # 11-18 저녁: 달별 반입량 몫 (1~12월 %, 합 100)
 
 
 def share(crop: str, region: str | None) -> float | None:
@@ -28,6 +29,12 @@ def tier(crop: str, region: str | None) -> str | None:
     if p is None:
         return None
     return "main" if p >= MAIN_PCT else "rare" if p < RARE_PCT else None
+
+
+def volume_share(crop: str, months) -> float | None:
+    """그 작물 1년 반입량 가운데 months(1~12)에 들어오는 몫(%). 자료가 없으면 None"""
+    ms = MONTH_SHARE.get(crop)
+    return round(sum(ms[m - 1] for m in set(months)), 1) if ms else None
 
 
 RANK = {"main": 0, None: 1, "rare": 2}

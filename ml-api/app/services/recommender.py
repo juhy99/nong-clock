@@ -33,6 +33,7 @@ WEEKS_AHEAD = 53  # 심는 날 비교 범위: 앞으로 1년(주 단위)
 TIE_PCT = 0.5     # 마진률이 이만큼 안쪽으로 비슷하면 더 가까운 날을 고른다
 TOP_N = 3         # 작물 정보 탭 "추천 상위" 기준
 OFF_SEASON_REF = 0.5  # 매출의 절반 넘게가 출하철 밖(참고값) 날이면 화면에 '참고용'
+FEW = 2               # 11-18: 지금 심을 수 있는 작물이 이 개수 이하면 '비교 대상이 적어요' 안내
 PEAK_RATIO = 2.0      # 수확 철 값이 조사 가격의 이만큼 넘으면 '수량 참고' (11-16: 여름 시금치 8월 = 조사의 3배 × 1년 평균 수량 → 마진율 90%대)
 
 
@@ -173,6 +174,20 @@ class Option:
             return None
         r = self.national_revenue / (self.sell_t * 1000) / self.cropping.survey.price
         return round(r, 2) if r > PEAK_RATIO else None
+
+    @property
+    def peak_volume_note(self) -> str | None:
+        """11-18 저녁: '수량 참고'(peak_ratio)일 때만 — 수확하는 달에 도매시장에 들어오는 양이 1년의 몇 %인지 (우리 경매 자료, shared/crop_regions.json).
+        값이 비싼 까닭(그 철엔 물량이 적음)을 사실로 알림. 소득 금액은 건드리지 않음 (철별 10a당 수량 자료가 없어서)"""
+        if self.peak_ratio is None:
+            return None
+        months = sorted({w.day.month for w in self.weeks})
+        p = crop_regions.volume_share(self.crop.code, months)
+        if p is None:
+            return None
+        a, b = self.weeks[0].day.month, self.weeks[-1].day.month
+        when = f"{a}월" if a == b else f"{a}~{b}월"
+        return f"수확 철({when}) 도매시장에 들어오는 {self.crop.name}{crop_regions._josa(self.crop.name, '은', '는')} 1년 물량의 {p:g}%예요 (열두 달 고르게 들어온다면 {len(months) * 100 / 12:.1f}%)"
 
     @property
     def demoted(self) -> bool:
@@ -357,6 +372,17 @@ def excluded(ok: list[Option], lands: dict[str, float], start: date, region: str
             tail = f" 다음 심는 때: {nxt[0].month}/{nxt[0].day}부터({nxt[1].name})" if nxt else ""
             out.append((crop, "season", f"고른 날({start.month}/{start.day})은 심는 시기가 아니에요. 심는 때: {ws}.{tail}"))
     return out
+
+
+def few_notice(ok: list[Option], off: list, start: date) -> str | None:
+    """11-18: 지금 심을 수 있는 작물이 FEW 개 이하일 때 — 순위가 의미를 갖기 어렵다는 것과 곧 심을 수 있는 작물을 알림.
+    (시금치처럼 거의 일 년 내내 심을 수 있는 작물이 자주 1위로 보이는 까닭 = 그날 비교할 다른 작물이 없어서. 계산은 건드리지 않음)"""
+    if not 1 <= len(ok) <= FEW:
+        return None
+    soon = sorted(((nxt[0], crop.name) for crop, _, nxt in off if nxt), key=lambda x: x[0])[:3]
+    tail = (" 곧 심을 수 있는 작물: " + " · ".join(f"{n} {d.month}/{d.day}부터" for d, n in soon) + ".") if soon else ""
+    return (f"고른 날({start.month}/{start.day})에 심을 수 있는 작물이 {len(ok)}개뿐이라 비교할 대상이 적어요. "
+            f"이 순위는 ‘가장 좋은 작물’이라기보다 ‘지금 심을 수 있는 작물’에 가까워요. 심을 날짜를 바꾸면 다른 작물과 견줄 수 있어요.{tail}")
 
 
 def better(a: Option | None, b: Option, metric: str = "rate") -> Option:

@@ -12,7 +12,7 @@ import "./recommend.css";
 /* ─────────────────────────────────────────────
    작물 추천 (v17, 11-11)  /recommend · /recommend?tab=info&crop=onion
    - 입력: 시·도 · 심을 날짜(오늘~1년) · 면적 · 기존에 키우던 작물(흙 pH 어림) · 1년 임대료 · 재배 방식 (11-13 날짜와 재배 방식 자리 바꿈)
-   - 결과: 순이익 TOP3 카드. 추천 이유는 API 응답 값으로 만든 틀 문장만 (직접 쓴 설명 없음)
+   - 결과: 소득 TOP3 카드. 추천 이유는 API 응답 값으로 만든 틀 문장만 (직접 쓴 설명 없음)
    - 작물 정보: 작물 고르기(드롭다운 검색) · 추천 결과 · 재배 조건 · 재배 달력 · 앞으로 12개월 예상 도매가
    - 11-13 실제 자료: 작물 34개 · 작형 = shared/crops.json (농사로 재배력 · 농진청 소득조사 · 통계청 생산비조사),
      가격 = DB AI 예측 도매가 × 농가 수취 비율 (예측이 없는 날은 평년 도매가, 쌀·콩은 조사 수취가), 시장 계수 = DB
@@ -31,16 +31,16 @@ const PH_LINE = {
   ok: (o) => `기존 작물(${o.prev_crop})로 본 흙 pH ${f1(o.soil_ph)} — 알맞은 범위(${f1(o.ph.min)}~${f1(o.ph.max)}) 안이에요`,
   raise: (o) => `기존 작물(${o.prev_crop})로 본 흙 pH ${f1(o.soil_ph)} — ${f1(o.ph.gap)} 올려야 해요 (석회로 맞출 수 있어요)`,
   near: (o) => `기존 작물(${o.prev_crop})로 본 흙 pH ${f1(o.soil_ph)} — 알맞은 범위보다 ${f1(o.ph.gap)} 높아요`,
-  lower: (o) => `흙 pH를 ${f1(o.ph.gap)} 낮춰야 해서 순이익과 상관없이 아래로 내렸어요`,
+  lower: (o) => `흙 pH를 ${f1(o.ph.gap)} 낮춰야 해서 소득과 상관없이 아래로 내렸어요`,
   unknown: (o) => `${o.crop_name} 알맞은 pH 자료가 없어 흙 비교는 하지 않았어요`,
 };
 /** 추천 이유 틀 문장: 수확·저장 → 비싼 달 → 팔 시장 → 흙 pH (POST /recommend/crops 응답 값만으로) */
 function reasonLines(o, region) {
   const b = bestMonth(o);
   const out = [
-    `${md(o.harvest_start)}~${md(o.harvest_end)} 수확${o.storage_days > 0 ? `, 저장하면 ${mdy(o.storage_end, o.harvest_end)}까지 팔 수 있어요 (순수익은 수확 때 가격으로 계산)` : ", 저장 없이 바로 출하해요"}`,
+    `${md(o.harvest_start)}~${md(o.harvest_end)} 수확${o.storage_days > 0 ? `, 저장하면 ${mdy(o.storage_end, o.harvest_end)}까지 팔 수 있어요 (소득은 수확 때 가격으로 계산)` : ", 저장 없이 바로 출하해요"}`,
     `가장 비싸게 팔리는 달은 ${mo(b.month + "-01")}월 (${won(b.price_per_kg)}원/kg)이에요`,
-    o.no_market ? `${region}에는 공영 도매시장이 없어 전국 평균 가격으로 계산했어요` : `${region} 안에서는 ${o.market.name}에 팔 때 순이익이 가장 커요`,
+    o.no_market ? `${region}에는 공영 도매시장이 없어 전국 평균 가격으로 계산했어요` : `${region} 안에서는 ${o.market.name}에 팔 때 소득이 가장 커요`,
   ];
   if (o.land_rent_year > 0) out.push(`임대료는 1년 ${man(o.land_rent_year)} 중 재배 기간 ${o.rent_days}일치 ${man(o.land_rent)}을 뺐어요`);
   if (o.ph) out.push(PH_LINE[o.ph.kind](o));
@@ -108,7 +108,7 @@ function LandForm({ form, onApply }) {
           {SOIL_PH.map((p) => <option key={p.name}>{p.name}</option>)}
         </select>
       </label>
-      <label className="rc-f"><span>임대료 (1년, 만원) <Info>1년 임대료를 넣으면 심는 날부터 마지막 수확까지 기간만큼만 순수익에서 빼요 (예: 3개월이면 1/4). 내 땅이면 0을 넣으세요.</Info></span>
+      <label className="rc-f"><span>임대료 (1년, 만원) <Info>1년 임대료를 넣으면 심는 날부터 마지막 수확까지 기간만큼만 소득에서 빼요 (예: 3개월이면 1/4). 내 땅이면 0을 넣으세요.</Info></span>
         <input className="input" type="number" min="0" inputMode="numeric" value={d.rent} onChange={(e) => set({ rent: e.target.value })} aria-invalid={!!err && err.includes("임대료")} />
       </label>
       <div className="rc-f"><span>재배 방식</span>
@@ -164,7 +164,7 @@ function MiniCalendar({ o }) {
       <div className="when">
         <div>심기<b>{md(o.plant_date)}</b></div>
         <div>수확<b>{md(o.harvest_start)}~{md(o.harvest_end)}</b></div>
-        {store ? <div title="순수익은 수확 때 가격으로 계산했어요">저장 가능<b>~{mdy(o.storage_end, o.harvest_end)}</b></div> : <div>재배 기간<b>{daysBetween(o.plant_date, o.harvest_end)}일</b></div>}
+        {store ? <div title="소득은 수확 때 가격으로 계산했어요">저장 가능<b>~{mdy(o.storage_end, o.harvest_end)}</b></div> : <div>재배 기간<b>{daysBetween(o.plant_date, o.harvest_end)}일</b></div>}
       </div>
     </div>
   );
@@ -177,14 +177,14 @@ function CropCard({ o, rank, topProfit, topRate, goInfo }) {
     <section className="card rc-card">
       <span className={`rc-art ${profit ? "profit" : rate ? "rate" : ""}`}>
         <i aria-hidden>{o.emoji}</i>
-        {profit && <b className="profit">💰 순수익 1위</b>}
-        {rate && <b className="rate">📊 마진율 1위</b>}
+        {profit && <b className="profit">💰 소득 1위</b>}
+        {rate && <b className="rate">📊 소득률 1위</b>}
       </span>
       <span className={`rc-n ${rank === 0 ? "first" : ""}`}>{String(rank + 1).padStart(2, "0")}</span>
       <div className="rc-nm">{o.crop_name}<small>{LAND_TYPES[o.land_type]} {o.cropping} · {mo(o.harvest_start)}월 수확</small></div>
       <div className="rc-money">
-        <div className={profit ? "hi-profit" : ""}><span>예상 순수익</span><b>{man(o.margin)}</b></div>
-        <div className={rate ? "hi-rate" : ""}><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div>
+        <div className={profit ? "hi-profit" : ""}><span>예상 소득</span><b>{man(o.margin)}</b></div>
+        <div className={rate ? "hi-rate" : ""}><span>소득률</span><b>{Math.round(o.margin_rate)}%</b></div>
       </div>
       {refLine(o) && <span className="rc-ref">ⓘ {refLine(o)}</span>}
       <div className="rc-calhead">📅 재배 달력</div>
@@ -206,18 +206,18 @@ function OrchardResults({ list, goInfo }) {
   return (
     <>
       <div className="card rc-note rc-orchard-note">
-        🌳 과수원 나무는 한 번 심으면 여러 해 기르니 <b>심을 날짜 비교 대신 다 자란 나무에서 1년에 얻는 순수익</b>으로 줄 세웠어요.
+        🌳 과수원 나무는 한 번 심으면 여러 해 기르니 <b>심을 날짜 비교 대신 다 자란 나무에서 1년에 얻는 소득</b>으로 줄 세웠어요.
         {src && ` 수량·가격·경영비는 ${src.source} ${src.years[0]}~${src.years.at(-1)}년 전국 평균이고, 가격에는 고른 시·도 도매시장이 전국보다 얼마나 비싼지(싼지)를 곱했어요.`} 새로 심으면 첫 수확까지 몇 해가 걸려요.
       </div>
       <div className="rc-top3">
         {top.map((o, i) => (
           <section key={o.crop} className="card rc-card open">
-            <span className={`rc-art ${i === 0 ? "profit" : ""}`}><i aria-hidden>{o.emoji}</i>{i === 0 && <b className="profit">💰 순수익 1위</b>}</span>
+            <span className={`rc-art ${i === 0 ? "profit" : ""}`}><i aria-hidden>{o.emoji}</i>{i === 0 && <b className="profit">💰 소득 1위</b>}</span>
             <span className={`rc-n ${i === 0 ? "first" : ""}`}>{String(i + 1).padStart(2, "0")}</span>
             <div className="rc-nm">{o.crop_name}<small>과수원 · 다 자란 나무 기준{o.harvest_months ? ` · ${monthsText(o.harvest_months)} 수확` : ""}</small></div>
             <div className="rc-money">
-              <div className={i === 0 ? "hi-profit" : ""}><span>1년 순수익</span><b>{man(o.margin)}</b></div>
-              <div><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div>
+              <div className={i === 0 ? "hi-profit" : ""}><span>1년 소득</span><b>{man(o.margin)}</b></div>
+              <div><span>소득률</span><b>{Math.round(o.margin_rate)}%</b></div>
             </div>
             <ul className="rc-why">
               <li>1년 수확 {f1(o.yield_t)}톤 × {won(o.price_per_kg)}원/kg = 매출 {man(o.revenue)}</li>
@@ -240,7 +240,7 @@ function OrchardResults({ list, goInfo }) {
           {rest.map((o, i) => (
             <button key={o.crop} type="button" className="rc-rest-row" onClick={() => goInfo(o.crop)}>
               <span>{String(i + 4).padStart(2, "0")} {o.emoji} {o.crop_name}</span>
-              <span>1년 순수익 <b>{man(o.margin)}</b> · 마진율 {Math.round(o.margin_rate)}%{o.region_note ? " · ⓘ 주산지 밖" : ""}</span>
+              <span>1년 소득 <b>{man(o.margin)}</b> · 소득률 {Math.round(o.margin_rate)}%{o.region_note ? " · ⓘ 주산지 밖" : ""}</span>
             </button>
           ))}
         </div>
@@ -377,7 +377,7 @@ function WhyCard({ crop, cropName, emoji, rec, form, info, goLand }) {
         <>
           <span className="rc-badge">🏆 내 조건에서 {rank + 1}위</span>
           <p className="rc-txt">{form.region} {LAND_TYPES[form.type]} {won(form.area)}평에 <b>{md(o.plant_date)}</b> 심으면 임대료를 빼고<br /><b>약 {man(o.margin)}</b>이 남을 것으로 보여요.</p>
-          <div className="rc-nums"><div><span>예상 순수익</span><b>{man(o.margin)}</b></div><div><span>마진율</span><b>{Math.round(o.margin_rate)}%</b></div><div><span>수확</span><b>{md(o.harvest_start)}~{md(o.harvest_end)}</b></div></div>
+          <div className="rc-nums"><div><span>예상 소득</span><b>{man(o.margin)}</b></div><div><span>소득률</span><b>{Math.round(o.margin_rate)}%</b></div><div><span>수확</span><b>{md(o.harvest_start)}~{md(o.harvest_end)}</b></div></div>
           {refLine(o) && <span className="rc-ref">ⓘ {refLine(o)}</span>}
           <ul className="rc-why">{[...reasonLines(o, form.region), ...(windowLine ? [windowLine] : [])].map((t) => <li key={t}>{t}</li>)}</ul>
         </>
@@ -558,7 +558,7 @@ export default function Recommend() {
     <div className="page">
       {tab === "land" ? (
         <>
-          <div className="page-head"><h1>내 땅에 무엇을 심을까</h1><p>내 땅 조건과 심을 날짜를 알려 주시면, 임대료를 뺀 순수익이 높은 작물을 골라 드려요.</p></div>
+          <div className="page-head"><h1>내 땅에 무엇을 심을까</h1><p>내 땅 조건과 심을 날짜를 알려 주시면, 경영비와 임대료를 뺀 소득이 높은 작물을 골라 드려요. (소득 = 총수입 − 경영비, 내 인건비는 빼지 않은 값)</p></div>
           <LandForm key={JSON.stringify(form)} form={form} onApply={setForm} />
           <Results state={rec} form={form} goInfo={goInfo} retry={(date) => { setForm({ ...form, date }); top(); }} />
         </>

@@ -236,7 +236,7 @@ URL과 API 모두 아래 영어 코드를 씁니다. (예: 프론트 주소 `/ma
 > | 메서드 | 주소 | 설명 | 사용 화면 |
 > |---|---|---|---|
 > | GET | `/public/predict?item=&horizon=7\|28` | 품목의 **전국 평균** 7일·4주 예측만 (오늘 기준, 응답은 `POST /predict` 와 같은 모양). 다른 기간은 422 | 홈 · 뉴스 |
-> | GET | `/public/recommend?region=&type=` | 오늘 1,200평에 심을 때 순수익 **위 3개만** (응답은 `POST /recommend/crops` 와 같은 모양, `excluded`·`unavailable` 은 빈 목록) | 홈 |
+> | GET | `/public/recommend?region=&type=` | 오늘 1,200평에 심을 때 소득 **위 3개만** (응답은 `POST /recommend/crops` 와 같은 모양, `excluded`·`unavailable` 은 빈 목록) | 홈 |
 
 ### 한눈에 보기
 

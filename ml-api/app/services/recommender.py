@@ -1,6 +1,6 @@
 """작물 추천 계산 (11-13 실제 자료로 바꿈 — 작물 표 shared/crops.json · 가격 DB 예측 표).
 
-순이익(마진) = 예상 매출 − 총경영비
+소득(margin) = 예상 매출 − 총경영비  (11-18 용어: 농진청 농산물소득조사 기준 "소득 = 총수입 − 경영비". 자가노동비까지 뺀 "순수익"이 아님 — 화면·API 설명은 소득 · 소득률로 씀, 필드 이름 margin · margin_rate 는 그대로)
 - 심는 날 → 첫 수확 · 마지막 수확: 농사로 재배력 (crop_catalog.Cropping.schedule)
 - 판매량 = 10a당 수량(조사 최근 3개 해 평균) × 면적(평 ÷ 302.5). 조사 수량이 이미 판 주산물이라 상품화율을 따로 곱하지 않음
 - 예상 매출 = Σ(주마다 판매량 × 그날 농가 수취가) — 수확 기간을 7일씩 나눠 출하 비중(ship_weight)만큼 판다
@@ -321,7 +321,7 @@ def excluded(ok: list[Option], lands: dict[str, float], start: date, region: str
                 out.append((crop, "ph", f"심을 수는 있지만 {LAND_TYPES[o.cropping.land]} 토지 흙(기존 작물 {o.prev_crop} 기준 pH 약 {o.soil_ph})이 "
                                        f"알맞은 pH {p.min}~{p.max}보다 {gap} 높아서 맨 아래({i + 1}위)로 내렸어요."))
             elif i >= TOP_N:
-                out.append((crop, "low", f"심을 수는 있지만 예상 순수익이 {round(o.margin / 1e4):,}만원(마진율 {round(o.margin_rate)}%)으로, "
+                out.append((crop, "low", f"심을 수는 있지만 예상 소득이 {round(o.margin / 1e4):,}만원(소득률 {round(o.margin_rate)}%)으로, "
                                         f"추천 상위({TOP_N}위 안)에 들지 못했어요. ({len(ok)}개 중 {i + 1}위)"))
             continue
         if crop.perennial_note:

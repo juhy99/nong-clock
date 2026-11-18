@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, HTTPException
 
+from app.core import crop_regions
 from app.core.crop_catalog import BUILT_AT, CROPS, LAND_TYPES, Crop, Survey
 from app.core.markets import market_name
 from app.core.soil_ph import ph_of
@@ -77,6 +78,7 @@ def _option(o: recommender.Option, region: str, today: date) -> Option:
         storage_days=c.storage_days, storage_end=o.harvest_end + timedelta(days=c.storage_days),
         region=region, market=_market_ref(o.market), factor=round(o.factor, 4), no_market=recommender.sido_markets(region, o.crop)[1],
         prev_crop=o.prev_crop, soil_ph=o.soil_ph, demoted=o.demoted,
+        region_tier=o.region_tier, region_share=o.region_share, region_note=o.region_note,
         ph=PhInfo(kind=o.ph[0], min=o.ph[1].min if o.ph[1] else None, max=o.ph[1].max if o.ph[1] else None, gap=o.ph[2]) if o.ph else None,
         price_per_kg=round(o.price), national_price_per_kg=round(nat / (o.sell_t * 1000)) if o.sell_t else 0,
         farm_ratio=c.farm_ratio if o.crop.price_source != "survey" else None, price_basis=o.basis,
@@ -123,8 +125,11 @@ def recommend_crops(req: RecommendCropsRequest) -> RecommendCropsResponse:
     ok, off = recommender.recommend_crops(lands, rents, req.start_date, today, req.region, req.market, prevs)
     codes, none = recommender.sido_markets(req.region)
     bases = [b for b in (crop_prices.forecast_base(o.crop, today) for o in ok) if b]
+    orchards = recommender.orchard_options(lands, rents, req.region)
+    shown = ok or orchards   # 화면은 과수원이면 orchards, 아니면 results 를 보여 줌
     return RecommendCropsResponse(
         start_date=req.start_date, region=req.region, markets=[_market_ref(c) for c in codes], no_market=none,
+        region_notice=crop_regions.notice(req.region, [o.crop.code for o in shown], [o.region_tier for o in shown]),
         results=[_option(o, req.region, today) for o in ok],
         excluded=[Excluded(crop=c.code, crop_name=c.name, emoji=c.emoji, land_type=c.land_type, kind=k, reason=why)
                   for c, k, why in recommender.excluded(ok, lands, req.start_date, req.region)],
@@ -133,7 +138,7 @@ def recommend_crops(req: RecommendCropsRequest) -> RecommendCropsResponse:
                         next_plant_date=nxt[0] if nxt else None, next_cropping=nxt[1].name if nxt else None)
             for c, why, nxt in off
         ],
-        orchards=[_orchard(o) for o in recommender.orchard_options(lands, rents, req.region)],
+        orchards=[_orchard(o) for o in orchards],
         model_version=_version(max(bases) if bases else None),
     )
 
@@ -142,6 +147,7 @@ def _orchard(o: recommender.OrchardOption) -> OrchardOption:
     c = o.crop
     return OrchardOption(crop=c.code, crop_name=c.name, emoji=c.emoji, area_pyeong=o.area_pyeong,
                          harvest_months=list(c.harvest_months) if c.harvest_months else None, note=c.perennial_note, region_note=o.region_note,
+                         region_tier=o.region_tier, region_share=o.region_share,
                          yield_t=round(o.yield_t, 2), price_per_kg=round(o.price), market=o.market, market_name=market_name(o.market),
                          market_factor=round(o.factor, 3), revenue=round(o.revenue), base_cost=round(o.base_cost),
                          land_rent=round(o.land_rent), cost=round(o.cost), margin=round(o.margin), margin_rate=round(o.margin_rate, 1), rda=_rda(c.survey))

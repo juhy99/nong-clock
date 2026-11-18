@@ -56,8 +56,9 @@ def test_recommend_sorted_consistent_and_real_sources():
     out = res.json()
     rs = out["results"]
     assert rs and "tomato" in {o["crop"] for o in rs}
-    margins = [o["margin"] for o in rs if not o["demoted"]]
-    assert margins == sorted(margins, reverse=True)
+    for t in ("main", None, "rare"):   # 11-18: 주산지 묶음 안에서는 소득 높은 순
+        margins = [o["margin"] for o in rs if not o["demoted"] and o["region_tier"] == t]
+        assert margins == sorted(margins, reverse=True)
     for o in rs:
         assert o["land_type"] in ("open", "house")
         assert abs(o["revenue"] - o["cost"] - o["margin"]) <= 1
@@ -297,19 +298,26 @@ def test_orchard_gives_tree_crops_by_income():
     j = _post([{"type": "orchard", "area_pyeong": 1000, "land_rent": 100}], region="경북").json()
     assert j["results"] == [] and len(j["orchards"]) == 7
     o = j["orchards"]
-    assert [x["margin"] for x in o if not x["region_note"]] == sorted((x["margin"] for x in o if not x["region_note"]), reverse=True)
+    for t in ("main", None, "rare"):   # 11-18: 주산지 → 보통 → 거의 안 기름, 묶음 안에서는 소득 순
+        ms = [x["margin"] for x in o if x["region_tier"] == t]
+        assert ms == sorted(ms, reverse=True)
+    assert [x["region_tier"] for x in o] == sorted((x["region_tier"] for x in o), key=lambda t: {"main": 0, None: 1, "rare": 2}[t])
+    assert o[0]["region_tier"] == "main" and o[0]["crop"] in ("apple", "grape", "peach", "plum", "pear")
     a = next(x for x in o if x["crop"] == "apple")
     s = CROPS["apple"].survey
     a10 = 1000 / recommender.PYEONG_PER_10A
     assert a["revenue"] == round(s.revenue * a10) and a["land_rent"] == 1_000_000
     assert a["cost"] == round((s.cost - s.land_rent) * a10 + 1_000_000) and a["margin"] == a["revenue"] - a["cost"]
     m = next(x for x in o if x["crop"] == "mandarin")
-    assert m["region_note"] and o[-1]["crop"] == "mandarin"   # 제주 밖 감귤은 안내 + 맨 아래
+    assert m["region_tier"] == "rare" and "거의 기르지 않는" in m["region_note"] and o[-1]["crop"] == "mandarin"   # 제주 밖 감귤은 안내 + 맨 아래
 
 
-def test_orchard_in_jeju_has_no_note_and_other_lands_have_no_orchards():
+def test_orchard_in_jeju_puts_mandarin_first_and_other_lands_have_no_orchards():
+    """11-18: 제주 과수원은 소득이 더 큰 포도·사과가 아니라 주산지인 감귤이 1위. 제주에서 거의 안 기르는 나무는 아래 + 안내"""
     o = _post([{"type": "orchard", "area_pyeong": 1000}], region="제주").json()["orchards"]
-    assert all(x["region_note"] is None for x in o)
+    assert o[0]["crop"] == "mandarin" and o[0]["region_tier"] == "main" and o[0]["region_share"] > 90 and "주산지" in o[0]["region_note"]
+    assert all(x["region_tier"] == "rare" and x["region_note"] for x in o[1:])
+    assert max(x["margin"] for x in o[1:]) > o[0]["margin"]   # 소득 숫자는 그대로 (순서만 바뀜)
     assert _post([{"type": "open", "area_pyeong": 1000}]).json()["orchards"] == []
 
 
@@ -336,3 +344,65 @@ def test_input_caps():
     r = _post([{**ok, "land_rent": 2001}])   # 1,000평 × 2만원 = 2,000만원까지
     assert r.status_code == 422 and "평당" in r.text
     assert _post([{**ok, "machine_rent": 10_001}]).status_code == 422
+
+
+# ── 11-18 주산지: 그 시·도에서 실제로 많이 기르는 작물을 위로, 거의 안 기르는 작물을 아래로 (shared/crop_regions.json) ──
+def test_crop_regions_table_is_real_shares():
+    from app.core import crop_regions as cr
+    from app.core.markets import SIDO
+    assert cr.MAIN_PCT == 10 and cr.RARE_PCT == 1
+    for code, row in cr.SHARE.items():
+        assert code in CROPS and set(row) == set(SIDO)
+        assert sum(row.values()) == pytest.approx(100, abs=1.0)        # 시·도 몫의 합 = 100% (반올림 오차)
+    assert set(CROPS) - set(cr.SHARE) == {"rice", "soybean"}            # 경매 자료에 없는 작물만 빠짐
+    assert cr.tier("mandarin", "제주") == "main" and cr.tier("mandarin", "경기") == "rare"
+    assert cr.tier("apple", "경북") == "main" and cr.tier("apple", "제주") == "rare"
+    assert cr.tier("onion", "제주") is None                             # 4.6% → 순위 그대로
+    assert cr.tier("rice", "전남") is None and cr.tier("onion", "national") is None and cr.tier("onion", None) is None
+    assert cr.note("onion", "양파", "제주") is None and "0.1% 미만" in cr.note("apple", "사과", "제주")
+
+
+def test_region_tiers_order_field_crops():
+    """노지: 주산지 → 보통 → 거의 안 기름. 소득 숫자는 시·도 순위 규칙과 상관없이 그대로"""
+    from app.core import crop_regions as cr
+    rank = {"main": 0, None: 1, "rare": 2}
+    for region in ("제주", "강원", "전남", "경북", "경기"):
+        for k in (0, 60, 150, 240):
+            d = TODAY + timedelta(days=k)
+            rs = _post([{"type": "open", "area_pyeong": 1000}], start=d, region=region).json()["results"]
+            tiers = [o["region_tier"] for o in rs if not o["demoted"]]
+            assert tiers == sorted(tiers, key=rank.get), (region, d, tiers)
+            for o in rs:
+                assert o["region_share"] == cr.share(o["crop"], region)
+                assert (o["region_note"] is None) == (o["region_tier"] is None)
+                assert abs(o["margin"] - (o["revenue"] - o["cost"])) <= 1
+
+
+def test_all_rare_region_keeps_income_order_without_notes():
+    """세종처럼 후보가 모두 '거의 안 기름'이면 내리지도 안내하지도 않음 (반입 산지 자료로 가릴 수 없음)"""
+    j = _post([{"type": "orchard", "area_pyeong": 1000}], region="세종").json()["orchards"]
+    assert all(x["region_tier"] is None and x["region_note"] is None for x in j)
+    assert [x["margin"] for x in j] == sorted((x["margin"] for x in j), reverse=True)
+
+
+def test_rare_crop_outside_top_is_explained_as_region():
+    d = _first_window("onion", "open")
+    j = _post([{"type": "open", "area_pyeong": 1000}], start=d, region="강원").json()
+    rare = [o["crop"] for o in j["results"][recommender.TOP_N:] if o["region_tier"] == "rare" and not o["demoted"]]
+    ex = {e["crop"]: e for e in j["excluded"]}
+    for c in rare:
+        assert ex[c]["kind"] == "region" and "거의 기르지 않는" in ex[c]["reason"]
+
+
+def test_region_notice_explains_order_and_basis():
+    """11-18: 결과 위 안내 — 규칙을 썼으면 순서·자료 기준, 가릴 수 없는 시·도면 그 사실, 그 밖에는 없음"""
+    j = _post([{"type": "orchard", "area_pyeong": 1000}], region="제주").json()
+    assert "제주가 주산지인" in j["region_notice"] and "도매시장" in j["region_notice"] and "소득 1위가 아닐 수" in j["region_notice"]
+    j = _post([{"type": "orchard", "area_pyeong": 1000}], region="경북").json()
+    assert "경북이 주산지인" in j["region_notice"]
+    j = _post([{"type": "orchard", "area_pyeong": 1000}], region="세종").json()
+    assert "세종산이 거의 들어오지 않는" in j["region_notice"] and "소득이 높은 순으로만" in j["region_notice"]
+    d = _first_window("rice", "paddy")
+    j = _post([{"type": "paddy", "area_pyeong": 3000}], start=d, region="전남").json()
+    if all(o["crop"] in ("rice", "soybean") for o in j["results"]):
+        assert j["region_notice"] is None                                # 주산지 자료가 없는 작물뿐

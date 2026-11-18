@@ -21,6 +21,7 @@
 from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 
+from app.core import crop_regions
 from app.core.crop_catalog import CROPS, LAND_TYPES, Crop, Cropping, ship_weight
 from app.core.markets import NATIONAL, markets_in_sido
 from app.core.soil_ph import SoilPh, ph_check, soil_ph_from_prev
@@ -68,6 +69,9 @@ class Option:
     prev_crop: str | None = None
     soil_ph: float | None = None
     ph: tuple[str, SoilPh | None, float] | None = None
+    region_tier: str | None = None    # 11-18 주산지: main(위로) · rare(아래로) · None
+    region_share: float | None = None  # 그 시·도산 몫 (%)
+    region_note: str | None = None
     _rev: dict[str, tuple[float, float, float]] = field(default_factory=dict, repr=False)
 
     # ── 매출 (시장마다 한 번 계산해 기억) ──
@@ -243,9 +247,25 @@ def apply_soil(o: Option, prev: str | None) -> Option:
     return o
 
 
+def apply_region(o: Option, region: str | None) -> Option:
+    """11-18 주산지: 그 시·도가 이 작물을 실제로 많이 기르는지 (shared/crop_regions.json — 도매시장 반입 산지 몫)"""
+    o.region_tier = crop_regions.tier(o.crop.code, region)
+    o.region_share = crop_regions.share(o.crop.code, region)
+    o.region_note = crop_regions.note(o.crop.code, o.crop.name, region)
+    return o
+
+
+def _clear_if_all_rare(opts: list) -> None:
+    """후보가 모두 '거의 안 기름'이면 (세종처럼 반입 산지 자료로 가릴 수 없는 시·도) 내리지도 안내하지도 않음"""
+    if opts and all(o.region_tier == "rare" for o in opts):
+        for o in opts:
+            o.region_tier = o.region_note = None
+
+
 def sort_options(opts: list[Option]) -> list[Option]:
-    """pH 를 낮춰야 하는 작물은 맨 아래, 나머지는 순이익 높은 순"""
-    return sorted(opts, key=lambda o: (o.demoted, -o.margin))
+    """pH 를 낮춰야 하는 작물은 맨 아래. 나머지는 주산지 → 보통 → 거의 안 기름 순, 같은 묶음 안에서는 소득 높은 순"""
+    _clear_if_all_rare(opts)
+    return sorted(opts, key=lambda o: (o.demoted, crop_regions.RANK[o.region_tier], -o.margin))
 
 
 def croppings_on(crop: Crop, d: date, lands: dict[str, float], region: str | None = None) -> list[Cropping]:
@@ -289,7 +309,7 @@ def recommend_crops(
             continue
         o = best_on(crop, start, lands, rents, today, region, market)
         if o:
-            ok.append(apply_soil(o, prevs.get(o.cropping.land)))
+            ok.append(apply_region(apply_soil(o, prevs.get(o.cropping.land)), region))
         else:
             off.append((crop, "심는 시기가 아니에요", next_window(crop, start, lands, region)))
     return sort_options(ok), off
@@ -307,7 +327,7 @@ def _window(c: Cropping) -> str:
 
 
 def excluded(ok: list[Option], lands: dict[str, float], start: date, region: str | None = None) -> list[tuple[Crop, str, str]]:
-    """추천 상위(TOP_N)에 없는 작물마다 (작물, 이유 종류, 한 줄 이유). 종류: perennial · land · season · ph · low"""
+    """추천 상위(TOP_N)에 없는 작물마다 (작물, 이유 종류, 한 줄 이유). 종류: perennial · land · season · ph · region · low"""
     owned = [k for k, v in lands.items() if v > 0]
     owned_txt = "·".join(LAND_TYPES[k] for k in LAND_TYPES if k in owned) or "없음"
     rank = {o.crop.code: (i, o) for i, o in enumerate(ok)}
@@ -320,6 +340,8 @@ def excluded(ok: list[Option], lands: dict[str, float], start: date, region: str
                 kind, p, gap = o.ph
                 out.append((crop, "ph", f"심을 수는 있지만 {LAND_TYPES[o.cropping.land]} 토지 흙(기존 작물 {o.prev_crop} 기준 pH 약 {o.soil_ph})이 "
                                        f"알맞은 pH {p.min}~{p.max}보다 {gap} 높아서 맨 아래({i + 1}위)로 내렸어요."))
+            elif i >= TOP_N and o.region_tier == "rare":
+                out.append((crop, "region", f"심을 수는 있지만 {o.region_note}. ({len(ok)}개 중 {i + 1}위)"))
             elif i >= TOP_N:
                 out.append((crop, "low", f"심을 수는 있지만 예상 소득이 {round(o.margin / 1e4):,}만원(소득률 {round(o.margin_rate)}%)으로, "
                                         f"추천 상위({TOP_N}위 안)에 들지 못했어요. ({len(ok)}개 중 {i + 1}위)"))
@@ -378,7 +400,7 @@ __all__ = ["Option", "Rent", "TOP_N", "at_best_market", "compare_markets", "eval
 
 
 # ── 11-17 과수원: 다 자란 나무 기준 1년 소득 (조사 자료 그대로, 날짜·가격 예측은 안 씀) ──
-MAIN_REGIONS = {"mandarin": ("제주",)}   # 노지감귤은 거의 제주에서만 재배 → 다른 시·도면 안내만 붙이고 순위는 그대로
+# 11-18: 감귤만 따로 두던 주산지 규칙(MAIN_REGIONS)을 모든 작물 공통 규칙(app/core/crop_regions.py)으로 바꿈
 
 
 @dataclass(frozen=True)
@@ -392,6 +414,8 @@ class OrchardOption:
     land_rent: float      # 사용자 1년 임대료 (원)
     machine_rent: float
     region_note: str | None
+    region_tier: str | None = None    # 11-18 주산지: main · rare · None
+    region_share: float | None = None
     market: str = NATIONAL    # 11-17: 시·도 안에서 수확 철 값이 가장 좋은 공영 도매시장 (없으면 전국)
     factor: float = 1.0       # 그 시장 계수 (수확 달 평균, 0.67~1.5) — 매출에 곱함
 
@@ -440,11 +464,11 @@ def orchard_options(lands: dict[str, float], rents: dict[str, Rent], region: str
         s = crop.survey
         if "orchard" not in crop.land_types or not crop.perennial_note or s is None or not s.revenue:
             continue
-        main = MAIN_REGIONS.get(crop.code)
-        note = f"노지{crop.name}은 겨울 추위 때문에 거의 {'·'.join(main)}에서만 길러요. {region}에서는 조사값만큼 거두기 어려워 맨 아래에 뒀어요" \
-            if main and region not in main and region != NATIONAL else None
         market, f = orchard_market(crop, region)
         out.append(OrchardOption(crop=crop, area_pyeong=area, yield_t=s.kg * a10 / 1000, price=s.price * f, revenue=s.revenue * a10 * f,
-                                 base_cost=max(0, s.cost - s.land_rent) * a10, land_rent=r.land * 1e4, machine_rent=r.machine * 1e4, region_note=note,
-                                 market=market, factor=f))
-    return sorted(out, key=lambda o: (o.region_note is not None, -o.margin))
+                                 base_cost=max(0, s.cost - s.land_rent) * a10, land_rent=r.land * 1e4, machine_rent=r.machine * 1e4,
+                                 region_note=crop_regions.note(crop.code, crop.name, region), region_tier=crop_regions.tier(crop.code, region),
+                                 region_share=crop_regions.share(crop.code, region), market=market, factor=f))
+    if out and all(o.region_tier == "rare" for o in out):   # 가릴 수 없는 시·도: 내리지도 안내하지도 않음
+        out = [replace(o, region_tier=None, region_note=None) for o in out]
+    return sorted(out, key=lambda o: (crop_regions.RANK[o.region_tier], -o.margin))

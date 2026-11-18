@@ -43,6 +43,7 @@ function reasonLines(o, region) {
     o.no_market ? `${region}에는 공영 도매시장이 없어 전국 평균 가격으로 계산했어요` : `${region} 안에서는 ${o.market.name}에 팔 때 소득이 가장 커요`,
   ];
   if (o.land_rent_year > 0) out.push(`임대료는 1년 ${man(o.land_rent_year)} 중 재배 기간 ${o.rent_days}일치 ${man(o.land_rent)}을 뺐어요`);
+  if (o.region_note) out.push(o.region_note);   // 11-18 주산지 · 거의 안 기름
   if (o.ph) out.push(PH_LINE[o.ph.kind](o));
   const pl = priceLine(o);
   if (pl) out.push(pl);
@@ -181,12 +182,13 @@ function CropCard({ o, rank, topProfit, topRate, goInfo }) {
         {rate && <b className="rate">📊 소득률 1위</b>}
       </span>
       <span className={`rc-n ${rank === 0 ? "first" : ""}`}>{String(rank + 1).padStart(2, "0")}</span>
-      <div className="rc-nm">{o.crop_name}<small>{LAND_TYPES[o.land_type]} {o.cropping} · {mo(o.harvest_start)}월 수확</small></div>
+      <div className="rc-nm">{o.crop_name}{o.region_tier === "main" && <em className="rc-main">📍 주산지</em>}<small>{LAND_TYPES[o.land_type]} {o.cropping} · {mo(o.harvest_start)}월 수확</small></div>
       <div className="rc-money">
         <div className={profit ? "hi-profit" : ""}><span>예상 소득</span><b>{man(o.margin)}</b></div>
         <div className={rate ? "hi-rate" : ""}><span>소득률</span><b>{Math.round(o.margin_rate)}%</b></div>
       </div>
       {refLine(o) && <span className="rc-ref">ⓘ {refLine(o)}</span>}
+      {o.region_note && <span className={o.region_tier === "main" ? "rc-ref main" : "rc-ref"}>{o.region_tier === "main" ? "📍" : "ⓘ"} {o.region_note}</span>}
       <div className="rc-calhead">📅 재배 달력</div>
       <MiniCalendar o={o} />
       <div className="rc-acts">
@@ -202,21 +204,22 @@ const monthsText = (h) => (h ? (h[0] === h[1] ? `${h[0]}월` : `${h[0]}~${h[1]}�
 function OrchardResults({ list, goInfo }) {
   if (!list.length) return <div className="card state">과수원 작물 자료를 불러오지 못했어요.</div>;
   const top = list.slice(0, 3), rest = list.slice(3);
+  const topProfit = top.reduce((a, b) => (b.margin > a.margin ? b : a));   // 11-18: 주산지가 위로 오므로 1번 카드가 소득 1위가 아닐 수 있음
   const src = top[0].rda;
   return (
     <>
       <div className="card rc-note rc-orchard-note">
-        🌳 과수원 나무는 한 번 심으면 여러 해 기르니 <b>심을 날짜 비교 대신 다 자란 나무에서 1년에 얻는 소득</b>으로 줄 세웠어요.
+        🌳 과수원 나무는 한 번 심으면 여러 해 기르니 <b>심을 날짜 비교 대신 다 자란 나무에서 1년에 얻는 소득</b>으로 줄 세웠어요. 고른 시·도가 주산지인 나무를 먼저, 거의 기르지 않는 나무를 아래에 뒀어요.
         {src && ` 수량·가격·경영비는 ${src.source} ${src.years[0]}~${src.years.at(-1)}년 전국 평균이고, 가격에는 고른 시·도 도매시장이 전국보다 얼마나 비싼지(싼지)를 곱했어요.`} 새로 심으면 첫 수확까지 몇 해가 걸려요.
       </div>
       <div className="rc-top3">
         {top.map((o, i) => (
           <section key={o.crop} className="card rc-card open">
-            <span className={`rc-art ${i === 0 ? "profit" : ""}`}><i aria-hidden>{o.emoji}</i>{i === 0 && <b className="profit">💰 소득 1위</b>}</span>
+            <span className={`rc-art ${o === topProfit ? "profit" : ""}`}><i aria-hidden>{o.emoji}</i>{o === topProfit && <b className="profit">💰 소득 1위</b>}</span>
             <span className={`rc-n ${i === 0 ? "first" : ""}`}>{String(i + 1).padStart(2, "0")}</span>
-            <div className="rc-nm">{o.crop_name}<small>과수원 · 다 자란 나무 기준{o.harvest_months ? ` · ${monthsText(o.harvest_months)} 수확` : ""}</small></div>
+            <div className="rc-nm">{o.crop_name}{o.region_tier === "main" && <em className="rc-main">📍 주산지</em>}<small>과수원 · 다 자란 나무 기준{o.harvest_months ? ` · ${monthsText(o.harvest_months)} 수확` : ""}</small></div>
             <div className="rc-money">
-              <div className={i === 0 ? "hi-profit" : ""}><span>1년 소득</span><b>{man(o.margin)}</b></div>
+              <div className={o === topProfit ? "hi-profit" : ""}><span>1년 소득</span><b>{man(o.margin)}</b></div>
               <div><span>소득률</span><b>{Math.round(o.margin_rate)}%</b></div>
             </div>
             <ul className="rc-why">
@@ -227,7 +230,7 @@ function OrchardResults({ list, goInfo }) {
                 <li>팔 시장 {o.market_name} — 수확 철 값이 전국 평균의 {Math.round(o.market_factor * 100)}%라 조사 가격에 곱했어요</li>
               )}
             </ul>
-            {o.region_note && <span className="rc-ref">ⓘ {o.region_note}</span>}
+            {o.region_note && <span className={o.region_tier === "main" ? "rc-ref main" : "rc-ref"}>{o.region_tier === "main" ? "📍" : "ⓘ"} {o.region_note}</span>}
             <div className="rc-acts">
               {IN50.has(o.crop) && <Link className="btn primary" to={`/ai?item=${o.crop}`}>{o.crop_name} 가격 예측 보기</Link>}
               <button type="button" className="btn" onClick={() => goInfo(o.crop)}>재배 정보 ›</button>
@@ -240,7 +243,7 @@ function OrchardResults({ list, goInfo }) {
           {rest.map((o, i) => (
             <button key={o.crop} type="button" className="rc-rest-row" onClick={() => goInfo(o.crop)}>
               <span>{String(i + 4).padStart(2, "0")} {o.emoji} {o.crop_name}</span>
-              <span>1년 소득 <b>{man(o.margin)}</b> · 소득률 {Math.round(o.margin_rate)}%{o.region_note ? " · ⓘ 주산지 밖" : ""}</span>
+              <span>1년 소득 <b>{man(o.margin)}</b> · 소득률 {Math.round(o.margin_rate)}%{o.region_tier === "main" ? " · 📍 주산지" : o.region_tier === "rare" ? " · ⓘ 이 지역에서 거의 안 길러요" : ""}</span>
             </button>
           ))}
         </div>
@@ -272,13 +275,16 @@ function Results({ state, form, goInfo, retry }) {
   return (
     <Async state={state} minHeight={360}>
       {(d) => {
-        if (form.type === "orchard") return <OrchardResults list={d.orchards ?? []} goInfo={goInfo} />;
+        // 11-18: 순서를 어떻게 정했는지 (주산지 규칙 · 자료 기준 · 가릴 수 없는 시·도) — 서버가 준 문장 그대로
+        const notice = d.region_notice ? <div className="card rc-note rc-region-note">📍 {d.region_notice}</div> : null;
+        if (form.type === "orchard") return <>{notice}<OrchardResults list={d.orchards ?? []} goInfo={goInfo} /></>;
         const top = d.results.slice(0, 3);
         if (!top.length) return <NoResult d={d} form={form} retry={retry} />;
         const topProfit = top.reduce((a, b) => (b.margin > a.margin ? b : a));
         const topRate = top.reduce((a, b) => (b.margin_rate > a.margin_rate ? b : a));
         return (
           <>
+            {notice}
             <div className="rc-top3">
               {top.map((o, i) => <CropCard key={o.crop + o.cropping} o={o} rank={i} topProfit={topProfit} topRate={topRate} goInfo={goInfo} />)}
               {top.length < 3 && (
@@ -352,7 +358,7 @@ function CropPicker({ list, crop, ranks, onPick }) {
 }
 
 // 작물 정보 탭: 추천에 없는 이유 종류 → 배지 (11-13)
-const OUT_LABEL = { perennial: "여러 해 기르는 나무", land: "고른 토지에서 못 길러요", season: "지금은 심는 때가 아니에요", ph: "흙 pH 때문에 맨 아래", low: "추천 3위 밖" };
+const OUT_LABEL = { perennial: "여러 해 기르는 나무", land: "고른 토지에서 못 길러요", season: "지금은 심는 때가 아니에요", ph: "흙 pH 때문에 맨 아래", region: "이 지역에서 거의 안 길러요", low: "추천 3위 밖" };
 
 function WhyCard({ crop, cropName, emoji, rec, form, info, goLand }) {
   const results = rec?.results ?? [];
